@@ -1,0 +1,113 @@
+/**
+ *------
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
+ * Perikles implementation : © <Your name here> <Your email address here>
+ *
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
+ * -----
+ *
+ * perikles.css
+ *
+ * Perikles stylesheet
+ *
+ */
+
+/*
+    This is the CSS stylesheet of your game User Interface.
+    
+    Styles defined on this file will be applied to the HTML elements you define in your
+    HTML template (perikles_perikles.tpl), and to HTML elements you create dynamically
+    (in perikles.js).
+    
+    Usually, you are using CSS to:
+    
+    1°) define the overall layout of your game
+        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
+
+    2°) create your CSS-sprites:
+        All images of your games should be gathered into a small number of image files. Then, using
+        background-image and background-position CSS properties, you create HTML blocks that can 
+        display these images correctly (see example below).
+    
+    3°) ... anything else:
+        It is really easy to add and remove CSS classes dynamically from your Javascript with
+        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
+        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
+        very often, using CSS classes for the logic of your user interface allow you to do complex
+        thing easily.
+        
+        
+     Note: on the production platform, this file will be compressed and comments will be removed.
+           Consequently, don't hesitate to put as many comments as necessary.
+*/
+
+
+/* Note: you must not use any @import directive */
+
+
+/********* You can start writing your CSS below this line: **********/
+
+:root {
+    --color_sparta: #F3BE7A;
+    --color_athens: #83CBFA;
+    --color_corinth: #B95AB4;
+    --color_argos: #A9D035;
+    --color_thebes: #F8F654;
+    --color_megara: #FF633A;
+    --color_anycity: #9A5200;
+    /* card dimensions */
+    --defeat_token_dim: 53px;
+    /* board has been blown up to 2x size */
+    --scale: 2;
+    --influence_sprites_w: 384px;
+    --influence_sprites_h: 1393px;
+    --influence_w: 128px;
+    --influence_h: 199px;
+}
+
+.per_special_tile {
+    width: 165px;
+    height: 255px;
+}
+
+.per_influence_tile {
+    background-image: url(img/influence_tiles.jpg);
+    background-size:  calc(var(--influence_sprites_w)*0.5) calc(var(--influence_sprites_h)*0.5);
+    background-repeat: no-repeat;
+    width: calc(var(--influence_w)*0.5);
+    height: calc(var(--influence_h)*0.5);
+}
+
+.per_influence_slot {
+    position: absolute;
+    width: calc(var(--scale) * 38px);
+    height: calc(var(--scale) * 53px);
+}
+
+.per_defeat_slot {
+    position: absolute;
+    height: var(--defeat_token_dim);
+    width: var(--defeat_token_dim);
+}
+
+.per_defeat {
+    position: relative;
+    background-image: url(img/defeat_counter.jpg);
+    background-size: var(--defeat_token_dim) var(--defeat_token_dim);
+    background-repeat: no-repeat;
+    height: var(--defeat_token_dim);
+    width: var(--defeat_token_dim);
+}
+
+#perikles_map {
+    position: relative;
+    background-size: 1298px 1500px;
+    background-image: url(img/perikles_board.jpg);
+    background-repeat: no-repeat;
+    width: 1298px;
+    height: 1500px;
+}
+
+
+
