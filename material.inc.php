@@ -20,12 +20,12 @@
  */
 
 
-
+// "influence" is number of 2-shard tiles
 $this->cities = array(
-    "athens" => array('name' => clienttranslate("Athens")),
-    "sparta" => array('name' => clienttranslate("Sparta")),
-    "argos" => array('name' => clienttranslate("Argos")),
-    "corinth" => array('name' => clienttranslate("Corinth")),
-    "thebes" => array('name' => clienttranslate("Thebes")),
-    "megara" => array('name' => clienttranslate("Megara")),
+    "athens" => clienttranslate("Athens"),
+    "sparta" => clienttranslate("Sparta"),
+    "argos" => clienttranslate("Argos"),
+    "corinth" => clienttranslate("Corinth"),
+    "thebes" => clienttranslate("Thebes"),
+    "megara" => clienttranslate("Megara"),
 );

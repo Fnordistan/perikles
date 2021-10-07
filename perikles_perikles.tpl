@@ -32,7 +32,7 @@
 
 // Javascript HTML templates
 
-const jstpl_influence_tile = '<div id="${city}_${type}_${ct}" class="per_influence_tile" style="background-position: ${x}px ${y}px;"></div>';
+const jstpl_influence_tile = '<div id="${city}_${id}" class="per_influence_tile" style="background-position: ${x}px ${y}px;"></div>';
 
 </script>  
 

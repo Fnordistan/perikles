@@ -56,17 +56,30 @@ function (dojo, declare) {
                 // TODO: Setting up players boards if needed
             }
             
-            // TODO: Set up your game interface here, according to "gamedatas"
-            const influence1 = document.getElementById("influence_slot_5");
-            const any = this.format_block('jstpl_influence_tile', {city: 'athens', type: '2', ct: '1', x: 0 * INFLUENCE_SCALE * this.influence_w, y: -6 * INFLUENCE_SCALE * this.influence_h});
-            dojo.place(any, influence1);
- 
+            this.setupInfluenceTiles(gamedatas.influence_tiles);
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
             console.log( "Ending game setup" );
         },
        
+
+        /**
+         * Put influence tiles on board
+         * @param {Array} influence 
+         */
+        setupInfluenceTiles: function(influence) {
+            const ROW = {'athens' : 0, 'sparta' : 1, 'argos' : 2, 'corinth' : 3, 'thebes' : 4, 'megara' : 5, 'any' : 6};
+            const COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
+            for (const tile of influence) {
+                const city = tile['city'];
+                const s = tile['slot'];
+                const slot = document.getElementById("influence_slot_"+s);
+                const card = this.format_block('jstpl_influence_tile', {city: city, id: tile['id'], x: -1 * COL[tile['type']] * INFLUENCE_SCALE * this.influence_w, y: -1 * ROW[city] * INFLUENCE_SCALE * this.influence_h});
+                dojo.place(card, slot);
+            }
+        },
 
         ///////////////////////////////////////////////////
         //// Game & client states

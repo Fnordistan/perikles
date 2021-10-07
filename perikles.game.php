@@ -20,6 +20,12 @@
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 
+define("INFLUENCE", "influence");
+define("CANDIDATE", "candidate");
+define("ASSASSIN", "assassin");
+define("DECK", "deck");
+define("BOARD", "board");
+
 class Perikles extends Table
 {
 	function __construct( )
@@ -40,7 +46,10 @@ class Perikles extends Table
             //    "my_second_game_variant" => 101,
             //      ...
         ) );        
-	}
+
+        $this->influence_tiles = self::getNew("module.common.deck");
+        $this->influence_tiles->init("INFLUENCE");
+    }
 	
     protected function getGameName( )
     {
@@ -88,12 +97,48 @@ class Perikles extends Table
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
         // TODO: setup the initial game situation here
+        $this->setupInfluenceTiles();
        
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
 
         /************ End of the game initialization *****/
+    }
+
+
+    protected function setupInfluenceTiles() {
+        $influence = $this->createInfluenceTiles();
+        $this->influence_tiles->createCards($influence, DECK);
+        $this->influence_tiles->shuffle(DECK);
+        for ($i = 1; $i <= 10; $i++) {
+            $this->influence_tiles->pickCardForLocation(DECK, BOARD, $i);
+        }
+    }
+
+
+    /**
+     * Create the influence tiles for deck
+     */
+    protected function createInfluenceTiles() {
+        $influence = array(
+            "athens" => ["influence" => 3, "candidate" => 2],
+            "sparta" => ["influence" => 3, "candidate" => 2],
+            "argos" => ["influence" => 2, "candidate" => 2],
+            "corinth" => ["influence" => 2, "candidate" => 2],
+            "thebes" => ["influence" => 2, "candidate" => 2],
+            "megara" => ["influence" => 2, "candidate" => 1],
+        );
+
+        $influence_tiles = array();
+
+        foreach( $influence as $city => $tiles) {
+            $influence_tiles[] = array('type' => $city, 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $tiles['influence']);
+            $influence_tiles[] = array('type' => $city, 'type_arg' => CANDIDATE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $tiles['candidate']);
+            $influence_tiles[] = array('type' => $city, 'type_arg' => ASSASSIN, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
+        }
+        $influence_tiles[] = array('type' => 'any', 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => 5);
+        return $influence_tiles;
     }
 
     /*
@@ -116,8 +161,7 @@ class Perikles extends Table
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
-  
+        $result['influence_tiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location_arg slot FROM INFLUENCE WHERE card_location='".BOARD."'");
         return $result;
     }
 
