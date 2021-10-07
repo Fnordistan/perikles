@@ -73,11 +73,13 @@ function (dojo, declare) {
             const ROW = {'athens' : 0, 'sparta' : 1, 'argos' : 2, 'corinth' : 3, 'thebes' : 4, 'megara' : 5, 'any' : 6};
             const COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
             for (const tile of influence) {
+                const id = tile['id'];
                 const city = tile['city'];
                 const s = tile['slot'];
                 const slot = document.getElementById("influence_slot_"+s);
-                const card = this.format_block('jstpl_influence_tile', {city: city, id: tile['id'], x: -1 * COL[tile['type']] * INFLUENCE_SCALE * this.influence_w, y: -1 * ROW[city] * INFLUENCE_SCALE * this.influence_h});
+                const card = this.format_block('jstpl_influence_tile', {city: city, id: id, x: -1 * COL[tile['type']] * INFLUENCE_SCALE * this.influence_w, y: -1 * ROW[city] * INFLUENCE_SCALE * this.influence_h});
                 dojo.place(card, slot);
+                this.addTooltip(city+'_'+id, city + ' ' + tile['type'], '');
             }
         },
 
