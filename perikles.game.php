@@ -162,6 +162,7 @@ class Perikles extends Table
         $result['players'] = self::getCollectionFromDb( $sql );
   
         $result['influence_tiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location_arg slot FROM INFLUENCE WHERE card_location='".BOARD."'");
+        $result['decksize'] = $this->influence_tiles->countCardInLocation(DECK);
         return $result;
     }
 

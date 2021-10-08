@@ -64,10 +64,12 @@
           8 => [3,2],
           9 => [3,3],
           10 => [4,1],
+          // pile
+          0 => [4,3]
         );
 
         $this->page->begin_block($template, 'INFLUENCE_TILES_BLOCK');
-        for ($i = 1; $i <= 10; $i++ ) {
+        for ($i = 0; $i <= 10; $i++ ) {
           $x = $COLX[$INFLUENCE_SLOTS[$i][0]];
           $y = $ROWY[$INFLUENCE_SLOTS[$i][1]];
           $this->page->insert_block('INFLUENCE_TILES_BLOCK', array(

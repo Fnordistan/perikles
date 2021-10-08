@@ -18,6 +18,11 @@
 const BOARD_SCALE = 2;
 const INFLUENCE_SCALE = 0.5;
 
+const INFLUENCE_ROW = {'athens' : 0, 'sparta' : 1, 'argos' : 2, 'corinth' : 3, 'thebes' : 4, 'megara' : 5, 'any' : 6};
+const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
+
+const INFLUENCE_PILE = "influence_slot_0";
+
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
@@ -56,7 +61,7 @@ function (dojo, declare) {
                 // TODO: Setting up players boards if needed
             }
             
-            this.setupInfluenceTiles(gamedatas.influence_tiles);
+            this.setupInfluenceTiles(gamedatas.influence_tiles, parseInt(gamedatas.decksize));
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -67,20 +72,29 @@ function (dojo, declare) {
 
         /**
          * Put influence tiles on board
-         * @param {Array} influence 
+         * @param {Array} influence
+         * @param {int} decksize
          */
-        setupInfluenceTiles: function(influence) {
-            const ROW = {'athens' : 0, 'sparta' : 1, 'argos' : 2, 'corinth' : 3, 'thebes' : 4, 'megara' : 5, 'any' : 6};
-            const COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
-            for (const tile of influence) {
+        setupInfluenceTiles: function(influence, decksize) {
+            // tiles in slots
+            for (let tile of influence) {
                 const id = tile['id'];
                 const city = tile['city'];
                 const s = tile['slot'];
                 const slot = document.getElementById("influence_slot_"+s);
-                const card = this.format_block('jstpl_influence_tile', {city: city, id: id, x: -1 * COL[tile['type']] * INFLUENCE_SCALE * this.influence_w, y: -1 * ROW[city] * INFLUENCE_SCALE * this.influence_h});
+                const card = this.format_block('jstpl_influence_tile', {city: city, id: id, x: -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w, y: -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h});
                 dojo.place(card, slot);
                 this.addTooltip(city+'_'+id, city + ' ' + tile['type'], '');
             }
+            // deck
+            const pile = document.getElementById(INFLUENCE_PILE);
+            for (let c = 1; c <= decksize; c++) {
+                const cardback = this.format_block('jstpl_influence_back', {id: c, x: -1 * INFLUENCE_SCALE * this.influence_w, y: -6 * INFLUENCE_SCALE * this.influence_h, m: c-1});
+                dojo.place(cardback, pile);
+            }
+            var pile_tt = _("Influence Deck: ${num} cards remaining");
+            pile_tt = pile_tt.replace('${num}', decksize);
+            this.addTooltip(INFLUENCE_PILE, pile_tt, '');
         },
 
         ///////////////////////////////////////////////////
