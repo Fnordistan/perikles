@@ -31,5 +31,5 @@ CREATE TABLE IF NOT EXISTS `INFLUENCE` (
 
 
 -- Example 2: add a custom field to the standard "player" table
--- ALTER TABLE `player` ADD `player_my_custom_field` INT UNSIGNED NOT NULL DEFAULT '0';
-
+ALTER TABLE `player` ADD `special_tile` TINYINT UNSIGNED NOT NULL;
+ALTER TABLE `player` ADD `special_tile_used` BOOLEAN NOT NULL DEFAULT '0';

@@ -23,6 +23,8 @@ const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
 
 const INFLUENCE_PILE = "influence_slot_0";
 
+const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
+
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
@@ -57,11 +59,23 @@ function (dojo, declare) {
             for( var player_id in gamedatas.players )
             {
                 var player = gamedatas.players[player_id];
-                         
-                // TODO: Setting up players boards if needed
+                const player_board_div = $('player_board_'+player_id);
+                const spec = parseInt(gamedatas.specialtiles[player_id]);
+
+                if (spec == 0) {
+                    var specialtile = this.format_block('jstpl_special_back', {id: player_id});
+                } else {
+                    var spec_i = SPECIAL_TILES[Math.abs(spec-1)]
+                    if (spec < 0) {
+                        specialtile = this.format_block('jstpl_special_tile', {special: spec_i});
+                    } else {
+                        specialtile = this.format_block('jstpl_special_tile', {special: spec_i});
+                    }
+                }
+                dojo.place(specialtile, player_board_div);
             }
             
-            this.setupInfluenceTiles(gamedatas.influence_tiles, parseInt(gamedatas.decksize));
+            this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();

@@ -64,11 +64,61 @@
     --influence_sprites_h: 1393px;
     --influence_w: 128px;
     --influence_h: 199px;
+    --special_sprites_w: 1244px;
+    --special_sprites_h: 980px;
+    --special_w: 311px;
+    --special_h: 490px;
+    --special_scale: 0.2;
 }
 
 .per_special_tile {
-    width: 165px;
-    height: 255px;
+    background-image: url(img/special_tiles.jpg);
+    background-size: calc(var(--special_scale) * var(--special_sprites_w)) calc(var(--special_scale) * var(--special_sprites_h));
+    background-repeat: no-repeat;
+    position: relative;
+    width: calc(var(--special_scale) * var(--special_w));
+    height: calc(var(--special_scale) * var(--special_h));
+}
+
+.per_special_tile_back {
+    background-image: url(img/special_cardback.jpg);
+    background-size: calc(var(--special_w)*var(--special_scale)) calc(var(--special_h)*var(--special_scale));
+    background-repeat: no-repeat;
+    position: relative;
+    width: calc(var(--special_w)*var(--special_scale));
+    height: calc(var(--special_h)*var(--special_scale));
+}
+
+.perikles {
+    background-position: 0px 0px;
+}
+
+.persianfleet {
+    background-position: calc(-1 * var(--special_scale) * var(--special_w)) 0px;
+}
+
+.slaverevolt {
+    background-position: calc(-2 * var(--special_scale) * var(--special_w)) 0px;
+}
+
+.brasidas {
+    background-position: calc(-3 * var(--special_scale) * var(--special_w)) 0px;
+}
+
+.thessalanianallies {
+    background-position: 0px calc(-1 * var(--special_scale) * var(--special_h));
+}
+
+.alkibiades {
+    background-position: calc(-1 * var(--special_scale) * var(--special_w)) calc(-1 * var(--special_scale) * var(--special_h));
+}
+
+.phormio {
+    background-position: calc(-2 * var(--special_scale) * var(--special_w)) calc(-1 * var(--special_scale) * var(--special_h));
+}
+
+.plague {
+    background-position: calc(-3 * var(--special_scale) * var(--special_w)) calc(-1 * var(--special_scale) * var(--special_h));
 }
 
 .per_influence_tile {

@@ -98,7 +98,7 @@ class Perikles extends Table
 
         // TODO: setup the initial game situation here
         $this->setupInfluenceTiles();
-       
+        $this->assignSpecialTiles();
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -106,7 +106,22 @@ class Perikles extends Table
         /************ End of the game initialization *****/
     }
 
+    /**
+     * Assign Special tile to each player at start of game.
+     */
+    protected function assignSpecialTiles() {
+        $spec = [1,2,3,4,5,6,7,8];
+        shuffle($spec);
+        $players = self::loadPlayersBasicInfos();
+        foreach ($players as $player_id => $player) {
+            $tile = array_pop($spec);
+            self::DbQuery("UPDATE player SET special_tile = $tile WHERE player_id=$player_id");
+        }
+    }
 
+    /**
+     * Lay out the first 10 influence tiles
+     */
     protected function setupInfluenceTiles() {
         $influence = $this->createInfluenceTiles();
         $this->influence_tiles->createCards($influence, DECK);
@@ -161,8 +176,28 @@ class Perikles extends Table
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
-        $result['influence_tiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location_arg slot FROM INFLUENCE WHERE card_location='".BOARD."'");
+        $result['influencetiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location_arg slot FROM INFLUENCE WHERE card_location='".BOARD."'");
         $result['decksize'] = $this->influence_tiles->countCardInLocation(DECK);
+        
+        $players = self::loadPlayersBasicInfos();
+        $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile, special_tile_used FROM player");
+        $specialtiles = array();
+        foreach ($players as $player_id => $player) {
+            $tile = 0;
+            if ($player_id == $current_player_id) {
+                // tile number if not used, negative tile number if used
+                $tile = $playertiles[$player_id]['special_tile'];
+                if ($playertiles[$player_id]['special_tile_used']) {
+                    $tile *= -1;
+                }
+                $specialtiles[$player_id] = $playertiles[$player_id]['special_tile'];
+            } elseif ($playertiles[$player_id]['special_tile_used']) {
+                $tile = $playertiles[$player_id]['special_tile'];
+            }
+            $specialtiles[$player_id] = $tile;
+        }
+        $result['specialtiles'] = $specialtiles;
+
         return $result;
     }
 

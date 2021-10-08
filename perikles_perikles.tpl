@@ -33,7 +33,12 @@
 // Javascript HTML templates
 
 const jstpl_influence_tile = '<div id="${city}_${id}" class="per_influence_tile" style="background-position: ${x}px ${y}px;"></div>';
+
 const jstpl_influence_back = '<div id="cardback_${id}" class="per_influence_tile" style="background-position: ${x}px ${y}px; position: absolute; margin: -${m}px ${m}px;"></div>';
+
+const jstpl_special_tile = '<div id="${special}_special_tile" class="per_special_tile ${special}"></div>';
+
+const jstpl_special_back = '<div id="special_${id}" class="per_special_tile_back"></div>';
 
 </script>  
 
