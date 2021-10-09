@@ -91,7 +91,10 @@
             "leader" => [445, 722],
             "statues" => [317, 871],
             "military" => [566, 846],
-        ),
+            "alpha" => [0,0],
+            "beta" => [0,0],
+            "cubes" => [390, 965],
+      ),
           "athens" => array(
             "defeats" => array(
               "y" => 517,
@@ -100,6 +103,9 @@
             "leader" => [1073, 252],
             "statues" => [943, 399],
             "military" => [1188, 374],
+            "alpha" => [0,0],
+            "beta" => [0,0],
+            "cubes" => [1016, 490],
           ),
           "corinth" => array(
             "defeats" => array(
@@ -109,7 +115,10 @@
               "leader" => [190, 447],
               "statues" => [59, 594],
               "military" => [306, 570],
-          ),
+              "alpha" => [0,0],
+              "beta" => [0,0],
+              "cubes" => [133, 687],
+            ),
           "megara" => array(
               "defeats" => array(
                 "y" => 654,
@@ -118,7 +127,10 @@
               "leader" => [616, 386],
               "statues" => [488, 531],
               "military" => [736, 510],
-            ),
+              "alpha" => [0,0],
+              "beta" => [0,0],
+              "cubes" => [560, 629],
+              ),
           "sparta" => array(
               "defeats" => array(
                 "y" => 1324,
@@ -127,7 +139,10 @@
               "leader" => [257, 1054],
               "statues" => [127, 1199],
               "military" => [376, 1176],
-            ),
+              "alpha" => [0,0],
+              "beta" => [0,0],
+              "cubes" => [202, 1295],
+              ),
           "thebes" => array(
               "defeats" => array(
                 "y" => 325,
@@ -136,14 +151,18 @@
               "leader" => [571, 55],
               "statues" => [439, 200],
               "military" => [687, 176],
+              "alpha" => [0,0],
+              "beta" => [0,0],
+              "cubes" => [516, 295],
             ),
         );
 
         $this->page->begin_block($template, 'DEFEAT_BLOCK');
+        $this->page->begin_block($template, 'CUBES_BLOCK');
         $this->page->begin_block($template, 'CITY_BLOCK');
-        $this->page->reset_subblocks('DEFEAT_BLOCK');
         foreach ($this->game->cities as $city => $cityname) {
           $this->page->reset_subblocks('DEFEAT_BLOCK');
+          $this->page->reset_subblocks('CUBES_BLOCK');
  
           $defeats = $CITIES[$city]["defeats"];
           $defeat_slot = 1;
@@ -156,6 +175,19 @@
             ));
             $defeat_slot++;
           }
+
+          $COL_GAP = 33;
+          $col = 0;
+          foreach ($players as $player_id => $player) {
+            $this->page->insert_block('CUBES_BLOCK', array(
+              'CITY' => $city,
+              'player_id' => $player_id,
+              'L' => $CITIES[$city]["cubes"][0] + $COL_GAP*$col,
+              'T' => $CITIES[$city]["cubes"][1]-120,
+            ));
+            $col++;
+          }
+
 
           $this->page->insert_block('CITY_BLOCK', array(
             'CITY' => $city,

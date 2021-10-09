@@ -28,6 +28,10 @@
             <!-- BEGIN DEFEAT_BLOCK -->
             <div id="{CITY}_defeat_slot_{i}" class="per_counter_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END DEFEAT_BLOCK -->
+            <!-- BEGIN CUBES_BLOCK -->
+            <div id="{CITY}_cubes_{player_id}" class="per_city_cubes" style="top: {T}px; left: {L}px;"></div>
+            <!-- END CUBES_BLOCK -->
+            
         </div>
         <!-- END CITY_BLOCK -->
     </div>
@@ -48,6 +52,8 @@ const jstpl_special_back = '<div id="special_${id}" class="per_special_tile_back
 const jstpl_defeat = '<div id="${city}_defeat_${num}" class="per_defeat_counter"></div>';
 
 const jstpl_leader = '<div id="${city}_${type}_${num}" class="per_counter per_statue per_${type}_${color}"></div>';
+
+const jstpl_cube = '<div class="per_cube" style="background-color: #${color};"></div>';
 
 </script>  
 

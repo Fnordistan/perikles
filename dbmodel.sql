@@ -27,9 +27,14 @@ CREATE TABLE IF NOT EXISTS `INFLUENCE` (
   `card_location` varchar(16) NOT NULL COMMENT 'player_id|deck|influence_slot',
   `card_location_arg` TINYINT COMMENT 'may be null',
   PRIMARY KEY (`card_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
-
--- Example 2: add a custom field to the standard "player" table
+-- custom entries to player table
 ALTER TABLE `player` ADD `special_tile` TINYINT UNSIGNED NOT NULL;
 ALTER TABLE `player` ADD `special_tile_used` BOOLEAN NOT NULL DEFAULT '0';
+ALTER TABLE `player` ADD `argos` TINYINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `player` ADD `athens` TINYINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `player` ADD `corinth` TINYINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `player` ADD `megara` TINYINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `player` ADD `sparta` TINYINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `player` ADD `thebes` TINYINT UNSIGNED NOT NULL DEFAULT 0;

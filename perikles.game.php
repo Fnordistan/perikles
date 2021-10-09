@@ -85,7 +85,7 @@ class Perikles extends Table
         self::DbQuery( $sql );
         self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
         self::reloadPlayersBasicInfos();
-        
+
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
@@ -96,9 +96,9 @@ class Perikles extends Table
         //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
-        // TODO: setup the initial game situation here
         $this->setupInfluenceTiles();
         $this->assignSpecialTiles();
+        $this->setupInfluenceCubes();
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -131,7 +131,6 @@ class Perikles extends Table
         }
     }
 
-
     /**
      * Create the influence tiles for deck
      */
@@ -154,6 +153,18 @@ class Perikles extends Table
         }
         $influence_tiles[] = array('type' => 'any', 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => 5);
         return $influence_tiles;
+    }
+
+    /**
+     * Initial assignment of 2 cubes per city per player.
+     */
+    protected function setupInfluenceCubes() {
+        $players = self::loadPlayersBasicInfos();
+        foreach($this->cities as $city => $c) {
+            foreach($players as $player_id => $player) {
+                self::DbQuery("UPDATE player SET ".$city." = 2 WHERE player_id=$player_id");
+            }
+        }
     }
 
     /*
@@ -182,6 +193,7 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile, special_tile_used FROM player");
         $specialtiles = array();
+        $influencecubes = array();
         foreach ($players as $player_id => $player) {
             $tile = 0;
             if ($player_id == $current_player_id) {
@@ -195,9 +207,14 @@ class Perikles extends Table
                 $tile = $playertiles[$player_id]['special_tile'];
             }
             $specialtiles[$player_id] = $tile;
+
+            $influencecubes[$player_id] = array();
+            foreach($this->cities as $city => $c) {
+                $influencecubes[$player_id][$city] = self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
+            }
         }
         $result['specialtiles'] = $specialtiles;
-
+        $result['influencecubes'] = $influencecubes;
         $result['defeats'] = $this->getDefeats();
         $result['leaders'] = $this->getLeaders();
         $result['statues'] = $this->getStatues();

@@ -215,6 +215,22 @@
     width: var(--counter_dim);
 }
 
+.per_city_cubes {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    width: 14px;
+    height: 120px;
+}
+
+.per_cube {
+    width: 14px;
+    height: 14px;
+    box-shadow: rgb(38 57 77) 0px 4px 4px 0px;
+    margin: 2px 0;
+}
+
 .per_statue_zone {
     position: absolute;
     width: 40px;

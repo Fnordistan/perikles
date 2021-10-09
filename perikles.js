@@ -87,6 +87,7 @@ function (dojo, declare) {
             }
             
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
+            this.setupInfluenceCube(gamedatas.influencecubes);
 
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
@@ -128,12 +129,30 @@ function (dojo, declare) {
         },
 
         /**
+         * Place influence cubes on cities.
+         * @param {Object} influencecubes 
+         */
+        setupInfluenceCube: function(influencecubes) {
+            for (const player_id of Object.keys(influencecubes)) {
+                for (const [city, cubes] of Object.entries(influencecubes[player_id])) {
+                    const num = parseInt(cubes);
+                    for (let n = 0; n < num; n++) {
+                        const cube = this.createInfluenceCube(player_id);
+                        const column = document.getElementById(city+"_cubes_"+player_id);
+                        dojo.place(cube, column);
+                    }
+                }
+
+            }
+        },
+
+        /**
          * Place Leader tokens on cities.
          * @param {Object} leaders 
          */
         setupLeaders: function(leaders) {
             for (const [city, player_id] of Object.entries(leaders)) {
-                const leader = this.getLeaderCounter(player_id, city, "leader", 1);
+                const leader = this.createLeaderCounter(player_id, city, "leader", 1);
                 const leader_slot = document.getElementById(city+"_leader");
                 dojo.place(leader, leader_slot);
             }
@@ -144,7 +163,6 @@ function (dojo, declare) {
          * @param {Object} statues 
          */
         setupStatues: function(statues) {
-            this.cityzones = {};
             for (let city of CITIES) {
                 const citystatues = statues[city];
                 if (citystatues) {
@@ -152,7 +170,7 @@ function (dojo, declare) {
                     let s = 0;
                     for (const [player_id, num] of Object.entries(citystatues)) {
                         for (let i = 1; i <= parseInt(num); i++) {
-                            const statue_div = this.getLeaderCounter(player_id, city, "statue", s+1);
+                            const statue_div = this.createLeaderCounter(player_id, city, "statue", s+1);
                             const statue = dojo.place(statue_div, statue_area);
                             statue.style.bottom = (s*22)+"px";
                             statue.style.left = (s*6)+"px";
@@ -171,11 +189,23 @@ function (dojo, declare) {
          * @param {int} n 
          * @returns statue or leader div
          */
-        getLeaderCounter: function(player_id, city, type, n) {
+        createLeaderCounter: function(player_id, city, type, n) {
             const player = this.gamedatas.players[player_id];
             const color = player.color;
             const counter = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: PLAYER_COLORS[color]});
             return counter;
+        },
+
+        /**
+         * Create a cube div in player's color.
+         * @param {int} player_id 
+         * @returns colored influence cube
+         */
+        createInfluenceCube: function(player_id) {
+            const player = this.gamedatas.players[player_id];
+            const color = player.color;
+            const cube = this.format_block('jstpl_cube', {color: color});
+            return cube;
         },
 
         /**
