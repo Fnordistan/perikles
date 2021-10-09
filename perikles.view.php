@@ -30,9 +30,9 @@
   {
     function getGameName() {
         return "perikles";
-    }    
-  	function build_page( $viewArgs )
-  	{		
+    }
+  
+  	function build_page( $viewArgs ) {		
   	    // Get players & players number
         $players = $this->game->loadPlayersBasicInfos();
         $players_nbr = count( $players );
@@ -82,24 +82,79 @@
 
 
         /** BEGIN DEFEAT TOKEN SLOTS */
-        $CORINTH_DEFEAT_Y = 716;
-        $CORINTH_DEFEAT_X = [104, 155, 208, 258];
-        $corinth_defeat_slot = 1;
-        $this->page->begin_block($template, 'CORINTH_DEFEAT_BLOCK');
-        foreach ($CORINTH_DEFEAT_X as $x) {
-          $this->page->insert_block('CORINTH_DEFEAT_BLOCK', array(
-            'i' => $corinth_defeat_slot,
-            'L' => $x,
-            'T' => $CORINTH_DEFEAT_Y
+        $CITIES = array(
+          "argos" => array(
+            "defeats" => array(
+              "y" => 989,
+              "x" => [467, 416]
+            ),
+            "leader" => [445, 722],
+          ),
+          "athens" => array(
+            "defeats" => array(
+              "y" => 517,
+              "x" => [1143, 1093, 1040, 989]
+            ),
+            "leader" => [1073, 252],
+          ),
+          "corinth" => array(
+            "defeats" => array(
+                "y" => 716,
+                "x" => [258, 208, 155, 104]
+              ),
+              "leader" => [190, 447],
+          ),
+          "megara" => array(
+              "defeats" => array(
+                "y" => 654,
+                "x" => [638, 587]
+              ),
+              "leader" => [616, 386],
+          ),
+          "sparta" => array(
+              "defeats" => array(
+                "y" => 1324,
+                "x" => [327, 278, 225, 172]
+              ),
+              "leader" => [257, 1054],
+          ),
+          "thebes" => array(
+              "defeats" => array(
+                "y" => 325,
+                "x" => [618, 566, 514]
+              ),
+              "leader" => [571, 55],
+          ),
+        );
+
+        $this->page->begin_block($template, 'DEFEAT_BLOCK');
+        $this->page->begin_block($template, 'CITY_BLOCK');
+        $this->page->reset_subblocks('DEFEAT_BLOCK');
+        foreach ($this->game->cities as $city => $cityname) {
+          $this->page->reset_subblocks('DEFEAT_BLOCK');
+ 
+          $defeats = $CITIES[$city]["defeats"];
+          $defeat_slot = 1;
+          foreach ($defeats["x"] as $x) {
+            $this->page->insert_block('DEFEAT_BLOCK', array(
+              'CITY' => $city,
+              'i' => $defeat_slot,
+              'L' => $x,
+              'T' => $defeats["y"]
+            ));
+            $defeat_slot++;
+          }
+
+          $this->page->insert_block('CITY_BLOCK', array(
+            'CITY' => $city,
+            'LEADERX' => $CITIES[$city]["leader"][0],
+            'LEADERY' => $CITIES[$city]["leader"][1]
           ));
-          $corinth_defeat_slot++;
         }
 
         /** END DEFEAT TOKEN SLOTS */
 
 
         /*********** Do not change anything below this line  ************/
-  	}
   }
-  
-
+}

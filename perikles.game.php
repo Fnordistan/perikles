@@ -198,7 +198,26 @@ class Perikles extends Table
         }
         $result['specialtiles'] = $specialtiles;
 
+        $result['defeats'] = $this->getDefeats();
+        $result['leaders'] = $this->getLeaders();
+
         return $result;
+    }
+
+
+    function getDefeats() {
+        $defeats = array(
+            "corinth" => 2,
+            "thebes" => 3,
+        );
+        return $defeats;
+    }
+
+    function getLeaders() {
+        $leaders = array(
+            "corinth" => self::getCurrentPlayerId()
+        );
+        return $leaders;
     }
 
     /*

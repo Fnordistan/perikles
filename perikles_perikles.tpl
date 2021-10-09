@@ -20,11 +20,14 @@
             <div id="influence_slot_{i}" class="per_influence_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END INFLUENCE_TILES_BLOCK -->
         </div>
-        <div id="corinth">
-            <!-- BEGIN CORINTH_DEFEAT_BLOCK -->
-            <div id="corinth_defeat_{i}" class="per_defeat_slot" style="top: {T}px; left: {L}px;"></div>
-            <!-- END CORINTH_DEFEAT_BLOCK -->
+        <!-- BEGIN CITY_BLOCK -->
+        <div id="{CITY}">
+            <div id="{CITY}_leader" class="per_counter_slot" style="top: {LEADERY}px; left: {LEADERX}px;"></div>
+            <!-- BEGIN DEFEAT_BLOCK -->
+            <div id="{CITY}_defeat_slot_{i}" class="per_counter_slot" style="top: {T}px; left: {L}px;"></div>
+            <!-- END DEFEAT_BLOCK -->
         </div>
+        <!-- END CITY_BLOCK -->
     </div>
 </div>
 
@@ -39,6 +42,11 @@ const jstpl_influence_back = '<div id="cardback_${id}" class="per_influence_tile
 const jstpl_special_tile = '<div id="${special}_special_tile" class="per_special_tile ${special}"></div>';
 
 const jstpl_special_back = '<div id="special_${id}" class="per_special_tile_back"></div>';
+
+const jstpl_defeat = '<div id="${city}_defeat_${num}" class="per_defeat_counter"></div>';
+
+const jstpl_leader = '<div id="${city}_leader_counter" class="per_counter per_${type}_${color}"></div>';
+
 
 </script>  
 

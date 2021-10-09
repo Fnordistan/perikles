@@ -25,6 +25,14 @@ const INFLUENCE_PILE = "influence_slot_0";
 
 const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
 
+const PLAYER_COLORS = {
+    "E53738" : "red",
+    "37BC4C" : "green",
+    "39364F" : "black",
+    "E5A137" : "orange",
+    "ffffff" : "white"
+}
+
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
@@ -77,6 +85,9 @@ function (dojo, declare) {
             
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
 
+            this.setupLeaders(gamedatas.leaders);
+            this.setupDefeats(gamedatas.defeats);
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
@@ -109,6 +120,30 @@ function (dojo, declare) {
             var pile_tt = _("Influence Deck: ${num} cards remaining");
             pile_tt = pile_tt.replace('${num}', decksize);
             this.addTooltip(INFLUENCE_PILE, pile_tt, '');
+        },
+
+        setupLeaders: function(leaders) {
+            for (const [city, player_id] of Object.entries(leaders)) {
+                const player = this.gamedatas.players[player_id];
+                const color = player.color;
+                const leader = this.format_block('jstpl_leader', {city: city, type: "leader", color: PLAYER_COLORS[color]});
+                const leader_slot = document.getElementById(city+"_leader");
+                dojo.place(leader, leader_slot);
+            }
+        },
+
+        setupStatues: function(statues) {
+
+        },
+
+        setupDefeats: function(defeats) {
+            for (const [city, num] of Object.entries(defeats)) {
+                for (let d = 1; d <= num; d++) {
+                    const def_ctr = this.format_block('jstpl_defeat', {city: city, num: d} );
+                    const def_div = document.getElementById(city+'_defeat_slot_'+d);
+                    dojo.place(def_ctr, def_div);
+                }
+            }
         },
 
         ///////////////////////////////////////////////////
