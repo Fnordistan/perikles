@@ -23,6 +23,8 @@
         <!-- BEGIN CITY_BLOCK -->
         <div id="{CITY}">
             <div id="{CITY}_leader" class="per_counter_slot" style="top: {LEADERY}px; left: {LEADERX}px;"></div>
+            <div id="{CITY}_statues" class="per_statue_zone" style="top: {STATUEY}px; left: {STATUEX}px;"></div>
+            <div id="{CITY}_military" class="per_military_zone" style="top: {MILY}px; left: {MILX}px;"></div>
             <!-- BEGIN DEFEAT_BLOCK -->
             <div id="{CITY}_defeat_slot_{i}" class="per_counter_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END DEFEAT_BLOCK -->
@@ -45,8 +47,7 @@ const jstpl_special_back = '<div id="special_${id}" class="per_special_tile_back
 
 const jstpl_defeat = '<div id="${city}_defeat_${num}" class="per_defeat_counter"></div>';
 
-const jstpl_leader = '<div id="${city}_leader_counter" class="per_counter per_${type}_${color}"></div>';
-
+const jstpl_leader = '<div id="${city}_${type}_${num}" class="per_counter per_statue per_${type}_${color}"></div>';
 
 </script>  
 

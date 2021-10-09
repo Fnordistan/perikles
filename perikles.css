@@ -159,6 +159,10 @@
     box-shadow: 3px 3px 12px 5px #8a0303;
 }
 
+.per_statue {
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
+}
+
 .per_leader_black {
     background-position: 0 0;
 }
@@ -209,6 +213,18 @@
     position: absolute;
     height: var(--counter_dim);
     width: var(--counter_dim);
+}
+
+.per_statue_zone {
+    position: absolute;
+    width: 40px;
+    height: 45px;
+}
+
+.per_military_zone {
+    position: absolute;
+    width: 50px;
+    height: 80px;
 }
 
 #periklesboard {

@@ -81,7 +81,7 @@
         /**** END INFLUENCE BLOCK */
 
 
-        /** BEGIN DEFEAT TOKEN SLOTS */
+        /** BEGIN CITY BLOCK */
         $CITIES = array(
           "argos" => array(
             "defeats" => array(
@@ -89,13 +89,17 @@
               "x" => [467, 416]
             ),
             "leader" => [445, 722],
-          ),
+            "statues" => [317, 871],
+            "military" => [566, 846],
+        ),
           "athens" => array(
             "defeats" => array(
               "y" => 517,
               "x" => [1143, 1093, 1040, 989]
             ),
             "leader" => [1073, 252],
+            "statues" => [943, 399],
+            "military" => [1188, 374],
           ),
           "corinth" => array(
             "defeats" => array(
@@ -103,6 +107,8 @@
                 "x" => [258, 208, 155, 104]
               ),
               "leader" => [190, 447],
+              "statues" => [59, 594],
+              "military" => [306, 570],
           ),
           "megara" => array(
               "defeats" => array(
@@ -110,21 +116,27 @@
                 "x" => [638, 587]
               ),
               "leader" => [616, 386],
-          ),
+              "statues" => [488, 531],
+              "military" => [736, 510],
+            ),
           "sparta" => array(
               "defeats" => array(
                 "y" => 1324,
                 "x" => [327, 278, 225, 172]
               ),
               "leader" => [257, 1054],
-          ),
+              "statues" => [127, 1199],
+              "military" => [376, 1176],
+            ),
           "thebes" => array(
               "defeats" => array(
                 "y" => 325,
                 "x" => [618, 566, 514]
               ),
               "leader" => [571, 55],
-          ),
+              "statues" => [439, 200],
+              "military" => [687, 176],
+            ),
         );
 
         $this->page->begin_block($template, 'DEFEAT_BLOCK');
@@ -148,7 +160,11 @@
           $this->page->insert_block('CITY_BLOCK', array(
             'CITY' => $city,
             'LEADERX' => $CITIES[$city]["leader"][0],
-            'LEADERY' => $CITIES[$city]["leader"][1]
+            'LEADERY' => $CITIES[$city]["leader"][1],
+            'STATUEX' => $CITIES[$city]["statues"][0],
+            'STATUEY' =>$CITIES[$city]["statues"][1],
+            'MILX' => $CITIES[$city]["military"][0],
+            'MILY' => $CITIES[$city]["military"][1],
           ));
         }
 

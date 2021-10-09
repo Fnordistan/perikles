@@ -200,6 +200,8 @@ class Perikles extends Table
 
         $result['defeats'] = $this->getDefeats();
         $result['leaders'] = $this->getLeaders();
+        $result['statues'] = $this->getStatues();
+        $result['military'] = $this->getMilitary();
 
         return $result;
     }
@@ -218,6 +220,22 @@ class Perikles extends Table
             "corinth" => self::getCurrentPlayerId()
         );
         return $leaders;
+    }
+
+    function getStatues() {
+        $player_id = self::getCurrentPlayerId();
+        $statues = array(
+            "corinth" => array($player_id => 1, self::getPlayerAfter($player_id) => 1),
+            "argos" => array($player_id => 3),
+        );
+        return $statues;
+    }
+
+    function getMilitary() {
+        $military = array(
+
+        );
+        return $military;
     }
 
     /*

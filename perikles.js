@@ -18,6 +18,8 @@
 const BOARD_SCALE = 2;
 const INFLUENCE_SCALE = 0.5;
 
+const CITIES = ['athens', 'sparta', 'argos', 'corinth', 'thebes', 'megara'];
+
 const INFLUENCE_ROW = {'athens' : 0, 'sparta' : 1, 'argos' : 2, 'corinth' : 3, 'thebes' : 4, 'megara' : 5, 'any' : 6};
 const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
 
@@ -36,7 +38,8 @@ const PLAYER_COLORS = {
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
-    "ebg/counter"
+    "ebg/counter",
+    "ebg/zone"
 ],
 function (dojo, declare) {
     return declare("bgagame.perikles", ebg.core.gamegui, {
@@ -86,6 +89,8 @@ function (dojo, declare) {
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
 
             this.setupLeaders(gamedatas.leaders);
+            this.setupStatues(gamedatas.statues);
+            this.setupMilitary(gamedatas.military);
             this.setupDefeats(gamedatas.defeats);
 
             // Setup game notifications to handle (see "setupNotifications" method below)
@@ -96,7 +101,7 @@ function (dojo, declare) {
        
 
         /**
-         * Put influence tiles on board
+         * Put influence tiles on board, create deck
          * @param {Array} influence
          * @param {int} decksize
          */
@@ -122,17 +127,62 @@ function (dojo, declare) {
             this.addTooltip(INFLUENCE_PILE, pile_tt, '');
         },
 
+        /**
+         * Place Leader tokens on cities.
+         * @param {Object} leaders 
+         */
         setupLeaders: function(leaders) {
             for (const [city, player_id] of Object.entries(leaders)) {
-                const player = this.gamedatas.players[player_id];
-                const color = player.color;
-                const leader = this.format_block('jstpl_leader', {city: city, type: "leader", color: PLAYER_COLORS[color]});
+                const leader = this.getLeaderCounter(player_id, city, "leader", 1);
                 const leader_slot = document.getElementById(city+"_leader");
                 dojo.place(leader, leader_slot);
             }
         },
 
+        /**
+         * Place all statues in city statue areas.
+         * @param {Object} statues 
+         */
         setupStatues: function(statues) {
+            this.cityzones = {};
+            for (let city of CITIES) {
+                const citystatues = statues[city];
+                if (citystatues) {
+                    const statue_area = document.getElementById(city+"_statues");
+                    let s = 0;
+                    for (const [player_id, num] of Object.entries(citystatues)) {
+                        for (let i = 1; i <= parseInt(num); i++) {
+                            const statue_div = this.getLeaderCounter(player_id, city, "statue", s+1);
+                            const statue = dojo.place(statue_div, statue_area);
+                            statue.style.bottom = (s*22)+"px";
+                            statue.style.left = (s*6)+"px";
+                            s++;
+                        }
+                    }
+                }
+            }
+        },
+
+        /**
+         * For creating Leader and Statue counters.
+         * @param {int} player_id 
+         * @param {string} city 
+         * @param {string} type 
+         * @param {int} n 
+         * @returns statue or leader div
+         */
+        getLeaderCounter: function(player_id, city, type, n) {
+            const player = this.gamedatas.players[player_id];
+            const color = player.color;
+            const counter = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: PLAYER_COLORS[color]});
+            return counter;
+        },
+
+        /**
+         * For military pools only, not conflict zone
+         * @param {Object} military 
+         */
+        setupMilitary: function(military) {
 
         },
 
