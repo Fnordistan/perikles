@@ -25,6 +25,8 @@
             <div id="{CITY}_leader" class="per_counter_slot" style="top: {LEADERY}px; left: {LEADERX}px;"></div>
             <div id="{CITY}_statues" class="per_statue_zone" style="top: {STATUEY}px; left: {STATUEX}px;"></div>
             <div id="{CITY}_military" class="per_military_zone" style="top: {MILY}px; left: {MILX}px;"></div>
+            <div id="{CITY}_alpha" class="per_candidate_space" style="top: {ALPHAY}px; left: {ALPHAX}px;"></div>
+            <div id="{CITY}_beta" class="per_candidate_space" style="top: {BETAY}px; left: {BETAX}px;"></div>
             <!-- BEGIN DEFEAT_BLOCK -->
             <div id="{CITY}_defeat_slot_{i}" class="per_counter_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END DEFEAT_BLOCK -->

@@ -224,6 +224,12 @@
     height: 120px;
 }
 
+.per_candidate_space {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+}
+
 .per_cube {
     width: 14px;
     height: 14px;

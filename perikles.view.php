@@ -91,10 +91,10 @@
             "leader" => [445, 722],
             "statues" => [317, 871],
             "military" => [566, 846],
-            "alpha" => [0,0],
-            "beta" => [0,0],
+            "alpha" => [445, 805],
+            "beta" => [478, 805],
             "cubes" => [390, 965],
-      ),
+          ),
           "athens" => array(
             "defeats" => array(
               "y" => 517,
@@ -103,8 +103,8 @@
             "leader" => [1073, 252],
             "statues" => [943, 399],
             "military" => [1188, 374],
-            "alpha" => [0,0],
-            "beta" => [0,0],
+            "alpha" => [1067, 333],
+            "beta" => [1100, 333],
             "cubes" => [1016, 490],
           ),
           "corinth" => array(
@@ -115,10 +115,10 @@
               "leader" => [190, 447],
               "statues" => [59, 594],
               "military" => [306, 570],
-              "alpha" => [0,0],
-              "beta" => [0,0],
+              "alpha" => [186, 527],
+              "beta" => [219, 527],
               "cubes" => [133, 687],
-            ),
+          ),
           "megara" => array(
               "defeats" => array(
                 "y" => 654,
@@ -127,8 +127,8 @@
               "leader" => [616, 386],
               "statues" => [488, 531],
               "military" => [736, 510],
-              "alpha" => [0,0],
-              "beta" => [0,0],
+              "alpha" => [615, 469],
+              "beta" => [648, 469],
               "cubes" => [560, 629],
               ),
           "sparta" => array(
@@ -139,8 +139,8 @@
               "leader" => [257, 1054],
               "statues" => [127, 1199],
               "military" => [376, 1176],
-              "alpha" => [0,0],
-              "beta" => [0,0],
+              "alpha" => [253, 1135],
+              "beta" => [286, 1135],
               "cubes" => [202, 1295],
               ),
           "thebes" => array(
@@ -151,8 +151,8 @@
               "leader" => [571, 55],
               "statues" => [439, 200],
               "military" => [687, 176],
-              "alpha" => [0,0],
-              "beta" => [0,0],
+              "alpha" => [568, 137],
+              "beta" => [601,137],
               "cubes" => [516, 295],
             ),
         );
@@ -197,6 +197,10 @@
             'STATUEY' =>$CITIES[$city]["statues"][1],
             'MILX' => $CITIES[$city]["military"][0],
             'MILY' => $CITIES[$city]["military"][1],
+            'ALPHAX' => $CITIES[$city]["alpha"][0],
+            'ALPHAY' => $CITIES[$city]["alpha"][1],
+            'BETAX' => $CITIES[$city]["beta"][0],
+            'BETAY' => $CITIES[$city]["beta"][1],
           ));
         }
 
