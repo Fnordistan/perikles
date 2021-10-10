@@ -22,12 +22,12 @@
 
 // "influence" is number of 2-shard tiles
 $this->cities = array(
-    "athens" => clienttranslate("Athens"),
-    "sparta" => clienttranslate("Sparta"),
-    "argos" => clienttranslate("Argos"),
-    "corinth" => clienttranslate("Corinth"),
-    "thebes" => clienttranslate("Thebes"),
-    "megara" => clienttranslate("Megara"),
+    "athens" => array(clienttranslate("Athens"),"influence" => 3, "candidate" => 2),
+    "sparta" => array(clienttranslate("Sparta"),"influence" => 3, "candidate" => 2),
+    "argos" => array(clienttranslate("Argos"),"influence" => 2, "candidate" => 2),
+    "corinth" => array(clienttranslate("Corinth"),"influence" => 2, "candidate" => 2),
+    "thebes" => array(clienttranslate("Thebes"),"influence" => 2, "candidate" => 2),
+    "megara" => array(clienttranslate("Megara"),"influence" => 2, "candidate" => 1),
 );
 
 $this->specialcards = array(
@@ -39,4 +39,34 @@ $this->specialcards = array(
   6 => array('name' => clienttranslate("Alkibiades"), "description" => clienttranslate("Move any two cubes from any city or cities to any other city or cities.")),
   7 => array('name' => clienttranslate("Phormio"), "description" => clienttranslate("Double value of all Athenian triremes in one battle.")),
   8 => array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes.")),
+);
+
+$this->locations = array(
+  // Athens
+  "amphipolis" => array("name" => clienttranslate("Amphipolis"), "city" => "athens", "battle" => "TH", "vp" => 6, "bonus" => "dh"),
+  "lesbos" => array("name" => clienttranslate("Lesbos"), "city" => "athens", "battle" => "HT", "vp" => 4, "bonus" => "aht"),
+  "plataea" => array("name" => clienttranslate("Plataea"), "city" => "athens", "battle" => "H", "vp" => 4, "bonus" => "dh"),
+  "naupactus" => array("name" => clienttranslate("Naupactus"), "city" => "athens", "battle" => "TH", "vp" => 4, "bonus" => null),
+  "potidea" => array("name" => clienttranslate("Potidea"), "city" => "athens", "battle" => "TH", "vp" => 5, "bonus" => "ah"),
+  "acarnania" => array("name" => clienttranslate("Acarnania"), "city" => "athens", "battle" => "TH", "vp" => 3, "bonus" => "dh"),
+  "attica" => array("name" => clienttranslate("Attica"), "city" => "athens", "battle" => "H", "vp" => 4, "bonus" => null),
+  // Sparta
+  "melos" => array("name" => clienttranslate("Melos"), "city" => "sparta", "battle" => "HT", "vp" => 3, "bonus" => "dht"),
+  "epidaurus" => array("name" => clienttranslate("Epidaurus"), "city" => "sparta", "battle" => "TH", "vp" => 4, "bonus" => null),
+  "pylos" => array("name" => clienttranslate("Pylos"), "city" => "sparta", "battle" => "TH", "vp" => 4, "bonus" => null),
+  "sicily" => array("name" => clienttranslate("Sicily"), "city" => "sparta", "battle" => "TH", "vp" => 7, "bonus" => "dht"),
+  "cephallenia" => array("name" => clienttranslate("Cephallenia"), "city" => "sparta", "battle" => "HT", "vp" => 4, "bonus" => null),
+  "cythera" => array("name" => clienttranslate("Cythera"), "city" => "sparta", "battle" => "HT", "vp" => 3, "bonus" => null),
+  "spartolus" => array("name" => clienttranslate("Spartolus"), "city" => "sparta", "battle" => "TH", "vp" => 4, "bonus" => "ah"),
+  // Megara
+  "megara" => array("name" => clienttranslate("Megara"), "city" => "megara", "battle" => "TH", "vp" => 5, "bonus" => null),
+  // Argos
+  "mantinea" => array("name" => clienttranslate("Mantinea"), "city" => "argos", "battle" => "H", "vp" => 5, "bonus" => null),
+  // Thebes
+  "delium" => array("name" => clienttranslate("Delium"), "city" => "thebes", "battle" => "TH", "vp" => 5, "bonus" => null),
+  "aetolia" => array("name" => clienttranslate("Aetolia"), "city" => "thebes", "battle" => "TH", "vp" => 3, "bonus" => null),
+  // Corinth
+  "corcyra" => array("name" => clienttranslate("Corcyra"), "city" => "corinth", "battle" => "HT", "vp" => 3, "bonus" => "aht"),
+  "leucas" => array("name" => clienttranslate("Leucas"), "city" => "corinth", "battle" => "HT", "vp" => 4, "bonus" => null),
+  "solygeia" => array("name" => clienttranslate("Solygeia"), "city" => "corinth", "battle" => "HT", "vp" => 4, "bonus" => null),
 );

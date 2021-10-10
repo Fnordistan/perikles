@@ -76,6 +76,10 @@
     --counter_w: 83px;
     --counter_h: 82px;
     --counter_scale: 0.5;
+    /* Location tiles */
+    --location_w: 124px;
+    --location_h: 195px;
+    --location_scale: 0.55;
 }
 
 .per_special_tile {
@@ -94,6 +98,21 @@
     position: relative;
     width: calc(var(--special_w)*var(--special_scale));
     height: calc(var(--special_h)*var(--special_scale));
+}
+
+.per_location_slot {
+    position: absolute;
+    width: 70px;
+    height: 104px;
+}
+
+.per_location_tile {
+    background-image: url(img/location_tiles.jpg);
+    background-size: calc(var(--location_w)*7 *var(--location_scale)) calc(var(--location_h)*3*var(--location_scale));
+    background-repeat: no-repeat;
+    position: relative;
+    width: calc(var(--location_scale) * var(--location_w));
+    height: calc(var(--location_scale) * var(--location_h));
 }
 
 .perikles {

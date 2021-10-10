@@ -35,6 +35,31 @@ const PLAYER_COLORS = {
     "ffffff" : "white"
 }
 
+// row,column
+const LOCATIONS = {
+    "amphipolis" : [1,1],
+    "lesbos" : [1,2],
+    "plataea" :  [1,3],
+    "naupactus" : [1,4],
+    "potidea" : [1,5],
+    "acarnania" : [1,6],
+    "attica" : [1,7],
+    "melos" : [2,1],
+    "epidaurus" : [2,2],
+    "pylos" : [2,3],
+    "sicily" : [2,4],
+    "cephallenia" : [2,5],
+    "cythera" : [2,6],
+    "spartolus" : [2,7],
+    "megara" : [3,1],
+    "mantinea" : [3,2],
+    "delium" : [3,3],
+    "aetolia" : [3,4],
+    "corcyra" : [3,5],
+    "leucas" : [3,6],
+    "solygeia" : [3,7],
+}
+
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
@@ -89,6 +114,9 @@ function (dojo, declare) {
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCube(gamedatas.influencecubes);
 
+
+            this.setupLocationTiles(gamedatas.locationtiles);
+
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
             this.setupMilitary(gamedatas.military);
@@ -108,7 +136,7 @@ function (dojo, declare) {
          */
         setupInfluenceTiles: function(influence, decksize) {
             // tiles in slots
-            for (let tile of influence) {
+            for (const tile of influence) {
                 const id = tile['id'];
                 const city = tile['city'];
                 const s = tile['slot'];
@@ -143,6 +171,23 @@ function (dojo, declare) {
                     }
                 }
 
+            }
+        },
+
+        setupLocationTiles: function(locationtiles) {
+            debugger;
+            const locw = 124;
+            const loch = 195;
+            const scale = 0.55;
+        
+            for (const loc of locationtiles) {
+                const slot = loc['slot'];
+                const battle = loc['location'];
+                const loc_slot = document.getElementById("location_"+slot);
+                x = -1*(LOCATIONS[battle][1]-1)*locw*scale;
+                y = -1*(LOCATIONS[battle][0]-1)*loch*scale;
+                const loc_tile = this.format_block('jstpl_location_tile', {id: battle, x: x, y: y});
+                dojo.place(loc_tile, loc_slot);
             }
         },
 

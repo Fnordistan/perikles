@@ -49,6 +49,8 @@ class Perikles extends Table
 
         $this->influence_tiles = self::getNew("module.common.deck");
         $this->influence_tiles->init("INFLUENCE");
+        $this->location_tiles = self::getNew("module.common.deck");
+        $this->location_tiles->init("LOCATION");
     }
 	
     protected function getGameName( )
@@ -97,6 +99,7 @@ class Perikles extends Table
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
         $this->setupInfluenceTiles();
+        $this->setupLocationTiles();
         $this->assignSpecialTiles();
         $this->setupInfluenceCubes();
 
@@ -135,21 +138,12 @@ class Perikles extends Table
      * Create the influence tiles for deck
      */
     protected function createInfluenceTiles() {
-        $influence = array(
-            "athens" => ["influence" => 3, "candidate" => 2],
-            "sparta" => ["influence" => 3, "candidate" => 2],
-            "argos" => ["influence" => 2, "candidate" => 2],
-            "corinth" => ["influence" => 2, "candidate" => 2],
-            "thebes" => ["influence" => 2, "candidate" => 2],
-            "megara" => ["influence" => 2, "candidate" => 1],
-        );
-
         $influence_tiles = array();
 
-        foreach( $influence as $city => $tiles) {
-            $influence_tiles[] = array('type' => $city, 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $tiles['influence']);
-            $influence_tiles[] = array('type' => $city, 'type_arg' => CANDIDATE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $tiles['candidate']);
-            $influence_tiles[] = array('type' => $city, 'type_arg' => ASSASSIN, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
+        foreach( $this->cities as $cn => $city) {
+            $influence_tiles[] = array('type' => $cn, 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $city['influence']);
+            $influence_tiles[] = array('type' => $cn, 'type_arg' => CANDIDATE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $city['candidate']);
+            $influence_tiles[] = array('type' => $cn, 'type_arg' => ASSASSIN, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
         }
         $influence_tiles[] = array('type' => 'any', 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => 5);
         return $influence_tiles;
@@ -165,6 +159,29 @@ class Perikles extends Table
                 self::DbQuery("UPDATE player SET ".$city." = 2 WHERE player_id=$player_id");
             }
         }
+    }
+
+    /**
+     * Create the Location deck
+     */
+    protected function setupLocationTiles() {
+        $locations = $this->createLocationTiles();
+        $this->location_tiles->createCards($locations, DECK);
+        $this->location_tiles->shuffle(DECK);
+        for ($i = 1; $i <= 7; $i++) {
+            $this->location_tiles->pickCardForLocation(DECK, BOARD, $i);
+        }
+    }
+
+    /**
+     * Fill location card database.
+     */
+    protected function createLocationTiles() {
+        $locations = array();
+        foreach($this->locations as $location => $tile) {
+            $locations[] = array('type' => $tile['city'], 'type_arg' => $location, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
+        }
+        return $locations;
     }
 
     /*
@@ -189,6 +206,8 @@ class Perikles extends Table
   
         $result['influencetiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location_arg slot FROM INFLUENCE WHERE card_location='".BOARD."'");
         $result['decksize'] = $this->influence_tiles->countCardInLocation(DECK);
+
+        $result['locationtiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
         
         $players = self::loadPlayersBasicInfos();
         $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile, special_tile_used FROM player");

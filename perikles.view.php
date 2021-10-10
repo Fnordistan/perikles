@@ -204,8 +204,17 @@
           ));
         }
 
-        /** END DEFEAT TOKEN SLOTS */
-
+        // LOCATION BLOCK
+        $this->page->begin_block($template, 'LOCATION_BLOCK');
+        $LOC_Y = 676;
+        $LOC_H = 115;
+        for ($l = 0; $l < 7; $l++) {
+            $this->page->insert_block('LOCATION_BLOCK', array(
+              'LOC' => $l+1,
+              'T' => $LOC_Y + ($l*$LOC_H),
+              'L' => 1000
+            ));
+        }
 
         /*********** Do not change anything below this line  ************/
   }
