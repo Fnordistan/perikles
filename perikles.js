@@ -19,6 +19,7 @@ const BOARD_SCALE = 2;
 const INFLUENCE_SCALE = 0.5;
 
 const CITIES = ['athens', 'sparta', 'argos', 'corinth', 'thebes', 'megara'];
+const MILITARY_ROW = {'argos': 0, 'athens': 1, 'corinth': 2, 'megara': 3, 'sparta': 4, 'thebes': 5, 'persia': 6};
 
 const INFLUENCE_ROW = {'athens' : 0, 'sparta' : 1, 'argos' : 2, 'corinth' : 3, 'thebes' : 4, 'megara' : 5, 'any' : 6};
 const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
@@ -26,6 +27,9 @@ const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
 const INFLUENCE_PILE = "influence_slot_0";
 
 const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
+
+const HOPLITE = "hoplite";
+const TRIREME = "trireme";
 
 const PLAYER_COLORS = {
     "E53738" : "red",
@@ -112,11 +116,9 @@ function (dojo, declare) {
             }
             
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
-            this.setupInfluenceCube(gamedatas.influencecubes);
-
-
+            this.setupInfluenceCubes(gamedatas.influencecubes);
             this.setupLocationTiles(gamedatas.locationtiles);
-
+            this.setupCandidates(gamedatas.candidates);
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
             this.setupMilitary(gamedatas.military);
@@ -160,7 +162,7 @@ function (dojo, declare) {
          * Place influence cubes on cities.
          * @param {Object} influencecubes 
          */
-        setupInfluenceCube: function(influencecubes) {
+        setupInfluenceCubes: function(influencecubes) {
             for (const player_id of Object.keys(influencecubes)) {
                 for (const [city, cubes] of Object.entries(influencecubes[player_id])) {
                     const num = parseInt(cubes);
@@ -174,8 +176,11 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * Put all the Location tiles in their slots.
+         * @param {Array} locationtiles 
+         */
         setupLocationTiles: function(locationtiles) {
-            debugger;
             const locw = 124;
             const loch = 195;
             const scale = 0.55;
@@ -184,10 +189,22 @@ function (dojo, declare) {
                 const slot = loc['slot'];
                 const battle = loc['location'];
                 const loc_slot = document.getElementById("location_"+slot);
-                x = -1*(LOCATIONS[battle][1]-1)*locw*scale;
-                y = -1*(LOCATIONS[battle][0]-1)*loch*scale;
+                x = -1 * (LOCATIONS[battle][1]-1) * locw * scale;
+                y = -1 * (LOCATIONS[battle][0]-1) * loch * scale;
                 const loc_tile = this.format_block('jstpl_location_tile', {id: battle, x: x, y: y});
                 dojo.place(loc_tile, loc_slot);
+            }
+        },
+
+        /**
+         * Put cubes in candidate spaces.
+         * @param {Object} candidates 
+         */
+        setupCandidates: function(candidates) {
+            for (const [cand, player_id] of Object.entries(candidates)) {
+                const candidate_space = document.getElementById(cand);
+                const cube = this.createInfluenceCube(player_id);
+                dojo.place(cube, candidate_space);
             }
         },
 
@@ -258,7 +275,34 @@ function (dojo, declare) {
          * @param {Object} military 
          */
         setupMilitary: function(military) {
-
+            const dim_l = 100;
+            const dim_s = 62;
+            for(const i in military) {
+                const counter = military[i];
+                const city = counter['city'];
+                const unit = counter['type'];
+                const strength = counter['strength'];
+                const location = counter['location'];
+                var xdim, ydim;
+                if (unit == HOPLITE) {
+                    xdim = dim_s;
+                    ydim = dim_l;
+                } else if (unit == TRIREME) {
+                    xdim = dim_l;
+                    ydim = dim_s;
+                } else {
+                    throw Error("invalid unit type: "+ unit);
+                }
+                let xoff = -1 * strength * xdim;
+                let yoff = -1 * MILITARY_ROW[city] * ydim;
+                if (location == city) {
+                    const city_military = document.getElementById(city+"_military");
+                    const ct = city_military.childElementCount;
+                    const top = (unit == TRIREME) ? ydim/2 : 0;
+                    const tile_div = this.format_block('jstpl_military', {city: city, type: unit, s: strength, id: counter['id'], x: xoff, y: yoff, m: 2*ct, t: top}); 
+                    dojo.place(tile_div, city_military);
+                }
+            }
         },
 
         setupDefeats: function(defeats) {

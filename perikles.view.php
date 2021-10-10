@@ -24,16 +24,19 @@
  *
  */
   
-  require_once( APP_BASE_PATH."view/common/game.view.php" );
-  
-  class view_perikles_perikles extends game_view
-  {
+require_once( APP_BASE_PATH."view/common/game.view.php" );
+
+class view_perikles_perikles extends game_view
+{
     function getGameName() {
         return "perikles";
     }
   
   	function build_page( $viewArgs ) {		
-  	    // Get players & players number
+      $this->tpl['PERSIA_X'] = 72;
+      $this->tpl['PERSIA_Y'] = 888;
+
+      // Get players & players number
         $players = $this->game->loadPlayersBasicInfos();
         $players_nbr = count( $players );
 
@@ -177,13 +180,14 @@
           }
 
           $COL_GAP = 33;
+          $COL_HEIGHT = 124;
           $col = 0;
           foreach ($players as $player_id => $player) {
             $this->page->insert_block('CUBES_BLOCK', array(
               'CITY' => $city,
               'player_id' => $player_id,
               'L' => $CITIES[$city]["cubes"][0] + $COL_GAP*$col,
-              'T' => $CITIES[$city]["cubes"][1]-120,
+              'T' => $CITIES[$city]["cubes"][1]-$COL_HEIGHT,
             ));
             $col++;
           }
@@ -211,7 +215,7 @@
         for ($l = 0; $l < 7; $l++) {
             $this->page->insert_block('LOCATION_BLOCK', array(
               'LOC' => $l+1,
-              'T' => $LOC_Y + ($l*$LOC_H),
+              'T' => $LOC_Y + ($l*$LOC_H)-$l,
               'L' => 1000
             ));
         }

@@ -31,11 +31,20 @@ CREATE TABLE IF NOT EXISTS `INFLUENCE` (
 
 CREATE TABLE IF NOT EXISTS `LOCATION` (
   `card_id` TINYINT unsigned NOT NULL AUTO_INCREMENT,
-  `card_type` varchar(16) NOT NULL COMMENT 'city',
+  `card_type` varchar(8) NOT NULL COMMENT 'city',
   `card_type_arg` varchar(16) NULL COMMENT 'battle name',
   `card_location` varchar(16) NOT NULL COMMENT 'deck or board',
   `card_location_arg` TINYINT COMMENT 'slot #',
   PRIMARY KEY (`card_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS `MILITARY` (
+  `id` TINYINT unsigned NOT NULL AUTO_INCREMENT,
+  `city` varchar(8) NOT NULL COMMENT 'city',
+  `type` varchar(8) NOT NULL COMMENT 'hoplite/trireme',
+  `strength` TINYINT UNSIGNED NOT NULL COMMENT 'strength',
+  `location` varchar(16) NOT NULL COMMENT 'city/dead/location',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
 -- custom entries to player table

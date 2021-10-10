@@ -25,6 +25,9 @@ define("CANDIDATE", "candidate");
 define("ASSASSIN", "assassin");
 define("DECK", "deck");
 define("BOARD", "board");
+define("HOPLITE", "hoplite");
+define("TRIREME", "trireme");
+define("PERSIA", "persia");
 
 class Perikles extends Table
 {
@@ -38,13 +41,26 @@ class Perikles extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
         
+
         self::initGameStateLabels( array( 
-            //    "my_first_global_variable" => 10,
-            //    "my_second_global_variable" => 11,
-            //      ...
-            //    "my_first_game_variant" => 100,
-            //    "my_second_game_variant" => 101,
-            //      ...
+            "argos_leader" => 10,
+            "argos_a" => 11,
+            "argos_b" => 12,
+            "athens_leader" => 13,
+            "athens_a" => 14,
+            "athens_b" => 15,
+            "corinth_leader" => 16,
+            "corinth_a" => 17,
+            "corinth_b" => 18,
+            "megara_leader" => 19,
+            "megara_a" => 20,
+            "megara_b" => 21,
+            "sparta_leader" => 22,
+            "sparta_a" => 23,
+            "sparta_b" => 24,
+            "thebes_leader" => 25,
+            "thebes_a" => 26,
+            "thebes_b" => 27,
         ) );        
 
         $this->influence_tiles = self::getNew("module.common.deck");
@@ -92,14 +108,20 @@ class Perikles extends Table
 
         // Init global values with their initial values
         //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
+        $cand_lbl = ["_leader", "_a", "_b"];
+        foreach($this->cities as $cn => $city) {
+            foreach ($cand_lbl as $c) {
+                self::setGameStateInitialValue( $cn.$c, 0 );
+            }
+        }
         
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
-        //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
         $this->setupInfluenceTiles();
         $this->setupLocationTiles();
+        $this->setupMilitary();
         $this->assignSpecialTiles();
         $this->setupInfluenceCubes();
 
@@ -184,6 +206,56 @@ class Perikles extends Table
         return $locations;
     }
 
+    /**
+     * Create all the military counters
+     */
+    protected function setupMilitary() {
+        $hops = ["h1", "h2", "h3", "h4"];
+        $tri = ["t1", "t2", "t3", "t4"];
+        $id = 1;
+        foreach($this->cities as $cn => $city) {
+            $strength = 1;
+            foreach ($hops as $hoplite) {
+                if (isset($city[$hoplite])) {
+                    for ($h = 0; $h < $city[$hoplite]; $h++) {
+                        self::DbQuery( "INSERT INTO MILITARY VALUES($id,\"$cn\",\"".HOPLITE."\",$strength,\"$cn\")" );
+                        $id++;
+                    }
+                }
+                $strength++;
+            }
+            $strength = 1;
+            foreach ($tri as $trireme) {
+                if (isset($city[$trireme])) {
+                    for ($t = 0; $t < $city[$trireme]; $t++) {
+                        self::DbQuery( "INSERT INTO MILITARY VALUES($id,\"$cn\",\"".TRIREME."\",$strength,\"$cn\")" );
+                        $id++;
+                    }
+                }
+                $strength++;
+            }
+        }
+        // and add the Persians
+        $persian = array(
+            HOPLITE => array(
+                2 => 2,
+                3 => 4
+            ),
+            TRIREME => array(
+                2 => 2,
+                3 => 2
+            )
+        );
+        foreach($persian as $type => $units) {
+            foreach($units as $strength => $ct) {
+                for ($i = 0; $i < $ct; $i++) {
+                    self::DbQuery( "INSERT INTO MILITARY VALUES($id,\"".PERSIA."\",\"$type\",$strength,\"".PERSIA."\")" );
+                    $id++;
+                }
+            }
+        }
+    }
+
     /*
         getAllDatas: 
         
@@ -236,12 +308,12 @@ class Perikles extends Table
         $result['influencecubes'] = $influencecubes;
         $result['defeats'] = $this->getDefeats();
         $result['leaders'] = $this->getLeaders();
+        $result['candidates'] = $this->getCandidates();
         $result['statues'] = $this->getStatues();
         $result['military'] = $this->getMilitary();
 
         return $result;
     }
-
 
     function getDefeats() {
         $defeats = array(
@@ -258,6 +330,16 @@ class Perikles extends Table
         return $leaders;
     }
 
+    function getCandidates() {
+        $player_id = self::getCurrentPlayerId();
+        $candidates = array(
+            "thebes_a" => $player_id,
+            "sparta_b" => $player_id,
+            "sparta_a" => self::getPlayerAfter($player_id)
+        );
+        return $candidates;
+    }
+
     function getStatues() {
         $player_id = self::getCurrentPlayerId();
         $statues = array(
@@ -268,9 +350,7 @@ class Perikles extends Table
     }
 
     function getMilitary() {
-        $military = array(
-
-        );
+        $military = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY");
         return $military;
     }
 
