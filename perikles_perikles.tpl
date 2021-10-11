@@ -21,7 +21,7 @@
             <!-- END INFLUENCE_TILES_BLOCK -->
         </div>
         <!-- BEGIN CITY_BLOCK -->
-        <div id="{CITY}">
+            <div id="{CITY}" class="per_city" style="top: {CITYY}px; left: {CITYX}px;"></div>
             <div id="{CITY}_leader" class="per_counter_slot" style="top: {LEADERY}px; left: {LEADERX}px;"></div>
             <div id="{CITY}_statues" class="per_statue_zone" style="top: {STATUEY}px; left: {STATUEX}px;"></div>
             <div id="{CITY}_military" class="per_military_zone" style="top: {MILY}px; left: {MILX}px;"></div>
@@ -33,7 +33,7 @@
             <!-- BEGIN CUBES_BLOCK -->
             <div id="{CITY}_cubes_{player_id}" class="per_city_cubes" style="top: {T}px; left: {L}px;"></div>
             <!-- END CUBES_BLOCK -->
-        </div>
+        
         <!-- END CITY_BLOCK -->
 
         <div id="location_area">
@@ -56,9 +56,9 @@ const jstpl_influence_tile = '<div id="${city}_${id}" class="per_influence_tile"
 
 const jstpl_influence_back = '<div id="cardback_${id}" class="per_influence_tile" style="background-position: ${x}px ${y}px; position: absolute; margin: -${m}px ${m}px;"></div>';
 
-const jstpl_special_tile = '<div id="${special}_special_tile" class="per_special_tile ${special}"></div>';
+const jstpl_special_tile = '<div id="${special}_special_tile" class="per_special_tile ${special}" style="--scale: ${scale};"></div>';
 
-const jstpl_special_back = '<div id="special_${id}" class="per_special_tile_back"></div>';
+const jstpl_special_back = '<div id="special_${id}" class="per_special_tile_back" style="--scale: ${scale};"></div>';
 
 const jstpl_defeat = '<div id="${city}_defeat_${num}" class="per_defeat_counter"></div>';
 
@@ -69,6 +69,15 @@ const jstpl_cube = '<div class="per_cube" style="background-color: #${color};"><
 const jstpl_location_tile = '<div id="${id}_tile" class="per_location_tile" style="background-position: ${x}px ${y}px;"></div>';
 
 const jstpl_military = '<div id="${city}_${type}_${s}_${id}" class="per_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
+
+const jstpl_special_tt = '<div id="{$special}_special_tt" style="display: flex; flex-direction: row;">\
+                            <div style="flex: 1;">\
+                                <h1 style="font-family: ThrumsSerifRegular;">${header}</h1>\
+                                <hr\>\
+                                ${text}\
+                            </div>\
+                            <div class="per_special_tile_tt ${special}" style="--scale: ${scale};"></div>\
+                        </div>';
 
 </script>  
 

@@ -56,40 +56,41 @@ $stats_type = array(
                     "name" => totranslate("Number of turns"),
                     "type" => "int" ),
 
-/*
-        Examples:
-
-
-        "table_teststat1" => array(   "id"=> 10,
-                                "name" => totranslate("table test stat 1"), 
-                                "type" => "int" ),
-                                
-        "table_teststat2" => array(   "id"=> 11,
-                                "name" => totranslate("table test stat 2"), 
-                                "type" => "float" )
-*/  
     ),
     
     // Statistics existing for each player
     "player" => array(
-
-        "turns_number" => array("id"=> 10,
-                    "name" => totranslate("Number of turns"),
-                    "type" => "int" ),
+        "argos_statues" => array(
+            "id"=> 10,
+            "name" => totranslate("Argos Statues"),
+            "type" => "int"
+        ),
+        "athens_statues" => array(
+            "id"=> 11,
+            "name" => totranslate("Athens Statues"),
+            "type" => "int"
+        ),
+        "corinth_statues" => array(
+            "id"=> 12,
+            "name" => totranslate("Corinth Statues"),
+            "type" => "int"
+        ),
+        "megara_statues" => array(
+            "id"=> 13,
+            "name" => totranslate("Megara Statues"),
+            "type" => "int"
+        ),
+        "sparta_statues" => array(
+            "id"=> 14,
+            "name" => totranslate("Sparta Statues"),
+            "type" => "int"
+        ),
+        "thebes_statues" => array(
+            "id"=> 15,
+            "name" => totranslate("Thebes Statues"),
+            "type" => "int"
+        ),
     
-/*
-        Examples:    
-        
-        
-        "player_teststat1" => array(   "id"=> 10,
-                                "name" => totranslate("player test stat 1"), 
-                                "type" => "int" ),
-                                
-        "player_teststat2" => array(   "id"=> 11,
-                                "name" => totranslate("player test stat 2"), 
-                                "type" => "float" )
-
-*/    
     )
 
 );

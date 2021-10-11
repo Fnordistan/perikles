@@ -88,6 +88,7 @@ class view_perikles_perikles extends game_view
         /** BEGIN CITY BLOCK */
         $CITIES = array(
           "argos" => array(
+            "xy" => [348, 769],
             "defeats" => array(
               "y" => 989,
               "x" => [467, 416]
@@ -100,6 +101,7 @@ class view_perikles_perikles extends game_view
             "cubes" => [390, 965],
           ),
           "athens" => array(
+            "xy" => [880, 295],
             "defeats" => array(
               "y" => 517,
               "x" => [1143, 1093, 1040, 989]
@@ -112,6 +114,7 @@ class view_perikles_perikles extends game_view
             "cubes" => [1016, 490],
           ),
           "corinth" => array(
+            "xy" => [111, 493],
             "defeats" => array(
                 "y" => 716,
                 "x" => [258, 208, 155, 104]
@@ -124,7 +127,8 @@ class view_perikles_perikles extends game_view
               "cubes" => [133, 687],
           ),
           "megara" => array(
-              "defeats" => array(
+            "xy" => [478, 433],
+            "defeats" => array(
                 "y" => 654,
                 "x" => [638, 587]
               ),
@@ -136,7 +140,8 @@ class view_perikles_perikles extends game_view
               "cubes" => [560, 629],
               ),
           "sparta" => array(
-              "defeats" => array(
+            "xy" => [57, 1101],
+            "defeats" => array(
                 "y" => 1324,
                 "x" => [327, 278, 225, 172]
               ),
@@ -148,7 +153,8 @@ class view_perikles_perikles extends game_view
               "cubes" => [202, 1295],
               ),
           "thebes" => array(
-              "defeats" => array(
+            "xy" => [465, 103],
+            "defeats" => array(
                 "y" => 325,
                 "x" => [618, 566, 514]
               ),
@@ -206,6 +212,8 @@ class view_perikles_perikles extends game_view
             'ALPHAY' => $CITIES[$city]["alpha"][1],
             'BETAX' => $CITIES[$city]["beta"][0],
             'BETAY' => $CITIES[$city]["beta"][1],
+            'CITYY' => $CITIES[$city]["xy"][1],
+            'CITYX' => $CITIES[$city]["xy"][0],
           ));
         }
 

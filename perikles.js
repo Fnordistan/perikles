@@ -95,26 +95,7 @@ function (dojo, declare) {
         {
             console.log( "Starting game setup" );
             
-            // Setting up player boards
-            for( var player_id in gamedatas.players )
-            {
-                var player = gamedatas.players[player_id];
-                const player_board_div = $('player_board_'+player_id);
-                const spec = parseInt(gamedatas.specialtiles[player_id]);
-
-                if (spec == 0) {
-                    var specialtile = this.format_block('jstpl_special_back', {id: player_id});
-                } else {
-                    var spec_i = SPECIAL_TILES[Math.abs(spec-1)]
-                    if (spec < 0) {
-                        specialtile = this.format_block('jstpl_special_tile', {special: spec_i});
-                    } else {
-                        specialtile = this.format_block('jstpl_special_tile', {special: spec_i});
-                    }
-                }
-                dojo.place(specialtile, player_board_div);
-            }
-            
+            this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCubes(gamedatas.influencecubes);
             this.setupLocationTiles(gamedatas.locationtiles);
@@ -129,7 +110,74 @@ function (dojo, declare) {
 
             console.log( "Ending game setup" );
         },
-       
+
+        /**
+         * Set up special tiles
+         * @param {Array} players 
+         * @param {Array} specialtiles 
+         */
+        setupSpecialTiles: function(players, specialtiles) {
+            const special_scale = 0.2;
+            for (const player_id in players) {
+                const player_board_div = document.getElementById('player_board_'+player_id);
+                const spec = parseInt(specialtiles[player_id]);
+
+                if (spec == 0) {
+                    var specialtile = this.format_block('jstpl_special_back', {id: player_id, scale: special_scale});
+                } else {
+                    const spec_i = SPECIAL_TILES[Math.abs(spec-1)];
+                    specialtile = this.format_block('jstpl_special_tile', {special: spec_i, scale: special_scale});
+                    const used = (spec < 0 || player_id != this.player_id);
+                    if (used) {
+                        tile.classList.add("per_special_tile_used");
+                    }
+                }
+                const tile = dojo.place(specialtile, player_board_div);
+                if (spec == 0) {
+                    let ttext = _("${player_name}'s Special tile (not used)");
+                    ttext = ttext.replace('${player_name}', players[player_id].name);
+                    this.addTooltip(tile.id, ttext, '');
+                } else {
+                    const thtml = this.createSpecialTileTooltip(players[player_id], SPECIAL_TILES[Math.abs(spec-1)]);
+                    this.addTooltipHtml(tile.id, thtml, '');
+                }
+            }
+        },
+
+        /**
+         * HTML for Special tile tooltip.
+         * @param {Object} player 
+         * @param {string} tilenum 
+         * @returns 
+         */
+        createSpecialTileTooltip: function(player, special) {
+            
+            const TITLES = {
+                'perikles': _("Perikles"),
+                'persianfleet': _("Persian Fleet"),
+                'slaverevolt': _("Slave Revolt"),
+                'brasidas': _("Brasidas"),
+                'thessalanianallies': _("Thessalanian Allies"),
+                'alkibiades': _("Alkibiades"),
+                'phormio': _("Phormio"),
+                'plague': _("Plague")
+            };
+            const DESC = {
+                'perikles': _("Place two Influence cubes in Athens. This tile can be played when it is your turn to select an Influence tile, either just before or just after taking the tile."),
+                'persianfleet': _("This tile can be played just before a trireme battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
+                'slaverevolt': _("This tile can be played when it is your turn to commit forces to a location. Take one Spartan hoplite counter, either from the board or from the controlling player, and place it back in Sparta. That counter cannot be involved in combat this turn. You cannot examine the counter you remove. The counter will come back into play in the next turn."),
+                'brasidas': _("This tile can be played just before a hoplite battle is about to be resolved. All Spartan hoplite counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled."),
+                'thessalanianallies': _("This tile can be played just before a hoplite battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
+                'alkibiades': _("Player can take two Influence cubes of any color from any city/cities and move them to any city of their choice. These cubes may not be moved from a candidate space, nor may they be moved to one."),
+                'phormio': _("This tile can be played just before a trireme battle is about to be resolved. All Athenian trireme counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled."),
+                'plague': _("This tile can be played during the Influence Tile phase. Select one city. All players remove half (rounded down) of their Influence cubes from that city.")
+            };
+
+            const title = TITLES[special];
+            const text = DESC[special];
+            const tt = this.format_block('jstpl_special_tt', {header: title, special: special, text: text, scale: 0.5});
+            return tt;
+        },
 
         /**
          * Put influence tiles on board, create deck

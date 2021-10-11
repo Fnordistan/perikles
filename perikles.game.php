@@ -97,13 +97,16 @@ class Perikles extends Table
         $default_colors = $gameinfos['player_colors'];
  
         // Create players
-        // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
         $values = array();
         foreach( $players as $player_id => $player )
         {
             $color = array_shift( $default_colors );
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
+            foreach($this->cities as $cn => $city) {
+                $statues = $cn."_statues";
+                self::initStat( 'player', $statues, 0, $player_id);
+            }
         }
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
@@ -217,14 +220,17 @@ class Perikles extends Table
     protected function setupMilitary() {
         $id = 1;
         foreach($this->cities as $cn => $city) {
-            $id = $this->insertMilitaryUnits($cn, $city, $id);
+            $id = $this->createMilitaryUnits($cn, $city, $id);
         }
         // and add the Persians
         $cn = PERSIA;
-        $id = $this->insertMilitaryUnits($cn, $this->persia[$cn], $id);
+        $id = $this->createMilitaryUnits($cn, $this->persia[$cn], $id);
     }
 
-    protected function insertMilitaryUnits($cn, $city, $idct) {
+    /**
+     * Insert units into database
+     */
+    protected function createMilitaryUnits($cn, $city, $idct) {
         $units = array(
             HOPLITE => "h",
             TRIREME => "t",
@@ -270,31 +276,8 @@ class Perikles extends Table
 
         $result['locationtiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
         
-        $players = self::loadPlayersBasicInfos();
-        $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile, special_tile_used FROM player");
-        $specialtiles = array();
-        $influencecubes = array();
-        foreach ($players as $player_id => $player) {
-            $tile = 0;
-            if ($player_id == $current_player_id) {
-                // tile number if not used, negative tile number if used
-                $tile = $playertiles[$player_id]['special_tile'];
-                if ($playertiles[$player_id]['special_tile_used']) {
-                    $tile *= -1;
-                }
-                $specialtiles[$player_id] = $playertiles[$player_id]['special_tile'];
-            } elseif ($playertiles[$player_id]['special_tile_used']) {
-                $tile = $playertiles[$player_id]['special_tile'];
-            }
-            $specialtiles[$player_id] = $tile;
-
-            $influencecubes[$player_id] = array();
-            foreach($this->cities as $city => $c) {
-                $influencecubes[$player_id][$city] = self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
-            }
-        }
-        $result['specialtiles'] = $specialtiles;
-        $result['influencecubes'] = $influencecubes;
+        $result['specialtiles'] = $this->getSpecialTiles($current_player_id);
+        $result['influencecubes'] = $this->getInfluenceCubes();
         $result['defeats'] = $this->getDefeats();
         $result['leaders'] = $this->getLeaders();
         $result['candidates'] = $this->getCandidates();
@@ -305,44 +288,111 @@ class Perikles extends Table
     }
 
     /**
+     * Return associative array of player_id => tile number.
+     * For unused opponent tiles, value is 0
+     * For used own tile, return negative value.
+     */
+    protected function getSpecialTiles($current_player_id) {
+        $specialtiles = array();
+        $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile, special_tile_used FROM player");
+
+        foreach ($playertiles as $player_id => $tiles) {
+            $tile = 0;
+            if ($player_id == $current_player_id) {
+                // tile number if not used, negative tile number if used
+                $tile = $tiles['special_tile'];
+                if ($tiles['special_tile_used']) {
+                    // mark my tile was used
+                    $tile *= -1;
+                }
+            } elseif ($tiles['special_tile_used']) {
+                // only reveal tile if it's been used
+                $tile = $tiles['special_tile'];
+            }
+            $specialtiles[$player_id] = $tile;
+        }
+        return $specialtiles;
+    }
+
+    /**
+     * Return double associative array of player_id => city => influence
+     */
+    protected function getInfluenceCubes() {
+        $influencecubes = array();
+
+        $players = self::loadPlayersBasicInfos();
+        foreach ($players as $player_id => $player) {
+            $influencecubes[$player_id] = array();
+            foreach($this->cities as $cn => $city) {
+                $influencecubes[$player_id][$cn] = self::getUniqueValueFromDB("SELECT $cn FROM player WHERE player_id=$player_id");
+            }
+        }
+        return $influencecubes;
+    }
+
+    /**
      * Return associative array (city => #defeats)
      */
     function getDefeats() {
+        $defeats = array();
         foreach ($this->cities as $cn => $city) {
+            $defeats[$cn] = self::getGameStateValue($cn."_defeats");
         }
-        $defeats = array(
-            "corinth" => 2,
-            "thebes" => 3,
-        );
         return $defeats;
     }
 
+    /**
+     * Return associative array: city => player_id
+     */
     function getLeaders() {
-        $leaders = array(
-            "corinth" => self::getCurrentPlayerId()
-        );
+        $leaders = array();
+        foreach ($this->cities as $cn => $city) {
+            $leader = self::getGameStateValue($cn."_leader");
+            if ($leader != 0) {
+                $leaders[$cn] = $leader;
+            }
+        }
         return $leaders;
     }
 
+    /**
+     * Return associative array: "city_a" and "city_b" => player_id
+     */
     function getCandidates() {
-        $player_id = self::getCurrentPlayerId();
-        $candidates = array(
-            "thebes_a" => $player_id,
-            "sparta_b" => $player_id,
-            "sparta_a" => self::getPlayerAfter($player_id)
-        );
+        $candidates = array();
+        foreach ($this->cities as $cn => $city) {
+            foreach(["a", "b"] as $c) {
+                $cv = $cn."_".$c;
+                $candidate = self::getGameStateValue($cv);
+                if ($candidate != 0) {
+                    $candidates[$cv] = $candidate;
+                }
+            }
+        }
         return $candidates;
     }
 
+    /**
+     * Return double associative array: "city" => $player_id => statues
+     */
     function getStatues() {
-        $player_id = self::getCurrentPlayerId();
-        $statues = array(
-            "corinth" => array($player_id => 1, self::getPlayerAfter($player_id) => 1),
-            "argos" => array($player_id => 3),
-        );
+        $statues = array();
+        $players = self::loadPlayersBasicInfos();
+        foreach($this->cities as $cn => $city) {
+            $statues[$cn] = array();
+            foreach ($players as $player_id => $player) {
+                $s = self::getStat($cn."_statues", $player_id);
+                if ($s != 0) {
+                    $statues[$cn][$player_id] = $s;
+                }
+            }
+        }
         return $statues;
     }
 
+    /**
+     * Get all military tokens with their locations.
+     */
     function getMilitary() {
         $military = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY");
         return $military;
