@@ -13,40 +13,18 @@
  *
  */
 
-/*
-    This is the CSS stylesheet of your game User Interface.
-    
-    Styles defined on this file will be applied to the HTML elements you define in your
-    HTML template (perikles_perikles.tpl), and to HTML elements you create dynamically
-    (in perikles.js).
-    
-    Usually, you are using CSS to:
-    
-    1°) define the overall layout of your game
-        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
-
-    2°) create your CSS-sprites:
-        All images of your games should be gathered into a small number of image files. Then, using
-        background-image and background-position CSS properties, you create HTML blocks that can 
-        display these images correctly (see example below).
-    
-    3°) ... anything else:
-        It is really easy to add and remove CSS classes dynamically from your Javascript with
-        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
-        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
-        very often, using CSS classes for the logic of your user interface allow you to do complex
-        thing easily.
-        
-        
-     Note: on the production platform, this file will be compressed and comments will be removed.
-           Consequently, don't hesitate to put as many comments as necessary.
-*/
-
 
 /* Note: you must not use any @import directive */
 
 
 /********* You can start writing your CSS below this line: **********/
+
+@font-face {
+    font-family: 'ThrumsSerifRegular', serif;
+    src: local('ThrumsSerifRegular'), url('https://fontlibrary.org//face/thrums-serif-regular');
+    font-style: normal;
+    font-weight: normal;
+}
 
 :root {
     --color_sparta: #F3BE7A;
@@ -294,7 +272,8 @@
 /* IDENTITIES */
 
 #periklesboard {
-    width: 100%;
+    display: flex;
+    flex-direction: row;
     height: 100%;
     overflow: auto;
 }
@@ -304,6 +283,24 @@
     background-size: 1298px 1500px;
     background-image: url(img/perikles_board.jpg);
     background-repeat: no-repeat;
-    width: 1298px;
-    height: 1500px;
+    min-width: 1298px;
+    min-height: 1500px;
+}
+
+#deadpool {
+    display: flex;
+    flex-direction: column;
+    min-width: max-content;
+    margin: 0 5px;
+    padding: 5px;
+    border: 3px ridge #8F8C7E;
+    background-color: lightgray;
+}
+
+#deadpool h1 {
+    font-family: 'ThrumsSerifRegular';
+    font-style: normal;
+    font-weight: 700;
+    color: #767060;
+    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
 }

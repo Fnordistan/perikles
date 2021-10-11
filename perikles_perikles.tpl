@@ -43,6 +43,9 @@
         </div>
         <div id="persia_military" class="per_military_zone" style="top: {PERSIA_Y}px; left: {PERSIA_X}px;"></div>
     </div>
+    <div id="deadpool">
+        <h1>{DEADPOOL}</h1>
+    </div>
 </div>
 
 <script type="text/javascript">
