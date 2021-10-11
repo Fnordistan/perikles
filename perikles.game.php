@@ -61,6 +61,12 @@ class Perikles extends Table
             "thebes_leader" => 25,
             "thebes_a" => 26,
             "thebes_b" => 27,
+            "argos_defeats" => 31,
+            "athens_defeats" => 32,
+            "corinth_defeats" => 33,
+            "megara_defeats" => 34,
+            "sparta_defeats" => 35,
+            "thebes_defeats" => 36,
         ) );        
 
         $this->influence_tiles = self::getNew("module.common.deck");
@@ -107,11 +113,10 @@ class Perikles extends Table
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
-        $cand_lbl = ["_leader", "_a", "_b"];
+        $city_states = ["leader", "a", "b", "defeats"];
         foreach($this->cities as $cn => $city) {
-            foreach ($cand_lbl as $c) {
-                self::setGameStateInitialValue( $cn.$c, 0 );
+            foreach ($city_states as $lbl) {
+                self::setGameStateInitialValue( $cn."_".$lbl, 0 );
             }
         }
         
@@ -210,50 +215,34 @@ class Perikles extends Table
      * Create all the military counters
      */
     protected function setupMilitary() {
-        $hops = ["h1", "h2", "h3", "h4"];
-        $tri = ["t1", "t2", "t3", "t4"];
         $id = 1;
         foreach($this->cities as $cn => $city) {
-            $strength = 1;
-            foreach ($hops as $hoplite) {
-                if (isset($city[$hoplite])) {
-                    for ($h = 0; $h < $city[$hoplite]; $h++) {
-                        self::DbQuery( "INSERT INTO MILITARY VALUES($id,\"$cn\",\"".HOPLITE."\",$strength,\"$cn\")" );
-                        $id++;
-                    }
-                }
-                $strength++;
-            }
-            $strength = 1;
-            foreach ($tri as $trireme) {
-                if (isset($city[$trireme])) {
-                    for ($t = 0; $t < $city[$trireme]; $t++) {
-                        self::DbQuery( "INSERT INTO MILITARY VALUES($id,\"$cn\",\"".TRIREME."\",$strength,\"$cn\")" );
-                        $id++;
-                    }
-                }
-                $strength++;
-            }
+            $id = $this->insertMilitaryUnits($cn, $city, $id);
         }
         // and add the Persians
-        $persian = array(
-            HOPLITE => array(
-                2 => 2,
-                3 => 4
-            ),
-            TRIREME => array(
-                2 => 2,
-                3 => 2
-            )
+        $cn = PERSIA;
+        $id = $this->insertMilitaryUnits($cn, $this->persia[$cn], $id);
+    }
+
+    protected function insertMilitaryUnits($cn, $city, $idct) {
+        $units = array(
+            HOPLITE => "h",
+            TRIREME => "t",
         );
-        foreach($persian as $type => $units) {
-            foreach($units as $strength => $ct) {
-                for ($i = 0; $i < $ct; $i++) {
-                    self::DbQuery( "INSERT INTO MILITARY VALUES($id,\"".PERSIA."\",\"$type\",$strength,\"".PERSIA."\")" );
-                    $id++;
+        foreach ($units as $unit => $u) {
+            $strength = 1;
+            for ($i = 1; $i <= 4; $i++) {
+                $unittype = $u.$i;
+                if (isset($city[$unittype])) {
+                    for ($t = 0; $t < $city[$unittype]; $t++) {
+                        self::DbQuery( "INSERT INTO MILITARY VALUES($idct,\"$cn\",\"$unit\",$strength,\"$cn\")" );
+                        $idct++;
+                    }
                 }
+                $strength++;
             }
         }
+        return $idct;
     }
 
     /*
@@ -315,7 +304,12 @@ class Perikles extends Table
         return $result;
     }
 
+    /**
+     * Return associative array (city => #defeats)
+     */
     function getDefeats() {
+        foreach ($this->cities as $cn => $city) {
+        }
         $defeats = array(
             "corinth" => 2,
             "thebes" => 3,
