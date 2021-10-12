@@ -217,6 +217,7 @@ function (dojo, declare) {
                 ttext = ttext.replace('${city}', cityname);
                 const tooltip = this.format_block('jstpl_influence_tt', {city: cityname, label: helplbl[tile['type']], text: ttext, x: xoff, y: yoff});
                 this.addTooltipHtml(card.id, tooltip, '');
+                this.decorateInfluenceCard(card.id);
             }
             // deck
             const pile = document.getElementById(INFLUENCE_PILE);
@@ -245,6 +246,39 @@ function (dojo, declare) {
             };
             return citynames[city];
         },
+
+        /**
+         * For Influence cards on display, add Event listeners.
+         * @param {string} id 
+         */
+         decorateInfluenceCard: function(id) {
+             const card = document.getElementById(id);
+             card.addEventListener('click', () => {
+                this.onInfluenceCardSelected(id);
+            });
+            card.addEventListener('mouseenter', () => {
+                this.onInfluenceCardHover(id, true);
+            });
+            card.addEventListener('mouseout', () => {
+                this.onInfluenceCardHover(id, false);
+            });
+        },
+
+        onInfluenceCardSelected: function(id) {
+            if (this.checkAction("takeInfluenceTile", true)) {
+                console.log("picked card "+id);
+            }
+       },
+
+        onInfluenceCardHover: function(id, hover) {
+            if (this.checkAction("takeInfluenceTile", true)) {
+                const card = document.getElementById(id);
+                card.style['transform'] = hover ? 'scale(1.1)' : '';
+                card.style['transition'] = 'transform 0.5s';
+                card.style['box-shadow'] = hover ? 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px' : '';
+            }
+        },
+
 
         /**
          * Place influence cubes on cities.
