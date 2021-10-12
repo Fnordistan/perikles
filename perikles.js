@@ -1,7 +1,7 @@
 /**
  *------
  * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
- * Perikles implementation : © <Your name here> <Your email address here>
+ * Perikles implementation : © <David Edelstein> <david.edelstein@gmail.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -186,14 +186,37 @@ function (dojo, declare) {
          */
         setupInfluenceTiles: function(influence, decksize) {
             // tiles in slots
+            const helplbl = {
+                "influence": "",
+                "candidate": _("Candidate"),
+                "assassin": _("Assassin"),
+                "any": "",
+            };
+            const helptext = {
+                "influence": _("Add 2 Influence cubes to ${city}"),
+                "candidate": _("Add 1 Influence cube to ${city}, and propose a candidate in any city"),
+                "assassin": _("Add 1 Influence cube to ${city}, and remove 1 cube from any city"),
+                "any": _("Add 1 Influence cube to any city"),
+            };
             for (const tile of influence) {
                 const id = tile['id'];
                 const city = tile['city'];
                 const s = tile['slot'];
                 const slot = document.getElementById("influence_slot_"+s);
-                const card = this.format_block('jstpl_influence_tile', {city: city, id: id, x: -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w, y: -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h});
-                dojo.place(card, slot);
-                this.addTooltip(city+'_'+id, city + ' ' + tile['type'], '');
+                const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
+                const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
+                const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff});
+                const card = dojo.place(card_div, slot);
+                let ttext = "";
+                if (city == "any") {
+                    ttext = helptext["any"];
+                } else {
+                    ttext = helptext[tile['type']];
+                }
+                const cityname = this.getCityNameTr(city);
+                ttext = ttext.replace('${city}', cityname);
+                const tooltip = this.format_block('jstpl_influence_tt', {city: cityname, label: helplbl[tile['type']], text: ttext, x: xoff, y: yoff});
+                this.addTooltipHtml(card.id, tooltip, '');
             }
             // deck
             const pile = document.getElementById(INFLUENCE_PILE);
@@ -204,6 +227,23 @@ function (dojo, declare) {
             var pile_tt = _("Influence Deck: ${num} cards remaining");
             pile_tt = pile_tt.replace('${num}', decksize);
             this.addTooltip(INFLUENCE_PILE, pile_tt, '');
+        },
+
+        /**
+         * Return translatable city name text
+         * @param {string} city 
+         */
+        getCityNameTr: function(city) {
+            const citynames = {
+                "argos" : _("Argos"),
+                "athens": _("Athens"),
+                "corinth": _("Corinth"),
+                "megara": _("Megara"),
+                "sparta": _("Sparta"),
+                "thebes": _("Thebes"),
+                "any": _("Any City")
+            };
+            return citynames[city];
         },
 
         /**

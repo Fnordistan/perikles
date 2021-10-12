@@ -3,7 +3,7 @@
 <!-- 
 --------
 -- BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
--- Perikles implementation : © <Your name here> <Your email address here>
+-- Perikles implementation : © <David Edelstein> <david.edelstein@gmail.com>
 -- 
 -- This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
 -- See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -33,7 +33,6 @@
             <!-- BEGIN CUBES_BLOCK -->
             <div id="{CITY}_cubes_{player_id}" class="per_city_cubes" style="top: {T}px; left: {L}px;"></div>
             <!-- END CUBES_BLOCK -->
-        
         <!-- END CITY_BLOCK -->
 
         <div id="location_area">
@@ -78,6 +77,15 @@ const jstpl_special_tt = '<div id="{$special}_special_tt" style="display: flex; 
                             </div>\
                             <div class="per_special_tile_tt ${special}" style="--scale: ${scale};"></div>\
                         </div>';
+
+const jstpl_influence_tt = '<div style="display: flex; flex-direction: row;">\
+                                <div class="per_influence_tile" style="background-position: ${x}px ${y}px; margin: 5px;"></div>\
+                                <div style="flex: 1;">\
+                                    <h1 style="font-family: ThrumsSerifRegular;">${city}</h1>\
+                                    <h2>${label}</h2>\
+                                    <span>${text}</span>\
+                                </div>\
+                            </div>';
 
 </script>  
 
