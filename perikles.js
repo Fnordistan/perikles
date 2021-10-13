@@ -449,6 +449,7 @@ function (dojo, declare) {
             city_mil.addEventListener('mouseleave', () => {
                 for (const mil of city_mil.children) {
                     mil.style.transform = "";
+                    mil.style["z-index"] = "";
                 }
             });
         },
@@ -478,6 +479,7 @@ function (dojo, declare) {
                 let xoff = athens_off+(n*MIL_DIM.s);
                 let yoff = n*-2;
                 hop.style.transform = "translate("+xoff+"px,"+yoff+"px)";
+                hop.style["z-index"] = 1;
                 n++;
             }
             n = 0;
@@ -486,6 +488,7 @@ function (dojo, declare) {
                 let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
                 let yoff = MIL_DIM.s+(n*-2);
                 tri.style.transform = "translate("+xoff+"px,"+yoff+"px)";
+                tri.style["z-index"] = 1;
                 n++;
             }
         },
