@@ -31,6 +31,11 @@ const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 't
 const HOPLITE = "hoplite";
 const TRIREME = "trireme";
 
+const MIL_DIM = {
+    "l": 100,
+    "s": 62
+}
+
 const PLAYER_COLORS = {
     "E53738" : "red",
     "37BC4C" : "green",
@@ -252,8 +257,8 @@ function (dojo, declare) {
          * @param {string} id 
          */
          decorateInfluenceCard: function(id) {
-             const card = document.getElementById(id);
-             card.addEventListener('click', () => {
+            const card = document.getElementById(id);
+            card.addEventListener('click', () => {
                 this.onInfluenceCardSelected(id);
             });
             card.addEventListener('mouseenter', () => {
@@ -264,6 +269,10 @@ function (dojo, declare) {
             });
         },
 
+        /**
+         * When Influence card is taken.
+         * @param {string} id 
+         */
         onInfluenceCardSelected: function(id) {
             if (this.checkAction("takeInfluenceTile", true)) {
                 console.log("picked card "+id);
@@ -278,7 +287,6 @@ function (dojo, declare) {
                 card.style['box-shadow'] = hover ? 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px' : '';
             }
         },
-
 
         /**
          * Place influence cubes on cities.
@@ -423,10 +431,69 @@ function (dojo, declare) {
                     const top = (unit == TRIREME) ? ydim/2 : 0;
                     const tile_div = this.format_block('jstpl_military', {city: city, type: unit, s: strength, id: counter['id'], x: xoff, y: yoff, m: 2*ct, t: top}); 
                     dojo.place(tile_div, city_military);
+                    this.decorateMilitary(city_military);
                 }
             }
         },
 
+        /**
+         * Make military display available counters
+         */
+        decorateMilitary: function(city_mil) {
+            city_mil.addEventListener('click', () => {
+                this.spreadMilitaryUnits(city_mil);
+            });
+            city_mil.addEventListener('mouseenter', () => {
+                this.spreadMilitaryUnits(city_mil);
+            });
+            city_mil.addEventListener('mouseleave', () => {
+                for (const mil of city_mil.children) {
+                    mil.style.transform = "";
+                }
+            });
+        },
+
+        /**
+         * Spread out all Hoplite and Trireme counters
+         */
+        spreadMilitaryUnits: function(city_mil) {
+            const hoplites = [];
+            const triremes = [];
+            for (const mil of city_mil.children) {
+                if (mil.classList.contains("per_hoplite")) {
+                    hoplites.push(mil.id);
+                } else if  (mil.classList.contains("per_trireme")) {
+                    triremes.push(mil.id);
+                }
+            }
+            hoplites.sort();
+            triremes.sort();
+            let n = 0;
+            let athens_off = 0;
+            if (city_mil.id == "athens_military") {
+                athens_off = -1 * Math.max((hoplites.length * MIL_DIM.s), (triremes.length * MIL_DIM.l));
+            }
+            for(h of hoplites) {
+                const hop = document.getElementById(h);
+                let xoff = athens_off+(n*MIL_DIM.s);
+                let yoff = n*-2;
+                hop.style.transform = "translate("+xoff+"px,"+yoff+"px)";
+                n++;
+            }
+            n = 0;
+            for(t of triremes) {
+                const tri = document.getElementById(t);
+                let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
+                let yoff = MIL_DIM.s+(n*-2);
+                tri.style.transform = "translate("+xoff+"px,"+yoff+"px)";
+                n++;
+            }
+        },
+
+        /**
+         * Place Defeat counters on cities.
+         * @param {Object} defeats 
+         */
         setupDefeats: function(defeats) {
             for (const [city, num] of Object.entries(defeats)) {
                 for (let d = 1; d <= num; d++) {

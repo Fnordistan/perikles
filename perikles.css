@@ -269,24 +269,26 @@
     height: 80px;
 }
 
+.per_military {
+    background-repeat: no-repeat;
+    position: absolute;
+    transition: transform 0.5s;
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
+
+}
+
 .per_hoplite {
     background-image: url(img/hoplites.jpg);
     background-size:  calc(5 * var(--military_s)) calc(7 * var(--military_l));
-    background-repeat: no-repeat;
-    position: absolute;
     width: var(--military_s);
     height: var(--military_l);
-    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
 }
 
 .per_trireme {
     background-image: url(img/triremes.jpg);
     background-size:  calc(5 * var(--military_l)) calc(7 * var(--military_s));
-    background-repeat: no-repeat;
-    position: absolute;
     width: var(--military_l);
     height: var(--military_s);
-    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
 }
 
 /* IDENTITIES */

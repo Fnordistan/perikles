@@ -20,11 +20,18 @@
             <div id="influence_slot_{i}" class="per_influence_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END INFLUENCE_TILES_BLOCK -->
         </div>
+        <div id="location_area">
+            <!-- BEGIN LOCATION_BLOCK -->
+            <div id="location_{LOC}" class="per_location_slot" style="top: {T}px; left: {L}px;"></div>
+            <!-- END LOCATION_BLOCK -->
+        </div>
+
+        <div id="persia_military" class="per_military_zone" style="top: {PERSIA_Y}px; left: {PERSIA_X}px;"></div>
+
         <!-- BEGIN CITY_BLOCK -->
             <div id="{CITY}" class="per_city" style="top: {CITYY}px; left: {CITYX}px;"></div>
             <div id="{CITY}_leader" class="per_counter_slot" style="top: {LEADERY}px; left: {LEADERX}px;"></div>
             <div id="{CITY}_statues" class="per_statue_zone" style="top: {STATUEY}px; left: {STATUEX}px;"></div>
-            <div id="{CITY}_military" class="per_military_zone" style="top: {MILY}px; left: {MILX}px;"></div>
             <div id="{CITY}_a" class="per_candidate_space" style="top: {ALPHAY}px; left: {ALPHAX}px;"></div>
             <div id="{CITY}_b" class="per_candidate_space" style="top: {BETAY}px; left: {BETAX}px;"></div>
             <!-- BEGIN DEFEAT_BLOCK -->
@@ -33,14 +40,9 @@
             <!-- BEGIN CUBES_BLOCK -->
             <div id="{CITY}_cubes_{player_id}" class="per_city_cubes" style="top: {T}px; left: {L}px;"></div>
             <!-- END CUBES_BLOCK -->
+            <div id="{CITY}_military" class="per_military_zone" style="top: {MILY}px; left: {MILX}px;"></div>
         <!-- END CITY_BLOCK -->
 
-        <div id="location_area">
-            <!-- BEGIN LOCATION_BLOCK -->
-            <div id="location_{LOC}" class="per_location_slot" style="top: {T}px; left: {L}px;"></div>
-            <!-- END LOCATION_BLOCK -->
-        </div>
-        <div id="persia_military" class="per_military_zone" style="top: {PERSIA_Y}px; left: {PERSIA_X}px;"></div>
     </div>
     <div id="deadpool">
         <h1>{DEADPOOL}</h1>
@@ -67,7 +69,7 @@ const jstpl_cube = '<div class="per_cube" style="background-color: #${color};"><
 
 const jstpl_location_tile = '<div id="${id}_tile" class="per_location_tile" style="background-position: ${x}px ${y}px;"></div>';
 
-const jstpl_military = '<div id="${city}_${type}_${s}_${id}" class="per_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
+const jstpl_military = '<div id="${city}_${type}_${s}_${id}" class="per_military per_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
 
 const jstpl_special_tt = '<div id="{$special}_special_tt" style="display: flex; flex-direction: row;">\
                             <div style="flex: 1;">\
