@@ -428,6 +428,19 @@ class Perikles extends Table
         return !empty($tiles);
     }
 
+    /**
+     * Get the translated name of an Influence tile type (empty for plain influence cards)
+     */
+    function influenceTypeToStringTr($type) {
+        $tr = "";
+        if ($type == "assassin") {
+            $tr = self::_("Assassin");
+        } else if ($type == "candidate") {
+            $tr = self::_("Candidate");
+        }
+        return $tr;
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -445,22 +458,39 @@ class Perikles extends Table
         }
         $player_id = self::getActivePlayerId();
         // has this player already selected a card from this city?
-        $citysel = $influence_card['city'];
+        $city = $influence_card['city'];
+        $city_name = ($city == "any") ? self::_("Any") : $this->cities[$city]['name'];
 
-        if ($this->hasCityInfluenceTile($player_id, $citysel)) {
+        if ($this->hasCityInfluenceTile($player_id, $city)) {
             // only allowed if there are no other Influence cards he can take
             $availablecities = self::getObjectListFromDB("SELECT card_type city FROM INFLUENCE WHERE card_location=\"".BOARD."\"", true);
-            foreach($availablecities as $city) {
-                if (!$this->hasCityInfluenceTile($player_id, $city)) {
+            foreach($availablecities as $cn) {
+                if (!$this->hasCityInfluenceTile($player_id, $cn)) {
                     // at least one city that you don't have yet
-                    throw new BgaUserException(self::_("You may not choose another $citysel Influence tile"));
+                    throw new BgaUserException(self::_("You may not choose another $city_name Influence tile"));
                 }
             }
         }
         // got past checks, so it's a valid choice
-        throw new BgaUserException("Tile: ".$influence_card['id']." ".$influence_card['city']." ".$influence_card['type']." ".$influence_card['location']);
+        $this->influence_tiles->moveCard($influence_id, $player_id);
+        $players = self::loadPlayersBasicInfos();
+
+        $inf_type = $this->influenceTypeToStringTr($influence_card['type']);
+        if (!empty($inf_type)) {
+            $inf_type = "(".$inf_type.")";
+        }
+
+        self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${city_name} ${inf_type} Influence tile'), array(
+            'i18n' => ['city_name', 'inf_type'],
+            'player_name' => $players[$player_id]['player_name'],
+            'player_id' => $player_id,
+            'city_name' => $city_name,
+            'inf_type' => $inf_type,
+            'preserve' => 'player_id'
+        ));
+        
     }
-    
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////

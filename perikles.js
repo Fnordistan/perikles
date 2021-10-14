@@ -523,26 +523,60 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
         //// Display methods
 
+        /* @Override */
+        format_string_recursive : function(log, args) {
+            try {
+                if (log && args && !args.processed) {
+                    args.processed = true;
+                    if (!this.isSpectator) {
+                        log = log.replace("You", this.spanYou());
+                    }
+                    if (args.player_name) {
+                        args.player_name = this.spanPlayerName(args.player_id);
+                    }
+                }
+            } catch (e) {
+                console.error(log, args, "Exception thrown", e.stack);
+            }
+            return this.inherited(arguments);
+        },
+
         /**
          * Create span with Player's name in color.
          * @param {int} player 
          */
          spanPlayerName: function(player_id) {
             const player = this.gamedatas.players[player_id];
-            let color_bg = "";
-            if (player.color_back) {
-                color_bg = "background-color:#"+player.color_back;
-
-            } else if (player.color == "FFF") {
-                color_bg = "text-shadow: -1px -1px #000";
-            }
-
+            const color_bg = this.colorBg(player);
             const pname = "<span style=\"font-weight:bold;color:#" + player.color + ";" + color_bg + "\">" + player.name + "</span>";
             return pname;
         },
 
+        /**
+         * From BGA Cookbook. Return "You" in this player's color
+         */
+         spanYou: function() {
+            const player = this.gamedatas.players[this.player_id]; 
+            const color = player.color;
+            const color_bg = this.colorBg(player);
+            const you = "<span style=\"font-weight:bold;color:#" + color + ";" + color_bg + "\">" + __("lang_mainsite", "You") + "</span>";
+            return you;
+        },
 
-
+        /**
+         * Get the style tag for background-color for a player name (shadow for white text)
+         * @param {Object} player 
+         * @returns css tag or empty string
+         */
+        colorBg: function(player) {
+            let color_bg = "";
+            if (player.color_back) {
+                color_bg = "background-color:#"+player.color_back;
+            } else if (player.color == "FFF") {
+                color_bg = "text-shadow: -1px -1px #000";
+            }
+            return color_bg;
+        },
 
         ///////////////////////////////////////////////////
         //// Game & client states
