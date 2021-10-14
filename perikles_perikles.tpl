@@ -89,6 +89,8 @@ const jstpl_influence_tt = '<div style="display: flex; flex-direction: row;">\
                                 </div>\
                             </div>';
 
+const jstpl_influence_cards = '<div id="${id}_player_cards" class="per_player_infl" style="--scale: ${scale};"></div>';
+
 </script>  
 
 {OVERALL_GAME_FOOTER}

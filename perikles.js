@@ -123,9 +123,14 @@ function (dojo, declare) {
          */
         setupSpecialTiles: function(players, specialtiles) {
             const special_scale = 0.2;
+
             for (const player_id in players) {
                 const player_board_div = document.getElementById('player_board_'+player_id);
                 const spec = parseInt(specialtiles[player_id]);
+
+                // add flex row for cards
+                const player_cards = this.format_block('jstpl_influence_cards', {id: player_id, scale: special_scale});
+                const player_cards_div = dojo.place(player_cards, player_board_div);
 
                 if (spec == 0) {
                     var specialtile = this.format_block('jstpl_special_back', {id: player_id, scale: special_scale});
@@ -137,10 +142,11 @@ function (dojo, declare) {
                         tile.classList.add("per_special_tile_used");
                     }
                 }
-                const tile = dojo.place(specialtile, player_board_div);
+                const tile = dojo.place(specialtile, player_cards_div);
                 if (spec == 0) {
-                    let ttext = _("${player_name}'s Special tile (not used)");
-                    ttext = ttext.replace('${player_name}', players[player_id].name);
+                    let ttext = _("${player_name}'s Special tile");
+                    const player_name = this.spanPlayerName(player_id);
+                    ttext = ttext.replace('${player_name}', player_name);
                     this.addTooltip(tile.id, ttext, '');
                 } else {
                     const thtml = this.createSpecialTileTooltip(players[player_id], SPECIAL_TILES[Math.abs(spec-1)]);
@@ -274,13 +280,18 @@ function (dojo, declare) {
          * @param {string} id 
          */
         onInfluenceCardSelected: function(id) {
-            if (this.checkAction("takeInfluenceTile", true)) {
-                console.log("picked card "+id);
+            if (this.checkAction("takeInfluence", true)) {
+                this.takeInfluenceTile(id);
             }
        },
 
+       /**
+        * 
+        * @param {string} id 
+        * @param {bool} hover 
+        */
         onInfluenceCardHover: function(id, hover) {
-            if (this.checkAction("takeInfluenceTile", true)) {
+            if (this.checkAction("takeInfluence", true)) {
                 const card = document.getElementById(id);
                 card.style['transform'] = hover ? 'scale(1.1)' : '';
                 card.style['transition'] = 'transform 0.5s';
@@ -467,8 +478,8 @@ function (dojo, declare) {
                     triremes.push(mil.id);
                 }
             }
-            hoplites.sort();
-            triremes.sort();
+            // hoplites.sort();
+            // triremes.sort();
             let n = 0;
             let athens_off = 0;
             if (city_mil.id == "athens_military") {
@@ -490,6 +501,8 @@ function (dojo, declare) {
                 tri.style.transform = "translate("+xoff+"px,"+yoff+"px)";
                 tri.style["z-index"] = 1;
                 n++;
+                if (athens_off != 0) {
+                }
             }
         },
 
@@ -506,6 +519,30 @@ function (dojo, declare) {
                 }
             }
         },
+
+        ///////////////////////////////////////////////////
+        //// Display methods
+
+        /**
+         * Create span with Player's name in color.
+         * @param {int} player 
+         */
+         spanPlayerName: function(player_id) {
+            const player = this.gamedatas.players[player_id];
+            let color_bg = "";
+            if (player.color_back) {
+                color_bg = "background-color:#"+player.color_back;
+
+            } else if (player.color == "FFF") {
+                color_bg = "text-shadow: -1px -1px #000";
+            }
+
+            const pname = "<span style=\"font-weight:bold;color:#" + player.color + ";" + color_bg + "\">" + player.name + "</span>";
+            return pname;
+        },
+
+
+
 
         ///////////////////////////////////////////////////
         //// Game & client states
@@ -592,62 +629,23 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
         //// Utility methods
         
-        /*
-        
-            Here, you can defines some utility methods that you can use everywhere in your javascript
-            script.
-        
-        */
-
 
         ///////////////////////////////////////////////////
         //// Player's action
         
-        /*
-        
-            Here, you are defining methods to handle player's action (ex: results of mouse click on 
-            game objects).
-            
-            Most of the time, these methods:
-            _ check the action is possible at this game state.
-            _ make a call to the game server
-        
-        */
-        
-        /* Example:
-        
-        onMyMethodToCall1: function( evt )
-        {
-            console.log( 'onMyMethodToCall1' );
-            
-            // Preventing default browser reaction
-            dojo.stopEvent( evt );
-
-            // Check that this action is possible (see "possibleactions" in states.inc.php)
-            if( ! this.checkAction( 'myAction' ) )
-            {   return; }
-
-            this.ajaxcall( "/perikles/perikles/myAction.html", { 
-                                                                    lock: true, 
-                                                                    myArgument1: arg1, 
-                                                                    myArgument2: arg2,
-                                                                    ...
-                                                                 }, 
-                         this, function( result ) {
-                            
-                            // What to do after the server call if it succeeded
-                            // (most of the time: nothing)
-                            
-                         }, function( is_error) {
-
-                            // What to do after the server call in anyway (success or failure)
-                            // (most of the time: nothing)
-
-                         } );        
-        },        
-        
-        */
-
+        /**
+         * Action to take an Influence card.
+         * @param {string} id
+         */
+         takeInfluenceTile: function(card_id) {
+            if (this.checkAction("takeInfluence", true)) {
+                const id = parseInt(card_id.match(/\d+$/)[0]);
+                this.ajaxcall( "/perikles/perikles/takeinfluence.html", { 
+                    id: id,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
         
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications

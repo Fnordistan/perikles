@@ -49,7 +49,7 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must take an Influence tile'),
     	"descriptionmyturn" => clienttranslate('${you} must take an Influence tile'),
     	"type" => "activeplayer",
-    	"possibleactions" => array( "takeInfluenceTile" ),
+    	"possibleactions" => array( "takeInfluence" ),
     	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "useSpecial" => USE_SPECIAL, "candidates" => PROPOSE_CANDIDATE)
     ),
 

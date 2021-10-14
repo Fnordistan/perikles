@@ -126,7 +126,6 @@ class Perikles extends Table
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
-
         $this->setupInfluenceTiles();
         $this->setupLocationTiles();
         $this->setupMilitary();
@@ -420,47 +419,47 @@ class Perikles extends Table
 //////////// Utility functions
 ////////////    
 
-    /*
-        In this space, you can put any utility methods useful for your game logic
-    */
 
-
+    /**
+     * Returns true if this player has at least once Influence tile of this city
+     */
+    function hasCityInfluenceTile($player_id, $city) {
+        $tiles = $this->influence_tiles->getCardsOfTypeInLocation($city, null, $player_id);
+        return !empty($tiles);
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
 
-    /*
-        Each time a player is doing some game action, one of the methods below is called.
-        (note: each method below must match an input method in perikles.action.php)
-    */
+    /**
+     * 
+     */
+    function takeInfluence($influence_id) {
+        self::checkAction( 'takeInfluence' );
+        $influence_card = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location FROM INFLUENCE WHERE card_id=$influence_id");
 
-    /*
-    
-    Example:
-
-    function playCard( $card_id )
-    {
-        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction( 'playCard' ); 
-        
+        // is it on the board?
+        if ($influence_card['location'] != BOARD) {
+            throw new BgaUserException(self::_("This card is not selectable"));
+        }
         $player_id = self::getActivePlayerId();
-        
-        // Add your game logic to play a card there 
-        ...
-        
-        // Notify all players about the card played
-        self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} plays ${card_name}' ), array(
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
-            'card_name' => $card_name,
-            'card_id' => $card_id
-        ) );
-          
-    }
-    
-    */
+        // has this player already selected a card from this city?
+        $citysel = $influence_card['city'];
 
+        if ($this->hasCityInfluenceTile($player_id, $citysel)) {
+            // only allowed if there are no other Influence cards he can take
+            $availablecities = self::getObjectListFromDB("SELECT card_type city FROM INFLUENCE WHERE card_location=\"".BOARD."\"", true);
+            foreach($availablecities as $city) {
+                if (!$this->hasCityInfluenceTile($player_id, $city)) {
+                    // at least one city that you don't have yet
+                    throw new BgaUserException(self::_("You may not choose another $citysel Influence tile"));
+                }
+            }
+        }
+        // got past checks, so it's a valid choice
+        throw new BgaUserException("Tile: ".$influence_card['id']." ".$influence_card['city']." ".$influence_card['type']." ".$influence_card['location']);
+    }
     
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
