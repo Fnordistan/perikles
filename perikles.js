@@ -197,6 +197,23 @@ function (dojo, declare) {
          */
         setupInfluenceTiles: function(influence, decksize) {
             // tiles in slots
+            for (const tile of influence) {
+                const loc = tile['location'];
+                if (loc == "board") {
+                    this.placeInfluenceTileBoard(tile);
+                } else {
+                    this.placeInfluencePlayerBoard(tile);
+                }
+            }
+            // deck
+            this.createInfluencePile(decksize);
+        },
+
+        /**
+         * 
+         * @param {Object} tile 
+         */
+        placeInfluenceTileBoard: function(tile) {
             const helplbl = {
                 "influence": "",
                 "candidate": _("Candidate"),
@@ -209,28 +226,49 @@ function (dojo, declare) {
                 "assassin": _("Add 1 Influence cube to ${city}, and remove 1 cube from any city"),
                 "any": _("Add 1 Influence cube to any city"),
             };
-            for (const tile of influence) {
-                const id = tile['id'];
-                const city = tile['city'];
-                const s = tile['slot'];
-                const slot = document.getElementById("influence_slot_"+s);
-                const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
-                const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
-                const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff});
-                const card = dojo.place(card_div, slot);
-                let ttext = "";
-                if (city == "any") {
-                    ttext = helptext["any"];
-                } else {
-                    ttext = helptext[tile['type']];
-                }
-                const cityname = this.getCityNameTr(city);
-                ttext = ttext.replace('${city}', cityname);
-                const tooltip = this.format_block('jstpl_influence_tt', {city: cityname, label: helplbl[tile['type']], text: ttext, x: xoff, y: yoff});
-                this.addTooltipHtml(card.id, tooltip, '');
-                this.decorateInfluenceCard(card.id);
+            const id = tile['id'];
+            const city = tile['city'];
+            const s = tile['slot'];
+            const slot = document.getElementById("influence_slot_"+s);
+            const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
+            const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
+            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff});
+            const card = dojo.place(card_div, slot);
+            let ttext = "";
+            if (city == "any") {
+                ttext = helptext["any"];
+            } else {
+                ttext = helptext[tile['type']];
             }
-            // deck
+            const cityname = this.getCityNameTr(city);
+            ttext = ttext.replace('${city}', cityname);
+            const tooltip = this.format_block('jstpl_influence_tt', {city: cityname, label: helplbl[tile['type']], text: ttext, x: xoff, y: yoff});
+            this.addTooltipHtml(card.id, tooltip, '');
+            this.decorateInfluenceCard(card.id);
+        },
+
+        /**
+         * 
+         * @param {Object} tile 
+         */
+        placeInfluencePlayerBoard: function(tile) {
+            const id = tile['id'];
+            const loc = tile['location'];
+            const player_cards = loc+'_player_cards';
+            const player_card_div = document.getElementById(player_cards);
+            const city = tile['city'];
+            const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
+            const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
+            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff});
+            const card = dojo.place(card_div, player_card_div);
+            card.style.margin = "0 2px";
+        },
+
+        /**
+         * Deck pile of decksize cardbacks
+         * @param {int} decksize 
+         */
+        createInfluencePile: function(decksize) {
             const pile = document.getElementById(INFLUENCE_PILE);
             for (let c = 1; c <= decksize; c++) {
                 const cardback = this.format_block('jstpl_influence_back', {id: c, x: -1 * INFLUENCE_SCALE * this.influence_w, y: -6 * INFLUENCE_SCALE * this.influence_h, m: c-1});
@@ -697,34 +735,26 @@ function (dojo, declare) {
         {
             console.log( 'notifications subscriptions setup' );
             
-            // TODO: here, associate your game notifications with local methods
-            
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
+            dojo.subscribe( 'influenceCardTaken', this, "notif_influenceCardTaken" );
+            // this.notifqueue.setSynchronous( 'influenceCardTaken', 3000 );
             // 
         },  
         
-        // TODO: from this point and below, you can write your game notifications handling methods
+        // Notification handlers
         
-        /*
-        Example:
-        
-        notif_cardPlayed: function( notif )
+        notif_influenceCardTaken: function( notif )
         {
-            console.log( 'notif_cardPlayed' );
             console.log( notif );
-            
-            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-            
-            // TODO: play the card in the user interface.
-        },    
-        
-        */
+            const player_id = notif.args.player_id;
+            const city = notif.args.city;
+            const id = notif.args.card_id;
+            const card_id = city+'_'+id;
+            const card_div = document.getElementById(card_id);
+            const player_cards = player_id+'_player_cards';
+            const player_div = document.getElementById(player_cards);
+            this.slideToObject(card_div, player_div, 1000, 1000).play();
+            // dojo.place(card_div, player_div);
+        },
+
    });             
 });

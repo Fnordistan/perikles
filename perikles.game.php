@@ -24,6 +24,7 @@ define("INFLUENCE", "influence");
 define("CANDIDATE", "candidate");
 define("ASSASSIN", "assassin");
 define("DECK", "deck");
+define("DISCARD", "discard");
 define("BOARD", "board");
 define("HOPLITE", "hoplite");
 define("TRIREME", "trireme");
@@ -270,7 +271,7 @@ class Perikles extends Table
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
-        $result['influencetiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location_arg slot FROM INFLUENCE WHERE card_location='".BOARD."'");
+        $result['influencetiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_location != \"".DECK."\" AND card_location != \"".DISCARD."\"");
         $result['decksize'] = $this->influence_tiles->countCardInLocation(DECK);
 
         $result['locationtiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
@@ -429,16 +430,27 @@ class Perikles extends Table
     }
 
     /**
-     * Get the translated name of an Influence tile type (empty for plain influence cards)
+     * Return {name,shard,desc} array of strings
      */
-    function influenceTypeToStringTr($type) {
-        $tr = "";
-        if ($type == "assassin") {
-            $tr = self::_("Assassin");
-        } else if ($type == "candidate") {
-            $tr = self::_("Candidate");
+    function influenceTileDescriptors($tile) {
+        $name = $tile['city'];
+        $shards = 2;
+        $desc = "";
+        if ($name == 'any') {
+            $name = self::_("Any");
+            $shards = 1;
+        } else {
+            $name = $this->cities[$name]['name'];
+
+            if ($tile['type'] == "assassin") {
+                $desc = self::_("Assassin");
+                $shards = 1;
+            } else if ($tile['type'] == "candidate") {
+                $desc = self::_("Candidate");
+                $shards = 1;
+            }
         }
-        return $tr;
+        return [$name, $shards, $desc];
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -458,8 +470,10 @@ class Perikles extends Table
         }
         $player_id = self::getActivePlayerId();
         // has this player already selected a card from this city?
+        $descriptors = $this->influenceTileDescriptors($influence_card);
+
         $city = $influence_card['city'];
-        $city_name = ($city == "any") ? self::_("Any") : $this->cities[$city]['name'];
+        $city_name = $descriptors[0];
 
         if ($this->hasCityInfluenceTile($player_id, $city)) {
             // only allowed if there are no other Influence cards he can take
@@ -467,7 +481,7 @@ class Perikles extends Table
             foreach($availablecities as $cn) {
                 if (!$this->hasCityInfluenceTile($player_id, $cn)) {
                     // at least one city that you don't have yet
-                    throw new BgaUserException(self::_("You may not choose another $city_name Influence tile"));
+                    throw new BgaUserException(self::_("You may not take another $city_name Influence tile"));
                 }
             }
         }
@@ -475,18 +489,21 @@ class Perikles extends Table
         $this->influence_tiles->moveCard($influence_id, $player_id);
         $players = self::loadPlayersBasicInfos();
 
-        $inf_type = $this->influenceTypeToStringTr($influence_card['type']);
+        $inf_type = $descriptors[2];
         if (!empty($inf_type)) {
             $inf_type = "(".$inf_type.")";
         }
 
-        self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${city_name} ${inf_type} Influence tile'), array(
+        self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${shards}-Shard ${city_name} tile ${inf_type}'), array(
             'i18n' => ['city_name', 'inf_type'],
             'player_name' => $players[$player_id]['player_name'],
             'player_id' => $player_id,
+            'city' => $city,
             'city_name' => $city_name,
+            'shards' => $descriptors[1],
             'inf_type' => $inf_type,
-            'preserve' => 'player_id'
+            'card_id' => $influence_id,
+            'preserve' => 'player_id',
         ));
         
     }

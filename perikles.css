@@ -66,6 +66,7 @@
 .per_player_infl {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     min-height: calc(var(--scale)*var(--influence_h));
 }
 
