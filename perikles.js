@@ -490,17 +490,43 @@ function (dojo, declare) {
          */
         decorateMilitary: function(city_mil) {
             city_mil.addEventListener('click', () => {
-                this.spreadMilitaryUnits(city_mil);
+                if (this.isSpread(city_mil)) {
+                    this.unspread(city_mil);
+                } else {
+                    this.spreadMilitaryUnits(city_mil);
+                }
             });
             city_mil.addEventListener('mouseenter', () => {
                 this.spreadMilitaryUnits(city_mil);
             });
             city_mil.addEventListener('mouseleave', () => {
-                for (const mil of city_mil.children) {
-                    mil.style.transform = "";
-                    mil.style["z-index"] = "";
-                }
+                this.unspread(city_mil);
             });
+        },
+
+
+        /**
+         * Are the military units in the city spread already?
+         * @param {Object} city_mil 
+         */
+        isSpread: function(city_mil) {
+            let isspread = false;
+            let unit = city_mil.firstChild;
+            if (unit) {
+                isspread = (unit.style["z-index"] == 1);
+            }
+            return isspread;
+        },
+
+        /**
+         * Unspread military units.
+         * @param {Object} city_mil 
+         */
+        unspread: function(city_mil) {
+            for (const mil of city_mil.children) {
+                mil.style.transform = "";
+                mil.style["z-index"] = "";
+            }
         },
 
         /**
@@ -516,30 +542,34 @@ function (dojo, declare) {
                     triremes.push(mil.id);
                 }
             }
-            // hoplites.sort();
-            // triremes.sort();
             let n = 0;
             let athens_off = 0;
             if (city_mil.id == "athens_military") {
                 athens_off = -1 * Math.max((hoplites.length * MIL_DIM.s), (triremes.length * MIL_DIM.l));
             }
-            for(h of hoplites) {
-                const hop = document.getElementById(h);
-                let xoff = athens_off+(n*MIL_DIM.s);
-                let yoff = n*-2;
-                hop.style.transform = "translate("+xoff+"px,"+yoff+"px)";
-                hop.style["z-index"] = 1;
-                n++;
+            let bottomedge = 0;
+            if (hoplites.length !== 0) {
+                hopdim = document.getElementById(hoplites[0]).getBoundingClientRect();
+                bottomedge = hopdim.bottom;
+                for(h of hoplites) {
+                    const hop = document.getElementById(h);
+                    let xoff = athens_off+(n*MIL_DIM.s);
+                    let yoff = n*-2;
+                    hop.style.transform = "translate("+xoff+"px,"+yoff+"px)";
+                    hop.style["z-index"] = 1;
+                    n++;
+                }
             }
-            n = 0;
-            for(t of triremes) {
-                const tri = document.getElementById(t);
-                let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
-                let yoff = MIL_DIM.s+(n*-2);
-                tri.style.transform = "translate("+xoff+"px,"+yoff+"px)";
-                tri.style["z-index"] = 1;
-                n++;
-                if (athens_off != 0) {
+            if (triremes.length !== 0) {
+                n = 0;
+                for(t of triremes) {
+                    const tri = document.getElementById(t);
+                    let tridim = tri.getBoundingClientRect();
+                    let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
+                    let yoff = (bottomedge === 0) ? 5 : bottomedge - tridim.top + 5;
+                    tri.style.transform = "translate("+xoff+"px,"+yoff+"px)";
+                    tri.style["z-index"] = 1;
+                    n++;
                 }
             }
         },
@@ -566,11 +596,11 @@ function (dojo, declare) {
             try {
                 if (log && args && !args.processed) {
                     args.processed = true;
-                    if (!this.isSpectator) {
-                        log = log.replace("You", this.spanYou());
-                    }
                     if (args.player_name) {
                         args.player_name = this.spanPlayerName(args.player_id);
+                    }
+                    if (!this.isSpectator) {
+                        log = log.replace("You", this.spanYou());
                     }
                 }
             } catch (e) {
@@ -752,8 +782,8 @@ function (dojo, declare) {
             const card_div = document.getElementById(card_id);
             const player_cards = player_id+'_player_cards';
             const player_div = document.getElementById(player_cards);
+            player_div.appendChild(card_div);
             this.slideToObject(card_div, player_div, 1000, 1000).play();
-            // dojo.place(card_div, player_div);
         },
 
    });             

@@ -47,7 +47,7 @@ $machinestates = array(
     TAKE_INFLUENCE => array(
     	"name" => "takeInfluence",
     	"description" => clienttranslate('${actplayer} must take an Influence tile'),
-    	"descriptionmyturn" => clienttranslate('${you} must take an Influence tile'),
+    	"descriptionmyturn" => clienttranslate('You must take an Influence tile'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "takeInfluence" ),
     	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "useSpecial" => USE_SPECIAL, "candidates" => PROPOSE_CANDIDATE)
@@ -56,7 +56,7 @@ $machinestates = array(
     PLACE_INFLUENCE => array(
     	"name" => "placeInfluence",
     	"description" => clienttranslate('${actplayer} must place ${num} cubes on ${city}'),
-    	"descriptionmyturn" => clienttranslate('${you} must place ${num} cubes on ${city}'),
+    	"descriptionmyturn" => clienttranslate('You must place ${num} cubes on ${city}'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "placeCubes" ),
     	"transitions" => array( "assassinate" => ASSASSINATE, "candidate" => ASSIGN_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
@@ -65,7 +65,7 @@ $machinestates = array(
     ASSASSINATE => array(
     	"name" => "assassinate",
     	"description" => clienttranslate('${actplayer} must remove 1 Influence cube'),
-    	"descriptionmyturn" => clienttranslate('${you} must remove 1 Influence cube'),
+    	"descriptionmyturn" => clienttranslate('You must remove 1 Influence cube'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "removeCube" ),
     	"transitions" => array( "useSpecial" => USE_SPECIAL, "nextPlayer" => NEXT_PLAYER )
@@ -74,7 +74,7 @@ $machinestates = array(
     USE_SPECIAL => array(
     	"name" => "specialTile",
     	"description" => clienttranslate('${actplayer} is using a Special Tile'),
-    	"descriptionmyturn" => clienttranslate('${you} must use your special Tile'),
+    	"descriptionmyturn" => clienttranslate('You must use your special Tile'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "useSpecial" ),
     	"transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "nextPlayer" => NEXT_PLAYER )
@@ -83,7 +83,7 @@ $machinestates = array(
     PROPOSE_CANDIDATE => array(
     	"name" => "proposeCandidates",
     	"description" => clienttranslate('${actplayer} must propose a candidate'),
-    	"descriptionmyturn" => clienttranslate('${you} must propose a candidate'),
+    	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "chooseCandidate" ),
     	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "elections" => ELECTIONS )
