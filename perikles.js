@@ -26,7 +26,7 @@ const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
 
 const INFLUENCE_PILE = "influence_slot_0";
 
-const PLAYER_INF_MARGIN = "0 2px";
+const PLAYER_INF_MARGIN = "2px";
 
 const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
 
@@ -254,15 +254,25 @@ function (dojo, declare) {
          * @param {Object} tile 
          */
         placeInfluencePlayerBoard: function(tile) {
-            const id = tile['id'];
             const loc = tile['location'];
             const player_cards = loc+'_player_cards';
             const player_card_div = document.getElementById(player_cards);
+            const card_div = this.createPlayerInfluenceCard(tile);
+            dojo.place(card_div, player_card_div);
+        },
+
+        /**
+         * 
+         * @param {Object} tile 
+         * @returns Div string
+         */
+        createPlayerInfluenceCard: function(tile) {
+            const id = tile['id'];
             const city = tile['city'];
             const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
             const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
-            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff, margin: PLAYER_INF_MARGIN});
-            const card = dojo.place(card_div, player_card_div);
+            const card_div = this.format_block('jstpl_influence_tile', {id: id, city: city, x: xoff, y: yoff, margin: PLAYER_INF_MARGIN});
+            return card_div;
         },
 
         /**
@@ -844,11 +854,39 @@ function (dojo, declare) {
             const id = notif.args.card_id;
             const card_id = city+'_'+id;
             const card_div = document.getElementById(card_id);
-            Object.assign(card_div.style, {margin: PLAYER_INF_MARGIN, transform: null});
+            const slot = notif.args.slot;
+
+            // create the Influence tile
+            const newTile = this.getTileById(id);
+            if (newTile == null) {
+                throw "Unknown Influence Tile: " + id;
+            }
+
+            card_div.remove();
             const player_cards = player_id+'_player_cards';
-            const fromSlot = "influence_slot_"+id;
-            this.slide(card_div, player_cards, {"from": document.getElementById(fromSlot)});
+            const from_id = "influence_slot_"+slot;
+
+            // create temp new card to move to the player board
+            const fromSlot = document.getElementById(from_id);
+            const newcard = this.createPlayerInfluenceCard(newTile);
+            newcard_div = dojo.place(newcard, fromSlot);
+            this.slide(newcard_div, player_cards, {"from": fromSlot});
         },
 
-   });             
+        /**
+         * Get tile from what should be in gamedatas.influencetiles
+         * @param {string} id 
+         * @returns tile
+         */
+        getTileById: function(id) {
+            for (const tile of this.gamedatas.influencetiles) {
+                if (tile['id'] == id) {
+                    return tile;
+                }
+            }
+            return null;
+        },
+
+
+   });
 });

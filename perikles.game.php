@@ -462,7 +462,7 @@ class Perikles extends Table
      */
     function takeInfluence($influence_id) {
         self::checkAction( 'takeInfluence' );
-        $influence_card = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location FROM INFLUENCE WHERE card_id=$influence_id");
+        $influence_card = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_id=$influence_id");
 
         // is it on the board?
         if ($influence_card['location'] != BOARD) {
@@ -494,6 +494,8 @@ class Perikles extends Table
             $inf_type = "(".$inf_type.")";
         }
 
+        $slot = $influence_card['slot'];
+
         self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${shards}-Shard ${city_name} tile ${inf_type}'), array(
             'i18n' => ['city_name', 'inf_type'],
             'player_name' => $players[$player_id]['player_name'],
@@ -503,6 +505,7 @@ class Perikles extends Table
             'shards' => $descriptors[1],
             'inf_type' => $inf_type,
             'card_id' => $influence_id,
+            'slot' => $slot,
             'preserve' => 'player_id',
         ));
         
