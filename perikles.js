@@ -26,6 +26,8 @@ const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
 
 const INFLUENCE_PILE = "influence_slot_0";
 
+const PLAYER_INF_MARGIN = "0 2px";
+
 const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
 
 const HOPLITE = "hoplite";
@@ -136,7 +138,7 @@ function (dojo, declare) {
                     var specialtile = this.format_block('jstpl_special_back', {id: player_id, scale: special_scale});
                 } else {
                     const spec_i = SPECIAL_TILES[Math.abs(spec-1)];
-                    specialtile = this.format_block('jstpl_special_tile', {special: spec_i, scale: special_scale});
+                    specialtile = this.format_block('jstpl_special_tile', {special: spec_i, scale: special_scale, margin: PLAYER_INF_MARGIN});
                     const used = (spec < 0 || player_id != this.player_id);
                     if (used) {
                         tile.classList.add("per_special_tile_used");
@@ -232,7 +234,7 @@ function (dojo, declare) {
             const slot = document.getElementById("influence_slot_"+s);
             const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
             const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
-            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff});
+            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff, margin: "auto"});
             const card = dojo.place(card_div, slot);
             let ttext = "";
             if (city == "any") {
@@ -259,9 +261,8 @@ function (dojo, declare) {
             const city = tile['city'];
             const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
             const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
-            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff});
+            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff, margin: PLAYER_INF_MARGIN});
             const card = dojo.place(card_div, player_card_div);
-            card.style.margin = "0 2px";
         },
 
         /**
@@ -456,6 +457,16 @@ function (dojo, declare) {
         setupMilitary: function(military) {
             const dim_l = 100;
             const dim_s = 62;
+            this.military_zones = {};
+            let mz = 'persia_military';
+            this.militaryAreaEvents(mz);
+            this.military_zones[mz] = {'spread': false};
+            for (city of CITIES) {
+                mz = city+"_military";
+                this.militaryAreaEvents(mz);
+                this.military_zones[mz] = {'spread': false};
+            }
+
             for(const i in military) {
                 const counter = military[i];
                 const city = counter['city'];
@@ -480,7 +491,6 @@ function (dojo, declare) {
                     const top = (unit == TRIREME) ? ydim/2 : 0;
                     const tile_div = this.format_block('jstpl_military', {city: city, type: unit, s: strength, id: counter['id'], x: xoff, y: yoff, m: 2*ct, t: top}); 
                     dojo.place(tile_div, city_military);
-                    this.decorateMilitary(city_military);
                 }
             }
         },
@@ -488,9 +498,10 @@ function (dojo, declare) {
         /**
          * Make military display available counters
          */
-        decorateMilitary: function(city_mil) {
+        militaryAreaEvents: function(city_mil_id) {
+            const city_mil = document.getElementById(city_mil_id);
             city_mil.addEventListener('click', () => {
-                if (this.isSpread(city_mil)) {
+                if (this.isSpread(city_mil_id)) {
                     this.unspread(city_mil);
                 } else {
                     this.spreadMilitaryUnits(city_mil);
@@ -510,12 +521,7 @@ function (dojo, declare) {
          * @param {Object} city_mil 
          */
         isSpread: function(city_mil) {
-            let isspread = false;
-            let unit = city_mil.firstChild;
-            if (unit) {
-                isspread = (unit.style["z-index"] == 1);
-            }
-            return isspread;
+            return this.military_zones[city_mil]['spread'];
         },
 
         /**
@@ -524,9 +530,9 @@ function (dojo, declare) {
          */
         unspread: function(city_mil) {
             for (const mil of city_mil.children) {
-                mil.style.transform = "";
-                mil.style["z-index"] = "";
+                Object.assign(mil.style, {'transform' : null, 'z-index': null});
             }
+            this.military_zones[city_mil.id]['spread'] = false;
         },
 
         /**
@@ -543,35 +549,29 @@ function (dojo, declare) {
                 }
             }
             let n = 0;
+            // Athens spreads to left
             let athens_off = 0;
             if (city_mil.id == "athens_military") {
                 athens_off = -1 * Math.max((hoplites.length * MIL_DIM.s), (triremes.length * MIL_DIM.l));
             }
-            let bottomedge = 0;
-            if (hoplites.length !== 0) {
-                hopdim = document.getElementById(hoplites[0]).getBoundingClientRect();
-                bottomedge = hopdim.bottom;
-                for(h of hoplites) {
-                    const hop = document.getElementById(h);
-                    let xoff = athens_off+(n*MIL_DIM.s);
-                    let yoff = n*-2;
-                    hop.style.transform = "translate("+xoff+"px,"+yoff+"px)";
-                    hop.style["z-index"] = 1;
-                    n++;
-                }
+            for (h of hoplites) {
+                const hop = document.getElementById(h);
+                let xoff = athens_off+(n*MIL_DIM.s);
+                let yoff = n*-2;
+                Object.assign(hop.style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
+                n++;
             }
-            if (triremes.length !== 0) {
-                n = 0;
-                for(t of triremes) {
-                    const tri = document.getElementById(t);
-                    let tridim = tri.getBoundingClientRect();
-                    let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
-                    let yoff = (bottomedge === 0) ? 5 : bottomedge - tridim.top + 5;
-                    tri.style.transform = "translate("+xoff+"px,"+yoff+"px)";
-                    tri.style["z-index"] = 1;
-                    n++;
-                }
+            const rec = city_mil.getBoundingClientRect();
+            n = 0;
+            for (t of triremes) {
+                const tri = document.getElementById(t);
+                let tridim = tri.getBoundingClientRect();
+                let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
+                let yoff = 22 + rec.bottom - tridim.top;
+                Object.assign(tri.style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
+                n++;
             }
+            this.military_zones[city_mil.id]['spread'] = true;
         },
 
         /**
@@ -730,7 +730,71 @@ function (dojo, declare) {
 
         ///////////////////////////////////////////////////
         //// Utility methods
-        
+
+        /**
+         * Tisaac's slide method.
+         * @param {DOMElement} mobile 
+         * @param {string} targetId 
+         * @param {Object} options 
+         * @returns 
+         */
+        slide: function(mobile, targetId, options = {}) {
+            let config = Object.assign(
+              {
+                duration: 800,
+                delay: 0,
+                destroy: false,
+                attach: true,
+                changeParent: true, // Change parent during sliding to avoid zIndex issue
+                pos: null,
+                className: 'moving',
+                from: null,
+                clearPos: true,
+              },
+              options,
+            );
+            const newParent = config.attach ? targetId : $(mobile).parentNode;
+            mobile.style['z-index'] = 5000;
+            mobile.classList.add(config.className);
+            // if (config.changeParent) {
+            //     this.changeParent(mobile, 'game_play_area');
+            // }
+            if (config.from != null) {
+                this.placeOnObject(mobile, config.from);
+            }
+            return new Promise((resolve, reject) => {
+              const animation =
+                config.pos == null
+                  ? this.slideToObject(mobile, targetId, config.duration, config.delay)
+                  : this.slideToObjectPos(mobile, targetId, config.pos.x, config.pos.y, config.duration, config.delay);
+      
+              dojo.connect(animation, 'onEnd', () => {
+                // mobile.style['z-index'] = null;
+                mobile.classList.remove(config.className);
+                if (config.changeParent) {
+                    this.changeParent(mobile, newParent);
+                }
+                if (config.destroy) {
+                    mobile.parentNode.removeChild(mobile);
+                }
+                if (config.clearPos && !config.destroy) {
+                    Object.assign(mobile.style, { top: null, left: null, position: null, 'z-index': null });
+                }
+                resolve();
+              });
+              animation.play();
+            });
+          },
+
+          /**
+           * 
+           * @param {DOMObject} mobile 
+           * @param {string} parent_id 
+           */
+          changeParent: function(mobile, parent_id) {
+            document.getElementById(parent_id).appendChild(mobile);
+          },
+
 
         ///////////////////////////////////////////////////
         //// Player's action
@@ -780,10 +844,10 @@ function (dojo, declare) {
             const id = notif.args.card_id;
             const card_id = city+'_'+id;
             const card_div = document.getElementById(card_id);
+            Object.assign(card_div.style, {margin: PLAYER_INF_MARGIN, transform: null});
             const player_cards = player_id+'_player_cards';
-            const player_div = document.getElementById(player_cards);
-            player_div.appendChild(card_div);
-            this.slideToObject(card_div, player_div, 1000, 1000).play();
+            const fromSlot = "influence_slot_"+id;
+            this.slide(card_div, player_cards, {"from": document.getElementById(fromSlot)});
         },
 
    });             

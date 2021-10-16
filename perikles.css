@@ -163,7 +163,6 @@
     position: relative;
     width: calc(var(--influence_w)*var(--influence_scale));
     height: calc(var(--influence_h)*var(--influence_scale));
-    margin: auto;
 }
 
 .per_counter {
