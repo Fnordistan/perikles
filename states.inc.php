@@ -18,6 +18,7 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("SETUP", 1);
     define("TAKE_INFLUENCE", 2);
     define("PLACE_INFLUENCE", 3);
+    define("CHOOSE_PLACE_INFLUENCE", 33);
     define("USE_SPECIAL", 4);
     define("ASSIGN_CANDIDATE", 5);
     define("ASSASSINATE", 6);
@@ -41,8 +42,6 @@ $machinestates = array(
         "action" => "stGameSetup",
         "transitions" => array( "" => TAKE_INFLUENCE )
     ),
-    
-    // Note: ID=2 => your first state
 
     TAKE_INFLUENCE => array(
     	"name" => "takeInfluence",
@@ -50,13 +49,21 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must take an Influence tile'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "takeInfluence" ),
-    	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "useSpecial" => USE_SPECIAL, "candidates" => PROPOSE_CANDIDATE)
+    	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "choosePlaceCube" => CHOOSE_PLACE_INFLUENCE)
     ),
 
     PLACE_INFLUENCE => array(
     	"name" => "placeInfluence",
-    	"description" => clienttranslate('${actplayer} must place ${num} cubes on ${city}'),
-    	"descriptionmyturn" => clienttranslate('You must place ${num} cubes on ${city}'),
+    	"description" => "",
+    	"type" => "game",
+    	"action" => "stPlaceInfluence",
+    	"transitions" => array( "assassinate" => ASSASSINATE, "candidate" => ASSIGN_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
+    ),
+
+    CHOOSE_PLACE_INFLUENCE => array(
+    	"name" => "choosePlaceInfluence",
+    	"description" => clienttranslate('${actplayer} must choose a city to add an Influence cube'),
+    	"descriptionmyturn" => clienttranslate('You must choose a city to add an Influence cube'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "placeCubes" ),
     	"transitions" => array( "assassinate" => ASSASSINATE, "candidate" => ASSIGN_CANDIDATE, "nextPlayer" => NEXT_PLAYER )

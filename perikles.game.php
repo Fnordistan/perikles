@@ -430,6 +430,20 @@ class Perikles extends Table
     }
 
     /**
+     * Have all players taken all the Influence tiles for the Take Influence phase?
+     */
+    function allInfluenceTilesTaken() {
+        $players = self::loadPlayersBasicInfos();
+        $cardlim = count($players) == 5 ? 4 : 5;
+        foreach($players as $player_id => $player) {
+            if ($this->influence_tiles->getCardsInLocation($player_id) != $cardlim) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Return {name,shard,desc} array of strings
      */
     function influenceTileDescriptors($tile) {
@@ -452,6 +466,32 @@ class Perikles extends Table
         }
         return [$name, $shards, $desc];
     }
+
+    /**
+     * Add/remove cubes to city.
+     */
+    function changeInfluenceInCity($city, $player_id, $cubes) {
+        $influence = self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
+        $influence += $cubes;
+        if ($influence < 0) {
+            throw new BgaVisibleSystemException("Cannot reduce influence below 0");
+        }
+        self::DbQuery("UPDATE player SET $city = $influence WHERE player_id=$player_id");
+        $players = self::loadPlayersBasicInfos();
+
+        $adj = $influence < 0 ? _("removes") : _("adds"); 
+        $city_name = $this->cities[$city]['name'];
+
+        self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} ${addremove} ${cubes} cubes to ${city_name}'), array(
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id],
+            'addremove' => $adj,
+            'cubes' => $cubes,
+            'city' => $city,
+            'city_name' => $city_name,
+        ));
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -486,7 +526,7 @@ class Perikles extends Table
             }
         }
         // got past checks, so it's a valid choice
-        $this->influence_tiles->moveCard($influence_id, $player_id);
+        $this->influence_tiles->insertCardOnExtremePosition($influence_id, $player_id, true);
         $players = self::loadPlayersBasicInfos();
 
         $inf_type = $descriptors[2];
@@ -508,7 +548,9 @@ class Perikles extends Table
             'slot' => $slot,
             'preserve' => 'player_id',
         ));
-        
+
+        $state = ($city_name == "any") ? "choosePlaceCube" : "placeCube";
+        $this->gamestate->nextState( $state );
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -542,23 +584,39 @@ class Perikles extends Table
 //////////// Game state actions
 ////////////
 
-    /*
-        Here, you can create methods defined as "game state actions" (see "action" property in states.inc.php).
-        The action method of state X is called everytime the current game state is set to X.
-    */
-    
-    /*
-    
-    Example for game state "MyGameState":
+    function stNextPlayer() {
+        $state = "";
+        // $currentstate = $this->gamestate->state();
 
-    function stMyGameState()
-    {
-        // Do some stuff ...
-        
-        // (very often) go to another gamestate
-        $this->gamestate->nextState( 'some_gamestate_transition' );
-    }    
-    */
+        if ($this->allInfluenceTilesTaken()) {
+            $state = "proposeCandidate";
+        } else {
+            $player_id = self::activeNextPlayer();
+            self::giveExtraTime( $player_id );
+            $state = "takeInfluence";
+        }
+        $this->gamestate->nextState($state);
+    }
+
+
+    function stPlaceInfluence() {
+        $player_id = self::getActivePlayerId();
+        // card on top should be most recently added card
+        $card = $this->influence_tiles->getCardOnTop($player_id);
+        $id = $card['id'];
+        $city = $card['type'];
+        $type = $card['type_arg'];
+        $cubes = ($type == 'influence') ? 2 : 1;
+        $this->changeInfluenceInCity($city, $player_id, $cubes);
+
+        $state = "nextPlayer";
+        if ($type == 'assassin') {
+            $state = "assassinate";
+        } else if ($type == 'candidate') {
+            $state = "candidate";
+        }
+        $this->gamestate->nextState( $state );
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie

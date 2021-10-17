@@ -843,11 +843,27 @@ function (dojo, declare) {
             console.log( 'notifications subscriptions setup' );
             
             dojo.subscribe( 'influenceCardTaken', this, "notif_influenceCardTaken" );
-            // this.notifqueue.setSynchronous( 'influenceCardTaken', 3000 );
-            // 
+            this.notifqueue.setSynchronous( 'influenceCardTaken', 1000 );
+            dojo.subscribe( 'influenceCubes', this, "notif_addInfluenceCubes");
+            this.notifqueue.setSynchronous( 'influenceCubes', 1000 );
         },  
         
         // Notification handlers
+
+
+        notif_addInfluenceCubes: function( notif ) {
+            const player_id = notif.args.player_id;
+            const cubes = parseInt(notif.args.cubes);
+            const city = notif.args.city;
+            const from_div = document.getElementById(player_id+'_player_cards');
+            const to_div = document.getElementById(city+'_cubes_'+player_id);
+            debugger;
+            for (let c = 0; c < cubes; c++) {
+                const cube = this.createInfluenceCube(player_id);
+                let cube_div = dojo.place(cube, from_div);
+                this.slide(cube_div, to_div, {"from": from_div});
+            }
+        },
         
         notif_influenceCardTaken: function( notif )
         {
@@ -872,7 +888,7 @@ function (dojo, declare) {
             // create temp new card to move to the player board
             const fromSlot = document.getElementById(from_id);
             const newcard = this.createPlayerInfluenceCard(newTile);
-            newcard_div = dojo.place(newcard, fromSlot);
+            let newcard_div = dojo.place(newcard, fromSlot);
             this.slide(newcard_div, player_cards, {"from": fromSlot});
         },
 
