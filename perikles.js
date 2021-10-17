@@ -609,6 +609,9 @@ function (dojo, declare) {
                     if (args.player_name) {
                         args.player_name = this.spanPlayerName(args.player_id);
                     }
+                    if (args.actplayer) {
+                        args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF; '+'background-color:#ccc; text-shadow: -1px -1px #000;');
+                    }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.spanYou());
                     }
@@ -649,9 +652,9 @@ function (dojo, declare) {
         colorBg: function(player) {
             let color_bg = "";
             if (player.color_back) {
-                color_bg = "background-color:#"+player.color_back;
+                color_bg = "background-color:#"+player.color_back+";";
             } else if (player.color == "FFF") {
-                color_bg = "text-shadow: -1px -1px #000";
+                color_bg = "background-color:#ccc; text-shadow: -1px -1px #000;";
             }
             return color_bg;
         },
@@ -886,7 +889,6 @@ function (dojo, declare) {
             }
             return null;
         },
-
 
    });
 });
