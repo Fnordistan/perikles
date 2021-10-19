@@ -111,6 +111,7 @@ function (dojo, declare) {
             this.setupStatues(gamedatas.statues);
             this.setupMilitary(gamedatas.military);
             this.setupDefeats(gamedatas.defeats);
+            this.setupCities();
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -357,7 +358,7 @@ function (dojo, declare) {
                 for (const [city, cubes] of Object.entries(influencecubes[player_id])) {
                     const num = parseInt(cubes);
                     for (let n = 0; n < num; n++) {
-                        const cube = this.createInfluenceCube(player_id);
+                        const cube = this.createInfluenceCube(player_id, city, n);
                         const column = document.getElementById(city+"_cubes_"+player_id);
                         dojo.place(cube, column);
                     }
@@ -393,7 +394,7 @@ function (dojo, declare) {
         setupCandidates: function(candidates) {
             for (const [cand, player_id] of Object.entries(candidates)) {
                 const candidate_space = document.getElementById(cand);
-                const cube = this.createInfluenceCube(player_id);
+                const cube = this.createInfluenceCube(player_id, city, "cand");
                 dojo.place(cube, candidate_space);
             }
         },
@@ -450,13 +451,16 @@ function (dojo, declare) {
 
         /**
          * Create a cube div in player's color.
-         * @param {int} player_id 
+         * @param {int} player_id
+         * @param {string} city
+         * @param {string} tag
          * @returns colored influence cube
          */
-        createInfluenceCube: function(player_id) {
+        createInfluenceCube: function(player_id, city, tag) {
             const player = this.gamedatas.players[player_id];
             const color = player.color;
-            const cube = this.format_block('jstpl_cube', {color: color});
+            const id = player_id+"_"+city+"_"+tag;
+            const cube = this.format_block('jstpl_cube', {id: id, color: color});
             return cube;
         },
 
@@ -598,6 +602,16 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * Add event listeners to city divs.
+         */
+        setupCities: function() {
+            for (city of CITIES) {
+                const city_div = document.getElementById(city);
+
+            }
+        },
+
         ///////////////////////////////////////////////////
         //// Display methods
 
@@ -669,22 +683,12 @@ function (dojo, declare) {
         {
             console.log( 'Entering state: '+stateName );
             
-            switch( stateName )
-            {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
+            switch( stateName ) {
+                case 'choosePlaceInfluence':
+                    debugger;
                 break;
-           */
-           
-           
-            case 'dummmy':
-                break;
+                case 'dummmy':
+                    break;
             }
         },
 
@@ -749,7 +753,7 @@ function (dojo, declare) {
          * @param {DOMElement} mobile 
          * @param {string} targetId 
          * @param {Object} options 
-         * @returns 
+         * @returns a Promise
          */
         slide: function(mobile, targetId, options = {}) {
             let config = Object.assign(
@@ -808,6 +812,107 @@ function (dojo, declare) {
             document.getElementById(parent_id).appendChild(mobile);
           },
 
+        /*
+         * This method is similar to slideToObject but works on object which do not use inline style positioning. It also attaches object to
+         * new parent immediately, so parent is correct during animation
+         */
+        slideToObjectRelative: function (token, finalPlace, duration, delay, onEnd, relation) {
+            token = $(token);
+            this.delayedExec(() => {
+                token.style.transition = "none";
+                token.classList.add('moving_token');
+                var box = this.attachToNewParentNoDestroy(token, finalPlace, relation, 'static');
+                token.offsetHeight; // re-flow
+                token.style.transition = "all " + duration + "ms ease-in-out";
+                token.style.left = box.l + "px";
+                token.style.top = box.t + "px";
+            }, () => {
+                token.style.removeProperty("transition");
+                this.stripPosition(token);
+                token.classList.remove('moving_token');
+                if (onEnd) onEnd(token);
+            }, duration, delay);
+        },
+
+        /**
+         * This method will attach mobile to a new_parent without destroying, unlike original attachToNewParent which destroys mobile and
+         * all its connectors (onClick, etc)
+         */
+         attachToNewParentNoDestroy: function (mobile_in, new_parent_in, relation, place_position) {
+            //console.log("attaching ",mobile,new_parent,relation);
+            const mobile = $(mobile_in);
+            const new_parent = $(new_parent_in);
+
+            var src = dojo.position(mobile);
+            if (place_position) {
+                mobile.style.position = place_position;
+            }
+            dojo.place(mobile, new_parent, relation);
+            mobile.offsetTop;//force re-flow
+            var tgt = dojo.position(mobile);
+            var box = dojo.marginBox(mobile);
+            var cbox = dojo.contentBox(mobile);
+            var left = box.l + src.x - tgt.x;
+            var top = box.t + src.y - tgt.y;
+
+            mobile.style.position = "absolute";
+            mobile.style.left = left + "px";
+            mobile.style.top = top + "px";
+            box.l += box.w - cbox.w;
+            box.t += box.h - cbox.h;
+            mobile.offsetTop;//force re-flow
+            return box;
+        },
+
+        /**
+         * This method will remove all inline style added to element that affect positioning
+         */
+         stripPosition: function (token) {
+            // console.log(token + " STRIPPING");
+            // remove any added positioning style
+            token = $(token);
+
+            token.style.removeProperty("display");
+            token.style.removeProperty("top");
+            token.style.removeProperty("bottom");
+            token.style.removeProperty("left");
+            token.style.removeProperty("right");
+            token.style.removeProperty("position");
+            // dojo.style(token, "transform", null);
+        },
+
+        /**
+         * 
+         * @param {*} onStart 
+         * @param {*} onEnd 
+         * @param {*} duration 
+         * @param {*} delay 
+         */
+        delayedExec: function (onStart, onEnd, duration, delay) {
+            if (typeof duration == "undefined") {
+                duration = this.defaultAnimationDuration;
+            }
+            if (typeof delay == "undefined") {
+                delay = 0;
+            }
+            if (this.instantaneousMode) {
+                delay = Math.min(1, delay);
+                duration = Math.min(1, duration);
+            }
+            if (delay) {
+                setTimeout(function () {
+                    onStart();
+                    if (onEnd) {
+                        setTimeout(onEnd, duration);
+                    }
+                }, delay);
+            } else {
+                onStart();
+                if (onEnd) {
+                    setTimeout(onEnd, duration);
+                }
+            }
+        },
 
         ///////////////////////////////////////////////////
         //// Player's action
@@ -825,7 +930,20 @@ function (dojo, declare) {
                 }, this, function( result ) {  }, function( is_error) { } );
             }
         },
-        
+
+        /**
+         * Action to place an Influence cube on a city.
+         * @param {string} city 
+         */
+        placeInfluenceCube: function(city) {
+            if (this.checkAction("placeCube", true)) {
+                this.ajaxcall( "/perikles/perikles/placeCube.html", { 
+                    city: city,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
@@ -857,11 +975,13 @@ function (dojo, declare) {
             const city = notif.args.city;
             const from_div = document.getElementById(player_id+'_player_cards');
             const to_div = document.getElementById(city+'_cubes_'+player_id);
-            debugger;
+            const player_cubes_div = document.getElementById(city+"_cubes_"+player_id);
+            const num = player_cubes_div.childElementCount;
             for (let c = 0; c < cubes; c++) {
-                const cube = this.createInfluenceCube(player_id);
-                let cube_div = dojo.place(cube, from_div);
-                this.slide(cube_div, to_div, {"from": from_div});
+                const i = num+c+1;
+                const cube = this.createInfluenceCube(player_id, city, i);
+                const cube_div = dojo.place(cube, from_div);
+                this.slideToObjectRelative(cube_div.id, player_cubes_div, 1000, 1000, null, "last")
             }
         },
         

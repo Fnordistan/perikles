@@ -549,10 +549,13 @@ class Perikles extends Table
             'preserve' => 'player_id',
         ));
 
-        $state = ($city_name == "any") ? "choosePlaceCube" : "placeCube";
+        $state = ($city == "any") ? "choosePlaceCube" : "placeCube";
         $this->gamestate->nextState( $state );
     }
 
+    function placeCube($city) {
+
+    }
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////

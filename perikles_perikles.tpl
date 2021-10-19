@@ -65,7 +65,7 @@ const jstpl_defeat = '<div id="${city}_defeat_${num}" class="per_defeat_counter"
 
 const jstpl_leader = '<div id="${city}_${type}_${num}" class="per_counter per_statue per_${type}_${color}"></div>';
 
-const jstpl_cube = '<div class="per_cube" style="background-color: #${color};"></div>';
+const jstpl_cube = '<div id="${id}"" class="per_cube" style="background-color: #${color};"></div>';
 
 const jstpl_location_tile = '<div id="${id}_tile" class="per_location_tile" style="background-position: ${x}px ${y}px;"></div>';
 

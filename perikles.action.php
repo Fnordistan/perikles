@@ -41,7 +41,9 @@
   	
   	// TODO: defines your action entry points there
 
-
+    /**
+     * When player takes an Influence tile.
+     */
     public function takeinfluence()
     {
         self::setAjaxMode();     
@@ -51,7 +53,17 @@
         $this->game->takeInfluence($influence_id);
         self::ajaxResponse( );
     }
-    
-  }
-  
 
+    /**
+     * When player clicks a city to add a cube to.
+     */
+    public function placeCube() {
+      self::setAjaxMode();     
+
+      $city = self::getArg( "city", AT_alphanum, true );
+
+      $this->game->placeCube($city);
+      self::ajaxResponse( );
+    }
+  
+  }
