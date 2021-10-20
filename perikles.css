@@ -264,6 +264,12 @@
     margin: 2px 0;
 }
 
+.per_cubes_hover {
+    border-radius: 4px;
+    outline: 2px dotted red;
+    box-shadow: rgb(38 57 77) 0px 4px 8px 8px;
+}
+
 .per_statue_zone {
     position: absolute;
     width: 40px;

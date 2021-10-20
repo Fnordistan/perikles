@@ -43,7 +43,8 @@ const PLAYER_COLORS = {
     "37BC4C" : "green",
     "39364F" : "black",
     "E5A137" : "orange",
-    "ffffff" : "white"
+    "FFF" : "white",
+
 }
 
 // row,column
@@ -326,30 +327,6 @@ function (dojo, declare) {
         },
 
         /**
-         * When Influence card is taken.
-         * @param {string} id 
-         */
-        onInfluenceCardSelected: function(id) {
-            if (this.checkAction("takeInfluence", true)) {
-                this.takeInfluenceTile(id);
-            }
-       },
-
-       /**
-        * 
-        * @param {string} id 
-        * @param {bool} hover 
-        */
-        onInfluenceCardHover: function(id, hover) {
-            if (this.checkAction("takeInfluence", true)) {
-                const card = document.getElementById(id);
-                card.style['transform'] = hover ? 'scale(1.1)' : '';
-                card.style['transition'] = 'transform 0.5s';
-                card.style['box-shadow'] = hover ? 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px' : '';
-            }
-        },
-
-        /**
          * Place influence cubes on cities.
          * @param {Object} influencecubes 
          */
@@ -443,9 +420,7 @@ function (dojo, declare) {
          * @returns statue or leader div
          */
         createLeaderCounter: function(player_id, city, type, n) {
-            const player = this.gamedatas.players[player_id];
-            const color = player.color;
-            const counter = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: PLAYER_COLORS[color]});
+            const counter = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: this.playerColor(player_id)});
             return counter;
         },
 
@@ -608,9 +583,18 @@ function (dojo, declare) {
         setupCities: function() {
             for (city of CITIES) {
                 const city_div = document.getElementById(city);
-
+                city_div.addEventListener('mouseenter', (event) => {
+                    this.onCityHover(event);
+                });
+                city_div.addEventListener('mouseleave', (event) => {
+                    this.onCityExit(event);
+                });
+                city_div.addEventListener('click', (event) => {
+                    this.onCityClick(event);
+                });
             }
         },
+
 
         ///////////////////////////////////////////////////
         //// Display methods
@@ -673,6 +657,78 @@ function (dojo, declare) {
             return color_bg;
         },
 
+        /**
+         * Customized player colors per player_id
+         * @param {string} player_id 
+         */
+        playerColor: function(player_id) {
+            const player = this.gamedatas.players[player_id];
+            const color = player.color;
+            return PLAYER_COLORS[color];
+        },
+
+        ///////////////////////////////////////////////////
+        //// Event listeners
+
+        onCityHover: function(event) {
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("placeAnyCube", true)) {
+                    const city = event.target.id;
+                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    mycubes.classList.add("per_cubes_hover");
+                    // const bgcolor = this.playerColor(this.player_id);
+                    // mycubes.style['background-color'] = bgcolor;
+                }
+            }
+        },
+
+        onCityExit: function(event) {
+            // debugger;
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("placeAnyCube", true)) {
+                    const city = event.target.id;
+                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    mycubes.classList.remove("per_cubes_hover");
+                    // mycubes.style['backround-color'] = null;
+                }
+            }
+        },
+
+        onCityClick: function(event) {
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("placeAnyCube", true)) {
+                    const city = event.target.id;
+                    this.placeInfluenceCube(city);
+                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    mycubes.classList.remove("per_cubes_hover");
+                }
+            }
+        },
+
+        /**
+         * When Influence card is taken.
+         * @param {string} id 
+         */
+         onInfluenceCardSelected: function(id) {
+            if (this.checkAction("takeInfluence", true)) {
+                this.takeInfluenceTile(id);
+            }
+       },
+
+       /**
+        * 
+        * @param {string} id 
+        * @param {bool} hover 
+        */
+        onInfluenceCardHover: function(id, hover) {
+            if (this.checkAction("takeInfluence", true)) {
+                const card = document.getElementById(id);
+                card.style['transform'] = hover ? 'scale(1.1)' : '';
+                card.style['transition'] = 'transform 0.5s';
+                card.style['box-shadow'] = hover ? 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px' : '';
+            }
+        },
+
         ///////////////////////////////////////////////////
         //// Game & client states
         
@@ -684,9 +740,8 @@ function (dojo, declare) {
             console.log( 'Entering state: '+stateName );
             
             switch( stateName ) {
-                case 'choosePlaceInfluence':
-                    debugger;
-                break;
+                // case 'choosePlaceInfluence':
+                // break;
                 case 'dummmy':
                     break;
             }
@@ -936,8 +991,8 @@ function (dojo, declare) {
          * @param {string} city 
          */
         placeInfluenceCube: function(city) {
-            if (this.checkAction("placeCube", true)) {
-                this.ajaxcall( "/perikles/perikles/placeCube.html", { 
+            if (this.checkAction("placeAnyCube", true)) {
+                this.ajaxcall( "/perikles/perikles/placecube.html", { 
                     city: city,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );

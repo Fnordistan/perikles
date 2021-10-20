@@ -498,7 +498,7 @@ class Perikles extends Table
 //////////// 
 
     /**
-     * 
+     * Player chose an Influence tile
      */
     function takeInfluence($influence_id) {
         self::checkAction( 'takeInfluence' );
@@ -553,9 +553,16 @@ class Perikles extends Table
         $this->gamestate->nextState( $state );
     }
 
-    function placeCube($city) {
-
+    /**
+     * Player chose a city with an Any card.
+     */
+    function placeAnyCube($city) {
+        self::checkAction( 'placeAnyCube' );
+        $player_id = self::getActivePlayerId();
+        $this->changeInfluenceInCity($city, $player_id, 1);
+        $this->gamestate->nextState();
     }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -600,7 +607,6 @@ class Perikles extends Table
         }
         $this->gamestate->nextState($state);
     }
-
 
     function stPlaceInfluence() {
         $player_id = self::getActivePlayerId();

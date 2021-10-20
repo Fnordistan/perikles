@@ -65,8 +65,8 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must choose a city to add an Influence cube'),
     	"descriptionmyturn" => clienttranslate('You must choose a city to add an Influence cube'),
     	"type" => "activeplayer",
-    	"possibleactions" => array( "placeCube" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER )
+    	"possibleactions" => array( "placeAnyCube" ),
+    	"transitions" => array( "" => NEXT_PLAYER )
     ),
 
     ASSASSINATE => array(

@@ -57,12 +57,12 @@
     /**
      * When player clicks a city to add a cube to.
      */
-    public function placeCube() {
+    public function placecube() {
       self::setAjaxMode();     
 
       $city = self::getArg( "city", AT_alphanum, true );
 
-      $this->game->placeCube($city);
+      $this->game->placeAnyCube($city);
       self::ajaxResponse( );
     }
   
