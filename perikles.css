@@ -76,6 +76,22 @@
     height: 215px;
 }
 
+.per_city_active {
+    animation: per_border_pulse 2s infinite;
+}
+
+@keyframes per_border_pulse {
+    0% {
+        border: white 1px dotted;
+        border-radius: 15px;
+    }
+    100% {
+        border: #888c8d 4px dotted;
+        border-radius: 15px;
+    }
+}
+ 
+
 .per_special_tile {
     background-image: url(img/special_tiles.jpg);
     background-size: calc(var(--scale) * var(--special_sprites_w)) calc(var(--scale) * var(--special_sprites_h));
@@ -267,7 +283,7 @@
 .per_cubes_hover {
     border-radius: 4px;
     outline: 2px dotted red;
-    box-shadow: rgb(38 57 77) 0px 4px 8px 8px;
+    box-shadow: darkgray 0px 4px 8px 8px;
 }
 
 .per_statue_zone {

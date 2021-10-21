@@ -563,6 +563,14 @@ class Perikles extends Table
         $this->gamestate->nextState();
     }
 
+    /**
+     * Player is selecting a candidate for a city.
+     */
+    function chooseCandidate($city, $player_id) {
+        self::checkAction('chooseCandidate');
+
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////

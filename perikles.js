@@ -676,8 +676,7 @@ function (dojo, declare) {
                     const city = event.target.id;
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
                     mycubes.classList.add("per_cubes_hover");
-                    // const bgcolor = this.playerColor(this.player_id);
-                    // mycubes.style['background-color'] = bgcolor;
+                } else if (this.checkAction("chooseCandidate", true)) {
                 }
             }
         },
@@ -689,7 +688,7 @@ function (dojo, declare) {
                     const city = event.target.id;
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
                     mycubes.classList.remove("per_cubes_hover");
-                    // mycubes.style['backround-color'] = null;
+                } else if (this.checkAction("chooseCandidate", true)) {
                 }
             }
         },
@@ -701,6 +700,7 @@ function (dojo, declare) {
                     this.placeInfluenceCube(city);
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
                     mycubes.classList.remove("per_cubes_hover");
+                } else if (this.checkAction("chooseCandidate", true)) {
                 }
             }
         },
@@ -740,8 +740,14 @@ function (dojo, declare) {
             console.log( 'Entering state: '+stateName );
             
             switch( stateName ) {
-                // case 'choosePlaceInfluence':
-                // break;
+                case 'choosePlaceInfluence':
+                case 'proposeCandidates':
+                    if( this.isCurrentPlayerActive() ) {
+                        for (let city_div of document.getElementsByClassName("per_city")) {
+                            city_div.classList.add("per_city_active");
+                        }
+                    }
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -757,19 +763,15 @@ function (dojo, declare) {
             switch( stateName )
             {
             
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-                
+                case 'choosePlaceInfluence':
+                case 'proposeCandidates':
+                    for (let city_div of document.getElementsByClassName("per_city")) {
+                        city_div.classList.remove("per_city_active");
+                    }
                 break;
-           */
            
-           
-            case 'dummmy':
-                break;
+                case 'dummmy':
+                    break;
             }               
         }, 
 

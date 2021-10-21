@@ -57,7 +57,7 @@ $machinestates = array(
     	"description" => "",
     	"type" => "game",
     	"action" => "stPlaceInfluence",
-    	"transitions" => array( "assassinate" => ASSASSINATE, "candidate" => ASSIGN_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
+    	"transitions" => array( "assassinate" => ASSASSINATE, "candidate" => PROPOSE_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
     ),
 
     CHOOSE_PLACE_INFLUENCE => array(
@@ -67,6 +67,15 @@ $machinestates = array(
     	"type" => "activeplayer",
     	"possibleactions" => array( "placeAnyCube" ),
     	"transitions" => array( "" => NEXT_PLAYER )
+    ),
+
+    PROPOSE_CANDIDATE => array(
+    	"name" => "proposeCandidates",
+    	"description" => clienttranslate('${actplayer} must propose a candidate'),
+    	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "chooseCandidate" ),
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "elections" => ELECTIONS )
     ),
 
     ASSASSINATE => array(
@@ -85,15 +94,6 @@ $machinestates = array(
     	"type" => "activeplayer",
     	"possibleactions" => array( "useSpecial" ),
     	"transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "nextPlayer" => NEXT_PLAYER )
-    ),
-   
-    PROPOSE_CANDIDATE => array(
-    	"name" => "proposeCandidates",
-    	"description" => clienttranslate('${actplayer} must propose a candidate'),
-    	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
-    	"type" => "activeplayer",
-    	"possibleactions" => array( "chooseCandidate" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "elections" => ELECTIONS )
     ),
 
     ELECTIONS => array(
