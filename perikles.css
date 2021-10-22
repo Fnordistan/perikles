@@ -77,7 +77,7 @@
 }
 
 .per_city_active {
-    animation: per_border_pulse 2s infinite;
+    animation: per_border_pulse 5s infinite;
 }
 
 @keyframes per_border_pulse {
@@ -85,12 +85,31 @@
         border: white 1px dotted;
         border-radius: 15px;
     }
-    100% {
+    20% {
+        border: white 2px dotted;
+        border-radius: 15px;
+    }
+    30% {
+        border: lightgray 3px dotted;
+        border-radius: 15px;
+    }
+    50% {
         border: #888c8d 4px dotted;
         border-radius: 15px;
     }
+    70% {
+        border: lightgray 3px dotted;
+        border-radius: 15px;
+    }
+    90% {
+        border: white 2px dotted;
+        border-radius: 15px;
+    }
+    100% {
+        border: white 1px dotted;
+        border-radius: 15px;
+    }
 }
- 
 
 .per_special_tile {
     background-image: url(img/special_tiles.jpg);
@@ -271,6 +290,21 @@
     position: absolute;
     width: 14px;
     height: 14px;
+}
+
+.per_candidate_space_active {
+    animation: per_candidate_space_pulse 5s infinite;
+}
+
+@keyframes per_candidate_space_pulse {
+    0% {
+        border: white solid 2px;
+        border-radius: 4px;
+    }
+    100% {
+        border: red solid 6px;
+        border-radius: 4px;
+    }
 }
 
 .per_cube {

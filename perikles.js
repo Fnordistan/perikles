@@ -595,6 +595,24 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * For a city, returns the div for candidate a if it's empty, else b if it's empty, else null
+         * @param {string} city 
+         * @returns a DOM Element or else null
+         */
+        openCandidateSpace: function(city) {
+            let candidate_space = null;
+            const citya = document.getElementById(city+"_a");
+            if (!citya.hasChildNodes()) {
+                candidate_space = citya;
+            } else {
+                const cityb = document.getElementById(city+"_b");
+                if (!cityb.hasChildNodes()) {
+                    candidate_space = cityb; 
+                }
+            }
+            return candidate_space;
+        },
 
         ///////////////////////////////////////////////////
         //// Display methods
@@ -677,6 +695,7 @@ function (dojo, declare) {
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
                     mycubes.classList.add("per_cubes_hover");
                 } else if (this.checkAction("chooseCandidate", true)) {
+                    console.log(event.currentTarget.id);
                 }
             }
         },
@@ -741,13 +760,21 @@ function (dojo, declare) {
             
             switch( stateName ) {
                 case 'choosePlaceInfluence':
-                case 'proposeCandidates':
                     if( this.isCurrentPlayerActive() ) {
                         for (let city_div of document.getElementsByClassName("per_city")) {
                             city_div.classList.add("per_city_active");
                         }
                     }
                     break;
+                case 'proposeCandidates':
+                    if (this.isCurrentPlayerActive()) {
+                        for (city of CITIES) {
+                            const candidate_space = this.openCandidateSpace(city);
+                            if (candidate_space) {
+                                candidate_space.classList.add("per_candidate_space_active");
+                            }
+                        }
+                    }
                 case 'dummmy':
                     break;
             }
@@ -764,12 +791,12 @@ function (dojo, declare) {
             {
             
                 case 'choosePlaceInfluence':
-                case 'proposeCandidates':
                     for (let city_div of document.getElementsByClassName("per_city")) {
                         city_div.classList.remove("per_city_active");
                     }
-                break;
-           
+                    break;
+                case 'proposeCandidates':
+                    break;
                 case 'dummmy':
                     break;
             }               
