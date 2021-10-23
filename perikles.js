@@ -308,7 +308,8 @@ function (dojo, declare) {
                 "megara": _("Megara"),
                 "sparta": _("Sparta"),
                 "thebes": _("Thebes"),
-                "any": _("Any City")
+                "any": _("Any City"),
+                "persia": _("Persia"),
             };
             return citynames[city];
         },
@@ -472,11 +473,11 @@ function (dojo, declare) {
             const dim_s = 62;
             this.military_zones = {};
             let mz = 'persia_military';
-            this.militaryAreaEvents(mz);
+            this.decorateMilitaryStacks("persia", mz);
             this.military_zones[mz] = {'spread': false};
             for (city of CITIES) {
                 mz = city+"_military";
-                this.militaryAreaEvents(mz);
+                this.decorateMilitaryStacks(city, mz);
                 this.military_zones[mz] = {'spread': false};
             }
 
@@ -511,7 +512,7 @@ function (dojo, declare) {
         /**
          * Make military display available counters
          */
-        militaryAreaEvents: function(city_mil_id) {
+        decorateMilitaryStacks: function(city, city_mil_id) {
             const city_mil = document.getElementById(city_mil_id);
             city_mil.addEventListener('click', () => {
                 if (this.isSpread(city_mil_id)) {
@@ -520,9 +521,13 @@ function (dojo, declare) {
                     this.spreadMilitaryUnits(city_mil);
                 }
             });
-            city_mil.addEventListener('mouseenter', () => {
-                this.spreadMilitaryUnits(city_mil);
-            });
+
+            let tt = _("${city} military: click to inspect stack");
+            tt = tt.replace('${city}', this.getCityNameTr(city) );
+            this.addTooltip(city_mil_id, tt, '');
+            // city_mil.addEventListener('mouseenter', () => {
+            //     this.spreadMilitaryUnits(city_mil);
+            // });
             city_mil.addEventListener('mouseleave', () => {
                 this.unspread(city_mil);
             });
