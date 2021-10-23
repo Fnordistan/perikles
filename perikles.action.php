@@ -66,4 +66,14 @@
       self::ajaxResponse( );
     }
   
+    public function selectcandidate() {
+      self::setAjaxMode();     
+
+      $city = self::getArg( "city", AT_alphanum, true );
+      $player_id = self::getArg( "player", AT_alphanum, true );
+
+      $this->game->chooseCandidate($city, $player_id);
+      self::ajaxResponse( );
+    }
+
   }

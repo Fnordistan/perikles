@@ -321,7 +321,7 @@ function (dojo, declare) {
             card.addEventListener('mouseenter', () => {
                 this.onInfluenceCardHover(id, true);
             });
-            card.addEventListener('mouseout', () => {
+            card.addEventListener('mouseleave', () => {
                 this.onInfluenceCardHover(id, false);
             });
         },
@@ -339,9 +339,28 @@ function (dojo, declare) {
                         const column = document.getElementById(city+"_cubes_"+player_id);
                         dojo.place(cube, column);
                     }
+                    this.decorateInfluenceCubes(city, player_id);
                 }
-
             }
+        },
+
+        /**
+         * Add event listeners to the cubes areas for each player.
+         * @param {string} citu
+         * @param {string} player_id
+         */
+        decorateInfluenceCubes: function(city, player_id) {
+            const id = city+"_cubes_"+player_id;
+            const cubes_div = document.getElementById(id);
+            cubes_div.addEventListener('mouseenter', (event) => {
+                this.onInfluenceCubesHover(event, true);
+            });
+            cubes_div.addEventListener('mouseleave', (event) => {
+                this.onInfluenceCubesHover(event, false);
+            });
+            cubes_div.addEventListener('click', (event) => {
+                this.onInfluenceCubesClick(event, city, player_id);
+            });
         },
 
         /**
@@ -371,6 +390,7 @@ function (dojo, declare) {
         setupCandidates: function(candidates) {
             for (const [cand, player_id] of Object.entries(candidates)) {
                 const candidate_space = document.getElementById(cand);
+                const city = cand.substring(0, cand.indexOf("_"));
                 const cube = this.createInfluenceCube(player_id, city, "cand");
                 dojo.place(cube, candidate_space);
             }
@@ -595,25 +615,6 @@ function (dojo, declare) {
             }
         },
 
-        /**
-         * For a city, returns the div for candidate a if it's empty, else b if it's empty, else null
-         * @param {string} city 
-         * @returns a DOM Element or else null
-         */
-        openCandidateSpace: function(city) {
-            let candidate_space = null;
-            const citya = document.getElementById(city+"_a");
-            if (!citya.hasChildNodes()) {
-                candidate_space = citya;
-            } else {
-                const cityb = document.getElementById(city+"_b");
-                if (!cityb.hasChildNodes()) {
-                    candidate_space = cityb; 
-                }
-            }
-            return candidate_space;
-        },
-
         ///////////////////////////////////////////////////
         //// Display methods
 
@@ -627,6 +628,9 @@ function (dojo, declare) {
                     }
                     if (args.actplayer) {
                         args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF; '+'background-color:#ccc; text-shadow: -1px -1px #000;');
+                    }
+                    if (args.candidate_name) {
+                        args.candidate_name  = this.spanPlayerName(args.candidate_id);
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.spanYou());
@@ -685,153 +689,6 @@ function (dojo, declare) {
             return PLAYER_COLORS[color];
         },
 
-        ///////////////////////////////////////////////////
-        //// Event listeners
-
-        onCityHover: function(event) {
-            if( this.isCurrentPlayerActive() ) {
-                if (this.checkAction("placeAnyCube", true)) {
-                    const city = event.target.id;
-                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.add("per_cubes_hover");
-                } else if (this.checkAction("chooseCandidate", true)) {
-                    console.log(event.currentTarget.id);
-                }
-            }
-        },
-
-        onCityExit: function(event) {
-            // debugger;
-            if( this.isCurrentPlayerActive() ) {
-                if (this.checkAction("placeAnyCube", true)) {
-                    const city = event.target.id;
-                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.remove("per_cubes_hover");
-                } else if (this.checkAction("chooseCandidate", true)) {
-                }
-            }
-        },
-
-        onCityClick: function(event) {
-            if( this.isCurrentPlayerActive() ) {
-                if (this.checkAction("placeAnyCube", true)) {
-                    const city = event.target.id;
-                    this.placeInfluenceCube(city);
-                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.remove("per_cubes_hover");
-                } else if (this.checkAction("chooseCandidate", true)) {
-                }
-            }
-        },
-
-        /**
-         * When Influence card is taken.
-         * @param {string} id 
-         */
-         onInfluenceCardSelected: function(id) {
-            if (this.checkAction("takeInfluence", true)) {
-                this.takeInfluenceTile(id);
-            }
-       },
-
-       /**
-        * 
-        * @param {string} id 
-        * @param {bool} hover 
-        */
-        onInfluenceCardHover: function(id, hover) {
-            if (this.checkAction("takeInfluence", true)) {
-                const card = document.getElementById(id);
-                card.style['transform'] = hover ? 'scale(1.1)' : '';
-                card.style['transition'] = 'transform 0.5s';
-                card.style['box-shadow'] = hover ? 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px' : '';
-            }
-        },
-
-        ///////////////////////////////////////////////////
-        //// Game & client states
-        
-        // onEnteringState: this method is called each time we are entering into a new game state.
-        //                  You can use this method to perform some user interface changes at this moment.
-        //
-        onEnteringState: function( stateName, args )
-        {
-            console.log( 'Entering state: '+stateName );
-            
-            switch( stateName ) {
-                case 'choosePlaceInfluence':
-                    if( this.isCurrentPlayerActive() ) {
-                        for (let city_div of document.getElementsByClassName("per_city")) {
-                            city_div.classList.add("per_city_active");
-                        }
-                    }
-                    break;
-                case 'proposeCandidates':
-                    if (this.isCurrentPlayerActive()) {
-                        for (city of CITIES) {
-                            const candidate_space = this.openCandidateSpace(city);
-                            if (candidate_space) {
-                                candidate_space.classList.add("per_candidate_space_active");
-                            }
-                        }
-                    }
-                case 'dummmy':
-                    break;
-            }
-        },
-
-        // onLeavingState: this method is called each time we are leaving a game state.
-        //                 You can use this method to perform some user interface changes at this moment.
-        //
-        onLeavingState: function( stateName )
-        {
-            console.log( 'Leaving state: '+stateName );
-            
-            switch( stateName )
-            {
-            
-                case 'choosePlaceInfluence':
-                    for (let city_div of document.getElementsByClassName("per_city")) {
-                        city_div.classList.remove("per_city_active");
-                    }
-                    break;
-                case 'proposeCandidates':
-                    break;
-                case 'dummmy':
-                    break;
-            }               
-        }, 
-
-        // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-        //                        action status bar (ie: the HTML links in the status bar).
-        //        
-        onUpdateActionButtons: function( stateName, args )
-        {
-            console.log( 'onUpdateActionButtons: '+stateName );
-                      
-            if( this.isCurrentPlayerActive() )
-            {            
-                switch( stateName )
-                {
-/*               
-                 Example:
- 
-                 case 'myGameState':
-                    
-                    // Add 3 action buttons in the action status bar:
-                    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
-                    break;
-*/
-                }
-            }
-        },        
-
-        ///////////////////////////////////////////////////
-        //// Utility methods
-
         /**
          * Tisaac's slide method.
          * @param {DOMElement} mobile 
@@ -839,7 +696,7 @@ function (dojo, declare) {
          * @param {Object} options 
          * @returns a Promise
          */
-        slide: function(mobile, targetId, options = {}) {
+         slide: function(mobile, targetId, options = {}) {
             let config = Object.assign(
               {
                 duration: 800,
@@ -997,6 +854,209 @@ function (dojo, declare) {
                 }
             }
         },
+        
+        ///////////////////////////////////////////////////
+        //// Event listeners
+
+        onCityHover: function(event) {
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("placeAnyCube", true)) {
+                    const city = event.target.id;
+                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    mycubes.classList.add("per_cubes_hover");
+                } else if (this.checkAction("chooseCandidate", true)) {
+                }
+            }
+        },
+
+        onCityExit: function(event) {
+            // debugger;
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("placeAnyCube", true)) {
+                    const city = event.target.id;
+                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    mycubes.classList.remove("per_cubes_hover");
+                }
+            }
+        },
+
+        onCityClick: function(event) {
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("placeAnyCube", true)) {
+                    const city = event.target.id;
+                    this.placeInfluenceCube(city);
+                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    mycubes.classList.remove("per_cubes_hover");
+                }
+            }
+        },
+
+        onInfluenceCubesHover: function(event, enter) {
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("chooseCandidate", true)) {
+                    const cube_div = event.target;
+                    if (enter) {
+                        if (cube_div.hasChildNodes()) {
+                            cube_div.classList.add("per_cubes_hover");
+                        }
+                    } else {
+                        cube_div.classList.remove("per_cubes_hover");
+                    }
+                }
+            }
+        },
+
+        onInfluenceCubesClick: function(event, city, player_id) {
+            if( this.isCurrentPlayerActive() ) {
+                if (this.checkAction("chooseCandidate", true)) {
+                    const cube_div = event.target;
+                    if (cube_div.hasChildNodes()) {
+                        console.log(player_id+" adds canddiate in " + city);
+                        this.proposeCandidate(city, player_id);
+                    }
+                }
+            }
+        },
+
+        /**
+         * When Influence card is taken.
+         * @param {string} id 
+         */
+         onInfluenceCardSelected: function(id) {
+            if (this.checkAction("takeInfluence", true)) {
+                this.takeInfluenceTile(id);
+            }
+       },
+
+       /**
+        * 
+        * @param {string} id 
+        * @param {bool} hover 
+        */
+        onInfluenceCardHover: function(id, hover) {
+            if (this.checkAction("takeInfluence", true)) {
+                const card = document.getElementById(id);
+                card.style['transform'] = hover ? 'scale(1.1)' : '';
+                card.style['transition'] = 'transform 0.5s';
+                card.style['box-shadow'] = hover ? 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px' : '';
+            }
+        },
+
+        ///////////////////////////////////////////////////
+        //// Game & client states
+        
+        // onEnteringState: this method is called each time we are entering into a new game state.
+        //                  You can use this method to perform some user interface changes at this moment.
+        //
+        onEnteringState: function( stateName, args )
+        {
+            console.log( 'Entering state: '+stateName );
+            
+            switch( stateName ) {
+                case 'choosePlaceInfluence':
+                    if( this.isCurrentPlayerActive() ) {
+                        for (city of CITIES) {
+                            const city_div = document.getElementById(city);
+                            city_div.classList.add("per_city_active");
+                        }
+                    }
+                    break;
+                case 'proposeCandidates':
+                    if (this.isCurrentPlayerActive()) {
+                        for (city of CITIES) {
+                            const candidate_space = this.openCandidateSpace(city);
+                            if (candidate_space) {
+                                const city_div = document.getElementById(city);
+                                city_div.classList.add("per_city_active");
+                                candidate_space.classList.add("per_candidate_space_active");
+                            }
+                        }
+                    }
+                case 'dummmy':
+                    break;
+            }
+        },
+
+        // onLeavingState: this method is called each time we are leaving a game state.
+        //                 You can use this method to perform some user interface changes at this moment.
+        //
+        onLeavingState: function( stateName )
+        {
+            console.log( 'Leaving state: '+stateName );
+            
+            switch( stateName )
+            {
+            
+                case 'choosePlaceInfluence':
+                    this.stripClassName("per_city_active");
+                    break;
+                case 'proposeCandidates':
+                    this.stripClassName("per_city_active");
+                    this.stripClassName("per_candidate_space_active");
+                break;
+                case 'dummmy':
+                    break;
+            }
+        }, 
+
+        // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
+        //                        action status bar (ie: the HTML links in the status bar).
+        //        
+        onUpdateActionButtons: function( stateName, args )
+        {
+            console.log( 'onUpdateActionButtons: '+stateName );
+                      
+            if( this.isCurrentPlayerActive() )
+            {            
+                switch( stateName )
+                {
+/*               
+                 Example:
+ 
+                 case 'myGameState':
+                    
+                    // Add 3 action buttons in the action status bar:
+                    
+                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
+                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
+                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
+                    break;
+*/
+                }
+            }
+        },        
+
+        ///////////////////////////////////////////////////
+        //// Utility methods
+
+
+        /**
+         * For a city, returns the div for candidate a if it's empty, else b if it's empty, else null
+         * @param {string} city 
+         * @returns a DOM Element or else null
+         */
+         openCandidateSpace: function(city) {
+            let candidate_space = null;
+            const citya = document.getElementById(city+"_a");
+            if (!citya.hasChildNodes()) {
+                candidate_space = citya;
+            } else {
+                const cityb = document.getElementById(city+"_b");
+                if (!cityb.hasChildNodes()) {
+                    candidate_space = cityb; 
+                }
+            }
+            return candidate_space;
+        },
+
+        /**
+         * Strip all elements of the document of a given class name
+         * @param {string} cls className
+         */
+        stripClassName: function(cls) {
+            let actdiv = document.getElementsByClassName(cls);
+            [...actdiv].forEach( a => a.classList.remove(cls));
+        },
 
         ///////////////////////////////////////////////////
         //// Player's action
@@ -1023,6 +1083,16 @@ function (dojo, declare) {
             if (this.checkAction("placeAnyCube", true)) {
                 this.ajaxcall( "/perikles/perikles/placecube.html", { 
                     city: city,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        proposeCandidate: function(city, player_id) {
+            if (this.checkAction("chooseCandidate", true)) {
+                this.ajaxcall( "/perikles/perikles/selectcandidate.html", { 
+                    city: city,
+                    player: player_id,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
             }

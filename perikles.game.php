@@ -29,6 +29,8 @@ define("BOARD", "board");
 define("HOPLITE", "hoplite");
 define("TRIREME", "trireme");
 define("PERSIA", "persia");
+define("ALPHA", "\u{003B1}");
+define("BETA", "\u{003B2}");
 
 class Perikles extends Table
 {
@@ -479,13 +481,14 @@ class Perikles extends Table
         self::DbQuery("UPDATE player SET $city = $influence WHERE player_id=$player_id");
         $players = self::loadPlayersBasicInfos();
 
-        $adj = $influence < 0 ? _("removes") : _("adds"); 
+        $adj = $cubes < 0 ? _("removes") : _("adds"); 
         $city_name = $this->cities[$city]['name'];
 
-        self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} ${addremove} ${cubes} cubes to ${city_name}'), array(
+        self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} ${addremove} ${cubect} cubes in ${city_name}'), array(
             'player_id' => $player_id,
             'player_name' => $players[$player_id],
             'addremove' => $adj,
+            'cubect' => abs($cubes),
             'cubes' => $cubes,
             'city' => $city,
             'city_name' => $city_name,
@@ -566,9 +569,44 @@ class Perikles extends Table
     /**
      * Player is selecting a candidate for a city.
      */
-    function chooseCandidate($city, $player_id) {
+    function chooseCandidate($city, $candidate_id) {
         self::checkAction('chooseCandidate');
+        $actingplayer = self::getActivePlayerId();
+        $city_name = $this->cities[$city]['name'];
+        $players = self::loadPlayersBasicInfos();
+        $candidate_name = $players[$candidate_id]['player_name'];
+        // is there an available candidate slot?
+        $candidate_slot = $city."_a";
+        $cand_a = self::getGameStateValue($candidate_slot);
+        if ($cand_a != 0) {
+            $candidate_slot = $city."_b";
+            $cand_b = self::getGameStateValue($candidate_slot);
+            if ($cand_b != 0) {
+                throw new BgaUserException("$city_name has no empty candidate spaces");
+            } else if ($cand_a == $candidate_id) {
+                throw new BgaUserException("$candidate_name is already a candidate in $city_name");
+            }
+        }
+        // does the nominated player have cubes there?
+        $cubes = self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$candidate_id");
+        if ($cubes == 0) {
+            throw new BgaUserException("$candidate_name has no influence cubes in $city_name");
+        }
+        // passed checks, can nominate
+        self::setGameStateValue($candidate_slot, $candidate_id);
 
+        $c = ($candidate_slot == $city."_a") ? ALPHA : BETA;
+        self::notifyAllPlayers("candidateProposed", clienttranslate('${player_name} proposes ${candidate_name} as candidate ${candidate} in ${city_name}'), array(
+            'i18n' => ['city_name'],
+            'player_id' => $actingplayer,
+            'player_name' => $players[$actingplayer]['player_name'],
+            'candidate_id' => $candidate_id,
+            'candidate_name' => $candidate_name,
+            'city_name' => $city_name,
+            'candidate' => $c
+        ) );
+
+        $this->changeInfluenceInCity($city, $candidate_id, -1);
     }
 
 //////////////////////////////////////////////////////////////////////////////
