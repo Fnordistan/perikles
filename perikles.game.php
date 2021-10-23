@@ -603,7 +603,8 @@ class Perikles extends Table
             'candidate_id' => $candidate_id,
             'candidate_name' => $candidate_name,
             'city_name' => $city_name,
-            'candidate' => $c
+            'candidate' => $c,
+            'preserve' => $candidate_id,
         ) );
 
         $this->changeInfluenceInCity($city, $candidate_id, -1);
