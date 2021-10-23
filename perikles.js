@@ -133,12 +133,11 @@ function (dojo, declare) {
             const special_scale = 0.2;
 
             for (const player_id in players) {
-                const player_board_div = document.getElementById('player_board_'+player_id);
                 const spec = parseInt(specialtiles[player_id]);
 
                 // add flex row for cards
                 const player_cards = this.format_block('jstpl_influence_cards', {id: player_id, scale: special_scale});
-                const player_cards_div = dojo.place(player_cards, player_board_div);
+                const player_cards_div = dojo.place(player_cards, $('player_board_'+player_id));
 
                 if (spec == 0) {
                     var specialtile = this.format_block('jstpl_special_back', {id: player_id, scale: special_scale});
@@ -237,11 +236,10 @@ function (dojo, declare) {
             const id = tile['id'];
             const city = tile['city'];
             const s = tile['slot'];
-            const slot = document.getElementById("influence_slot_"+s);
             const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
             const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
             const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff, margin: "auto"});
-            const card = dojo.place(card_div, slot);
+            const card = dojo.place(card_div,  $("influence_slot_"+s));
             let ttext = "";
             if (city == "any") {
                 ttext = helptext["any"];
@@ -262,9 +260,8 @@ function (dojo, declare) {
         placeInfluencePlayerBoard: function(tile) {
             const loc = tile['location'];
             const player_cards = loc+'_player_cards';
-            const player_card_div = document.getElementById(player_cards);
             const card_div = this.createPlayerInfluenceCard(tile);
-            dojo.place(card_div, player_card_div);
+            dojo.place(card_div, $(player_cards));
         },
 
         /**
@@ -286,10 +283,9 @@ function (dojo, declare) {
          * @param {int} decksize 
          */
         createInfluencePile: function(decksize) {
-            const pile = document.getElementById(INFLUENCE_PILE);
             for (let c = 1; c <= decksize; c++) {
                 const cardback = this.format_block('jstpl_influence_back', {id: c, x: -1 * INFLUENCE_SCALE * this.influence_w, y: -6 * INFLUENCE_SCALE * this.influence_h, m: c-1});
-                dojo.place(cardback, pile);
+                dojo.place(cardback, $(INFLUENCE_PILE));
             }
             var pile_tt = _("Influence Deck: ${num} cards remaining");
             pile_tt = pile_tt.replace('${num}', decksize);
@@ -319,7 +315,7 @@ function (dojo, declare) {
          * @param {string} id 
          */
          decorateInfluenceCard: function(id) {
-            const card = document.getElementById(id);
+            const card = $(id);
             card.addEventListener('click', () => {
                 this.onInfluenceCardSelected(id);
             });
@@ -341,7 +337,7 @@ function (dojo, declare) {
                     const num = parseInt(cubes);
                     for (let n = 0; n < num; n++) {
                         const cube = this.createInfluenceCube(player_id, city, n);
-                        const column = document.getElementById(city+"_cubes_"+player_id);
+                        const column = $(city+"_cubes_"+player_id);
                         dojo.place(cube, column);
                     }
                     this.decorateInfluenceCubes(city, player_id);
@@ -356,7 +352,7 @@ function (dojo, declare) {
          */
         decorateInfluenceCubes: function(city, player_id) {
             const id = city+"_cubes_"+player_id;
-            const cubes_div = document.getElementById(id);
+            const cubes_div = $(id);
             cubes_div.addEventListener('mouseenter', (event) => {
                 this.onInfluenceCubesHover(event, city, true);
             });
@@ -380,11 +376,10 @@ function (dojo, declare) {
             for (const loc of locationtiles) {
                 const slot = loc['slot'];
                 const battle = loc['location'];
-                const loc_slot = document.getElementById("location_"+slot);
                 x = -1 * (LOCATIONS[battle][1]-1) * locw * scale;
                 y = -1 * (LOCATIONS[battle][0]-1) * loch * scale;
                 const loc_tile = this.format_block('jstpl_location_tile', {id: battle, x: x, y: y});
-                dojo.place(loc_tile, loc_slot);
+                dojo.place(loc_tile, $("location_"+slot));
             }
         },
 
@@ -394,10 +389,10 @@ function (dojo, declare) {
          */
         setupCandidates: function(candidates) {
             for (const [cand, player_id] of Object.entries(candidates)) {
-                const candidate_space = document.getElementById(cand);
-                const city = cand.substring(0, cand.indexOf("_"));
-                const cube = this.createInfluenceCube(player_id, city, "cand");
-                dojo.place(cube, candidate_space);
+                const cid = cand.split('_', cand);
+                const city = cid[0];
+                const cube = this.createInfluenceCube(player_id, city, cid[1]);
+                dojo.place(cube, $(cand));
             }
         },
 
@@ -408,8 +403,7 @@ function (dojo, declare) {
         setupLeaders: function(leaders) {
             for (const [city, player_id] of Object.entries(leaders)) {
                 const leader = this.createLeaderCounter(player_id, city, "leader", 1);
-                const leader_slot = document.getElementById(city+"_leader");
-                dojo.place(leader, leader_slot);
+                dojo.place(leader, $(city+"_leader"));
             }
         },
 
@@ -421,12 +415,11 @@ function (dojo, declare) {
             for (let city of CITIES) {
                 const citystatues = statues[city];
                 if (citystatues) {
-                    const statue_area = document.getElementById(city+"_statues");
                     let s = 0;
                     for (const [player_id, num] of Object.entries(citystatues)) {
                         for (let i = 1; i <= parseInt(num); i++) {
                             const statue_div = this.createLeaderCounter(player_id, city, "statue", s+1);
-                            const statue = dojo.place(statue_div, statue_area);
+                            const statue = dojo.place(statue_div, $(city+"_statues"));
                             statue.style.bottom = (s*22)+"px";
                             statue.style.left = (s*6)+"px";
                             s++;
@@ -500,7 +493,7 @@ function (dojo, declare) {
                 let xoff = -1 * strength * xdim;
                 let yoff = -1 * MILITARY_ROW[city] * ydim;
                 if (location == city) {
-                    const city_military = document.getElementById(city+"_military");
+                    const city_military = $(city+"_military");
                     const ct = city_military.childElementCount;
                     const top = (unit == TRIREME) ? ydim/2 : 0;
                     const tile_div = this.format_block('jstpl_military', {city: city, type: unit, s: strength, id: counter['id'], x: xoff, y: yoff, m: 2*ct, t: top}); 
@@ -513,7 +506,7 @@ function (dojo, declare) {
          * Make military display available counters
          */
         decorateMilitaryStacks: function(city, city_mil_id) {
-            const city_mil = document.getElementById(city_mil_id);
+            const city_mil = $(city_mil_id);
             city_mil.addEventListener('click', () => {
                 if (this.isSpread(city_mil_id)) {
                     this.unspread(city_mil);
@@ -532,7 +525,6 @@ function (dojo, declare) {
                 this.unspread(city_mil);
             });
         },
-
 
         /**
          * Are the military units in the city spread already?
@@ -572,21 +564,19 @@ function (dojo, declare) {
             if (city_mil.id == "athens_military") {
                 athens_off = -1 * Math.max((hoplites.length * MIL_DIM.s), (triremes.length * MIL_DIM.l));
             }
-            for (h of hoplites) {
-                const hop = document.getElementById(h);
+            for (hop of hoplites) {
                 let xoff = athens_off+(n*MIL_DIM.s);
                 let yoff = n*-2;
-                Object.assign(hop.style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
+                Object.assign($(hop).style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
                 n++;
             }
             const rec = city_mil.getBoundingClientRect();
             n = 0;
-            for (t of triremes) {
-                const tri = document.getElementById(t);
-                let tridim = tri.getBoundingClientRect();
+            for (tri of triremes) {
+                let tridim = $(tri).getBoundingClientRect();
                 let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
                 let yoff = 22 + rec.bottom - tridim.top;
-                Object.assign(tri.style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
+                Object.assign($(tri).style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
                 n++;
             }
             this.military_zones[city_mil.id]['spread'] = true;
@@ -600,7 +590,7 @@ function (dojo, declare) {
             for (const [city, num] of Object.entries(defeats)) {
                 for (let d = 1; d <= num; d++) {
                     const def_ctr = this.format_block('jstpl_defeat', {city: city, num: d} );
-                    const def_div = document.getElementById(city+'_defeat_slot_'+d);
+                    const def_div = $(city+'_defeat_slot_'+d);
                     dojo.place(def_ctr, def_div);
                 }
             }
@@ -611,7 +601,7 @@ function (dojo, declare) {
          */
         setupCities: function() {
             for (city of CITIES) {
-                const city_div = document.getElementById(city);
+                const city_div = $(city);
                 city_div.addEventListener('mouseenter', (event) => {
                     this.onCityTouch(event, true);
                 });
@@ -759,7 +749,7 @@ function (dojo, declare) {
            * @param {string} parent_id 
            */
           changeParent: function(mobile, parent_id) {
-            document.getElementById(parent_id).appendChild(mobile);
+            $(parent_id).appendChild(mobile);
           },
 
         /*
@@ -876,7 +866,7 @@ function (dojo, declare) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const city = event.target.id;
-                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    const mycubes = $(city+"_cubes_"+this.player_id);
                     if (enter) {
                         mycubes.classList.add("prk_cubes_hover");
                     } else {
@@ -895,7 +885,7 @@ function (dojo, declare) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const city = event.target.id;
                     this.placeInfluenceCube(city);
-                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
+                    const mycubes = $(city+"_cubes_"+this.player_id);
                     mycubes.classList.remove("prk_cubes_hover");
                 }
             }
@@ -912,7 +902,7 @@ function (dojo, declare) {
                 if (this.checkAction("chooseCandidate", true)) {
                     const cube_div = event.target;
                     if (enter) {
-                        if (cube_div.hasChildNodes() && document.getElementById(city).classList.contains("prk_city_active")) {
+                        if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
                             cube_div.classList.add("prk_cubes_hover");
                         }
                     } else {
@@ -930,7 +920,7 @@ function (dojo, declare) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("chooseCandidate", true)) {
                     const cube_div = event.target;
-                    if (cube_div.hasChildNodes() && document.getElementById(city).classList.contains("prk_city_active")) {
+                    if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
                         this.proposeCandidate(city, player_id);
                     }
                 }
@@ -954,11 +944,11 @@ function (dojo, declare) {
         */
         onInfluenceCardHover: function(id, hover) {
             if (this.checkAction("takeInfluence", true)) {
-                const card = document.getElementById(id);
+                const card = $(id);
                 if (hover) {
-                    card.classList.add("per_influence_tile_active");
+                    card.classList.add("prk_influence_tile_active");
                 } else {
-                    card.classList.remove("per_influence_tile_active");
+                    card.classList.remove("prk_influence_tile_active");
                 }
             }
         },
@@ -977,7 +967,7 @@ function (dojo, declare) {
                 case 'choosePlaceInfluence':
                     if( this.isCurrentPlayerActive() ) {
                         for (city of CITIES) {
-                            const city_div = document.getElementById(city);
+                            const city_div = $(city);
                             city_div.classList.add("prk_city_active");
                         }
                     }
@@ -987,7 +977,7 @@ function (dojo, declare) {
                         for (city of CITIES) {
                             const candidate_space = this.openCandidateSpace(city);
                             if (candidate_space) {
-                                const city_div = document.getElementById(city);
+                                const city_div = $(city);
                                 city_div.classList.add("prk_city_active");
                                 candidate_space.classList.add("prk_candidate_space_active");
                             }
@@ -1005,15 +995,14 @@ function (dojo, declare) {
         {
             console.log( 'Leaving state: '+stateName );
             
-            switch( stateName )
-            {
-            
+            switch( stateName ) {
                 case 'choosePlaceInfluence':
                     this.stripClassName("prk_city_active");
                     break;
                 case 'proposeCandidates':
                     this.stripClassName("prk_city_active");
                     this.stripClassName("prk_candidate_space_active");
+                    this.stripClassName("prk_cubes_hover");
                 break;
                 case 'dummmy':
                     break;
@@ -1058,11 +1047,11 @@ function (dojo, declare) {
          */
          openCandidateSpace: function(city) {
             let candidate_space = null;
-            const citya = document.getElementById(city+"_a");
+            const citya = $(city+"_a");
             if (!citya.hasChildNodes()) {
                 candidate_space = citya;
             } else {
-                const cityb = document.getElementById(city+"_b");
+                const cityb = $(city+"_b");
                 if (!cityb.hasChildNodes()) {
                     candidate_space = cityb; 
                 }
@@ -1158,9 +1147,9 @@ function (dojo, declare) {
             const player_id = notif.args.player_id;
             const cubes = parseInt(notif.args.cubes);
             const city = notif.args.city;
-            const from_div = document.getElementById(player_id+'_player_cards');
-            const to_div = document.getElementById(city+'_cubes_'+player_id);
-            const player_cubes_div = document.getElementById(city+"_cubes_"+player_id);
+            const from_div = $(player_id+'_player_cards');
+            const to_div = $(city+'_cubes_'+player_id);
+            const player_cubes_div = $(city+"_cubes_"+player_id);
             const num = player_cubes_div.childElementCount;
             for (let c = 0; c < cubes; c++) {
                 const i = num+c+1;
@@ -1181,7 +1170,6 @@ function (dojo, declare) {
             const city = notif.args.city;
             const id = notif.args.card_id;
             const card_id = city+'_'+id;
-            const card_div = document.getElementById(card_id);
             const slot = notif.args.slot;
 
             // create the Influence tile
@@ -1190,12 +1178,12 @@ function (dojo, declare) {
                 throw "Unknown Influence Tile: " + id;
             }
 
-            card_div.remove();
+            $(card_id).remove();
             const player_cards = player_id+'_player_cards';
             const from_id = "influence_slot_"+slot;
 
             // create temp new card to move to the player board
-            const fromSlot = document.getElementById(from_id);
+            const fromSlot = $(from_id);
             const newcard = this.createPlayerInfluenceCard(newTile);
             let newcard_div = dojo.place(newcard, fromSlot);
             this.slide(newcard_div, player_cards, {"from": fromSlot});
@@ -1223,8 +1211,22 @@ function (dojo, declare) {
             const player_id = notif.args.candidate_id;
             const city = notif.args.city;
             const candidate = notif.args.candidate; // alpha or beta
-            const candidate_slot = CANDIDATES[candidate]; // "a" or "b"
+            const c = CANDIDATES[candidate]; // "a" or "b"
+            const player_cubes = $(city+"_cubes_"+player_id);
+            const cube1 = player_cubes.firstChild;
 
+            const cube = this.createInfluenceCube(player_id, city, c);
+            const ccube = dojo.place(cube, cube1);
+            // this.slideToObject(ccube.id, city+"_"+c, 250, 250);
+            this.slide(ccube, city+"_"+c, {"from": cube1.id});
+            this.fadeOutAndDestroy( cube1.id, 250);
+            if (c == "a") {
+                $(city+"_a").classList.remove("prk_candidate_space_active");
+                $(city+"_b").classList.add("prk_candidate_space_active");
+            } else {
+                $(city+"_b").classList.remove("prk_candidate_space_active");
+                $(city).classList.remove("prk_city_active")
+            }
         },
 
    });

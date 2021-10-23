@@ -616,6 +616,7 @@ class Perikles extends Table
             'preserve' => [ 2 => 'player_id', 3 => 'candidate_id' ],
         ) );
 
+        $this->gamestate->nextState();
     }
 
 //////////////////////////////////////////////////////////////////////////////

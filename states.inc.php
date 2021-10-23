@@ -75,7 +75,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "chooseCandidate" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "elections" => ELECTIONS )
+    	"transitions" => array( "" => NEXT_PLAYER )
     ),
 
     ASSASSINATE => array(

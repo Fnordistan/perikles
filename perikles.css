@@ -200,6 +200,12 @@
     height: calc(var(--influence_h)*var(--influence_scale));
 }
 
+.prk_influence_tile_active {
+    transform: scale(1.1);
+    transition: transform 0.5s;
+    box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.4);
+}
+
 .prk_counter {
     background-image: url(img/leader_counters.jpg);
     background-size:  calc(11 * var(--counter_scale) * var(--counter_w)) calc(var(--counter_scale) * var(--counter_h));
