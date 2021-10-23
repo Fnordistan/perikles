@@ -350,17 +350,17 @@ function (dojo, declare) {
 
         /**
          * Add event listeners to the cubes areas for each player.
-         * @param {string} citu
+         * @param {string} city
          * @param {string} player_id
          */
         decorateInfluenceCubes: function(city, player_id) {
             const id = city+"_cubes_"+player_id;
             const cubes_div = document.getElementById(id);
             cubes_div.addEventListener('mouseenter', (event) => {
-                this.onInfluenceCubesHover(event, true);
+                this.onInfluenceCubesHover(event, city, true);
             });
             cubes_div.addEventListener('mouseleave', (event) => {
-                this.onInfluenceCubesHover(event, false);
+                this.onInfluenceCubesHover(event, city, false);
             });
             cubes_div.addEventListener('click', (event) => {
                 this.onInfluenceCubesClick(event, city, player_id);
@@ -899,13 +899,15 @@ function (dojo, declare) {
         /**
          * Mouse entering or leaving player's Influence zone in city.
          * @param {Object} event 
+         * @param {string} city
+         * @param {bool} enter
          */
-         onInfluenceCubesHover: function(event, enter) {
+         onInfluenceCubesHover: function(event, city, enter) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("chooseCandidate", true)) {
                     const cube_div = event.target;
                     if (enter) {
-                        if (cube_div.hasChildNodes()) {
+                        if (cube_div.hasChildNodes() && document.getElementById(city).classList.contains("prk_city_active")) {
                             cube_div.classList.add("prk_cubes_hover");
                         }
                     } else {
@@ -923,8 +925,7 @@ function (dojo, declare) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("chooseCandidate", true)) {
                     const cube_div = event.target;
-                    if (cube_div.hasChildNodes()) {
-                        console.log(player_id+" adds canddiate in " + city);
+                    if (cube_div.hasChildNodes() && document.getElementById(city).classList.contains("prk_city_active")) {
                         this.proposeCandidate(city, player_id);
                     }
                 }
