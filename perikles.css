@@ -63,24 +63,24 @@
     --military_s: 62px;
 }
 
-.per_player_infl {
+.prk_player_infl {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     min-height: calc(var(--scale)*var(--influence_h));
 }
 
-.per_city {
+.prk_city {
     position: absolute;
     width: 322px;
     height: 215px;
 }
 
-.per_city_active {
-    animation: per_border_pulse 5s infinite;
+.prk_city_active {
+    animation: prk_border_pulse 5s infinite;
 }
 
-@keyframes per_border_pulse {
+@keyframes prk_border_pulse {
     0% {
         border: white 1px dotted;
         border-radius: 15px;
@@ -111,7 +111,7 @@
     }
 }
 
-.per_special_tile {
+.prk_special_tile {
     background-image: url(img/special_tiles.jpg);
     background-size: calc(var(--scale) * var(--special_sprites_w)) calc(var(--scale) * var(--special_sprites_h));
     background-repeat: no-repeat;
@@ -120,7 +120,7 @@
     height: calc(var(--scale) * var(--special_h));
 }
 
-.per_special_tile_tt {
+.prk_special_tile_tt {
     background-image: url(img/special_tiles.jpg);
     background-size: calc(var(--scale) * var(--special_sprites_w)) calc(var(--scale) * var(--special_sprites_h));
     background-repeat: no-repeat;
@@ -130,12 +130,12 @@
     margin: 5px;
 }
 
-.per_special_tile_used {
+.prk_special_tile_used {
     opacity: 0.5;
     transform: rotate(180deg);
 }
 
-.per_special_tile_back {
+.prk_special_tile_back {
     background-image: url(img/special_cardback.jpg);
     background-size: calc(var(--special_w)*var(--scale)) calc(var(--special_h)*var(--scale));
     background-repeat: no-repeat;
@@ -144,13 +144,13 @@
     height: calc(var(--special_h)*var(--scale));
 }
 
-.per_location_slot {
+.prk_location_slot {
     position: absolute;
     width: 70px;
     height: 104px;
 }
 
-.per_location_tile {
+.prk_location_tile {
     background-image: url(img/location_tiles.jpg);
     background-size: calc(var(--location_w)*7 *var(--location_scale)) calc(var(--location_h)*3*var(--location_scale));
     background-repeat: no-repeat;
@@ -191,7 +191,7 @@
     background-position: calc(-3 * var(--scale) * var(--special_w)) calc(-1 * var(--scale) * var(--special_h));
 }
 
-.per_influence_tile {
+.prk_influence_tile {
     background-image: url(img/influence_tiles.jpg);
     background-size:  calc(var(--influence_sprites_w)*var(--influence_scale)) calc(var(--influence_sprites_h)*var(--influence_scale));
     background-repeat: no-repeat;
@@ -200,7 +200,7 @@
     height: calc(var(--influence_h)*var(--influence_scale));
 }
 
-.per_counter {
+.prk_counter {
     background-image: url(img/leader_counters.jpg);
     background-size:  calc(11 * var(--counter_scale) * var(--counter_w)) calc(var(--counter_scale) * var(--counter_h));
     background-repeat: no-repeat;
@@ -209,7 +209,7 @@
     height: calc(var(--counter_scale) * var(--counter_h));
 }
 
-.per_defeat_counter {
+.prk_defeat_counter {
     background-image: url(img/leader_counters.jpg);
     background-size:  calc(11 * var(--counter_scale) * var(--counter_w)) calc(var(--counter_scale) * var(--counter_h));
     background-repeat: no-repeat;
@@ -221,63 +221,63 @@
     box-shadow: 3px 3px 12px 5px #8a0303;
 }
 
-.per_statue {
+.prk_statue {
     box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
 }
 
-.per_leader_black {
+.prk_leader_black {
     background-position: 0 0;
 }
 
-.per_statue_black {
+.prk_statue_black {
     background-position: calc(-1 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_leader_white {
+.prk_leader_white {
     background-position: calc(-2 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_statue_white {
+.prk_statue_white {
     background-position: calc(-3 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_leader_orange {
+.prk_leader_orange {
     background-position: calc(-4 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_statue_orange {
+.prk_statue_orange {
     background-position: calc(-5 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_leader_green {
+.prk_leader_green {
     background-position: calc(-6 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_statue_green {
+.prk_statue_green {
     background-position: calc(-7 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_leader_red {
+.prk_leader_red {
     background-position: calc(-8 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_statue_red {
+.prk_statue_red {
     background-position: calc(-9 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.per_influence_slot {
+.prk_influence_slot {
     position: absolute;
     width: calc(var(--boardscale) * 38px);
     height: calc(var(--boardscale) * 53px);
 }
 
-.per_counter_slot {
+.prk_counter_slot {
     position: absolute;
     height: var(--counter_dim);
     width: var(--counter_dim);
 }
 
-.per_city_cubes {
+.prk_city_cubes {
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -286,17 +286,17 @@
     height: 120px;
 }
 
-.per_candidate_space {
+.prk_candidate_space {
     position: absolute;
     width: 14px;
     height: 14px;
 }
 
-.per_candidate_space_active {
-    animation: per_candidate_space_pulse 5s infinite;
+.prk_candidate_space_active {
+    animation: prk_candidate_space_pulse 5s infinite;
 }
 
-@keyframes per_candidate_space_pulse {
+@keyframes prk_candidate_space_pulse {
     0% {
         border: white solid 2px;
         border-radius: 4px;
@@ -307,46 +307,46 @@
     }
 }
 
-.per_cube {
+.prk_cube {
     width: 14px;
     height: 14px;
     box-shadow: rgb(38 57 77) 0px 4px 4px 0px;
     margin: 2px 0;
 }
 
-.per_cubes_hover {
+.prk_cubes_hover {
     border-radius: 4px;
     outline: 2px dotted red;
     box-shadow: darkgray 0px 4px 8px 8px;
 }
 
-.per_statue_zone {
+.prk_statue_zone {
     position: absolute;
     width: 40px;
     height: 45px;
 }
 
-.per_military_zone {
+.prk_military_zone {
     position: absolute;
     width: 50px;
     height: 80px;
 }
 
-.per_military {
+.prk_military {
     background-repeat: no-repeat;
     position: absolute;
     transition: transform 0.5s;
     box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
 }
 
-.per_hoplite {
+.prk_hoplite {
     background-image: url(img/hoplites.jpg);
     background-size:  calc(5 * var(--military_s)) calc(7 * var(--military_l));
     width: var(--military_s);
     height: var(--military_l);
 }
 
-.per_trireme {
+.prk_trireme {
     background-image: url(img/triremes.jpg);
     background-size:  calc(5 * var(--military_l)) calc(7 * var(--military_s));
     width: var(--military_l);

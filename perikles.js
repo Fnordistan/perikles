@@ -143,7 +143,7 @@ function (dojo, declare) {
                     specialtile = this.format_block('jstpl_special_tile', {special: spec_i, scale: special_scale, margin: PLAYER_INF_MARGIN});
                     const used = (spec < 0 || player_id != this.player_id);
                     if (used) {
-                        tile.classList.add("per_special_tile_used");
+                        tile.classList.add("prk_special_tile_used");
                     }
                 }
                 const tile = dojo.place(specialtile, player_cards_div);
@@ -551,9 +551,9 @@ function (dojo, declare) {
             const hoplites = [];
             const triremes = [];
             for (const mil of city_mil.children) {
-                if (mil.classList.contains("per_hoplite")) {
+                if (mil.classList.contains("prk_hoplite")) {
                     hoplites.push(mil.id);
-                } else if  (mil.classList.contains("per_trireme")) {
+                } else if  (mil.classList.contains("prk_trireme")) {
                     triremes.push(mil.id);
                 }
             }
@@ -863,7 +863,7 @@ function (dojo, declare) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const city = event.target.id;
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.add("per_cubes_hover");
+                    mycubes.classList.add("prk_cubes_hover");
                 } else if (this.checkAction("chooseCandidate", true)) {
                 }
             }
@@ -875,7 +875,7 @@ function (dojo, declare) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const city = event.target.id;
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.remove("per_cubes_hover");
+                    mycubes.classList.remove("prk_cubes_hover");
                 }
             }
         },
@@ -886,7 +886,7 @@ function (dojo, declare) {
                     const city = event.target.id;
                     this.placeInfluenceCube(city);
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.remove("per_cubes_hover");
+                    mycubes.classList.remove("prk_cubes_hover");
                 }
             }
         },
@@ -897,10 +897,10 @@ function (dojo, declare) {
                     const cube_div = event.target;
                     if (enter) {
                         if (cube_div.hasChildNodes()) {
-                            cube_div.classList.add("per_cubes_hover");
+                            cube_div.classList.add("prk_cubes_hover");
                         }
                     } else {
-                        cube_div.classList.remove("per_cubes_hover");
+                        cube_div.classList.remove("prk_cubes_hover");
                     }
                 }
             }
@@ -957,7 +957,7 @@ function (dojo, declare) {
                     if( this.isCurrentPlayerActive() ) {
                         for (city of CITIES) {
                             const city_div = document.getElementById(city);
-                            city_div.classList.add("per_city_active");
+                            city_div.classList.add("prk_city_active");
                         }
                     }
                     break;
@@ -967,8 +967,8 @@ function (dojo, declare) {
                             const candidate_space = this.openCandidateSpace(city);
                             if (candidate_space) {
                                 const city_div = document.getElementById(city);
-                                city_div.classList.add("per_city_active");
-                                candidate_space.classList.add("per_candidate_space_active");
+                                city_div.classList.add("prk_city_active");
+                                candidate_space.classList.add("prk_candidate_space_active");
                             }
                         }
                     }
@@ -988,11 +988,11 @@ function (dojo, declare) {
             {
             
                 case 'choosePlaceInfluence':
-                    this.stripClassName("per_city_active");
+                    this.stripClassName("prk_city_active");
                     break;
                 case 'proposeCandidates':
-                    this.stripClassName("per_city_active");
-                    this.stripClassName("per_candidate_space_active");
+                    this.stripClassName("prk_city_active");
+                    this.stripClassName("prk_candidate_space_active");
                 break;
                 case 'dummmy':
                     break;
