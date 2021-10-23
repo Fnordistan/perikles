@@ -33,6 +33,11 @@ const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 't
 const HOPLITE = "hoplite";
 const TRIREME = "trireme";
 
+const CANDIDATES = {
+    "\u{003B1}" : "a",
+    "\u{003B2}" : "b"
+}
+
 const MIL_DIM = {
     "l": 100,
     "s": 62
@@ -44,7 +49,6 @@ const PLAYER_COLORS = {
     "39364F" : "black",
     "E5A137" : "orange",
     "FFF" : "white",
-
 }
 
 // row,column
@@ -604,10 +608,10 @@ function (dojo, declare) {
             for (city of CITIES) {
                 const city_div = document.getElementById(city);
                 city_div.addEventListener('mouseenter', (event) => {
-                    this.onCityHover(event);
+                    this.onCityTouch(event, true);
                 });
                 city_div.addEventListener('mouseleave', (event) => {
-                    this.onCityExit(event);
+                    this.onCityTouch(event, false);
                 });
                 city_div.addEventListener('click', (event) => {
                     this.onCityClick(event);
@@ -858,28 +862,29 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
         //// Event listeners
 
-        onCityHover: function(event) {
+        /**
+         * Mouse entering City zone.
+         * @param {Object} event
+         * @param {bool} enter true if touching, otherwise leaving
+         */
+        onCityTouch: function(event, enter) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const city = event.target.id;
                     const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.add("prk_cubes_hover");
-                } else if (this.checkAction("chooseCandidate", true)) {
+                    if (enter) {
+                        mycubes.classList.add("prk_cubes_hover");
+                    } else {
+                        mycubes.classList.remove("prk_cubes_hover");
+                    }
                 }
             }
         },
 
-        onCityExit: function(event) {
-            // debugger;
-            if( this.isCurrentPlayerActive() ) {
-                if (this.checkAction("placeAnyCube", true)) {
-                    const city = event.target.id;
-                    const mycubes = document.getElementById(city+"_cubes_"+this.player_id);
-                    mycubes.classList.remove("prk_cubes_hover");
-                }
-            }
-        },
-
+        /**
+         * Mouse clicking City zone.
+         * @param {Object} event 
+         */
         onCityClick: function(event) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("placeAnyCube", true)) {
@@ -891,7 +896,11 @@ function (dojo, declare) {
             }
         },
 
-        onInfluenceCubesHover: function(event, enter) {
+        /**
+         * Mouse entering or leaving player's Influence zone in city.
+         * @param {Object} event 
+         */
+         onInfluenceCubesHover: function(event, enter) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("chooseCandidate", true)) {
                     const cube_div = event.target;
@@ -906,7 +915,11 @@ function (dojo, declare) {
             }
         },
 
-        onInfluenceCubesClick: function(event, city, player_id) {
+        /**
+         * Mouse leaving player's Influence zone in city.
+         * @param {Object} event 
+         */
+         onInfluenceCubesClick: function(event, city, player_id) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("chooseCandidate", true)) {
                     const cube_div = event.target;
@@ -919,7 +932,7 @@ function (dojo, declare) {
         },
 
         /**
-         * When Influence card is taken.
+         * When Influence card is clicked.
          * @param {string} id 
          */
          onInfluenceCardSelected: function(id) {
@@ -929,16 +942,18 @@ function (dojo, declare) {
        },
 
        /**
-        * 
+        * When mouse hovers or leaves Influence tile.
         * @param {string} id 
-        * @param {bool} hover 
+        * @param {bool} hover true if entering, false if leaving
         */
         onInfluenceCardHover: function(id, hover) {
             if (this.checkAction("takeInfluence", true)) {
                 const card = document.getElementById(id);
-                card.style['transform'] = hover ? 'scale(1.1)' : '';
-                card.style['transition'] = 'transform 0.5s';
-                card.style['box-shadow'] = hover ? 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px' : '';
+                if (hover) {
+                    card.classList.add("per_influence_tile_active");
+                } else {
+                    card.classList.remove("per_influence_tile_active");
+                }
             }
         },
 
@@ -1088,6 +1103,11 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * Action to assign a Candidate to a city from a player
+         * @param {string} city 
+         * @param {string} player_id 
+         */
         proposeCandidate: function(city, player_id) {
             if (this.checkAction("chooseCandidate", true)) {
                 this.ajaxcall( "/perikles/perikles/selectcandidate.html", { 
@@ -1117,12 +1137,17 @@ function (dojo, declare) {
             dojo.subscribe( 'influenceCardTaken', this, "notif_influenceCardTaken" );
             this.notifqueue.setSynchronous( 'influenceCardTaken', 1000 );
             dojo.subscribe( 'influenceCubes', this, "notif_addInfluenceCubes");
-            this.notifqueue.setSynchronous( 'influenceCubes', 1000 );
+            this.notifqueue.setSynchronous( 'influenceCubes', 500 );
+            dojo.subscribe( 'candidateProposed', this, "notif_candidateProposed");
+            this.notifqueue.setSynchronous( 'candidateProposed', 1000 );
         },  
         
         // Notification handlers
 
-
+        /**
+         * When Influence cubes are added to a city. Animate cubes from card to player's cube area in city.
+         * @param {Object} notif 
+         */
         notif_addInfluenceCubes: function( notif ) {
             const player_id = notif.args.player_id;
             const cubes = parseInt(notif.args.cubes);
@@ -1138,7 +1163,11 @@ function (dojo, declare) {
                 this.slideToObjectRelative(cube_div.id, player_cubes_div, 1000, 1000, null, "last")
             }
         },
-        
+
+        /**
+         * When an Influence tile is taken. Animate card going to player's board, and drawing a new one.
+         * @param {Object} notif 
+         */
         notif_influenceCardTaken: function( notif )
         {
             console.log( notif );
@@ -1178,6 +1207,18 @@ function (dojo, declare) {
                 }
             }
             return null;
+        },
+
+        /**
+         * 
+         * @param {Object} notif 
+         */
+        notif_candidateProposed: function(notif) {
+            const player_id = notif.args.candidate_id;
+            const city = notif.args.city;
+            const candidate = notif.args.candidate; // alpha or beta
+            const candidate_slot = CANDIDATES[candidate]; // "a" or "b"
+
         },
 
    });

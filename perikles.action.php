@@ -55,7 +55,7 @@
     }
 
     /**
-     * When player clicks a city to add a cube to.
+     * When player using Any card clicks a city to add a cube to.
      */
     public function placecube() {
       self::setAjaxMode();     
@@ -65,7 +65,10 @@
       $this->game->placeAnyCube($city);
       self::ajaxResponse( );
     }
-  
+
+    /**
+     * Player chooses city and player to add Candidate
+     */
     public function selectcandidate() {
       self::setAjaxMode();     
 

@@ -417,7 +417,6 @@ class Perikles extends Table
         return 0;
     }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //////////// Utility functions
 ////////////    
@@ -470,7 +469,10 @@ class Perikles extends Table
     }
 
     /**
-     * Add/remove cubes to city.
+     * Only does the DB adjustment for influence in city
+     * @param {string} city
+     * @param {string} player_id
+     * @param {int} cubes may be negative
      */
     function changeInfluenceInCity($city, $player_id, $cubes) {
         $influence = self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
@@ -479,22 +481,26 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("Cannot reduce influence below 0");
         }
         self::DbQuery("UPDATE player SET $city = $influence WHERE player_id=$player_id");
+    }
+
+    /**
+     * Add cubes to a city and send notification.
+     */
+    function addInfluenceToCity($city, $player_id, $cubes) {
+        $this->changeInfluenceInCity($city, $player_id, $cubes);
+
         $players = self::loadPlayersBasicInfos();
 
-        $adj = $cubes < 0 ? _("removes") : _("adds"); 
         $city_name = $this->cities[$city]['name'];
 
-        self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} ${addremove} ${cubect} cubes in ${city_name}'), array(
+        self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} adds ${cubes} Influence to ${city_name}'), array(
             'player_id' => $player_id,
             'player_name' => $players[$player_id],
-            'addremove' => $adj,
-            'cubect' => abs($cubes),
             'cubes' => $cubes,
             'city' => $city,
             'city_name' => $city_name,
         ));
     }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -549,7 +555,7 @@ class Perikles extends Table
             'inf_type' => $inf_type,
             'card_id' => $influence_id,
             'slot' => $slot,
-            'preserve' => 'player_id',
+            'preserve' => [2 => 'player_id'],
         ));
 
         $state = ($city == "any") ? "choosePlaceCube" : "placeCube";
@@ -562,7 +568,7 @@ class Perikles extends Table
     function placeAnyCube($city) {
         self::checkAction( 'placeAnyCube' );
         $player_id = self::getActivePlayerId();
-        $this->changeInfluenceInCity($city, $player_id, 1);
+        $this->addInfluenceToCity($city, $player_id, 1);
         $this->gamestate->nextState();
     }
 
@@ -582,9 +588,9 @@ class Perikles extends Table
             $candidate_slot = $city."_b";
             $cand_b = self::getGameStateValue($candidate_slot);
             if ($cand_b != 0) {
-                throw new BgaUserException("$city_name has no empty candidate spaces");
+                throw new BgaUserException("$city_name has no empty Candidate spaces");
             } else if ($cand_a == $candidate_id) {
-                throw new BgaUserException("$candidate_name is already a candidate in $city_name");
+                throw new BgaUserException("$candidate_name is already a Candidate in $city_name");
             }
         }
         // does the nominated player have cubes there?
@@ -592,22 +598,24 @@ class Perikles extends Table
         if ($cubes == 0) {
             throw new BgaUserException("$candidate_name has no influence cubes in $city_name");
         }
-        // passed checks, can nominate
+        // passed checks, can assign Candidate
+        $this->changeInfluenceInCity($city, $candidate_id, -1);
+
         self::setGameStateValue($candidate_slot, $candidate_id);
 
         $c = ($candidate_slot == $city."_a") ? ALPHA : BETA;
-        self::notifyAllPlayers("candidateProposed", clienttranslate('${player_name} proposes ${candidate_name} as candidate ${candidate} in ${city_name}'), array(
+        self::notifyAllPlayers("candidateProposed", clienttranslate('${player_name} proposes ${candidate_name} as Candidate ${candidate} in ${city_name}'), array(
             'i18n' => ['city_name'],
             'player_id' => $actingplayer,
             'player_name' => $players[$actingplayer]['player_name'],
             'candidate_id' => $candidate_id,
             'candidate_name' => $candidate_name,
+            'city' => $city,
             'city_name' => $city_name,
             'candidate' => $c,
-            'preserve' => $candidate_id,
+            'preserve' => [ 2 => 'player_id', 3 => 'candidate_id' ],
         ) );
 
-        $this->changeInfluenceInCity($city, $candidate_id, -1);
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -663,7 +671,7 @@ class Perikles extends Table
         $city = $card['type'];
         $type = $card['type_arg'];
         $cubes = ($type == 'influence') ? 2 : 1;
-        $this->changeInfluenceInCity($city, $player_id, $cubes);
+        $this->addInfluenceToCity($city, $player_id, $cubes);
 
         $state = "nextPlayer";
         if ($type == 'assassin') {
