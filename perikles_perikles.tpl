@@ -73,7 +73,7 @@ const jstpl_military = '<div id="${city}_${type}_${s}_${id}" class="prk_military
 
 const jstpl_special_tt = '<div id="{$special}_special_tt" style="display: flex; flex-direction: row;">\
                             <div style="flex: 1;">\
-                                <h1 style="font-family: ThrumsSerifRegular;">${header}</h1>\
+                                <h1 style="font-family: Bodoni Moda;">${header}</h1>\
                                 <hr\>\
                                 ${text}\
                             </div>\
@@ -83,7 +83,7 @@ const jstpl_special_tt = '<div id="{$special}_special_tt" style="display: flex; 
 const jstpl_influence_tt = '<div style="display: flex; flex-direction: row;">\
                                 <div class="prk_influence_tile" style="background-position: ${x}px ${y}px; margin: 5px;"></div>\
                                 <div style="flex: 1;">\
-                                    <h1 style="font-family: ThrumsSerifRegular;">${city}</h1>\
+                                    <h1 style="font-family: Bodoni Moda;">${city}</h1>\
                                     <h2>${label}</h2>\
                                     <span>${text}</span>\
                                 </div>\

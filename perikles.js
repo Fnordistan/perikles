@@ -171,14 +171,14 @@ function (dojo, declare) {
         createSpecialTileTooltip: function(player, special) {
             
             const TITLES = {
-                'perikles': _("Perikles"),
-                'persianfleet': _("Persian Fleet"),
-                'slaverevolt': _("Slave Revolt"),
-                'brasidas': _("Brasidas"),
-                'thessalanianallies': _("Thessalanian Allies"),
-                'alkibiades': _("Alkibiades"),
-                'phormio': _("Phormio"),
-                'plague': _("Plague")
+                'perikles': _("PERIKLES"),
+                'persianfleet': _("PERSIAN FLEET"),
+                'slaverevolt': _("SLAVE REVOLT"),
+                'brasidas': _("BRASIDAS"),
+                'thessalanianallies': _("THESSALANIAN ALLIES"),
+                'alkibiades': _("ALKIBIADES"),
+                'phormio': _("PHORMIO"),
+                'plague': _("PLAGUE")
             };
             const DESC = {
                 'perikles': _("Place two Influence cubes in Athens. This tile can be played when it is your turn to select an Influence tile, either just before or just after taking the tile."),
