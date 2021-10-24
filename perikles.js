@@ -919,9 +919,13 @@ function (dojo, declare) {
          onInfluenceCubesClick: function(event, city, player_id) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("chooseCandidate", true)) {
-                    const cube_div = event.target;
-                    if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
-                        this.proposeCandidate(city, player_id);
+                    const tgt = event.target;
+                    // it's either the cube area or one of the cubes
+                    if ($(city).classList.contains("prk_city_active")) {
+                        if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
+                            this.proposeCandidate(city, player_id);
+                        }
+    
                     }
                 }
             }
