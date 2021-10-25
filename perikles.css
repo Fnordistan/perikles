@@ -339,10 +339,23 @@
     margin: 2px 0;
 }
 
-.prk_cubes_hover {
+.prk_cubes_active {
     border-radius: 4px;
     outline: 2px dotted red;
     box-shadow: darkgray 0px 4px 8px 8px;
+}
+
+.prk_cubes_remove {
+    border-radius: 2px;
+    outline: 2px dotted orangered;
+    outline-offset: 2px;
+    box-shadow: 3px 3px 12px 5px #8a0303;
+}
+
+.prk_cubes_remove:hover {
+    transform: scale(1.2);
+    transition: transform 0.25s;
+    outline: 1px dotted white;
 }
 
 .prk_statue_zone {

@@ -389,7 +389,7 @@ function (dojo, declare) {
          */
         setupCandidates: function(candidates) {
             for (const [cand, player_id] of Object.entries(candidates)) {
-                const cid = cand.split('_', cand);
+                const cid = cand.split('_');
                 const city = cid[0];
                 const cube = this.createInfluenceCube(player_id, city, cid[1]);
                 dojo.place(cube, $(cand));
@@ -518,9 +518,6 @@ function (dojo, declare) {
             let tt = _("${city} military: click to inspect stack");
             tt = tt.replace('${city}', this.getCityNameTr(city) );
             this.addTooltip(city_mil_id, tt, '');
-            // city_mil.addEventListener('mouseenter', () => {
-            //     this.spreadMilitaryUnits(city_mil);
-            // });
             city_mil.addEventListener('mouseleave', () => {
                 this.unspread(city_mil);
             });
@@ -868,9 +865,9 @@ function (dojo, declare) {
                     const city = event.target.id;
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     if (enter) {
-                        mycubes.classList.add("prk_cubes_hover");
+                        mycubes.classList.add("prk_cubes_active");
                     } else {
-                        mycubes.classList.remove("prk_cubes_hover");
+                        mycubes.classList.remove("prk_cubes_active");
                     }
                 }
             }
@@ -886,7 +883,7 @@ function (dojo, declare) {
                     const city = event.target.id;
                     this.placeInfluenceCube(city);
                     const mycubes = $(city+"_cubes_"+this.player_id);
-                    mycubes.classList.remove("prk_cubes_hover");
+                    mycubes.classList.remove("prk_cubes_active");
                 }
             }
         },
@@ -903,10 +900,10 @@ function (dojo, declare) {
                     const cube_div = event.target;
                     if (enter) {
                         if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
-                            cube_div.classList.add("prk_cubes_hover");
+                            cube_div.classList.add("prk_cubes_active");
                         }
                     } else {
-                        cube_div.classList.remove("prk_cubes_hover");
+                        cube_div.classList.remove("prk_cubes_active");
                     }
                 }
             }
@@ -957,6 +954,19 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * After clicking a cube during Assasassinate phase.
+         */
+        removeCube: function() {
+            const cube_id = this.id;
+            const segs = cube_id.split("_");
+            const player_id = segs[0];
+            const city = segs[1];
+            const cand = segs[2];
+            debugger;
+            console.log("clicked a cube "+cube_id);
+        },
+
         ///////////////////////////////////////////////////
         //// Game & client states
         
@@ -987,6 +997,15 @@ function (dojo, declare) {
                             }
                         }
                     }
+                case 'assassinate':
+                    if (this.isCurrentPlayerActive()) {
+                        let cubes = document.getElementsByClassName("prk_cube");
+                        [...cubes].forEach( c => {
+                            c.classList.add("prk_cubes_remove");
+                            c.addEventListener('click', this.removeCube);
+                        });
+                    }
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -1006,7 +1025,12 @@ function (dojo, declare) {
                 case 'proposeCandidates':
                     this.stripClassName("prk_city_active");
                     this.stripClassName("prk_candidate_space_active");
-                    this.stripClassName("prk_cubes_hover");
+                    this.stripClassName("prk_cubes_active");
+                break;
+                case 'assassinate':
+                    this.stripClassName("prk_cubes_remove");
+                    let cubes = document.getElementsByClassName("prk_cube");
+                    [...cubes].forEach( c => c.removeEventListener('click', this.removeCube));
                 break;
                 case 'dummmy':
                     break;
@@ -1153,13 +1177,12 @@ function (dojo, declare) {
             const city = notif.args.city;
             const from_div = $(player_id+'_player_cards');
             const to_div = $(city+'_cubes_'+player_id);
-            const player_cubes_div = $(city+"_cubes_"+player_id);
-            const num = player_cubes_div.childElementCount;
+            const num = to_div.childElementCount;
             for (let c = 0; c < cubes; c++) {
                 const i = num+c+1;
                 const cube = this.createInfluenceCube(player_id, city, i);
                 const cube_div = dojo.place(cube, from_div);
-                this.slideToObjectRelative(cube_div.id, player_cubes_div, 1000, 1000, null, "last")
+                this.slideToObjectRelative(cube_div.id, to_div, 1000, 1000, null, "last")
             }
         },
 
@@ -1221,8 +1244,8 @@ function (dojo, declare) {
 
             const cube = this.createInfluenceCube(player_id, city, c);
             const ccube = dojo.place(cube, cube1);
-            // this.slideToObject(ccube.id, city+"_"+c, 250, 250);
-            this.slide(ccube, city+"_"+c, {"from": cube1.id});
+            // this.slideToObject($(ccube), $(city+"_"+c), 500, 500).play();
+            this.slideToObjectRelative(ccube, $(city+"_"+c), 1000, 1000, null, "last")
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
                 $(city+"_a").classList.remove("prk_candidate_space_active");
