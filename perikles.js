@@ -997,6 +997,7 @@ function (dojo, declare) {
                             }
                         }
                     }
+                    break;
                 case 'assassinate':
                     if (this.isCurrentPlayerActive()) {
                         let cubes = document.getElementsByClassName("prk_cube");
@@ -1096,6 +1097,18 @@ function (dojo, declare) {
             [...actdiv].forEach( a => a.classList.remove(cls));
         },
 
+
+        /**
+         * Move a cube from one location to another.
+         * @param {string} cube 
+         * @param {DOMElement} from_div 
+         * @param {DOMElement} to_div 
+         */
+        moveCube: function(cube, from_div, to_div) {
+            const cube_div = dojo.place(cube, from_div);
+            this.slideToObjectRelative(cube_div, to_div, 1000, 1000, null, "last")
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
         
@@ -1181,8 +1194,7 @@ function (dojo, declare) {
             for (let c = 0; c < cubes; c++) {
                 const i = num+c+1;
                 const cube = this.createInfluenceCube(player_id, city, i);
-                const cube_div = dojo.place(cube, from_div);
-                this.slideToObjectRelative(cube_div.id, to_div, 1000, 1000, null, "last")
+                this.moveCube(cube, from_div, to_div);
             }
         },
 
@@ -1243,9 +1255,7 @@ function (dojo, declare) {
             const cube1 = player_cubes.firstChild;
 
             const cube = this.createInfluenceCube(player_id, city, c);
-            const ccube = dojo.place(cube, cube1);
-            // this.slideToObject($(ccube), $(city+"_"+c), 500, 500).play();
-            this.slideToObjectRelative(ccube, $(city+"_"+c), 1000, 1000, null, "last")
+            this.moveCube(cube, player_cubes, $(city+'_'+c))
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
                 $(city+"_a").classList.remove("prk_candidate_space_active");

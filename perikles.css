@@ -333,6 +333,7 @@
 }
 
 .prk_cube {
+    position: relative;
     width: 14px;
     height: 14px;
     box-shadow: rgb(38 57 77) 0px 4px 4px 0px;
