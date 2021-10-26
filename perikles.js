@@ -980,10 +980,8 @@ function (dojo, declare) {
             switch( stateName ) {
                 case 'choosePlaceInfluence':
                     if( this.isCurrentPlayerActive() ) {
-                        for (city of CITIES) {
-                            const city_div = $(city);
-                            city_div.classList.add("prk_city_active");
-                        }
+                        let cities = document.getElementsByClassName("prk_city");
+                        [...cities].forEach(c => c.classList.add("prk_city_active"));
                     }
                     break;
                 case 'proposeCandidates':
@@ -1243,7 +1241,7 @@ function (dojo, declare) {
         },
 
         /**
-         * 
+         * A Candidate was proposed for a city, move it from nominee's cubes to space.
          * @param {Object} notif 
          */
         notif_candidateProposed: function(notif) {

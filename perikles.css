@@ -223,6 +223,7 @@
     transform: scale(1.1);
     transition: transform 0.5s;
     box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.4);
+    cursor: grab;
 }
 
 .prk_counter {
@@ -344,6 +345,7 @@
     border-radius: 4px;
     outline: 2px dotted red;
     box-shadow: darkgray 0px 4px 8px 8px;
+    cursor: pointer;
 }
 
 .prk_cubes_remove {
@@ -351,6 +353,7 @@
     outline: 2px dotted orangered;
     outline-offset: 2px;
     box-shadow: 3px 3px 12px 5px #8a0303;
+    cursor: url(img/sword_cursor.png), crosshair;
 }
 
 .prk_cubes_remove:hover {
