@@ -597,18 +597,18 @@ function (dojo, declare) {
          * Add event listeners to city divs.
          */
         setupCities: function() {
-            for (city of CITIES) {
-                const city_div = $(city);
-                city_div.addEventListener('mouseenter', (event) => {
+            const cities = document.getElementsByClassName("prk_city");
+            [...cities].forEach(c => {
+                c.addEventListener('mouseenter', (event) => {
                     this.onCityTouch(event, true);
                 });
-                city_div.addEventListener('mouseleave', (event) => {
+                c.addEventListener('mouseleave', (event) => {
                     this.onCityTouch(event, false);
                 });
-                city_div.addEventListener('click', (event) => {
+                c.addEventListener('click', (event) => {
                     this.onCityClick(event);
                 });
-            }
+            });
         },
 
         ///////////////////////////////////////////////////
@@ -884,6 +884,9 @@ function (dojo, declare) {
                     this.placeInfluenceCube(city);
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     mycubes.classList.remove("prk_cubes_active");
+                } else if (this.checkAction("chooseRemoveCube", true)) {
+                    const target = event.currentTarget;
+                    debugger;
                 }
             }
         },
@@ -957,14 +960,13 @@ function (dojo, declare) {
         /**
          * After clicking a cube during Assasassinate phase.
          */
-        removeCube: function() {
+        onSelectCube: function() {
             const cube_id = this.id;
             const segs = cube_id.split("_");
             const player_id = segs[0];
             const city = segs[1];
-            const cand = segs[2];
-            debugger;
-            console.log("clicked a cube "+cube_id);
+            const c = segs[2];
+            removeCube(player_id, city, c);
         },
 
         ///////////////////////////////////////////////////
@@ -999,10 +1001,7 @@ function (dojo, declare) {
                 case 'assassinate':
                     if (this.isCurrentPlayerActive()) {
                         let cubes = document.getElementsByClassName("prk_cube");
-                        [...cubes].forEach( c => {
-                            c.classList.add("prk_cubes_remove");
-                            c.addEventListener('click', this.removeCube);
-                        });
+                        [...cubes].forEach( c => c.classList.add("prk_cubes_remove"));
                     }
                     break;
                 case 'dummmy':
@@ -1025,12 +1024,10 @@ function (dojo, declare) {
                     this.stripClassName("prk_city_active");
                     this.stripClassName("prk_candidate_space_active");
                     this.stripClassName("prk_cubes_active");
-                break;
+                    break;
                 case 'assassinate':
                     this.stripClassName("prk_cubes_remove");
-                    let cubes = document.getElementsByClassName("prk_cube");
-                    [...cubes].forEach( c => c.removeEventListener('click', this.removeCube));
-                break;
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -1147,6 +1144,23 @@ function (dojo, declare) {
                 this.ajaxcall( "/perikles/perikles/selectcandidate.html", { 
                     city: city,
                     player: player_id,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        /**
+         * Action to remove a cube.
+         * @param {string} player_id 
+         * @param {string} city 
+         * @param {string} c 
+         */
+        removeCube: function(player_id, city, c) {
+            if (this.checkAction("chooseRemoveCube", true)) {
+                this.ajaxcall( "/perikles/perikles/removecube.html", { 
+                    player: player_id,
+                    city: city,
+                    cube: c,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
             }

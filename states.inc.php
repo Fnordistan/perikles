@@ -83,7 +83,7 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must remove 1 Influence cube'),
     	"descriptionmyturn" => clienttranslate('You must remove 1 Influence cube'),
     	"type" => "activeplayer",
-    	"possibleactions" => array( "removeCube" ),
+    	"possibleactions" => array( "chooseRemoveCube" ),
     	"transitions" => array( "useSpecial" => USE_SPECIAL, "nextPlayer" => NEXT_PLAYER )
     ),
 

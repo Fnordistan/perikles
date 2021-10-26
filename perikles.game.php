@@ -619,6 +619,13 @@ class Perikles extends Table
         $this->gamestate->nextState();
     }
 
+    /**
+     * Player chose a cube to remove.
+     */
+    function chooseRemoveCube($player_id, $city, $cube) {
+        throw new BgaVisibleSystemException("Choose to remove $player_id $city $cube");
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////

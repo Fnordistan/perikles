@@ -44,12 +44,9 @@
     /**
      * When player takes an Influence tile.
      */
-    public function takeinfluence()
-    {
+    public function takeinfluence() {
         self::setAjaxMode();     
-
         $influence_id = self::getArg( "id", AT_posint, true );
-
         $this->game->takeInfluence($influence_id);
         self::ajaxResponse( );
     }
@@ -59,9 +56,7 @@
      */
     public function placecube() {
       self::setAjaxMode();     
-
       $city = self::getArg( "city", AT_alphanum, true );
-
       $this->game->placeAnyCube($city);
       self::ajaxResponse( );
     }
@@ -71,11 +66,18 @@
      */
     public function selectcandidate() {
       self::setAjaxMode();     
-
       $city = self::getArg( "city", AT_alphanum, true );
       $player_id = self::getArg( "player", AT_alphanum, true );
-
       $this->game->chooseCandidate($city, $player_id);
+      self::ajaxResponse( );
+    }
+
+    public function removecube() {
+      self::setAjaxMode();     
+      $city = self::getArg( "city", AT_alphanum, true );
+      $player_id = self::getArg( "player", AT_alphanum, true );
+      $cube = self::getArg( "cube", AT_alphanum, true );
+      $this->game->chooseRemoveCube($player_id, $city, $cube);
       self::ajaxResponse( );
     }
 
