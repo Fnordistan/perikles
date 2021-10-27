@@ -555,7 +555,7 @@ class Perikles extends Table
             'inf_type' => $inf_type,
             'card_id' => $influence_id,
             'slot' => $slot,
-            'preserve' => [2 => 'player_id'],
+            'preserve' => ['player_id'],
         ));
 
         $state = ($city == "any") ? "choosePlaceCube" : "placeCube";
@@ -613,7 +613,7 @@ class Perikles extends Table
             'city' => $city,
             'city_name' => $city_name,
             'candidate' => $c,
-            'preserve' => [ 2 => 'player_id', 3 => 'candidate_id' ],
+            'preserve' => ['player_id', 'candidate_id'],
         ) );
 
         $this->gamestate->nextState();
@@ -621,9 +621,81 @@ class Perikles extends Table
 
     /**
      * Player chose a cube to remove.
+     * $cube is a, b, or a number
      */
-    function chooseRemoveCube($player_id, $city, $cube) {
-        throw new BgaVisibleSystemException("Choose to remove $player_id $city $cube");
+    function chooseRemoveCube($target_id, $city, $cube) {
+        self::checkAction('chooseRemoveCube');
+        $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+        $city_name = $this->cities[$city]['name'];
+        if ($cube == 'a') {
+            $alpha = self::getGameStateValue($city.'_a');
+            if ($alpha != $target_id) {
+                throw new BgaVisibleSystemException("Missing cube at $city $cube"); // NO18N
+            }
+            self::setGameStateValue($city.'_a', 0);
+            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removed ${candidate_name}\'s Candidate ${candidate} in ${city_name}'), array(
+                'i18n' => ['city_name'],
+                'player_id' => $player_id,
+                'player_name' => $players[$player_id]['player_name'],
+                'candidate_id' => $target_id,
+                'candidate_name' => $players[$target_id]['player_name'],
+                'candidate' => ALPHA,
+                'city' => $city,
+                'city_name' => $city_name,
+                'preserve' => ['player_id', 'candidate_id']
+            ));
+            $beta = self::getGameStateValue($city.'_b');
+            if ($beta != 0) {
+                self::setGameStateValue($city.'_b', 0);
+                self::setGameStateValue($city.'_a', $beta);
+                self::notifyAllPlayers("candidatePromoted", clienttranslate('${candidate_name}\'s Candidate moves from ${B} to ${A} in ${city_name}'), array(
+                    'i18n' => ['city_name'],
+                    'candidate_id' => $beta,
+                    'candidate_name' => $players[$beta]['player_name'],
+                    'A' => ALPHA,
+                    'B' => BETA,
+                    'city' => $city,
+                    'city_name' => $city_name,
+                    'preserve' => ['candidate_id']
+    
+                ));
+            }
+        } else if ($cube == 'b') {
+            $alpha = self::getGameStateValue($city.'_a');
+            if ($alpha == 0) {
+                throw new BgaVisibleSystemException("Unexpected game state: Candidate B with no Candidate A"); // NO18N
+            }
+            $beta = self::getGameStateValue($city.'_b');
+            if ($beta != $target_id) {
+                throw new BgaVisibleSystemException("Missing cube at $city $cube"); // NO18N
+            }
+            self::setGameStateValue($city.'_b', 0);
+            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removed ${candidate_name}\'s Candidate ${candidate} in ${city_name}'), array(
+                'i18n' => ['city_name'],
+                'player_id' => $player_id,
+                'player_name' => $players[$player_id]['player_name'],
+                'candidate_id' => $target_id,
+                'candidate_name' => $players[$target_id]['player_name'],
+                'candidate' => BETA,
+                'city' => $city,
+                'city_name' => $city_name,
+                'preserve' => ['player_id', 'candidate_id']
+            ));
+        } else {
+            $this->changeInfluenceInCity($city, $target_id, -1);
+            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removed one of ${candidate_name}\'s Influence cubes in ${city_name}'), array(
+                'i18n' => ['city_name'],
+                'player_id' => $player_id,
+                'player_name' => $players[$player_id]['player_name'],
+                'candidate_id' => $target_id,
+                'candidate_name' => $players[$target_id]['player_name'],
+                'city' => $city,
+                'city_name' => $city_name,
+                'preserve' => ['player_id', 'candidate_id']
+            ));
+        }
+        $this->gamestate->nextState();
     }
 
 //////////////////////////////////////////////////////////////////////////////

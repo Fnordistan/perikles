@@ -338,7 +338,8 @@ function (dojo, declare) {
                     for (let n = 0; n < num; n++) {
                         const cube = this.createInfluenceCube(player_id, city, n);
                         const column = $(city+"_cubes_"+player_id);
-                        dojo.place(cube, column);
+                        const cube_div = dojo.place(cube, column);
+                        cube_div.addEventListener('click', (event) => this.onSelectCube(event));
                     }
                     this.decorateInfluenceCubes(city, player_id);
                 }
@@ -392,7 +393,8 @@ function (dojo, declare) {
                 const cid = cand.split('_');
                 const city = cid[0];
                 const cube = this.createInfluenceCube(player_id, city, cid[1]);
-                dojo.place(cube, $(cand));
+                const candidate = dojo.place(cube, $(cand));
+                candidate.addEventListener('click', (event) => this.onSelectCube(event));
             }
         },
 
@@ -884,9 +886,6 @@ function (dojo, declare) {
                     this.placeInfluenceCube(city);
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     mycubes.classList.remove("prk_cubes_active");
-                } else if (this.checkAction("chooseRemoveCube", true)) {
-                    const target = event.currentTarget;
-                    debugger;
                 }
             }
         },
@@ -960,13 +959,15 @@ function (dojo, declare) {
         /**
          * After clicking a cube during Assasassinate phase.
          */
-        onSelectCube: function() {
-            const cube_id = this.id;
-            const segs = cube_id.split("_");
-            const player_id = segs[0];
-            const city = segs[1];
-            const c = segs[2];
-            removeCube(player_id, city, c);
+        onSelectCube: function(event) {
+            if (this.checkAction("chooseRemoveCube", true)) {
+                const cube_id = event.target.id;
+                const segs = cube_id.split("_");
+                const player_id = segs[0];
+                const city = segs[1];
+                const c = segs[2];
+                this.removeCube(player_id, city, c);
+            }
         },
 
         ///////////////////////////////////////////////////
@@ -1100,8 +1101,9 @@ function (dojo, declare) {
          * @param {DOMElement} to_div 
          */
         moveCube: function(cube, from_div, to_div) {
-            const cube_div = dojo.place(cube, from_div);
-            this.slideToObjectRelative(cube_div, to_div, 1000, 1000, null, "last")
+            const mobile = dojo.place(cube, from_div);
+            mobile.addEventListener('click', (event) => this.onSelectCube(event));
+            this.slideToObjectRelative(mobile, to_div, 1000, 1000, null, "last")
         },
 
         ///////////////////////////////////////////////////
@@ -1188,6 +1190,10 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'influenceCubes', 500 );
             dojo.subscribe( 'candidateProposed', this, "notif_candidateProposed");
             this.notifqueue.setSynchronous( 'candidateProposed', 1000 );
+            dojo.subscribe( 'cubeRemoved', this, "notif_cubeRemoved");
+            this.notifqueue.setSynchronous( 'cubeRemoved', 1000 );
+            dojo.subscribe( 'candidatePromoted', this, "notif_candidatePromoted");
+            this.notifqueue.setSynchronous( 'candidatePromoted', 1000 );
         },  
         
         // Notification handlers
@@ -1276,6 +1282,36 @@ function (dojo, declare) {
                 $(city+"_b").classList.remove("prk_candidate_space_active");
                 $(city).classList.remove("prk_city_active")
             }
+        },
+
+        /**
+         * A cube was removed - may be an Influence cube or a candidate
+         * @param {Object} notif 
+         */
+        notif_cubeRemoved: function(notif) {
+            const target_id = notif.args.candidate_id;
+            const city = notif.args.city;
+            const candidate = notif.args.candidate; // alpha or beta or null
+            if (candidate) {
+                const c = CANDIDATES[candidate]; // "a" or "b"
+                this.fadeOutAndDestroy( target_id+"_"+city+"_"+c, 250);
+            } else {
+                const player_cubes = $(city+"_cubes_"+target_id);
+                const cube1 = player_cubes.firstChild;
+                this.fadeOutAndDestroy( cube1.id, 250);
+            }
+        },
+
+        /**
+         * Move cube from B to A
+         * @param {Object} notif
+         */
+        notif_candidatePromoted: function(notif) {
+            const city = notif.args.city;
+            const candidate_id = notif.args.candidate_id;
+            const fromcube = candidate_id+"_"+city+"_b";
+            const to_div = $(city+"_a");
+            this.slideToObjectRelative(fromcube, to_div, 1000, 1000, null, "last")
         },
 
    });
