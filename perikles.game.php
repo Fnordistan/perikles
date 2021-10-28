@@ -70,6 +70,7 @@ class Perikles extends Table
             "megara_defeats" => 34,
             "sparta_defeats" => 35,
             "thebes_defeats" => 36,
+            "last_influence_slot" => 37,
         ) );        
 
         $this->influence_tiles = self::getNew("module.common.deck");
@@ -125,6 +126,7 @@ class Perikles extends Table
                 self::setGameStateInitialValue( $cn."_".$lbl, 0 );
             }
         }
+        self::setGameStateInitialValue("last_influence_slot", 0);
         
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -502,6 +504,31 @@ class Perikles extends Table
         ));
     }
 
+    /**
+     * Draw a new Influence card from deck and place.
+     */
+    function drawInfluenceTile() {
+        $slot = self::getGameStateValue("last_influence_slot");
+        $this->influence_tiles->pickCardForLocation(DECK, BOARD, $slot);
+        $newtile = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_location = \"".BOARD."\" AND card_location_arg =$slot");
+        self::setGameStateValue("last_influence_slot", 0);
+
+        $descriptors = $this->influenceTileDescriptors($newtile);
+        $city_name = $descriptors[0];
+        $inf_type = $descriptors[2];
+        if (!empty($inf_type)) {
+            $inf_type = "(".$inf_type.")";
+        }
+
+        self::notifyAllPlayers("influenceCardDrawn", clienttranslate('New Influence tile: ${shards}-Shard ${city_name} tile ${inf_type}'), array(
+            'i18n' => ['city_name', 'inf_type'],
+            'city_name' => $city_name,
+            'shards' => $descriptors[1],
+            'inf_type' => $inf_type,
+            'tile' => $newtile,
+        ));
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -544,6 +571,7 @@ class Perikles extends Table
         }
 
         $slot = $influence_card['slot'];
+        self::setGameStateValue("last_influence_slot", $slot);
 
         self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${shards}-Shard ${city_name} tile ${inf_type}'), array(
             'i18n' => ['city_name', 'inf_type'],
@@ -736,6 +764,7 @@ class Perikles extends Table
         if ($this->allInfluenceTilesTaken()) {
             $state = "proposeCandidate";
         } else {
+            $this->drawInfluenceTile();
             $player_id = self::activeNextPlayer();
             self::giveExtraTime( $player_id );
             $state = "takeInfluence";

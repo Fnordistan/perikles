@@ -221,6 +221,7 @@ function (dojo, declare) {
          * @param {Object} tile 
          */
         placeInfluenceTileBoard: function(tile) {
+            debugger;
             const helplbl = {
                 "influence": "",
                 "candidate": _("Candidate"),
@@ -260,7 +261,7 @@ function (dojo, declare) {
         placeInfluencePlayerBoard: function(tile) {
             const loc = tile['location'];
             const player_cards = loc+'_player_cards';
-            const card_div = this.createPlayerInfluenceCard(tile);
+            const card_div = this.createInfluenceCard(tile);
             dojo.place(card_div, $(player_cards));
         },
 
@@ -269,7 +270,7 @@ function (dojo, declare) {
          * @param {Object} tile 
          * @returns Div string
          */
-        createPlayerInfluenceCard: function(tile) {
+        createInfluenceCard: function(tile) {
             const id = tile['id'];
             const city = tile['city'];
             const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
@@ -1194,7 +1195,9 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'cubeRemoved', 1000 );
             dojo.subscribe( 'candidatePromoted', this, "notif_candidatePromoted");
             this.notifqueue.setSynchronous( 'candidatePromoted', 1000 );
-        },  
+            dojo.subscribe( 'influenceCardDrawn', this, "notif_influenceCardDrawn");
+            this.notifqueue.setSynchronous( 'influenceCardDrawn', 1000 );
+        },
         
         // Notification handlers
 
@@ -1222,7 +1225,6 @@ function (dojo, declare) {
          */
         notif_influenceCardTaken: function( notif )
         {
-            console.log( notif );
             const player_id = notif.args.player_id;
             const city = notif.args.city;
             const id = notif.args.card_id;
@@ -1241,9 +1243,30 @@ function (dojo, declare) {
 
             // create temp new card to move to the player board
             const fromSlot = $(from_id);
-            const newcard = this.createPlayerInfluenceCard(newTile);
+            const newcard = this.createInfluenceCard(newTile);
             let newcard_div = dojo.place(newcard, fromSlot);
             this.slide(newcard_div, player_cards, {"from": fromSlot});
+        },
+
+        /**
+         * Move card from deck to empty slot.
+         * @param {Object} notif 
+         */
+         notif_influenceCardDrawn: function(notif) {
+            // create the Influence tile
+            const tile = notif.args.tile;
+            const tile_div = this.createInfluenceCard(tile);
+            const temp = dojo.place(tile_div, $('influence_slot_0'));
+            this.slideToObjectAndDestroy( temp, 'influence_slot_'+tile['slot'], 1000, 0 );
+            this.placeInfluenceTileBoard(tile);
+            // remove card from influence deck
+            this.removeTooltip( INFLUENCE_PILE );
+            $(INFLUENCE_PILE).lastElementChild.remove();
+            const decksize = $(INFLUENCE_PILE).childElementCount;
+            var pile_tt = _("Influence Deck: ${num} cards remaining");
+            pile_tt = pile_tt.replace('${num}', decksize);
+            this.addTooltip(INFLUENCE_PILE, pile_tt, '');
+
         },
 
         /**
