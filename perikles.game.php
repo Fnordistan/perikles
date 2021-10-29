@@ -447,6 +447,23 @@ class Perikles extends Table
     }
 
     /**
+     * Are all the Candidate slots filled?
+     * @return true if all Candidates filled, else false
+     */
+    function allCandidatesFilled() {
+        foreach ($this->cities as $cn => $city) {
+            foreach(["a", "b"] as $c) {
+                $cv = $cn."_".$c;
+                $candidate = self::getGameStateValue($cv);
+                if ($candidate == 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * Return {name,shard,desc} array of strings
      */
     function influenceTileDescriptors($tile) {
@@ -760,10 +777,12 @@ class Perikles extends Table
 
     function stNextPlayer() {
         $state = "";
-        // $currentstate = $this->gamestate->state();
-
         if ($this->allInfluenceTilesTaken()) {
-            $state = "proposeCandidate";
+            if ($this->allCandidatesFilled()) {
+                $state = "elections";
+            } else {
+                $state = "proposeCandidate";
+            }
         } else {
             $this->drawInfluenceTile();
             $player_id = self::activeNextPlayer();
