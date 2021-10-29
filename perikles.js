@@ -51,6 +51,8 @@ const PLAYER_COLORS = {
     "FFF" : "white",
 }
 
+const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;';
+
 // row,column
 const LOCATIONS = {
     "amphipolis" : [1,1],
@@ -209,7 +211,7 @@ function (dojo, declare) {
                 if (loc == "board") {
                     this.placeInfluenceTileBoard(tile);
                 } else {
-                    this.placeInfluencePlayerBoard(tile);
+                    this.placeInfluenceTilePlayerBoard(tile);
                 }
             }
             // deck
@@ -221,44 +223,20 @@ function (dojo, declare) {
          * @param {Object} tile 
          */
         placeInfluenceTileBoard: function(tile) {
-            debugger;
-            const helplbl = {
-                "influence": "",
-                "candidate": _("Candidate"),
-                "assassin": _("Assassin"),
-                "any": "",
-            };
-            const helptext = {
-                "influence": _("Add 2 Influence cubes to ${city}"),
-                "candidate": _("Add 1 Influence cube to ${city}, and propose a candidate in any city"),
-                "assassin": _("Add 1 Influence cube to ${city}, and remove 1 cube from any city"),
-                "any": _("Add 1 Influence cube to any city"),
-            };
-            const id = tile['id'];
             const city = tile['city'];
             const s = tile['slot'];
-            const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
-            const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
-            const card_div = this.format_block('jstpl_influence_tile', {city: city, id: id, x: xoff, y: yoff, margin: "auto"});
+
+            const card_div = this.createInfluenceCard(tile);
             const card = dojo.place(card_div,  $("influence_slot_"+s));
-            let ttext = "";
-            if (city == "any") {
-                ttext = helptext["any"];
-            } else {
-                ttext = helptext[tile['type']];
-            }
-            const cityname = this.getCityNameTr(city);
-            ttext = ttext.replace('${city}', cityname);
-            const tooltip = this.format_block('jstpl_influence_tt', {city: cityname, label: helplbl[tile['type']], text: ttext, x: xoff, y: yoff});
-            this.addTooltipHtml(card.id, tooltip, '');
-            this.decorateInfluenceCard(card.id);
+
+            this.decorateInfluenceCard(card, city, tile['type']);
         },
 
         /**
          * 
          * @param {Object} tile 
          */
-        placeInfluencePlayerBoard: function(tile) {
+        placeInfluenceTilePlayerBoard: function(tile) {
             const loc = tile['location'];
             const player_cards = loc+'_player_cards';
             const card_div = this.createInfluenceCard(tile);
@@ -313,18 +291,46 @@ function (dojo, declare) {
 
         /**
          * For Influence cards on display, add Event listeners.
-         * @param {string} id 
+         * @param {Object} card
+         * @param {string} city
+         * @param {string} type
          */
-         decorateInfluenceCard: function(id) {
-            const card = $(id);
+         decorateInfluenceCard: function(card, city, type) {
+            const helplbl = {
+                "influence": "",
+                "candidate": _("Candidate"),
+                "assassin": _("Assassin"),
+                "any": "",
+            };
+            const helptext = {
+                "influence": _("Add 2 Influence cubes to ${city}"),
+                "candidate": _("Add 1 Influence cube to ${city}, and propose a candidate in any city"),
+                "assassin": _("Add 1 Influence cube to ${city}, and remove 1 cube from any city"),
+                "any": _("Add 1 Influence cube to any city"),
+            };
+
+            const cityname = this.getCityNameTr(city);
+            let ttext = "";
+            if (city == "any") {
+                ttext = helptext["any"];
+            } else {
+                ttext = helptext[type];
+            }
+
+            ttext = ttext.replace('${city}', cityname);
+            const xoff = -1 * INFLUENCE_COL[type] * INFLUENCE_SCALE * this.influence_w;
+            const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
+            const tooltip = this.format_block('jstpl_influence_tt', {city: cityname, label: helplbl[type], text: ttext, x: xoff, y: yoff});
+            this.addTooltipHtml(card.id, tooltip, '');
+
             card.addEventListener('click', () => {
-                this.onInfluenceCardSelected(id);
+                this.onInfluenceCardSelected(card.id);
             });
             card.addEventListener('mouseenter', () => {
-                this.onInfluenceCardHover(id, true);
+                this.onInfluenceCardHover(card.id, true);
             });
             card.addEventListener('mouseleave', () => {
-                this.onInfluenceCardHover(id, false);
+                this.onInfluenceCardHover(card.id, false);
             });
         },
 
@@ -626,7 +632,7 @@ function (dojo, declare) {
                         args.player_name = this.spanPlayerName(args.player_id);
                     }
                     if (args.actplayer) {
-                        args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF; '+'background-color:#ccc; text-shadow: -1px -1px #000;');
+                        args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF;'+WHITE_OUTLINE);
                     }
                     if (args.candidate_name) {
                         args.candidate_name  = this.spanPlayerName(args.candidate_id);
@@ -673,7 +679,7 @@ function (dojo, declare) {
             if (player.color_back) {
                 color_bg = "background-color:#"+player.color_back+";";
             } else if (player.color == "FFF") {
-                color_bg = "background-color:#ccc; text-shadow: -1px -1px #000;";
+                color_bg = WHITE_OUTLINE;
             }
             return color_bg;
         },
@@ -1231,11 +1237,8 @@ function (dojo, declare) {
             const card_id = city+'_'+id;
             const slot = notif.args.slot;
 
-            // create the Influence tile
-            const newTile = this.getTileById(id);
-            if (newTile == null) {
-                throw "Unknown Influence Tile: " + id;
-            }
+            // recreate the Influence tile
+            const newTile = notif.args.tile;
 
             $(card_id).remove();
             const player_cards = player_id+'_player_cards';
@@ -1253,34 +1256,22 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
          notif_influenceCardDrawn: function(notif) {
-            // create the Influence tile
-            const tile = notif.args.tile;
-            const tile_div = this.createInfluenceCard(tile);
-            const temp = dojo.place(tile_div, $('influence_slot_0'));
-            this.slideToObjectAndDestroy( temp, 'influence_slot_'+tile['slot'], 1000, 0 );
-            this.placeInfluenceTileBoard(tile);
-            // remove card from influence deck
+            // take top card off influence deck first
             this.removeTooltip( INFLUENCE_PILE );
             $(INFLUENCE_PILE).lastElementChild.remove();
             const decksize = $(INFLUENCE_PILE).childElementCount;
+
+            // create the Influence tile
+            const tile = notif.args.tile;
+            const tile_div = this.createInfluenceCard(tile);
+            const card = dojo.place(tile_div, $('influence_slot_0'));
+            this.slideToObjectRelative( card.id, 'influence_slot_'+tile['slot'], 1000, 500 );
+            this.decorateInfluenceCard(card, tile['city'], tile['type']);
+
             var pile_tt = _("Influence Deck: ${num} cards remaining");
             pile_tt = pile_tt.replace('${num}', decksize);
             this.addTooltip(INFLUENCE_PILE, pile_tt, '');
 
-        },
-
-        /**
-         * Get tile from what should be in gamedatas.influencetiles
-         * @param {string} id 
-         * @returns tile
-         */
-        getTileById: function(id) {
-            for (const tile of this.gamedatas.influencetiles) {
-                if (tile['id'] == id) {
-                    return tile;
-                }
-            }
-            return null;
         },
 
         /**

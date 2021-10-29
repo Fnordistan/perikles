@@ -439,7 +439,7 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         $cardlim = count($players) == 5 ? 4 : 5;
         foreach($players as $player_id => $player) {
-            if ($this->influence_tiles->getCardsInLocation($player_id) != $cardlim) {
+            if ($this->influence_tiles->countCardInLocation($player_id) < $cardlim) {
                 return false;
             }
         }
@@ -583,6 +583,7 @@ class Perikles extends Table
             'inf_type' => $inf_type,
             'card_id' => $influence_id,
             'slot' => $slot,
+            'tile' => $influence_card,
             'preserve' => ['player_id'],
         ));
 
@@ -776,7 +777,6 @@ class Perikles extends Table
         $player_id = self::getActivePlayerId();
         // card on top should be most recently added card
         $card = $this->influence_tiles->getCardOnTop($player_id);
-        $id = $card['id'];
         $city = $card['type'];
         $type = $card['type_arg'];
         $cubes = ($type == 'influence') ? 2 : 1;
