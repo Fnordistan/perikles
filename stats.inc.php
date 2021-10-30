@@ -90,7 +90,6 @@ $stats_type = array(
             "name" => totranslate("Thebes Statues"),
             "type" => "int"
         ),
-    
     )
 
 );

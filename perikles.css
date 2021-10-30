@@ -99,6 +99,15 @@
     animation: prk_border_pulse 5s infinite;
 }
 
+.prk_city_name {
+    display: inline-block;
+    font-family: 'ThrumsSerifRegular';
+    font-size: 16px;
+    font-weight: 500;
+    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px 1px 0px rgba(0,0,0,.8);
+    padding: 0 2px;
+}
+
 @keyframes prk_border_pulse {
     0% {
         border: white 4px dotted;

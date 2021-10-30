@@ -636,6 +636,9 @@ function (dojo, declare) {
                     if (args.candidate_name) {
                         args.candidate_name  = this.spanPlayerName(args.candidate_id);
                     }
+                    if (args.city_name) {
+                        args.city_name = this.spanCityName(args.city, args.city_name);
+                    }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.spanYou());
                     }
@@ -666,6 +669,10 @@ function (dojo, declare) {
             const color_bg = this.colorBg(player);
             const you = "<span style=\"font-weight:bold;color:#" + color + ";" + color_bg + "\">" + __("lang_mainsite", "You") + "</span>";
             return you;
+        },
+
+        spanCityName: function(city, city_name) {
+            return '<div class="prk_city_name" style="color:var(--color_'+city+');">'+city_name+'</div>';
         },
 
         /**
@@ -1129,6 +1136,20 @@ function (dojo, declare) {
             [...actdiv].forEach( a => a.classList.remove(cls));
         },
 
+        /**
+         * Remove the bottommost of a player's Influence cubes in a city
+         * @param {string} player_id 
+         * @param {string} city
+         * @param {int} num
+         */
+        removeInfluenceCubes: function(player_id, city, num) {
+            const from_div = $(city+'_cubes_'+player_id);
+            const ct = from_div.childElementCount;
+            for (let i = 0; i < num; i++) {
+                const toremove = player_id+"_"+city+"_"+(ct-(1+i));
+                this.fadeOutAndDestroy(toremove, 500);
+            }
+        },
 
         ///////////////////////////////////////////////////
         //// Player's action
@@ -1303,7 +1324,7 @@ function (dojo, declare) {
             const candidate = notif.args.candidate; // alpha or beta
             const c = CANDIDATES[candidate]; // "a" or "b"
             const player_cubes = $(city+"_cubes_"+player_id);
-            const cube1 = player_cubes.firstChild;
+            const cube1 = player_cubes.lastChild;
 
             const cube = this.createInfluenceCube(player_id, city, c);
             this.moveCube(cube, player_cubes, $(city+'_'+c), 500);
@@ -1352,7 +1373,22 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_election: function(notif) {
-            debugger;
+            const player_id = notif.args.player_id;
+            const city = notif.args.city;
+            const cubes = parseInt(notif.args.cubes);
+            // remove candidate cubes
+            ["a", "b"].forEach(c => {
+                if ($(city+"_"+c).hasChildNodes) {
+                    const cand = $(city+"_"+c).lastElementChild;
+                    this.fadeOutAndDestroy(cand.id, 500);
+                }
+            });
+            // subtract loser's cubes from winner's
+            this.removeInfluenceCubes(player_id, city, cubes);
+            console.log(this.gamedatas.players[player_id]['name'] + " loses " + cubes + " cubes in "+city);
+            // place Leader
+            const leader = this.createLeaderCounter(player_id, city, "leader", 1);
+            dojo.place(leader, $(city+"_leader"));
         },
 
    });

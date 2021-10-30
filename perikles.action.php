@@ -80,5 +80,4 @@
       $this->game->chooseRemoveCube($player_id, $city, $cube);
       self::ajaxResponse( );
     }
-
   }

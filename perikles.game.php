@@ -70,7 +70,7 @@ class Perikles extends Table
             "megara_defeats" => 34,
             "sparta_defeats" => 35,
             "thebes_defeats" => 36,
-            "last_influence_slot" => 37,
+            "last_influence_slot" => 37, // keep track of where to put next Influence tile
         ) );        
 
         $this->influence_tiles = self::getNew("module.common.deck");
@@ -564,6 +564,7 @@ class Perikles extends Table
             'cubes' => $cubes,
             'city' => $city,
             'city_name' => $city_name,
+            'preserve' => ['city']
         ));
     }
 
@@ -585,10 +586,12 @@ class Perikles extends Table
 
         self::notifyAllPlayers("influenceCardDrawn", clienttranslate('New Influence tile: ${shards}-Shard ${city_name} tile ${inf_type}'), array(
             'i18n' => ['city_name', 'inf_type'],
+            'city' => $newtile['city'],
             'city_name' => $city_name,
             'shards' => $descriptors[1],
             'inf_type' => $inf_type,
             'tile' => $newtile,
+            'preserve' => ['city']
         ));
     }
 
@@ -647,7 +650,7 @@ class Perikles extends Table
             'card_id' => $influence_id,
             'slot' => $slot,
             'tile' => $influence_card,
-            'preserve' => ['player_id'],
+            'preserve' => ['player_id', 'city'],
         ));
 
         $state = ($city == "any") ? "choosePlaceCube" : "placeCube";
@@ -710,7 +713,7 @@ class Perikles extends Table
             'city' => $city,
             'city_name' => $city_name,
             'candidate' => $c,
-            'preserve' => ['player_id', 'candidate_id'],
+            'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
 
         $this->gamestate->nextState();
@@ -740,7 +743,7 @@ class Perikles extends Table
                 'candidate' => ALPHA,
                 'city' => $city,
                 'city_name' => $city_name,
-                'preserve' => ['player_id', 'candidate_id']
+                'preserve' => ['player_id', 'candidate_id', 'city']
             ));
             $beta = self::getGameStateValue($city.'_b');
             if ($beta != 0) {
@@ -754,7 +757,7 @@ class Perikles extends Table
                     'B' => BETA,
                     'city' => $city,
                     'city_name' => $city_name,
-                    'preserve' => ['candidate_id']
+                    'preserve' => ['candidate_id', 'city']
     
                 ));
             }
@@ -777,7 +780,7 @@ class Perikles extends Table
                 'candidate' => BETA,
                 'city' => $city,
                 'city_name' => $city_name,
-                'preserve' => ['player_id', 'candidate_id']
+                'preserve' => ['player_id', 'candidate_id', 'city']
             ));
         } else {
             $this->changeInfluenceInCity($city, $target_id, -1);
@@ -789,12 +792,11 @@ class Perikles extends Table
                 'candidate_name' => $players[$target_id]['player_name'],
                 'city' => $city,
                 'city_name' => $city_name,
-                'preserve' => ['player_id', 'candidate_id']
+                'preserve' => ['player_id', 'candidate_id', 'city']
             ));
         }
         $this->gamestate->nextState();
     }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
@@ -896,19 +898,27 @@ class Perikles extends Table
                 } else {
                     // B is unopposed
                     $winner = $b;
-                    self::notifyAllPlayers("unopposedElection", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
+                    self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
                         'i18n' => ['city_name'],
+                        'player_id' => $winner,
                         'player_name' => $players[$winner]['player_name'],
+                        'city' => $cn,
                         'city_name' => $city_name,
-                    ));
+                        'cubes' => 0,
+                        'preserve' => ['player_id', 'city']
+                        ));
                 }
             } elseif ($b == 0) {
                 // A is unopposed
                 $winner = $a;
-                self::notifyAllPlayers("unopposedElection", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
+                self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
                     'i18n' => ['city_name'],
+                    'player_id' => $winner,
                     'player_name' => $players[$winner]['player_name'],
+                    'city' => $cn,
                     'city_name' => $city_name,
+                    'cubes' => 0,
+                    'preserve' => ['player_id', 'city']
                 ));
             } else {
                 // contested election
@@ -916,23 +926,29 @@ class Perikles extends Table
                 $b_inf = $this->influenceInCity($b, $cn);
                 // default
                 $winner = $a;
+                $loser_inf = $b_inf;
                 if ($a_inf != $b_inf) {
                     if ($a_inf < $b_inf) {
                         $winner = $b;
+                        $loser_inf = $a_inf;
                     }
                 }
-                $this->changeInfluenceInCity($cn, $winner, -$b_inf);
+                $this->changeInfluenceInCity($cn, $winner, -$loser_inf);
                 self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name}'), array(
                     'i18n' => ['city_name'],
+                    'player_id' => $winner,
                     'player_name' => $players[$winner]['player_name'],
+                    'city' => $cn,
                     'city_name' => $city_name,
-                    'cubes' => $b_inf
+                    'cubes' => $loser_inf,
+                    'preserve' => ['player_id', 'city']
                 ));
             }
+            self::setGameStateValue($cn."_leader", $winner);
+
             foreach(["a", "b"] as $c) {
                 self::setGameStateValue($cn."_".$c, 0);
             }
-            self::debug("leader of $cn is $winner");
         }
         $this->gamestate->nextState();
     }

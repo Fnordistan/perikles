@@ -27,7 +27,7 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("PROPOSE_CANDIDATE", 10);
     define("ELECTIONS", 11);
     // Commit forces phase
-    define("TAKE_DEAD", 20);
+    define("ASSIGN_LEADERS", 20);
     define("TAKE_MILITARY", 21);
     define("COMMIT_FORCES", 22);
     define("ENDGAME", 99);
@@ -103,14 +103,14 @@ $machinestates = array(
     	"type" => "game",
         "updateGameProgression" => true,   
     	"action" => "stElections",
-    	"transitions" => array( "" => TAKE_MILITARY )
+    	"transitions" => array( "" => TAKE_INFLUENCE )
     ),
 
-    TAKE_MILITARY => array(
+    ASSIGN_LEADERS => array(
     	"name" => "militaryForces",
     	"description" => "",
     	"type" => "game",
-    	"action" => "stMilitary",
+    	"action" => "stLeadership",
     	"transitions" => array( "" => COMMIT_FORCES )
     ),
 
