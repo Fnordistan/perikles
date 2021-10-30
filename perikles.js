@@ -1105,12 +1105,13 @@ function (dojo, declare) {
          * Move a cube from one location to another.
          * @param {string} cube 
          * @param {DOMElement} from_div 
-         * @param {DOMElement} to_div 
+         * @param {DOMElement} to_div
+         * @param {int} delay
          */
-        moveCube: function(cube, from_div, to_div) {
+        moveCube: function(cube, from_div, to_div, delay) {
             const mobile = dojo.place(cube, from_div);
             mobile.addEventListener('click', (event) => this.onSelectCube(event));
-            this.slideToObjectRelative(mobile, to_div, 1000, 1000, null, "last")
+            this.slideToObjectRelative(mobile, to_div, 1000, delay, null, "last")
         },
 
         ///////////////////////////////////////////////////
@@ -1221,7 +1222,7 @@ function (dojo, declare) {
             for (let c = 0; c < cubes; c++) {
                 const i = num+c+1;
                 const cube = this.createInfluenceCube(player_id, city, i);
-                this.moveCube(cube, from_div, to_div);
+                this.moveCube(cube, from_div, to_div, 1000+(c*500));
             }
         },
 
@@ -1264,7 +1265,7 @@ function (dojo, declare) {
             // create the Influence tile
             const tile = notif.args.tile;
             const tile_div = this.createInfluenceCard(tile);
-            const card = dojo.place(tile_div, $('influence_slot_0'));
+            const card = dojo.place(tile_div, $(INFLUENCE_PILE).lastElementChild);
             this.slideToObjectRelative( card.id, 'influence_slot_'+tile['slot'], 1000, 500 );
             this.decorateInfluenceCard(card, tile['city'], tile['type']);
 
@@ -1287,7 +1288,7 @@ function (dojo, declare) {
             const cube1 = player_cubes.firstChild;
 
             const cube = this.createInfluenceCube(player_id, city, c);
-            this.moveCube(cube, player_cubes, $(city+'_'+c))
+            this.moveCube(cube, player_cubes, $(city+'_'+c), 500);
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
                 $(city+"_a").classList.remove("prk_candidate_space_active");
