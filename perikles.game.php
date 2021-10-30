@@ -447,20 +447,66 @@ class Perikles extends Table
     }
 
     /**
-     * Are all the Candidate slots filled?
-     * @return true if all Candidates filled, else false
+     * Does this player have any influence in the city, including a candidate?
      */
-    function allCandidatesFilled() {
-        foreach ($this->cities as $cn => $city) {
-            foreach(["a", "b"] as $c) {
-                $cv = $cn."_".$c;
-                $candidate = self::getGameStateValue($cv);
-                if ($candidate == 0) {
-                    return false;
+    function hasInfluenceInCity($player_id, $city) {
+        foreach(["a", "b"] as $c) {
+            if (self::getGameStateValue($city."_".$c) == $player_id) {
+                return true;
+            }
+        }
+        return ($this->influenceInCity($player_id, $city) > 0);
+    }
+
+    /**
+     * Can player nominate in this city?
+     */ 
+    function canNominate($player_id, $city) {
+        $open = false;
+        foreach(["a", "b"] as $c) {
+            if (self::getGameStateValue($city."_".$c) == 0) {
+                $open = true;
+            }
+            if ($open) {
+                if ($this->hasInfluenceInCity($player_id, $city)) {
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
+    }
+
+    /**
+     * Is there any city this player can nominate in?
+     */
+    function canNominateAny($player_id) {
+        foreach ($this->cities as $c => $city) {
+            if ($this->canNominate($player_id, $c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Influence of a player in a city.
+     */
+    function influenceInCity($player_id, $city) {
+        return self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
+    }
+
+    /**
+     * Are all the Candidate slots filled?
+     * @return true if someone is able to nominate in a city, otherwise false
+     */
+    function canAnyoneNominate() {
+        $players = self::loadPlayersBasicInfos();
+        foreach ($players as $player_id => $player) {
+            if ($this->canNominateAny($player_id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -494,7 +540,7 @@ class Perikles extends Table
      * @param {int} cubes may be negative
      */
     function changeInfluenceInCity($city, $player_id, $cubes) {
-        $influence = self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
+        $influence = $this->influenceInCity($player_id, $city);
         $influence += $cubes;
         if ($influence < 0) {
             throw new BgaVisibleSystemException("Cannot reduce influence below 0");
@@ -621,10 +667,15 @@ class Perikles extends Table
     /**
      * Player is selecting a candidate for a city.
      */
-    function chooseCandidate($city, $candidate_id) {
-        self::checkAction('chooseCandidate');
+    function proposeCandidate($city, $candidate_id) {
+        self::checkAction('proposeCandidate');
         $actingplayer = self::getActivePlayerId();
         $city_name = $this->cities[$city]['name'];
+        // player must have a cube in the city
+        if (!$this->hasInfluenceInCity($actingplayer, $city)) {
+            throw new BgaUserException(self::_("You cannot propose a Candidate in $city_name: you have no Influence cubes in this city"));
+        }
+
         $players = self::loadPlayersBasicInfos();
         $candidate_name = $players[$candidate_id]['player_name'];
         // is there an available candidate slot?
@@ -634,15 +685,15 @@ class Perikles extends Table
             $candidate_slot = $city."_b";
             $cand_b = self::getGameStateValue($candidate_slot);
             if ($cand_b != 0) {
-                throw new BgaUserException("$city_name has no empty Candidate spaces");
+                throw new BgaUserException(self::_("$city_name has no empty Candidate spaces"));
             } else if ($cand_a == $candidate_id) {
-                throw new BgaUserException("$candidate_name is already a Candidate in $city_name");
+                throw new BgaUserException(self::_("$candidate_name is already a Candidate in $city_name"));
             }
         }
         // does the nominated player have cubes there?
         $cubes = self::getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$candidate_id");
         if ($cubes == 0) {
-            throw new BgaUserException("$candidate_name has no influence cubes in $city_name");
+            throw new BgaUserException(self::_("$candidate_name has no Influence cubes in $city_name"));
         }
         // passed checks, can assign Candidate
         $this->changeInfluenceInCity($city, $candidate_id, -1);
@@ -744,6 +795,7 @@ class Perikles extends Table
         $this->gamestate->nextState();
     }
 
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -775,13 +827,23 @@ class Perikles extends Table
 //////////// Game state actions
 ////////////
 
+    /**
+     * Handles next player action through Influence phase.
+     */
     function stNextPlayer() {
         $state = "";
         if ($this->allInfluenceTilesTaken()) {
-            if ($this->allCandidatesFilled()) {
-                $state = "elections";
+            if ($this->canAnyoneNominate()) {
+                $player_id = self::activeNextPlayer();
+                if ($this->canNominateAny($player_id)) {
+                    self::giveExtraTime( $player_id );
+                    $state = "proposeCandidate";
+                } else {
+                    $player_id = self::activeNextPlayer();
+                    $state = "nextPlayer";
+                }
             } else {
-                $state = "proposeCandidate";
+                $state = "elections";
             }
         } else {
             $this->drawInfluenceTile();
@@ -792,6 +854,9 @@ class Perikles extends Table
         $this->gamestate->nextState($state);
     }
 
+    /**
+     * Place Influence cubes from card where the city is already determined.
+     */
     function stPlaceInfluence() {
         $player_id = self::getActivePlayerId();
         // card on top should be most recently added card
@@ -808,6 +873,75 @@ class Perikles extends Table
             $state = "candidate";
         }
         $this->gamestate->nextState( $state );
+    }
+
+    /**
+     * Do all the elections.
+     */
+    function stElections() {
+        $players = self::loadPlayersBasicInfos();
+        foreach ($this->cities as $cn => $city) {
+            $city_name = $city['name'];
+
+            $a = self::getGameStateValue($cn."_a");
+            $b = self::getGameStateValue($cn."_b");
+            $winner = 0;
+            if ($a == 0) {
+                if ($b == 0) {
+                    // no candidates!
+                    self::notifyAllPlayers("noElection", clienttranslate('${city_name} has no Candidates; no Leader assigned'), array(
+                        'i18n' => ['city_name'],
+                        'city_name' => $city_name,
+                    ));
+                } else {
+                    // B is unopposed
+                    $winner = $b;
+                    self::notifyAllPlayers("unopposedElection", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
+                        'i18n' => ['city_name'],
+                        'player_name' => $players[$winner]['player_name'],
+                        'city_name' => $city_name,
+                    ));
+                }
+            } elseif ($b == 0) {
+                // A is unopposed
+                $winner = $a;
+                self::notifyAllPlayers("unopposedElection", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
+                    'i18n' => ['city_name'],
+                    'player_name' => $players[$winner]['player_name'],
+                    'city_name' => $city_name,
+                ));
+            } else {
+                // contested election
+                $a_inf = $this->influenceInCity($a, $cn);
+                $b_inf = $this->influenceInCity($b, $cn);
+                // default
+                $winner = $a;
+                if ($a_inf != $b_inf) {
+                    if ($a_inf < $b_inf) {
+                        $winner = $b;
+                    }
+                }
+                $this->changeInfluenceInCity($cn, $winner, -$b_inf);
+                self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name}'), array(
+                    'i18n' => ['city_name'],
+                    'player_name' => $players[$winner]['player_name'],
+                    'city_name' => $city_name,
+                    'cubes' => $b_inf
+                ));
+            }
+            foreach(["a", "b"] as $c) {
+                self::setGameStateValue($cn."_".$c, 0);
+            }
+            self::debug("leader of $cn is $winner");
+        }
+        $this->gamestate->nextState();
+    }
+
+    /**
+     * Arrange the military.
+     */
+    function stMilitary() {
+        throw new BgaUserException("Pick military forces");
     }
 
 //////////////////////////////////////////////////////////////////////////////

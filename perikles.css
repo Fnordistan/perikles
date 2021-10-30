@@ -101,15 +101,15 @@
 
 @keyframes prk_border_pulse {
     0% {
-        border: white 1px dotted;
+        border: white 4px dotted;
         border-radius: 15px;
     }
     20% {
-        border: white 2px dotted;
+        border: white 4px dotted;
         border-radius: 15px;
     }
     30% {
-        border: lightgray 3px dotted;
+        border: lightgray 4px dotted;
         border-radius: 15px;
     }
     50% {
@@ -117,15 +117,15 @@
         border-radius: 15px;
     }
     70% {
-        border: lightgray 3px dotted;
+        border: lightgray 4px dotted;
         border-radius: 15px;
     }
     90% {
-        border: white 2px dotted;
+        border: white 4px dotted;
         border-radius: 15px;
     }
     100% {
-        border: white 1px dotted;
+        border: white 4px dotted;
         border-radius: 15px;
     }
 }

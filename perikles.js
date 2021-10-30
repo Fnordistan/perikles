@@ -421,7 +421,7 @@ function (dojo, declare) {
          * @param {Object} statues 
          */
         setupStatues: function(statues) {
-            for (let city of CITIES) {
+            for (const city of CITIES) {
                 const citystatues = statues[city];
                 if (citystatues) {
                     let s = 0;
@@ -477,7 +477,7 @@ function (dojo, declare) {
             let mz = 'persia_military';
             this.decorateMilitaryStacks("persia", mz);
             this.military_zones[mz] = {'spread': false};
-            for (city of CITIES) {
+            for (const city of CITIES) {
                 mz = city+"_military";
                 this.decorateMilitaryStacks(city, mz);
                 this.military_zones[mz] = {'spread': false};
@@ -606,18 +606,17 @@ function (dojo, declare) {
          * Add event listeners to city divs.
          */
         setupCities: function() {
-            const cities = document.getElementsByClassName("prk_city");
-            [...cities].forEach(c => {
-                c.addEventListener('mouseenter', (event) => {
-                    this.onCityTouch(event, true);
+            for (const city of CITIES) {
+                $(city).addEventListener('mouseenter', () => {
+                    this.onCityTouch(city, true);
                 });
-                c.addEventListener('mouseleave', (event) => {
-                    this.onCityTouch(event, false);
+                $(city).addEventListener('mouseleave', () => {
+                    this.onCityTouch(city, false);
                 });
-                c.addEventListener('click', (event) => {
-                    this.onCityClick(event);
+                $(city).addEventListener('click', () => {
+                    this.onCityClick(city);
                 });
-            });
+            }
         },
 
         ///////////////////////////////////////////////////
@@ -692,6 +691,19 @@ function (dojo, declare) {
             const player = this.gamedatas.players[player_id];
             const color = player.color;
             return PLAYER_COLORS[color];
+        },
+
+        /**
+         * Move a cube from one location to another.
+         * @param {string} cube 
+         * @param {DOMElement} from_div 
+         * @param {DOMElement} to_div
+         * @param {int} delay
+         */
+         moveCube: function(cube, from_div, to_div, delay) {
+            const mobile = dojo.place(cube, from_div);
+            mobile.addEventListener('click', (event) => this.onSelectCube(event));
+            this.slideToObjectRelative(mobile, to_div, 1000, delay, null, "last")
         },
 
         /**
@@ -865,13 +877,12 @@ function (dojo, declare) {
 
         /**
          * Mouse entering City zone.
-         * @param {Object} event
+         * @param {string} city
          * @param {bool} enter true if touching, otherwise leaving
          */
-        onCityTouch: function(event, enter) {
+        onCityTouch: function(city, enter) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("placeAnyCube", true)) {
-                    const city = event.target.id;
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     if (enter) {
                         mycubes.classList.add("prk_cubes_active");
@@ -884,12 +895,11 @@ function (dojo, declare) {
 
         /**
          * Mouse clicking City zone.
-         * @param {Object} event 
+         * @param {string} city
          */
-        onCityClick: function(event) {
+        onCityClick: function(city) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("placeAnyCube", true)) {
-                    const city = event.target.id;
                     this.placeInfluenceCube(city);
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     mycubes.classList.remove("prk_cubes_active");
@@ -904,10 +914,11 @@ function (dojo, declare) {
          * @param {bool} enter
          */
          onInfluenceCubesHover: function(event, city, enter) {
-            if( this.isCurrentPlayerActive() ) {
-                if (this.checkAction("chooseCandidate", true)) {
+            if( this.isCurrentPlayerActive()) {
+                if (this.checkAction("proposeCandidate", true)) {
                     const cube_div = event.target;
-                    if (enter) {
+                    // player must have a cube in the city
+                    if (enter && this.hasCubeInCity(city)) {
                         if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
                             cube_div.classList.add("prk_cubes_active");
                         }
@@ -924,10 +935,10 @@ function (dojo, declare) {
          */
          onInfluenceCubesClick: function(event, city, player_id) {
             if( this.isCurrentPlayerActive() ) {
-                if (this.checkAction("chooseCandidate", true)) {
+                if (this.checkAction("proposeCandidate", true)) {
                     const tgt = event.target;
                     // it's either the cube area or one of the cubes
-                    if ($(city).classList.contains("prk_city_active")) {
+                    if ($(city).classList.contains("prk_city_active") && this.hasCubeInCity(city)) {
                         if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
                             this.proposeCandidate(city, player_id);
                         }
@@ -996,7 +1007,7 @@ function (dojo, declare) {
                     break;
                 case 'proposeCandidates':
                     if (this.isCurrentPlayerActive()) {
-                        for (city of CITIES) {
+                        for (const city of CITIES) {
                             const candidate_space = this.openCandidateSpace(city);
                             if (candidate_space) {
                                 const city_div = $(city);
@@ -1071,6 +1082,24 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
         //// Utility methods
 
+        /**
+         * Does current player have a cube in the city? Includes candidates
+         * @param {string} city 
+         * @returns true if this player has a cube in city
+         */
+        hasCubeInCity: function(city) {
+            const player_id = this.player_id;
+            if (document.getElementById(player_id+"_"+city+"_a")) {
+                return true;
+            }
+            if (document.getElementById(player_id+"_"+city+"_b")) {
+                return true;
+            }
+            if (document.getElementById(city+"_cubes_"+player_id).hasChildNodes) {
+                return true;
+            }
+            return false;
+        },
 
         /**
          * For a city, returns the div for candidate a if it's empty, else b if it's empty, else null
@@ -1100,19 +1129,6 @@ function (dojo, declare) {
             [...actdiv].forEach( a => a.classList.remove(cls));
         },
 
-
-        /**
-         * Move a cube from one location to another.
-         * @param {string} cube 
-         * @param {DOMElement} from_div 
-         * @param {DOMElement} to_div
-         * @param {int} delay
-         */
-        moveCube: function(cube, from_div, to_div, delay) {
-            const mobile = dojo.place(cube, from_div);
-            mobile.addEventListener('click', (event) => this.onSelectCube(event));
-            this.slideToObjectRelative(mobile, to_div, 1000, delay, null, "last")
-        },
 
         ///////////////////////////////////////////////////
         //// Player's action
@@ -1150,7 +1166,7 @@ function (dojo, declare) {
          * @param {string} player_id 
          */
         proposeCandidate: function(city, player_id) {
-            if (this.checkAction("chooseCandidate", true)) {
+            if (this.checkAction("proposeCandidate", true)) {
                 this.ajaxcall( "/perikles/perikles/selectcandidate.html", { 
                     city: city,
                     player: player_id,
@@ -1204,6 +1220,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'candidatePromoted', 1000 );
             dojo.subscribe( 'influenceCardDrawn', this, "notif_influenceCardDrawn");
             this.notifqueue.setSynchronous( 'influenceCardDrawn', 1000 );
+            dojo.subscribe( 'election', this, "notif_election");
+            this.notifqueue.setSynchronous( 'election', 1000 );
         },
         
         // Notification handlers
@@ -1327,6 +1345,14 @@ function (dojo, declare) {
             const fromcube = candidate_id+"_"+city+"_b";
             const to_div = $(city+"_a");
             this.slideToObjectRelative(fromcube, to_div, 1000, 1000, null, "last")
+        },
+
+        /**
+         * 
+         * @param {Object} notif 
+         */
+        notif_election: function(notif) {
+            debugger;
         },
 
    });

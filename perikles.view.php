@@ -193,8 +193,8 @@ class view_perikles_perikles extends game_view
             $this->page->insert_block('CUBES_BLOCK', array(
               'CITY' => $city,
               'player_id' => $player_id,
-              'L' => $CITIES[$city]["cubes"][0] + $COL_GAP*$col,
-              'T' => $CITIES[$city]["cubes"][1]-$COL_HEIGHT,
+              'L' => $CITIES[$city]["cubes"][0] + ($COL_GAP*$col) - $CITIES[$city]["xy"][0],
+              'T' => $CITIES[$city]["cubes"][1] - $COL_HEIGHT - $CITIES[$city]["xy"][1],
             ));
             $col++;
           }

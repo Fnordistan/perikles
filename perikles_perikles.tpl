@@ -29,7 +29,11 @@
         <div id="persia_military" class="prk_military_zone" style="top: {PERSIA_Y}px; left: {PERSIA_X}px;"></div>
 
         <!-- BEGIN CITY_BLOCK -->
-            <div id="{CITY}" class="prk_city" style="top: {CITYY}px; left: {CITYX}px;"></div>
+            <div id="{CITY}" class="prk_city" style="top: {CITYY}px; left: {CITYX}px;">
+                <!-- BEGIN CUBES_BLOCK -->
+                <div id="{CITY}_cubes_{player_id}" class="prk_city_cubes" style="top: {T}px; left: {L}px;"></div>
+                <!-- END CUBES_BLOCK -->
+            </div>
             <div id="{CITY}_leader" class="prk_counter_slot" style="top: {LEADERY}px; left: {LEADERX}px;"></div>
             <div id="{CITY}_statues" class="prk_statue_zone" style="top: {STATUEY}px; left: {STATUEX}px;"></div>
             <div id="{CITY}_a" class="prk_candidate_space" style="top: {ALPHAY}px; left: {ALPHAX}px;"></div>
@@ -37,9 +41,6 @@
             <!-- BEGIN DEFEAT_BLOCK -->
             <div id="{CITY}_defeat_slot_{i}" class="prk_counter_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END DEFEAT_BLOCK -->
-            <!-- BEGIN CUBES_BLOCK -->
-            <div id="{CITY}_cubes_{player_id}" class="prk_city_cubes" style="top: {T}px; left: {L}px;"></div>
-            <!-- END CUBES_BLOCK -->
             <div id="{CITY}_military" class="prk_military_zone" style="top: {MILY}px; left: {MILX}px;"></div>
         <!-- END CITY_BLOCK -->
 

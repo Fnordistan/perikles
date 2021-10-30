@@ -28,7 +28,8 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("ELECTIONS", 11);
     // Commit forces phase
     define("TAKE_DEAD", 20);
-    define("COMMIT_FORCES", 21);
+    define("TAKE_MILITARY", 21);
+    define("COMMIT_FORCES", 22);
     define("ENDGAME", 99);
  }
  
@@ -74,7 +75,7 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must propose a candidate'),
     	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
     	"type" => "activeplayer",
-    	"possibleactions" => array( "chooseCandidate" ),
+    	"possibleactions" => array( "proposeCandidate" ),
     	"transitions" => array( "" => NEXT_PLAYER )
     ),
 
@@ -102,6 +103,14 @@ $machinestates = array(
     	"type" => "game",
         "updateGameProgression" => true,   
     	"action" => "stElections",
+    	"transitions" => array( "" => TAKE_MILITARY )
+    ),
+
+    TAKE_MILITARY => array(
+    	"name" => "militaryForces",
+    	"description" => "",
+    	"type" => "game",
+    	"action" => "stMilitary",
     	"transitions" => array( "" => COMMIT_FORCES )
     ),
 
@@ -110,9 +119,8 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "proposeCandidate" => PROPOSE_CANDIDATE, "elections" => ELECTIONS )
+        "transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "proposeCandidate" => PROPOSE_CANDIDATE, "elections" => ELECTIONS, "nextPlayer" => NEXT_PLAYER )
     ),
-
 
     // Final state.
     // Please do not modify (and do not overload action/args methods).
@@ -125,6 +133,3 @@ $machinestates = array(
     )
 
 );
-
-
-
