@@ -12,6 +12,9 @@
     perikles_perikles.tpl
 -->
 
+<div id="mymilitary">
+    <h1>{MILITARY}</h1>
+</div>
 
 <div id="periklesboard">
     <div id="perikles_map">
