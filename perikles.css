@@ -404,6 +404,11 @@
     height: var(--military_s);
 }
 
+.prk_mil_stack {
+    min-width: var(--military_l);
+    min-height: var(--military_l);
+}
+
 /* IDENTITIES */
 
 #periklesboard {
@@ -434,6 +439,8 @@
 
 #mymilitary {
     display: flex;
+    flex-direction: row;
+    min-height: fit-content;
     margin: 5px;
     border: 3px ridge #8F8C7E;
     background-color: lightgrey;

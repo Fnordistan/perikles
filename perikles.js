@@ -725,7 +725,13 @@ function (dojo, declare) {
             const player_id = military['location'];
             const counter = $(city+'_'+unit+'_'+strength+'_'+id);
             if (player_id == this.player_id) {
-                this.slideToObjectRelative(counter, $('mymilitary'), 500, 500, null, "last");
+                const city_mil = city+'_military_'+player_id;
+                if (!document.getElementById(city_mil)) {
+                    const mil_div = this.format_block('jstpl_military_forces', {city: city, id: player_id});
+                    dojo.place(mil_div, $('mymilitary'));
+                }
+                this.slideToObjectRelative(counter, $(city_mil), 500, 500, null, "last");
+                
             } else {
                 this.slideToObjectAndDestroy(counter, $('player_board_'+player_id), 500, 500);
             }
