@@ -188,9 +188,9 @@ class Perikles extends Table
      */
     protected function setupInfluenceCubes() {
         $players = self::loadPlayersBasicInfos();
-        foreach($this->cities as $city => $c) {
+        foreach($this->cities as $cn => $city) {
             foreach($players as $player_id => $player) {
-                self::DbQuery("UPDATE player SET ".$city." = 2 WHERE player_id=$player_id");
+                self::DbQuery("UPDATE player SET ".$cn." = 2 WHERE player_id=$player_id");
             }
         }
     }
@@ -510,6 +510,24 @@ class Perikles extends Table
     }
 
     /**
+     * There is a hard limit of 30 cubes on the board per player.
+     */
+    function allCubesOnBoard($player_id) {
+        $cubes = 0;
+        foreach($this->cities as $cn => $city) {
+            $cubes += $this->influenceInCity($player_id, $cn);
+            foreach(["a", "b"] as $c) {
+                $cv = $cn."_".$c;
+                $candidate = self::getGameStateValue($cv);
+                if ($candidate == $player_id) {
+                    $cubes++;
+                }
+            }
+        }
+        return $cubes;
+    }
+
+    /**
      * Return {name,shard,desc} array of strings
      */
     function influenceTileDescriptors($tile) {
@@ -552,15 +570,20 @@ class Perikles extends Table
      * Add cubes to a city and send notification.
      */
     function addInfluenceToCity($city, $player_id, $cubes) {
-        $this->changeInfluenceInCity($city, $player_id, $cubes);
-
         $players = self::loadPlayersBasicInfos();
+        $player_name = $players[$player_id]['player_name'];
 
+        $cubect = $this->allCubesOnBoard($player_id);
+        if ($cubect >= 30) {
+            throw new BgaUserException(self::_("$player_name already has 30 cubes on the board"));
+        }
+
+        $this->changeInfluenceInCity($city, $player_id, $cubes);
         $city_name = $this->cities[$city]['name'];
 
         self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} adds ${cubes} Influence to ${city_name}'), array(
             'player_id' => $player_id,
-            'player_name' => $players[$player_id],
+            'player_name' => $player_name,
             'cubes' => $cubes,
             'city' => $city,
             'city_name' => $city_name,
@@ -592,6 +615,24 @@ class Perikles extends Table
             'inf_type' => $inf_type,
             'tile' => $newtile,
             'preserve' => ['city']
+        ));
+    }
+
+    /**
+     * As Leader of a city, player takes all military units.
+     */
+    function moveMilitaryUnits($player_id, $city) {
+        $players = self::loadPlayersBasicInfos();
+        self::DbQuery("UPDATE MILITARY SET location = $player_id WHERE location=\"$city\"");
+        $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE city=\"$city\" AND location=$player_id");
+        self::notifyAllPlayers("takeMilitary", clienttranslate('${player_name} takes military units from ${city_name}'), array(
+            'i18n' => ['city_name'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'city' => $city,
+            'city_name' => $this->cities[$city]['name'],
+            'military' => $units,
+            'preserve' => ['player_id', 'city'],
         ));
     }
 
@@ -856,6 +897,11 @@ class Perikles extends Table
         $this->gamestate->nextState($state);
     }
 
+    function stMilitary() {
+        $sparta = self::getGameStateValue("sparta_leader");
+
+    }
+
     /**
      * Place Influence cubes from card where the city is already determined.
      */
@@ -944,20 +990,18 @@ class Perikles extends Table
                     'preserve' => ['player_id', 'city']
                 ));
             }
-            self::setGameStateValue($cn."_leader", $winner);
-
             foreach(["a", "b"] as $c) {
                 self::setGameStateValue($cn."_".$c, 0);
             }
-        }
-        $this->gamestate->nextState();
-    }
+            self::setGameStateValue($cn."_leader", $winner);
 
-    /**
-     * Arrange the military.
-     */
-    function stMilitary() {
-        throw new BgaUserException("Pick military forces");
+            if ($winner != 0) {
+                $this->moveMilitaryUnits($winner, $cn);
+            }
+        }
+        $sparta = self::getGameStateValue("sparta_leader");
+        $this->gamestate->changeActivePlayer($sparta);
+        $this->gamestate->nextState();
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -983,6 +1027,23 @@ class Perikles extends Table
     	
         if ($state['type'] === "activeplayer") {
             switch ($statename) {
+                case 'takeInfluence':
+                    $tile = $this->chooseRandomTile($active_player);
+                    $this->takeInfluence($tile['id']);
+                    break;
+                case 'choosePlaceInfluence':
+                    $cities = array_keys($this->cities);
+                    shuffle($cities);
+                    $city = $cities[0];
+                    $this->placeAnyCube($city);
+                    break;
+                case 'proposeCandidate':
+                    // should have already checked that it's possible
+                    $this->chooseRandomCandidate($active_player);
+                    break;
+                case 'assassinate':
+                    $this->removeRandomCube($active_player);
+                    break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
                 	break;
@@ -999,6 +1060,87 @@ class Perikles extends Table
         }
 
         throw new feException( "Zombie mode not supported at this game state: ".$statename );
+    }
+
+    /**
+     * Take a random city tile on the board and give it to zombie player.
+     */
+    function chooseRandomTile($player_id) {
+        $tiles = $this->influence_tiles->getCardsInLocation(BOARD);
+        foreach ($tiles as $t =>$tile) {
+            $city = $tile['type'];
+            if (!$this->hasCityInfluenceTile($player_id, $city)) {
+                return $tile;
+            }
+        }
+        // zombie player cannot pick a tile in a city he doesn't already have,
+        // so take first
+        shuffle($tiles);
+        return array_pop($tiles);
+    }
+
+    /**
+     * Zombie player propose in random city
+     */
+    function chooseRandomCandidate($player_id) {
+        $players = self::loadPlayersBasicInfos();
+        $cities = array_keys($this->cities);
+        shuffle($cities);
+        foreach($cities as $cn) {
+            if ($this->canNominate($player_id, $cn)) {
+                $a = self::getGameStateValue($cn."_a");
+                if ($a == 0) {
+                    foreach ($players as $candidate_id => $player) {
+                        if ($this->influenceInCity($candidate_id, $cn) > 0) {
+                            $this->proposeCandidate($cn, $candidate_id);
+                            return;
+                        }
+                    }
+                } else {
+                    $b = self::getGameStateValue($cn."_b");
+                    if ($b != 0) {
+                        throw new BgaVisibleSystemException("Unexpected zombie state: cannot nominate candidate in $cn"); //NO18N
+                    }
+                    foreach ($players as $candidate_id => $player) {
+                        if ($candidate_id != $a && $this->influenceInCity($candidate_id, $cn) > 0) {
+                            $this->proposeCandidate($cn, $candidate_id);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Zombie player pick a random cube to kill, not self.
+     */
+    function removeRandomCube($player_id) {
+        $cities = shuffle($this->cities);
+        foreach ($cities as $cn => $city) {
+            $players = self::loadPlayersBasicInfos();
+            $toremove = [];
+            foreach(["a", "b"] as $c) {
+                $cd = self::getGameStateValue($cn."_".$c);
+                if ($cd != 0 && $cd != $player_id) {
+                    $toremove[] = $c;
+                }
+            }
+            foreach($players as $target_id => $player) {
+                if ($player_id != $target_id && $this->influenceInCity($target_id, $cn) > 0) {
+                    $toremove[] = $target_id;
+                }
+            }
+            shuffle($toremove);
+            $killcube = array_pop($toremove);
+            if ($killcube == "a" || $killcube == "b") {
+                $this->chooseRemoveCube(self::getGameStateValue($cn."_".$killcube), $cn, $killcube);
+                break;
+            } else {
+                $this->chooseRemoveCube($killcube, $cn, 1);
+                break;
+            }
+        }
     }
     
 ///////////////////////////////////////////////////////////////////////////////////:

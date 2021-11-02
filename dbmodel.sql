@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `MILITARY` (
   `city` varchar(8) NOT NULL COMMENT 'city',
   `type` varchar(8) NOT NULL COMMENT 'hoplite/trireme',
   `strength` TINYINT UNSIGNED NOT NULL COMMENT 'strength',
-  `location` varchar(16) NOT NULL COMMENT 'city/dead/location',
+  `location` varchar(16) NOT NULL COMMENT 'city/dead/location/player',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 

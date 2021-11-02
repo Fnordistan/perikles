@@ -433,7 +433,7 @@
 }
 
 #mymilitary {
-    display: none;
+    display: flex;
     margin: 5px;
     border: 3px ridge #8F8C7E;
     background-color: lightgrey;

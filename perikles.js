@@ -714,6 +714,24 @@ function (dojo, declare) {
         },
 
         /**
+         * 
+         * @param {Object} military
+         */
+        moveMilitary: function(military) {
+            const city = military['city'];
+            const unit = military['type'];
+            const strength = military['strength'];
+            const id = military['id'];
+            const player_id = military['location'];
+            const counter = $(city+'_'+unit+'_'+strength+'_'+id);
+            if (player_id == this.player_id) {
+                this.slideToObjectRelative(counter, $('mymilitary'), 500, 500, null, "last");
+            } else {
+                this.slideToObjectAndDestroy(counter, $('player_board_'+player_id), 500, 500);
+            }
+        },
+
+        /**
          * Tisaac's slide method.
          * @param {DOMElement} mobile 
          * @param {string} targetId 
@@ -1070,18 +1088,11 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
-/*               
-                 Example:
- 
-                 case 'myGameState':
-                    
-                    // Add 3 action buttons in the action status bar:
-                    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
+                 case 'spartanChoice':
+                     for (player_id in this.gamedatas.players) {
+                        this.addActionButton( 'choose_'+player_id, this.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
+                     }
                     break;
-*/
                 }
             }
         },        
@@ -1213,6 +1224,16 @@ function (dojo, declare) {
             }
         },
 
+        choosePlayer: function() {
+            if (this.checkAction("chooseNextPlayer", true)) {
+                this.ajaxcall( "/perikles/perikles/choosenextplayer.html", { 
+                    player: player_id,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+
+        },
+
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
@@ -1243,6 +1264,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'influenceCardDrawn', 1000 );
             dojo.subscribe( 'election', this, "notif_election");
             this.notifqueue.setSynchronous( 'election', 1000 );
+            dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
+            this.notifqueue.setSynchronous( 'election', 500 );
         },
         
         // Notification handlers
@@ -1369,7 +1392,7 @@ function (dojo, declare) {
         },
 
         /**
-         * 
+         * Remove candidate cubes, place Leader counters.
          * @param {Object} notif 
          */
         notif_election: function(notif) {
@@ -1385,10 +1408,22 @@ function (dojo, declare) {
             });
             // subtract loser's cubes from winner's
             this.removeInfluenceCubes(player_id, city, cubes);
-            console.log(this.gamedatas.players[player_id]['name'] + " loses " + cubes + " cubes in "+city);
             // place Leader
             const leader = this.createLeaderCounter(player_id, city, "leader", 1);
             dojo.place(leader, $(city+"_leader"));
+        },
+
+        /**
+         * Move military tokens to each Leader.
+         * @param {Object} notif 
+         */
+        notif_takeMilitary: function(notif) {
+            const player_id = notif.args.player_id;
+            const city = notif.args.city;
+            const military = notif.args.military;
+            for (const unit of military) {
+                this.moveMilitary(unit);
+            }
         },
 
    });

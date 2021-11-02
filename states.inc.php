@@ -28,8 +28,8 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("ELECTIONS", 11);
     // Commit forces phase
     define("ASSIGN_LEADERS", 20);
-    define("TAKE_MILITARY", 21);
-    define("COMMIT_FORCES", 22);
+    define("SPARTAN_CHOICE", 21);
+    define("TAKE_MILITARY", 22);
     define("ENDGAME", 99);
  }
  
@@ -103,15 +103,24 @@ $machinestates = array(
     	"type" => "game",
         "updateGameProgression" => true,   
     	"action" => "stElections",
-    	"transitions" => array( "" => TAKE_INFLUENCE )
+    	"transitions" => array( "" => SPARTAN_CHOICE )
     ),
 
-    ASSIGN_LEADERS => array(
-    	"name" => "militaryForces",
+    SPARTAN_CHOICE => array(
+        "name" => "spartanChoice",
+    	"description" => clienttranslate('Spartan Leader ${actplayer} must choose the first player to commit forces'),
+    	"descriptionmyturn" => clienttranslate('You must choose the first player to commit forces'),
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "chooseNextPlayer" ),
+    	"transitions" => array( "" => TAKE_MILITARY)
+    ),
+
+    TAKE_MILITARY => array(
+    	"name" => "takeMilitary",
     	"description" => "",
     	"type" => "game",
-    	"action" => "stLeadership",
-    	"transitions" => array( "" => COMMIT_FORCES )
+    	"action" => "stMilitary",
+    	"transitions" => array( "" => NEXT_PLAYER )
     ),
 
     NEXT_PLAYER => array(
