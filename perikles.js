@@ -727,7 +727,7 @@ function (dojo, declare) {
             if (player_id == this.player_id) {
                 const city_mil = city+'_military_'+player_id;
                 if (!document.getElementById(city_mil)) {
-                    const mil_div = this.format_block('jstpl_military_forces', {city: city, id: player_id});
+                    const mil_div = this.format_block('jstpl_military_forces', {city: city, id: player_id, cityname: this.getCityNameTr(city)});
                     dojo.place(mil_div, $('mymilitary'));
                 }
                 this.slideToObjectRelative(counter, $(city_mil), 500, 500, null, "last");

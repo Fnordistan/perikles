@@ -75,7 +75,7 @@ const jstpl_location_tile = '<div id="${id}_tile" class="prk_location_tile" styl
 
 const jstpl_military = '<div id="${city}_${type}_${s}_${id}" class="prk_military prk_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
 
-const jstpl_military_forces = '<div id="${city}_military_${id}" class="prk_mil_stack"></div>';
+const jstpl_military_forces = '<div id="${city}_military_${id}" class="prk_mil_stack"><h1>${cityname}</h1></div>';
 
 const jstpl_special_tt = '<div id="{$special}_special_tt" style="display: flex; flex-direction: row;">\
                             <div style="flex: 1;">\

@@ -40,17 +40,17 @@ class view_perikles_perikles extends game_view
 
       // Get players & players number
         $players = $this->game->loadPlayersBasicInfos();
-        $players_nbr = count( $players );
+        // $players_nbr = count( $players );
 
         /*********** Place your code below:  ************/
         $template = self::getGameName() . "_" . self::getGameName();
 
         /**** INFLUENCE BLOCK */
         $COLX = array(
-          1 => 49,
-          2 => 137,
-          3 => 223,
-          4 => 309
+          1 => 53,
+          2 => 141,
+          3 => 227,
+          4 => 313
         );
         $ROWY = array(
           1 => 43,

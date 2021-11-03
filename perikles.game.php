@@ -1037,7 +1037,7 @@ class Perikles extends Table
                     $city = $cities[0];
                     $this->placeAnyCube($city);
                     break;
-                case 'proposeCandidate':
+                case 'proposeCandidates':
                     // should have already checked that it's possible
                     $this->chooseRandomCandidate($active_player);
                     break;
@@ -1116,8 +1116,9 @@ class Perikles extends Table
      * Zombie player pick a random cube to kill, not self.
      */
     function removeRandomCube($player_id) {
-        $cities = shuffle($this->cities);
-        foreach ($cities as $cn => $city) {
+        $cities = array_keys($this->cities);
+        shuffle($cities);
+        foreach ($cities as $cn) {
             $players = self::loadPlayersBasicInfos();
             $toremove = [];
             foreach(["a", "b"] as $c) {
