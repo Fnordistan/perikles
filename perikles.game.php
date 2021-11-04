@@ -641,6 +641,27 @@ class Perikles extends Table
 //////////// 
 
     /**
+     * Spartan player chose first player for influence phase.
+     */
+    function chooseNextPlayer($first_player) {
+        self::checkAction('chooseNextPlayer');
+        $players = self::loadPlayersBasicInfos();
+
+        $player_id = self::getActivePlayerId();
+        self::notifyAllPlayers("spartanChoice", clienttranslate('${player_name} chooses ${candidate_name} to commit forces first'), array(
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'candidate_id' => $first_player,
+            'candidate_name' => $players[$first_player]['player_name'],
+            'preserve' => ['player_id', 'candidate_id'],
+        ));
+
+        $this->gamestate->changeActivePlayer($player_id);
+        $this->gamestate->nextState();
+
+    }
+
+    /**
      * Player chose an Influence tile
      */
     function takeInfluence($influence_id) {

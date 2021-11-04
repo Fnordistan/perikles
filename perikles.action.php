@@ -62,7 +62,7 @@
     }
 
     /**
-     * Player chooses city and player to add Candidate
+     * Player chooses city and player to add Candidate.
      */
     public function selectcandidate() {
       self::setAjaxMode();     
@@ -72,6 +72,9 @@
       self::ajaxResponse( );
     }
 
+    /**
+     * Player chooses a cube to remove.
+     */
     public function removecube() {
       self::setAjaxMode();     
       $city = self::getArg( "city", AT_alphanum, true );
@@ -80,4 +83,15 @@
       $this->game->chooseRemoveCube($player_id, $city, $cube);
       self::ajaxResponse( );
     }
+
+    /**
+     * Spartan player choose first player to go.
+     */
+    public function chooseplayer() {
+      self::setAjaxMode();     
+      $player_id = self::getArg( "player", AT_alphanum, true );
+      $this->game->chooseNextPlayer($player_id);
+      self::ajaxResponse( );
+    }
+
   }

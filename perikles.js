@@ -1191,7 +1191,8 @@ function (dojo, declare) {
             const from_div = $(city+'_cubes_'+player_id);
             const ct = from_div.childElementCount;
             for (let i = 0; i < num; i++) {
-                const toremove = player_id+"_"+city+"_"+(ct-(1+i));
+                // const toremove = player_id+"_"+city+"_"+(ct-(1+i));
+                const toremove = from_div.lastChild;
                 if (!$(toremove)) {
                     debugger;
                 }
@@ -1261,9 +1262,14 @@ function (dojo, declare) {
             }
         },
 
-        choosePlayer: function() {
+        /**
+         * Action to choose next player.
+         * @param {Object} event 
+         */
+        choosePlayer: function(event) {
             if (this.checkAction("chooseNextPlayer", true)) {
-                this.ajaxcall( "/perikles/perikles/choosenextplayer.html", { 
+                const player_id = event.currentTarget.id.split("choose_")[1];
+                this.ajaxcall( "/perikles/perikles/chooseplayer.html", { 
                     player: player_id,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
