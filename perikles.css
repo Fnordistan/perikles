@@ -404,9 +404,42 @@
     height: var(--military_s);
 }
 
-.prk_mil_stack {
-    min-width: var(--military_l);
+.prk_mil_board {
+    min-width: fit-content;
+    min-height: fit-content;
+    margin: 0 10px;
+}
+
+.prk_mil_container {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    min-width: calc(var(--military_l)+var(--military_s));
+    min-height: fit-content;
+}
+
+.prk_hoplites {
+    display: flex;
+    flex-direction: column;
+    margin-right: 5px;
     min-height: var(--military_l);
+    width: var(--military_s);
+}
+
+.prk_trireme_col {
+    display: flex;
+    flex-direction: column;
+    min-height: var(--military_s);
+    width: var(--military_l);
+}
+
+.prk_hdr {
+    font-family: 'ThrumsSerifRegular';
+    font-style: normal;
+    font-weight: 700;
+    color: #767060;
+    text-align: center;
+    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
 }
 
 /* IDENTITIES */
@@ -437,19 +470,15 @@
     background-color: #8F8C7E;
 }
 
-#mymilitary {
-    display: flex;
-    flex-direction: row;
+#military_board {
     min-height: fit-content;
     margin: 5px;
     border: 3px ridge #8F8C7E;
     background-color: lightgrey;
+    overflow: auto;
 }
 
-#mymilitary, #deadpool h1 {
-    font-family: 'ThrumsSerifRegular';
-    font-style: normal;
-    font-weight: 700;
-    color: #767060;
-    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
+#mymilitary {
+    display: flex;
+    flex-direction: row;
 }

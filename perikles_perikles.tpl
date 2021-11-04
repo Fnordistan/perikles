@@ -12,8 +12,10 @@
     perikles_perikles.tpl
 -->
 
-<div id="mymilitary">
-    <h1>{MILITARY}</h1>
+<div id="military_board">
+    <h1 class="prk_hdr">{MILITARY}</h1>
+    <div id="mymilitary">
+    </div>
 </div>
 
 <div id="periklesboard">
@@ -49,7 +51,7 @@
 
     </div>
     <div id="deadpool">
-        <h1>{DEADPOOL}</h1>
+        <h1 class="prk_hdr">{DEADPOOL}</h1>
     </div>
 </div>
 
@@ -73,9 +75,15 @@ const jstpl_cube = '<div id="${id}"" class="prk_cube" style="background-color: #
 
 const jstpl_location_tile = '<div id="${id}_tile" class="prk_location_tile" style="background-position: ${x}px ${y}px;"></div>';
 
-const jstpl_military = '<div id="${city}_${type}_${s}_${id}" class="prk_military prk_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
+const jstpl_military_counter = '<div id="${city}_${type}_${s}_${id}" class="prk_military prk_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
 
-const jstpl_military_forces = '<div id="${city}_military_${id}" class="prk_mil_stack"><h1>${cityname}</h1></div>';
+const jstpl_military_area = '<div id="${city}_military_${id}" class="prk_mil_board">\
+                                <h2 class="prk_hdr">${cityname}</h2>\
+                                <div id="${city}_mil_ctnr_${id}" class="prk_mil_container">\
+                                    <div id="${city}_hoplite_${id}" class="prk_hoplites"></div>\
+                                    <div id="${city}_trireme_${id}" class="prk_triremes"></div>\
+                                </div>\
+                            </div>';
 
 const jstpl_special_tt = '<div id="{$special}_special_tt" style="display: flex; flex-direction: row;">\
                             <div style="flex: 1;">\

@@ -78,6 +78,8 @@ const LOCATIONS = {
     "solygeia" : [3,7],
 }
 
+const DEAD_POOL = "deadpool";
+
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
@@ -467,7 +469,7 @@ function (dojo, declare) {
         },
 
         /**
-         * For military pools only, not conflict zone
+         * Place all military counters
          * @param {Object} military 
          */
         setupMilitary: function(military) {
@@ -484,11 +486,11 @@ function (dojo, declare) {
             }
 
             for(const i in military) {
-                const counter = military[i];
-                const city = counter['city'];
-                const unit = counter['type'];
-                const strength = counter['strength'];
-                const location = counter['location'];
+                const mil = military[i];
+                const city = mil['city'];
+                const unit = mil['type'];
+                const strength = mil['strength'];
+                const location = mil['location'];
                 var xdim, ydim;
                 if (unit == HOPLITE) {
                     xdim = dim_s;
@@ -505,8 +507,23 @@ function (dojo, declare) {
                     const city_military = $(city+"_military");
                     const ct = city_military.childElementCount;
                     const top = (unit == TRIREME) ? ydim/2 : 0;
-                    const tile_div = this.format_block('jstpl_military', {city: city, type: unit, s: strength, id: counter['id'], x: xoff, y: yoff, m: 2*ct, t: top}); 
-                    dojo.place(tile_div, city_military);
+                    const counter = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: 2*ct, t: top});
+                    dojo.place(counter, city_military);
+                } else if (location == DEAD_POOL) {
+
+                } else if (Object.keys(LOCATIONS).includes(location)) {
+
+                } else {
+                    const player_id = location;
+                    if (player_id == this.player_id) {
+                        this.createMilitaryArea(player_id, city);
+                        const m = 1;
+                        const top = 0;
+                        const counter_div = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: m, t: top});
+                        const mil_zone = city+"_"+unit+"_"+player_id;
+                        const counter = dojo.place(counter_div, $(mil_zone));
+                        Object.assign(counter.style, {position: "relative"});
+                    }
                 }
             }
         },
@@ -701,6 +718,21 @@ function (dojo, declare) {
         },
 
         /**
+         * Create a military area for player, if it does not already exist
+         * @param {string} player_id 
+         * @param {strin} city 
+         * @returns id of military div
+         */
+        createMilitaryArea: function(player_id, city) {
+            const city_mil = city+'_military_'+player_id;
+            if (!document.getElementById(city_mil)) {
+                const mil_div = this.format_block('jstpl_military_area', {city: city, id: player_id, cityname: this.getCityNameTr(city)});
+                dojo.place(mil_div, $('mymilitary'));
+            }
+            return city_mil;
+        },
+
+        /**
          * Move a cube from one location to another.
          * @param {string} cube 
          * @param {DOMElement} from_div 
@@ -725,13 +757,9 @@ function (dojo, declare) {
             const player_id = military['location'];
             const counter = $(city+'_'+unit+'_'+strength+'_'+id);
             if (player_id == this.player_id) {
-                const city_mil = city+'_military_'+player_id;
-                if (!document.getElementById(city_mil)) {
-                    const mil_div = this.format_block('jstpl_military_forces', {city: city, id: player_id, cityname: this.getCityNameTr(city)});
-                    dojo.place(mil_div, $('mymilitary'));
-                }
-                this.slideToObjectRelative(counter, $(city_mil), 500, 500, null, "last");
-                
+                this.createMilitaryArea(player_id, city);
+                const mil_zone = city+"_"+unit+"_"+player_id;
+                this.slideToObjectRelative(counter, $(mil_zone), 500, 500, null, "last");
             } else {
                 this.slideToObjectAndDestroy(counter, $('player_board_'+player_id), 500, 500);
             }
@@ -1164,6 +1192,9 @@ function (dojo, declare) {
             const ct = from_div.childElementCount;
             for (let i = 0; i < num; i++) {
                 const toremove = player_id+"_"+city+"_"+(ct-(1+i));
+                if (!$(toremove)) {
+                    debugger;
+                }
                 this.fadeOutAndDestroy(toremove, 500);
             }
         },
@@ -1424,11 +1455,9 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_takeMilitary: function(notif) {
-            const player_id = notif.args.player_id;
-            const city = notif.args.city;
             const military = notif.args.military;
-            for (const unit of military) {
-                this.moveMilitary(unit);
+            for (const mil of military) {
+                this.moveMilitary(mil);
             }
         },
 
