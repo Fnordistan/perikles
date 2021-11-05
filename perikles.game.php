@@ -71,6 +71,8 @@ class Perikles extends Table
             "sparta_defeats" => 35,
             "thebes_defeats" => 36,
             "last_influence_slot" => 37, // keep track of where to put next Influence tile
+            "deadpool_picked" => 38, // how many players have been checked for deadpool?
+            "spartan_choice" => 39, // who Sparta picked to go first in military phase
         ) );        
 
         $this->influence_tiles = self::getNew("module.common.deck");
@@ -127,7 +129,9 @@ class Perikles extends Table
             }
         }
         self::setGameStateInitialValue("last_influence_slot", 0);
-        
+        self::setGameStateInitialValue("deadpool_picked", 0);
+        self::setGameStateInitialValue("spartan_choice", 0);
+
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
@@ -511,6 +515,7 @@ class Perikles extends Table
 
     /**
      * There is a hard limit of 30 cubes on the board per player.
+     * Returns all the cubes this player has on board (including candidates)
      */
     function allCubesOnBoard($player_id) {
         $cubes = 0;
@@ -636,6 +641,61 @@ class Perikles extends Table
         ));
     }
 
+    /**
+     * Faster check, just return true if at least one unit in deadpool to be retrieved by this player.
+     */
+    function hasDeadPool($player_id) {
+        foreach(array_keys($this->cities) as $cn) {
+            if ($player_id == self::getGameStateValue($cn."_leader")) {
+                $dead = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"$cn\" AND location='deadpool'", true);
+                if (!empty($dead)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return double associative array,
+     * all cities this player is leader of, with lowest strength Hoplite and/or Trireme from the deadpool for each
+     */
+    function deadPoolUnits($player_id) {
+        $deadpool = array();
+        foreach(array_keys($this->cities) as $cn) {
+            if ($player_id == self::getGameStateValue($cn."_leader")) {
+                $dead = self::getObjectListFromDB("SELECT id, city, type, strength FROM MILITARY WHERE city=\"$cn\" AND location='deadpool'");
+                if (!empty($dead)) {
+                    $deadpool[$cn] = array();
+                    $hop = null;
+                    $tri = null;
+                    foreach($dead as $d) {
+                        if ($d['type'] == HOPLITE) {
+                            if ($hop == null) {
+                                $hop = $d;
+                            } else if ($hop['strength'] > $d['strength']) {
+                                $hop = $d;
+                            }
+                        } elseif ($d['type'] == TRIREME) {
+                            if ($tri == null) {
+                                $tri = $d;
+                            } else if ($tri['strength'] > $d['strength']) {
+                                $tri = $d;
+                            }
+                        }
+                    }
+                    if ($hop != null) {
+                        $deadpool[$cn][HOPLITE] = $hop;
+                    }
+                    if ($tri != null) {
+                        $deadpool[$cn][TRIREME] = $tri;
+                    }
+                }
+            }
+        }
+        return $deadpool;
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -655,10 +715,8 @@ class Perikles extends Table
             'candidate_name' => $players[$first_player]['player_name'],
             'preserve' => ['player_id', 'candidate_id'],
         ));
-
-        $this->gamestate->changeActivePlayer($player_id);
+        self::setGameStateValue("spartan_choice", $first_player);
         $this->gamestate->nextState();
-
     }
 
     /**
@@ -860,6 +918,10 @@ class Perikles extends Table
         $this->gamestate->nextState();
     }
 
+    function chooseDeadUnits() {
+        throw new BgaUserException("Take dead not implemented yet");
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -918,9 +980,34 @@ class Perikles extends Table
         $this->gamestate->nextState($state);
     }
 
-    function stMilitary() {
-        $sparta = self::getGameStateValue("sparta_leader");
-
+    /**
+     * Check whether player can collect units
+     */
+    function stDeadPool() {
+        $first_player = self::getGameStateValue("spartan_choice");
+        if ($first_player != 0) {
+            $this->gamestate->changeActivePlayer($first_player);
+        } else {
+            self::setGameStateValue("spartan_choice", 0);
+        }
+        $players = self::loadPlayersBasicInfos();
+        $nbr = count($players);
+        $state = "nextPlayer";
+        if (self::getGameStateValue("deadpool_picked") == $nbr) {
+            self::setGameStateValue("deadpool_picked", 0);
+            $state = "commitForces";
+        } else {
+            $player_id = self::getActivePlayerId();
+            if ($this->hasDeadPool($player_id)) {
+                $state = "takeDead";
+            } else {
+                $player_id = self::activeNextPlayer();
+                self::giveExtraTime( $player_id );
+                $state = "nextPlayer";
+            }
+            self::incGameStateValue("deadpool_picked", 1);
+        }
+        $this->gamestate->nextState($state);
     }
 
     /**

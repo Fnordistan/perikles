@@ -29,7 +29,9 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     // Commit forces phase
     define("ASSIGN_LEADERS", 20);
     define("SPARTAN_CHOICE", 21);
-    define("TAKE_MILITARY", 22);
+    define("DEAD_POOL", 22);
+    define("BRING_OUT_YOUR_DEAD", 23);
+    define("COMMIT_FORCES", 24);
     define("ENDGAME", 99);
  }
  
@@ -112,15 +114,33 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must choose the first player to commit forces'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "chooseNextPlayer" ),
-    	"transitions" => array( "" => TAKE_MILITARY)
+    	"transitions" => array( "" => DEAD_POOL)
     ),
 
-    TAKE_MILITARY => array(
-    	"name" => "takeMilitary",
+    DEAD_POOL => array(
+    	"name" => "deadPool",
     	"description" => "",
     	"type" => "game",
-    	"action" => "stMilitary",
-    	"transitions" => array( "" => NEXT_PLAYER )
+    	"action" => "stDeadPool",
+    	"transitions" => array( "nextPlayer" => DEAD_POOL, "takeDead" => BRING_OUT_YOUR_DEAD, "commitForces" => COMMIT_FORCES)
+    ),
+
+    BRING_OUT_YOUR_DEAD => array(
+    	"name" => "takeDead",
+    	"description" => clienttranslate('${actplayer} must choose unit(s) from the dead pool'),
+    	"descriptionmyturn" => clienttranslate('You must choose unit(s) from the dead pool'),
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "chooseDeadUnits" ),
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER)
+    ),
+
+    COMMIT_FORCES => array(
+    	"name" => "commitForces",
+    	"description" => clienttranslate('${actplayer} must commit forces'),
+    	"descriptionmyturn" => clienttranslate('You must commit forces'),
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "commitForce" ),
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER)
     ),
 
     NEXT_PLAYER => array(
