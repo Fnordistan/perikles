@@ -746,7 +746,7 @@ function (dojo, declare) {
         },
 
         /**
-         * 
+         * Move a military token from the city to stack to the player'sboard
          * @param {Object} military
          */
         moveMilitary: function(military) {
@@ -847,6 +847,11 @@ function (dojo, declare) {
                 token.style.removeProperty("transition");
                 this.stripPosition(token);
                 token.classList.remove('moving_token');
+                // Perikles additions
+                if (token.classList.contains("prk_military")) {
+                    token.style.position = "relative";
+                    token.style.margin = "1px";
+                }
                 if (onEnd) onEnd(token);
             }, duration, delay);
         },
@@ -1462,6 +1467,7 @@ function (dojo, declare) {
          */
         notif_takeMilitary: function(notif) {
             const military = notif.args.military;
+            const player_id = notif.args.player_id;
             for (const mil of military) {
                 this.moveMilitary(mil);
             }

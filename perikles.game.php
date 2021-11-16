@@ -1152,6 +1152,10 @@ class Perikles extends Table
                 case 'assassinate':
                     $this->removeRandomCube($active_player);
                     break;
+                case 'spartanChoice':
+                    $firstplayer = $this->chooseRandomPlayer();
+                    $this->chooseNextPlayer($firstplayer);
+                    break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
                 	break;
@@ -1168,6 +1172,16 @@ class Perikles extends Table
         }
 
         throw new feException( "Zombie mode not supported at this game state: ".$statename );
+    }
+
+    /**
+     * Choose a random player_id.
+     */
+    function chooseRandomPlayer() {
+        $players = self::loadPlayersBasicInfos();
+        $playerids = array_keys($players);
+        shuffle($playerids);
+        return $playerids[0];
     }
 
     /**
