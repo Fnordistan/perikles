@@ -32,6 +32,8 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("DEAD_POOL", 22);
     define("BRING_OUT_YOUR_DEAD", 23);
     define("COMMIT_FORCES", 24);
+    define("NEXT_COMMIT", 25);
+    define("START_BATTLES", 26);
     define("ENDGAME", 99);
  }
  
@@ -122,7 +124,7 @@ $machinestates = array(
     	"description" => "",
     	"type" => "game",
     	"action" => "stDeadPool",
-    	"transitions" => array( "nextPlayer" => DEAD_POOL, "takeDead" => BRING_OUT_YOUR_DEAD, "commitForces" => COMMIT_FORCES)
+    	"transitions" => array( "nextPlayer" => DEAD_POOL, "takeDead" => BRING_OUT_YOUR_DEAD, "commitForces" => NEXT_COMMIT)
     ),
 
     BRING_OUT_YOUR_DEAD => array(
@@ -134,6 +136,14 @@ $machinestates = array(
     	"transitions" => array( "nextPlayer" => NEXT_PLAYER)
     ),
 
+    NEXT_COMMIT => array(
+        "name" => "nextPlayerCommit",
+        "description" => "",
+        "type" => "game",
+        "action" => "stNextCommit",
+        "transitions" => array( "commit" => COMMIT_FORCES, "nextPlayer" => NEXT_COMMIT, "resolve" => START_BATTLES )
+    ),
+
     COMMIT_FORCES => array(
     	"name" => "commitForces",
     	"description" => clienttranslate('${actplayer} must commit forces'),
@@ -141,6 +151,14 @@ $machinestates = array(
     	"type" => "activeplayer",
     	"possibleactions" => array( "commitForce" ),
     	"transitions" => array( "nextPlayer" => NEXT_PLAYER)
+    ),
+
+    START_BATTLES => array(
+        "name" => "resolveBattles",
+        "description" => "",
+        "type" => "game",
+        "action" => "stResolveBattles",
+        "transitions" => array( "" => "battle" )
     ),
 
     NEXT_PLAYER => array(

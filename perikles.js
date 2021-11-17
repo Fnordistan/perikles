@@ -1087,6 +1087,8 @@ function (dojo, declare) {
                         [...cubes].forEach( c => c.classList.add("prk_cubes_remove"));
                     }
                     break;
+                case 'commitForces':
+                    break;
                 case 'dummmy':
                     break;
             }

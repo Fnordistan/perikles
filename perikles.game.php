@@ -36,12 +36,6 @@ class Perikles extends Table
 {
 	function __construct( )
 	{
-        // Your global variables labels:
-        //  Here, you can assign labels to global variables you are using for this game.
-        //  You can use any number of global variables with IDs between 10 and 99.
-        //  If your game has options (variants), you also have to associate here a label to
-        //  the corresponding ID in gameoptions.inc.php.
-        // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
         
 
@@ -89,16 +83,9 @@ class Perikles extends Table
 
     /*
         setupNewGame:
-        
-        This method is called only once, when a new game is launched.
-        In this method, you must setup the game according to the game rules, so that
-        the game is ready to be played.
     */
     protected function setupNewGame( $players, $options = array() )
     {    
-        // Set the colors of the players with HTML color code
-        // The default below is red/green/blue/orange/brown
-        // The number of colors defined here must correspond to the maximum number of players allowed for the gams
         $gameinfos = self::getGameinfos();
         $default_colors = $gameinfos['player_colors'];
  
@@ -134,7 +121,6 @@ class Perikles extends Table
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
-        //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
         $this->setupInfluenceTiles();
         $this->setupLocationTiles();
         $this->setupMilitary();
@@ -657,6 +643,52 @@ class Perikles extends Table
     }
 
     /**
+     * Get an associative array of two-shard tiles held by this player: id => city
+     * @param $player_id
+     */
+    function twoShardTiles($player_id) {
+        $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND card_type_arg=\"".INFLUENCE."\"", true);
+        return $shards;
+    }
+
+    /**
+     * Get an associative array of one-shard tiles held by this player: id => city
+     * @param $player_id
+     */
+    function oneShardTiles($player_id) {
+        $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND card_type_arg!=\"".INFLUENCE."\"", true);
+        return $shards;
+    }
+
+    /**
+     * Check for either 1 or 2-shard tiles
+     */
+    protected function isTileLeft($num) {
+        $players = self::loadPlayersBasicInfos();
+        foreach(array_keys($players) as $player_id) {
+            $shards = ($num == 1) ? $this->oneShardTiles($player_id) : $this->twoShardTiles($player_id);
+            if (!empty($shards)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Does anyone have a two-shard tile in hand?
+     */
+    function isTwoShardTileLeft() {
+        return $this->isTileLeft(2);
+    }
+
+    /**
+     * Does anyone have a one-shared tile in hand?
+     */
+    function isOneShardTileLeft() {
+        return $this->isTileLeft(1);
+    }
+
+    /**
      * Return double associative array,
      * all cities this player is leader of, with lowest strength Hoplite and/or Trireme from the deadpool for each
      */
@@ -922,6 +954,11 @@ class Perikles extends Table
         throw new BgaUserException("Take dead not implemented yet");
     }
 
+
+    function commitForce() {
+        
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -976,6 +1013,39 @@ class Perikles extends Table
             $player_id = self::activeNextPlayer();
             self::giveExtraTime( $player_id );
             $state = "takeInfluence";
+        }
+        $this->gamestate->nextState($state);
+    }
+
+    function stNextCommit() {
+        $state = "commit";
+        $player_id = self::getActivePlayerId();
+        // do I have a 2-shard?
+        $shards = $this->twoShardTiles($player_id);
+        if (empty($shards)) {
+            // does anyone else have a two-shard tile left?
+            if ($this->isTwoShardTileLeft()) {
+                // go to next player with 2-shards
+                $state = "nextPlayer";
+                $nextplayer = self::activeNextPlayer();
+                self::giveExtraTime( $nextplayer );
+            } else {
+                // no 2-shards left.
+                // do I have a 1-shard?
+                $shards = $this->oneShardTiles($player_id);
+                if (empty($shards)) {
+                    // does anyone have any shards left?
+                    if ($this->isOneShardTileLeft()) {
+                        // go to next player with 1-shard
+                        $state = "nextPlayer";
+                        $nextplayer = self::activeNextPlayer();
+                        self::giveExtraTime( $nextplayer );
+                    } else {
+                        // everyone is out of tiles
+                        $state = "resolve";
+                    }
+                }
+            }
         }
         $this->gamestate->nextState($state);
     }
