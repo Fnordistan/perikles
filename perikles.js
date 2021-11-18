@@ -1316,6 +1316,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'election', 1000 );
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
             this.notifqueue.setSynchronous( 'election', 500 );
+            dojo.subscribe( 'useTile', this, "notif_useTile");
+            this.notifqueue.setSynchronous( 'useTile', 500 );
         },
         
         // Notification handlers
@@ -1474,6 +1476,17 @@ function (dojo, declare) {
                 this.moveMilitary(mil);
             }
         },
+
+        /**
+         * Move Influence tile to discard
+         * @param {Object} notif 
+         */
+        notif_useTile: function(notif) {
+            const id = notif.args.id;
+            const city = notif.args.city;
+            this.fadeOutAndDestroy(city+'_'+id, 2000, 0);
+        },
+
 
    });
 });

@@ -956,7 +956,7 @@ class Perikles extends Table
 
 
     function commitForce() {
-        
+
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1017,11 +1017,15 @@ class Perikles extends Table
         $this->gamestate->nextState($state);
     }
 
+    /**
+     * Choose next player to play an Influence tile and commit forces.
+     */
     function stNextCommit() {
         $state = "commit";
         $player_id = self::getActivePlayerId();
         // do I have a 2-shard?
         $shards = $this->twoShardTiles($player_id);
+        $s = 2;
         if (empty($shards)) {
             // does anyone else have a two-shard tile left?
             if ($this->isTwoShardTileLeft()) {
@@ -1044,8 +1048,24 @@ class Perikles extends Table
                         // everyone is out of tiles
                         $state = "resolve";
                     }
+                } else {
+                    $s = 1;
                 }
             }
+        }
+        if ($state == "commit") {
+            $city = reset($shards);
+            $id = key($shards);
+            self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard ${city_name} tile'), array(
+                'i18n' => ['city_name'],
+                'player_id' => $player_id,
+                'player_name' => self::getActivePlayerName(),
+                'id' => $id,
+                'shardct' => $s,
+                'city' => $city,
+                'city_name' => $this->cities[$city]['name'],
+                'preserve' => ['player_id', 'city']
+            ));
         }
         $this->gamestate->nextState($state);
     }
