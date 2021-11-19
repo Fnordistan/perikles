@@ -1088,9 +1088,16 @@ function (dojo, declare) {
                     }
                     break;
                 case 'commitForces':
+                    const mils = $('mymilitary').getElementsByClassName("prk_military");
+                    [...mils].forEach(m => {
+                        this.makeSelectable(m);
+                    });
                     break;
                 case 'dummmy':
                     break;
+            }
+            if (['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles'].includes(stateName)) {
+                $('military_board').style['display'] = 'block';
             }
         },
 
@@ -1204,6 +1211,55 @@ function (dojo, declare) {
                     debugger;
                 }
                 this.fadeOutAndDestroy(toremove, 500);
+            }
+        },
+
+        makeSelectable: function(counter) {
+            counter.addEventListener('mouseenter', this.hoverUnit);
+            counter.addEventListener('mouseleave', this.unhoverUnit);
+            counter.addEventListener('click', this.sendUnit);
+        },
+
+        hoverUnit: function(evt) {
+            evt.currentTarget.classList.add("prk_military_active");
+        },
+        unhoverUnit: function(evt) {
+            evt.currentTarget.classList.remove("prk_military_active");
+        },
+
+
+        sendUnit: function(evt) {
+            console.log(evt.currentTarget);
+            this.commitDlg = new ebg.popindialog();
+            this.commitDlg.create( 'commitDlg' );
+            var attackstr = _("Send ${unit} to attack ${location}");
+            var defendstr = _("Send ${unit} to defend ${location}");
+            this.commitDlg.setTitle( _(attackstr) );
+            this.commitDlg.setMaxWidth( 720 );
+            const html = '<div id="CommitDialogDiv" style="display: flex; flex-direction: column;">\
+                            <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
+                                <div id="send_button" class="prk_send_btn">'+_("Send Unit")+'</div>\
+                                <div id="cancel_button" class="prk_cancel_btn">'+_("Cancel")+'</div>\
+                            </div>\
+                        </div>';
+            // Show the dialog
+            this.commitDlg.setContent( html );
+            this.commitDlg.show();
+            this.commitDlg.hideCloseIcon();
+            const dlg = $('CommitDialogDiv');
+            dlg.onclick = event => {
+                this.onSendUnit(event);
+            };
+        },
+
+
+        onSendUnit: function(evt) {
+            const target = evt.target;
+
+            if (target.id == "send_button" ) {
+                console.log("clicked " + target.id);
+            } else if (target.id == "cancel_button") {
+                this.commitDlg.destroy();
             }
         },
 

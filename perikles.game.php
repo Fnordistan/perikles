@@ -31,6 +31,13 @@ define("TRIREME", "trireme");
 define("PERSIA", "persia");
 define("ALPHA", "\u{003B1}");
 define("BETA", "\u{003B2}");
+// for wars
+define("ARGOS",   '100000');
+define("ATHENS",  '010000');
+define("CORINTH", '001000');
+define("MEGARA",  '000100');
+define("SPARTA",  '000010');
+define("THEBES",  '000001');
 
 class Perikles extends Table
 {
@@ -64,6 +71,14 @@ class Perikles extends Table
             "megara_defeats" => 34,
             "sparta_defeats" => 35,
             "thebes_defeats" => 36,
+            // wars
+            "argos_wars" => 40,
+            "athens_wars" => 41,
+            "corinth_wars" => 42,
+            "megara_wars" => 43,
+            "sparta_wars" => 44,
+            "thebes_wars" => 45,
+
             "last_influence_slot" => 37, // keep track of where to put next Influence tile
             "deadpool_picked" => 38, // how many players have been checked for deadpool?
             "spartan_choice" => 39, // who Sparta picked to go first in military phase
@@ -96,7 +111,7 @@ class Perikles extends Table
         {
             $color = array_shift( $default_colors );
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
-            foreach($this->cities as $cn => $city) {
+            foreach(array_keys($this->cities) as $cn) {
                 $statues = $cn."_statues";
                 self::initStat( 'player', $statues, 0, $player_id);
             }
@@ -109,8 +124,8 @@ class Perikles extends Table
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        $city_states = ["leader", "a", "b", "defeats"];
-        foreach($this->cities as $cn => $city) {
+        $city_states = ["leader", "a", "b", "defeats", "wars"];
+        foreach(array_keys($this->cities) as $cn) {
             foreach ($city_states as $lbl) {
                 self::setGameStateInitialValue( $cn."_".$lbl, 0 );
             }
@@ -1056,6 +1071,7 @@ class Perikles extends Table
         if ($state == "commit") {
             $city = reset($shards);
             $id = key($shards);
+            $this->influence_tiles->moveCard($id, DISCARD);
             self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard ${city_name} tile'), array(
                 'i18n' => ['city_name'],
                 'player_id' => $player_id,
