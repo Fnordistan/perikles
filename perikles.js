@@ -276,6 +276,7 @@ function (dojo, declare) {
         /**
          * Return translatable city name text
          * @param {string} city 
+         * @returns translatable string
          */
         getCityNameTr: function(city) {
             const citynames = {
@@ -289,6 +290,38 @@ function (dojo, declare) {
                 "persia": _("Persia"),
             };
             return citynames[city];
+        },
+
+        /**
+         * Return translatable location name text.
+         * @param {string} battle 
+         * @returns translatable string
+         */
+        getBattleNameTr: function(battle) {
+            const locationnames = {
+                "amphipolis" : _("Amphipolis"),
+                "lesbos" : _("Lesbos"),
+                "plataea" : _("Plataea"),
+                "naupactus" : _("Naupactus"),
+                "potidea" : _("Potidea"),
+                "acarnania" : _("Acarnania"),
+                "attica" : _("Attica"),
+                "melos" : _("Melos"),
+                "epidaurus" : _("Epidaurus"),
+                "pylos" : _("Pylos"),
+                "sicily" : _("Sicily"),
+                "cephallenia" : _("Cephallenia"),
+                "cythera" : _("Cythera"),
+                "spartolus" : _("Spartolus"),
+                "megara" : _("Megara"),
+                "mantinea" : _("Mantinea"),
+                "delium" : _("Delium"),
+                "aetolia" : _("Aetolia"),
+                "corcyra" : _("Corcyra"),
+                "leucas" : _("Leucas"),
+                "solygeia" : _("Solygeia"),
+            };
+            return locationnames[battle];
         },
 
         /**
@@ -386,11 +419,25 @@ function (dojo, declare) {
             for (const loc of locationtiles) {
                 const slot = loc['slot'];
                 const battle = loc['location'];
-                x = -1 * (LOCATIONS[battle][1]-1) * locw * scale;
-                y = -1 * (LOCATIONS[battle][0]-1) * loch * scale;
-                const loc_tile = this.format_block('jstpl_location_tile', {id: battle, x: x, y: y});
+                const loc_tile = this.createLocationTile(battle, locw, loch, 0, scale)
                 dojo.place(loc_tile, $("location_"+slot));
             }
+        },
+
+        /**
+         * Create location tile
+         * @param {int} location 
+         * @param {int} w width
+         * @param {int} h height
+         * @param {int} m margin
+         * @param {int} s scale
+         * @returns html div
+         */
+        createLocationTile: function(location, w, h, m, s) {
+            const x = -1 * (LOCATIONS[location][1]-1) * w * s;
+            const y = -1 * (LOCATIONS[location][0]-1) * h * s;
+            const loc_html = this.format_block('jstpl_location_tile', {id: location, x: x, y: y, m: m});
+            return loc_html;
         },
 
         /**
@@ -473,8 +520,6 @@ function (dojo, declare) {
          * @param {Object} military 
          */
         setupMilitary: function(military) {
-            const dim_l = 100;
-            const dim_s = 62;
             this.military_zones = {};
             let mz = 'persia_military';
             this.decorateMilitaryStacks("persia", mz);
@@ -491,22 +536,11 @@ function (dojo, declare) {
                 const unit = mil['type'];
                 const strength = mil['strength'];
                 const location = mil['location'];
-                var xdim, ydim;
-                if (unit == HOPLITE) {
-                    xdim = dim_s;
-                    ydim = dim_l;
-                } else if (unit == TRIREME) {
-                    xdim = dim_l;
-                    ydim = dim_s;
-                } else {
-                    throw Error("invalid unit type: "+ unit);
-                }
-                let xoff = -1 * strength * xdim;
-                let yoff = -1 * MILITARY_ROW[city] * ydim;
+                let [xoff, yoff] = this.counterOffsets(city, strength, unit);
                 if (location == city) {
                     const city_military = $(city+"_military");
                     const ct = city_military.childElementCount;
-                    const top = (unit == TRIREME) ? ydim/2 : 0;
+                    const top = (unit == TRIREME) ? MIL_DIM.s : 0;
                     const counter = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: 2*ct, t: top});
                     dojo.place(counter, city_military);
                 } else if (location == DEAD_POOL) {
@@ -526,6 +560,29 @@ function (dojo, declare) {
                     }
                 }
             }
+        },
+
+        /**
+         * Create array[2] with background-position offsets for a military counter.
+         * @param {*} city 
+         * @param {*} strength 
+         * @param {*} unit
+         * @param returns [x,y] values
+         */
+        counterOffsets: function(city, strength, unit) {
+            var xdim, ydim;
+            if (unit == HOPLITE) {
+                xdim = MIL_DIM.s;
+                ydim = MIL_DIM.l;
+            } else if (unit == TRIREME) {
+                xdim = MIL_DIM.l;
+                ydim = MIL_DIM.s;
+            } else {
+                throw Error("invalid unit type: "+ unit);
+            }
+            let xoff = -1 * strength * xdim;
+            let yoff = -1 * MILITARY_ROW[city] * ydim;
+            return [xoff,yoff];
         },
 
         /**
@@ -1090,6 +1147,7 @@ function (dojo, declare) {
                 case 'commitForces':
                     const mils = $('mymilitary').getElementsByClassName("prk_military");
                     [...mils].forEach(m => {
+                        m.style.outline = "3px red dashed";
                         this.makeSelectable(m);
                     });
                     break;
@@ -1217,7 +1275,9 @@ function (dojo, declare) {
         makeSelectable: function(counter) {
             counter.addEventListener('mouseenter', this.hoverUnit);
             counter.addEventListener('mouseleave', this.unhoverUnit);
-            counter.addEventListener('click', this.sendUnit);
+            counter.addEventListener('click', (event) => {
+                this.sendUnit(event);
+            });
         },
 
         hoverUnit: function(evt) {
@@ -1229,17 +1289,28 @@ function (dojo, declare) {
 
 
         sendUnit: function(evt) {
-            console.log(evt.currentTarget);
+            const selectedUnit = evt.currentTarget;
+            console.log(selectedUnit);
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
-            var attackstr = _("Send ${unit} to attack ${location}");
-            var defendstr = _("Send ${unit} to defend ${location}");
-            this.commitDlg.setTitle( _(attackstr) );
+
+            const unitc = this.createCopyCounter(selectedUnit);
+            const [city,unit,strength,id] = selectedUnit.id.split('_');
+            let unit_str = _("${city_name} ${unit}-${strength}");
+            unit_str = unit_str.replace('${city_name}', this.getCityNameTr(city));
+            unit_str = unit_str.replace('${unit}', unit == HOPLITE ? _("Hoplite") : _("Trireme"));
+            unit_str = unit_str.replace('${strength}', strength);
+
+            this.commitDlg.setTitle( _("Commit Forces") );
             this.commitDlg.setMaxWidth( 720 );
-            const html = '<div id="CommitDialogDiv" style="display: flex; flex-direction: column;">\
+            const html = '<div id="CommitDialogDiv" style="display: flex; flex-direction: column; top: 50px;">\
+                            <div style="display: flex; flex-direction: row; align-items: center;">'
+                            +unitc + this.createLocationTileIcons()+
+                            '</div>\
+                            <div id="commit_text" style="margin: 2px; text-align: center;"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
-                                <div id="send_button" class="prk_send_btn">'+_("Send Unit")+'</div>\
-                                <div id="cancel_button" class="prk_cancel_btn">'+_("Cancel")+'</div>\
+                                <div id="send_button" class="prk_btn prk_send_btn">'+_("Send Unit")+'</div>\
+                                <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
                             </div>\
                         </div>';
             // Show the dialog
@@ -1248,10 +1319,68 @@ function (dojo, declare) {
             this.commitDlg.hideCloseIcon();
             const dlg = $('CommitDialogDiv');
             dlg.onclick = event => {
-                this.onSendUnit(event);
+                const target = event.target;
+
+                let attack_str = _("Send ${unit} to attack ${location}?");
+                let defend_str = _("Send ${unit} to defend ${location}?");
+                let banner_txt = null;
+
+                if (target.id == "send_button" ) {
+                    if (banner_txt) {
+                        let [side, loc] = target.id.split('_');
+                        console.log("sending "+id+ " to " + side + " " + loc);
+                    } else {
+                        console.log("No destination chosen");
+                    }
+                } else if (target.id == "cancel_button") {
+                    this.commitDlg.destroy();
+                } else if (target.classList.contains("prk_spartan_icon")) {
+                    let [side, loc] = target.id.split('_');
+                    banner_txt = side == "attack" ? attack_str : defend_str;
+                    banner_txt = banner_txt.replace('${location}', this.getBattleNameTr(loc));
+                    banner_txt = banner_txt.replace('${unit}', unit_str);
+                }
+                if (banner_txt) {
+                    $(commit_text).innerHTML = banner_txt;
+                }
+   
             };
         },
 
+        /**
+         * Copy a military counter as a dialog icon
+         * @param {*} counter 
+         * @returns relative div
+         */
+        createCopyCounter: function(counter) {
+            const [city,unit,strength,id] = counter.id.split('_');
+            const [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            let counter_html = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: id+'copy', x: xoff, y: yoff, m: 5, t: 0});
+            counter_html = counter_html.replace('style="', 'style="position: relative;');
+            return counter_html;
+        },
+
+        /**
+         * Create the div containing all the location tiles that go in a Commit Forces dialog.
+         * @returns html
+         */
+        createLocationTileIcons: function() {
+            const locw = 124;
+            const loch = 195;
+            const scale = 0.55;
+            let loc_html = '<div style="display: flex; flex-direction: column; margin: 10px;">';
+            for (const loc of this.gamedatas.locationtiles) {
+                loc_html += '<div style="display: flex; flex-direction: row; align-items: center;">';
+                const battle = loc['location'];
+                loc_html += '<div id="attack_'+battle+'" class="prk_spartan_icon prk_sword"></div>';
+                const loc_tile = this.createLocationTile(battle, locw, loch, 1, scale);
+                loc_html += loc_tile;
+                loc_html += '<div id="defend_'+battle+'" class="prk_spartan_icon prk_shield"></div>';
+                loc_html += '</div>';
+            }
+            loc_html += '</div>';
+            return loc_html;
+        },
 
         onSendUnit: function(evt) {
             const target = evt.target;

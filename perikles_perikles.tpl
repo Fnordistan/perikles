@@ -73,7 +73,7 @@ const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_counter prk_st
 
 const jstpl_cube = '<div id="${id}"" class="prk_cube" style="background-color: #${color};"></div>';
 
-const jstpl_location_tile = '<div id="${id}_tile" class="prk_location_tile" style="background-position: ${x}px ${y}px;"></div>';
+const jstpl_location_tile = '<div id="${id}_tile" class="prk_location_tile" style="background-position: ${x}px ${y}px; margin: ${m}px;"></div>';
 
 const jstpl_military_counter = '<div id="${city}_${type}_${s}_${id}" class="prk_military prk_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
 
