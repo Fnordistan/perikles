@@ -366,7 +366,7 @@
 }
 
 .prk_cubes_remove:hover {
-    transform: scale(1.2);
+    transform: scale(0.9) rotate(45deg);
     transition: transform 0.25s;
     outline: 1px dotted white;
 }

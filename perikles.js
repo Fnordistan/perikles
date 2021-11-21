@@ -92,6 +92,9 @@ function (dojo, declare) {
             console.log('perikles constructor');
             this.influence_h = 199;
             this.influence_w = 128;
+            this.location_w = 124;
+            this.location_h = 195;
+            this.location_s = 0.55;
         },
         
         /*
@@ -412,14 +415,10 @@ function (dojo, declare) {
          * @param {Array} locationtiles 
          */
         setupLocationTiles: function(locationtiles) {
-            const locw = 124;
-            const loch = 195;
-            const scale = 0.55;
-        
             for (const loc of locationtiles) {
                 const slot = loc['slot'];
                 const battle = loc['location'];
-                const loc_tile = this.createLocationTile(battle, locw, loch, 0, scale)
+                const loc_tile = this.createLocationTile(battle, 0)
                 dojo.place(loc_tile, $("location_"+slot));
             }
         },
@@ -427,15 +426,12 @@ function (dojo, declare) {
         /**
          * Create location tile
          * @param {int} location 
-         * @param {int} w width
-         * @param {int} h height
          * @param {int} m margin
-         * @param {int} s scale
          * @returns html div
          */
-        createLocationTile: function(location, w, h, m, s) {
-            const x = -1 * (BATTLES[location].xy[1]-1) * w * s;
-            const y = -1 * (BATTLES[location].xy[0]-1) * h * s;
+        createLocationTile: function(location, m) {
+            const x = -1 * (BATTLES[location].xy[1]-1) * this.location_w * this.location_s;
+            const y = -1 * (BATTLES[location].xy[0]-1) * this.location_h * this.location_s;
             const loc_html = this.format_block('jstpl_location_tile', {id: location, x: x, y: y, m: m});
             return loc_html;
         },
@@ -715,6 +711,23 @@ function (dojo, declare) {
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.spanYou());
+
+                        if (args.committed) {
+                            let commit_log = "";
+                            const attack_str = "Send ${unit} to attack ${location}";
+                            const defend_str = "Send ${unit} to defend ${location}";
+                            for (const[id, selected] of Object.entries(args.committed)) {
+                                let commit_str = (selected.id == "attack" ? attack_str : defend_str);
+                                let mil_html = this.createMilitaryCounterRelative(id+"_dlg", selected.city, selected.strength, selected.unit);
+                                mil_html = this.prependStyle(mil_html, 'display: inline-block');
+                                commit_str = commit_str.replace('${unit}', mil_html);
+                                let loc_html = this.createLocationTile(selected.location, 0);
+                                loc_html = this.prependStyle(loc_html, 'display: inline-block');
+                                commit_str = commit_str.replace('${location}', loc_html);
+                                commit_log += commit_str+'<br/>';
+                            }
+                            log = log.replace('committed_forces', commit_log);
+                        }
                     }
                 }
             } catch (e) {
@@ -765,6 +778,17 @@ function (dojo, declare) {
         },
 
         /**
+         * Put a new style element into an HTML div's style attribute
+         * @param {string} html 
+         * @param {string} style 
+         * @returns 
+         */
+        prependStyle: function(html, style) {
+            html = html.replace('style="', 'style="'+style+';');
+            return html;
+        },
+
+        /**
          * Customized player colors per player_id
          * @param {string} player_id 
          */
@@ -782,7 +806,6 @@ function (dojo, declare) {
          setDescriptionOnMyTurn : function(text, moreargs) {
             this.gamedatas.gamestate.descriptionmyturn = text;
             let tpl = Object.assign({}, this.gamedatas.gamestate.args);
-
             if (!tpl) {
                 tpl = {};
             }
@@ -1151,6 +1174,32 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * Send a unit to a battle location.
+         * @param {*} id 
+         * @param {*} city 
+         * @param {*} unit 
+         * @param {*} strength 
+         * @param {*} side 
+         * @param {*} battle 
+         */
+         onSendUnit: function(id, city, unit, strength, side, battle) {
+            this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit};
+            this.setDescriptionOnMyTurn(_("You must commit forces")+'<br/>committed_forces');
+        },
+
+        /**
+         * Player clicks "Commit Forces" button.
+         */
+        onCommitForces: function() {
+            console.log("Committing");
+        },
+
+        onResetForces: function() {
+            this.gamedatas.gamestate.args['committed'] = {};
+            this.setDescriptionOnMyTurn(_("You must commit forces"));
+        },
+
         ///////////////////////////////////////////////////
         //// Game & client states
         
@@ -1192,6 +1241,8 @@ function (dojo, declare) {
                         m.style.outline = "3px red dashed";
                         this.makeSelectable(m);
                     });
+                    this.gamedatas.gamestate.args = {};
+                    this.gamedatas.gamestate.args.committed = {};
                     break;
                 case 'dummmy':
                     break;
@@ -1220,6 +1271,9 @@ function (dojo, declare) {
                 case 'assassinate':
                     this.stripClassName("prk_cubes_remove");
                     break;
+                case 'commitForces':
+                    this.gamedatas.gamestate.args.committed = {};
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -1240,6 +1294,14 @@ function (dojo, declare) {
                      for (player_id in this.gamedatas.players) {
                         this.addActionButton( 'choose_'+player_id, this.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
                      }
+                    break;
+                case 'commitForces':
+                    this.addActionButton( "commit_send_btn", _('Commit Forces'), () => {
+                        this.onCommitForces();
+                    });
+                    this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
+                        this.onResetForces();
+                    }, null, null, 'red');
                     break;
                 }
             }
@@ -1372,9 +1434,9 @@ function (dojo, declare) {
 
                 if (target.id == "send_button" ) {
                     let location = dlg.getAttribute("data-location");
-                    let armyside = dlg.getAttribute("data-side");
-                    if (location != null && armyside != null) {
-                        this.onSendUnit(id, location, armyside);
+                    let sendto = dlg.getAttribute("data-side");
+                    if (location && sendto) {
+                        this.onSendUnit(id, city, unit, strength, sendto, location);
                         this.commitDlg.destroy();
                     }
                 } else if (target.id == "cancel_button") {
@@ -1393,16 +1455,32 @@ function (dojo, declare) {
             };
         },
 
+        ///////////////////////////////////////////////////
+        //// Component creation - create HTML elements
+
         /**
-         * Copy a military counter as a dialog icon
+         * Copy a military counter as a dialog icon from an existing one
          * @param {*} counter 
          * @returns relative div
          */
-        createCopyCounter: function(counter) {
+         createCopyCounter: function(counter) {
             const [city,unit,strength,id] = counter.id.split('_');
+            let counter_html = this.createMilitaryCounterRelative(id+"_copy", city, strength, unit);
+            return counter_html;
+        },
+
+        /**
+         * Create a military counter with relative dimensions.
+         * @param {*} id 
+         * @param {*} city 
+         * @param {*} strength 
+         * @param {*} unit 
+         * @returns relative html div
+         */
+        createMilitaryCounterRelative: function(id, city, strength, unit) {
             const [xoff, yoff] = this.counterOffsets(city, strength, unit);
-            let counter_html = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: id+'copy', x: xoff, y: yoff, m: 5, t: 0});
-            counter_html = counter_html.replace('style="', 'style="position: relative;');
+            let counter_html = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: id, x: xoff, y: yoff, m: 5, t: 0});
+            counter_html = this.prependStyle(counter_html, 'position: relative');
             return counter_html;
         },
 
@@ -1412,9 +1490,6 @@ function (dojo, declare) {
          * @returns html
          */
         createLocationTileIcons: function(counter_city) {
-            const locw = 124;
-            const loch = 195;
-            const scale = 0.55;
             let loc_html = '<div style="display: flex; flex-direction: column; margin: 10px;">';
             for (const loc of this.gamedatas.locationtiles) {
                 loc_html += '<div style="display: flex; flex-direction: row; align-items: center;">';
@@ -1425,26 +1500,13 @@ function (dojo, declare) {
                 } else {
                     loc_html += '<div id="attack_'+battle+'" class="prk_spartan_icon prk_sword"></div>';
                 }
-                const loc_tile = this.createLocationTile(battle, locw, loch, 1, scale);
+                const loc_tile = this.createLocationTile(battle, 1);
                 loc_html += loc_tile;
                 loc_html += '<div id="defend_'+battle+'" class="prk_spartan_icon prk_shield"></div>';
                 loc_html += '</div>';
             }
             loc_html += '</div>';
             return loc_html;
-        },
-
-        onSendUnit: function(id, battle, side) {
-            let banner = id + " sent to " + side + " " + battle;
-            this.setDescriptionOnMyTurn(banner, {unit: id, side: side, location: battle});
-            this.addActionButton( "commit_send_btn", _('Commit'), () => {
-                console.log("Sending units");
-            });
-            this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
-                this.removeActionButtons();
-                this.setDescriptionOnMyTurn(_("You must commit forces"));
-            }, null, null, 'red');
-
         },
 
         ///////////////////////////////////////////////////
