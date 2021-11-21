@@ -1436,7 +1436,7 @@ function (dojo, declare) {
 
         onSendUnit: function(id, battle, side) {
             let banner = id + " sent to " + side + " " + battle;
-            this.setDescriptionOnMyTurn(banner, {ID: id});
+            this.setDescriptionOnMyTurn(banner, {unit: id, side: side, location: battle});
             this.addActionButton( "commit_send_btn", _('Commit'), () => {
                 console.log("Sending units");
             });
