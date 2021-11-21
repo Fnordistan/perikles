@@ -54,28 +54,28 @@ const PLAYER_COLORS = {
 const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;';
 
 // row,column
-const LOCATIONS = {
-    "amphipolis" : [1,1],
-    "lesbos" : [1,2],
-    "plataea" :  [1,3],
-    "naupactus" : [1,4],
-    "potidea" : [1,5],
-    "acarnania" : [1,6],
-    "attica" : [1,7],
-    "melos" : [2,1],
-    "epidaurus" : [2,2],
-    "pylos" : [2,3],
-    "sicily" : [2,4],
-    "cephallenia" : [2,5],
-    "cythera" : [2,6],
-    "spartolus" : [2,7],
-    "megara" : [3,1],
-    "mantinea" : [3,2],
-    "delium" : [3,3],
-    "aetolia" : [3,4],
-    "corcyra" : [3,5],
-    "leucas" : [3,6],
-    "solygeia" : [3,7],
+const BATTLES = {
+    "amphipolis" : {xy: [1,1], location: "athens"},
+    "lesbos" : {xy: [1,2], location: "athens"},
+    "plataea" :  {xy: [1,3], location: "athens"},
+    "naupactus" : {xy: [1,4], location: "athens"},
+    "potidea" : {xy: [1,5], location: "athens"},
+    "acarnania" : {xy: [1,6], location: "athens"},
+    "attica" : {xy: [1,7], location: "athens"},
+    "melos" : {xy: [2,1], location: "sparta"},
+    "epidaurus" : {xy: [2,2], location: "sparta"},
+    "pylos" : {xy: [2,3], location: "sparta"},
+    "sicily" : {xy: [2,4], location: "sparta"},
+    "cephallenia" : {xy: [2,5], location: "sparta"},
+    "cythera" : {xy: [2,6], location: "sparta"},
+    "spartolus" : {xy: [2,7], location: "sparta"},
+    "megara" : {xy: [3,1], location: "megara"},
+    "mantinea" : {xy: [3,2], location: "argos"},
+    "delium" : {xy: [3,3], location: "thebes"},
+    "aetolia" : {xy: [3,4], location: "thebes"},
+    "corcyra" : {xy: [3,5], location: "corinth"},
+    "leucas" : {xy: [3,6], location: "corinth"},
+    "solygeia" : {xy: [3,7], location: "corinth"},
 }
 
 const DEAD_POOL = "deadpool";
@@ -434,8 +434,8 @@ function (dojo, declare) {
          * @returns html div
          */
         createLocationTile: function(location, w, h, m, s) {
-            const x = -1 * (LOCATIONS[location][1]-1) * w * s;
-            const y = -1 * (LOCATIONS[location][0]-1) * h * s;
+            const x = -1 * (BATTLES[location].xy[1]-1) * w * s;
+            const y = -1 * (BATTLES[location].xy[0]-1) * h * s;
             const loc_html = this.format_block('jstpl_location_tile', {id: location, x: x, y: y, m: m});
             return loc_html;
         },
@@ -545,7 +545,7 @@ function (dojo, declare) {
                     dojo.place(counter, city_military);
                 } else if (location == DEAD_POOL) {
 
-                } else if (Object.keys(LOCATIONS).includes(location)) {
+                } else if (Object.keys(BATTLES).includes(location)) {
 
                 } else {
                     const player_id = location;
@@ -772,6 +772,48 @@ function (dojo, declare) {
             const player = this.gamedatas.players[player_id];
             const color = player.color;
             return PLAYER_COLORS[color];
+        },
+
+        /**
+         * Puts top banner for active player.
+         * @param {string} text
+         * @param {Array} moreargs
+         */
+         setDescriptionOnMyTurn : function(text, moreargs) {
+            this.gamedatas.gamestate.descriptionmyturn = text;
+            let tpl = Object.assign({}, this.gamedatas.gamestate.args);
+
+            if (!tpl) {
+                tpl = {};
+            }
+            if (typeof moreargs != 'undefined') {
+                for ( const key in moreargs) {
+                    if (moreargs.hasOwnProperty(key)) {
+                        tpl[key]=moreargs[key];
+                    }
+                }
+            }
+ 
+            let title = "";
+            if (this.isCurrentPlayerActive() && text !== null) {
+                tpl.you = this.spanYou();
+            }
+            if (text !== null) {
+                title = this.format_string_recursive(text, tpl);
+            }
+            if (title == "") {
+                this.setMainTitle("&nbsp;");
+            } else {
+                this.setMainTitle(title);
+            }
+        },
+
+        /**
+         * Change the title banner.
+         * @param {string} text 
+         */
+         setMainTitle : function(text) {
+            $('pagemaintitletext').innerHTML = text;
         },
 
         /**
@@ -1287,17 +1329,20 @@ function (dojo, declare) {
             evt.currentTarget.classList.remove("prk_military_active");
         },
 
-
+        /**
+         * Button to send a unit to a battle.
+         * @param {Object} evt event
+         */
         sendUnit: function(evt) {
             const selectedUnit = evt.currentTarget;
-            console.log(selectedUnit);
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
 
             const unitc = this.createCopyCounter(selectedUnit);
             const [city,unit,strength,id] = selectedUnit.id.split('_');
             let unit_str = _("${city_name} ${unit}-${strength}");
-            unit_str = unit_str.replace('${city_name}', this.getCityNameTr(city));
+            unit_str = unit_str.replace('${city_name}', '<span style="color: var(--color_'+city+');")>'+this.getCityNameTr(city)+'</span>');
+            unit_str = unit_str.replace('${unit}', '<b>${unit}</b>');
             unit_str = unit_str.replace('${unit}', unit == HOPLITE ? _("Hoplite") : _("Trireme"));
             unit_str = unit_str.replace('${strength}', strength);
 
@@ -1305,9 +1350,9 @@ function (dojo, declare) {
             this.commitDlg.setMaxWidth( 720 );
             const html = '<div id="CommitDialogDiv" style="display: flex; flex-direction: column; top: 50px;">\
                             <div style="display: flex; flex-direction: row; align-items: center;">'
-                            +unitc + this.createLocationTileIcons()+
+                            +unitc + this.createLocationTileIcons(city)+
                             '</div>\
-                            <div id="commit_text" style="margin: 2px; text-align: center;"></div>\
+                            <div id="commit_text" style="margin: 2px; text-align: center; color: #fff; background-color: #880808;"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
                                 <div id="send_button" class="prk_btn prk_send_btn">'+_("Send Unit")+'</div>\
                                 <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
@@ -1321,29 +1366,30 @@ function (dojo, declare) {
             dlg.onclick = event => {
                 const target = event.target;
 
-                let attack_str = _("Send ${unit} to attack ${location}?");
-                let defend_str = _("Send ${unit} to defend ${location}?");
+                const attack_str = _("Send ${unit} to attack ${location}?");
+                const defend_str = _("Send ${unit} to defend ${location}?");
                 let banner_txt = null;
 
                 if (target.id == "send_button" ) {
-                    if (banner_txt) {
-                        let [side, loc] = target.id.split('_');
-                        console.log("sending "+id+ " to " + side + " " + loc);
-                    } else {
-                        console.log("No destination chosen");
+                    let location = dlg.getAttribute("data-location");
+                    let armyside = dlg.getAttribute("data-side");
+                    if (location != null && armyside != null) {
+                        this.onSendUnit(id, location, armyside);
+                        this.commitDlg.destroy();
                     }
                 } else if (target.id == "cancel_button") {
                     this.commitDlg.destroy();
                 } else if (target.classList.contains("prk_spartan_icon")) {
-                    let [side, loc] = target.id.split('_');
+                    const [side, loc] = target.id.split('_');
+                    dlg.setAttribute("data-location", loc);
+                    dlg.setAttribute("data-side", side);
                     banner_txt = side == "attack" ? attack_str : defend_str;
-                    banner_txt = banner_txt.replace('${location}', this.getBattleNameTr(loc));
+                    banner_txt = banner_txt.replace('${location}', '<span style="color: var(--color_'+BATTLES[loc].location +');">'+this.getBattleNameTr(loc)+'</span>');
                     banner_txt = banner_txt.replace('${unit}', unit_str);
                 }
                 if (banner_txt) {
                     $(commit_text).innerHTML = banner_txt;
                 }
-   
             };
         },
 
@@ -1362,9 +1408,10 @@ function (dojo, declare) {
 
         /**
          * Create the div containing all the location tiles that go in a Commit Forces dialog.
+         * @param counter_city city the unit is from
          * @returns html
          */
-        createLocationTileIcons: function() {
+        createLocationTileIcons: function(counter_city) {
             const locw = 124;
             const loch = 195;
             const scale = 0.55;
@@ -1372,7 +1419,12 @@ function (dojo, declare) {
             for (const loc of this.gamedatas.locationtiles) {
                 loc_html += '<div style="display: flex; flex-direction: row; align-items: center;">';
                 const battle = loc['location'];
-                loc_html += '<div id="attack_'+battle+'" class="prk_spartan_icon prk_sword"></div>';
+                // can't attack own city
+                if (BATTLES[battle].location == counter_city) {
+                    loc_html += '<div class="prk_blank_icon"></div>';
+                } else {
+                    loc_html += '<div id="attack_'+battle+'" class="prk_spartan_icon prk_sword"></div>';
+                }
                 const loc_tile = this.createLocationTile(battle, locw, loch, 1, scale);
                 loc_html += loc_tile;
                 loc_html += '<div id="defend_'+battle+'" class="prk_spartan_icon prk_shield"></div>';
@@ -1382,14 +1434,17 @@ function (dojo, declare) {
             return loc_html;
         },
 
-        onSendUnit: function(evt) {
-            const target = evt.target;
+        onSendUnit: function(id, battle, side) {
+            let banner = id + " sent to " + side + " " + battle;
+            this.setDescriptionOnMyTurn(banner, {ID: id});
+            this.addActionButton( "commit_send_btn", _('Commit'), () => {
+                console.log("Sending units");
+            });
+            this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
+                this.removeActionButtons();
+                this.setDescriptionOnMyTurn(_("You must commit forces"));
+            }, null, null, 'red');
 
-            if (target.id == "send_button" ) {
-                console.log("clicked " + target.id);
-            } else if (target.id == "cancel_button") {
-                this.commitDlg.destroy();
-            }
         },
 
         ///////////////////////////////////////////////////
