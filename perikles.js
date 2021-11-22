@@ -1196,7 +1196,7 @@ function (dojo, declare) {
             const sz = Object.keys(this.gamedatas.gamestate.args.committed).length;
             if (sz == 0) {
                 this.confirmationDialog( _("You have not selected any forces"),
-                    this.commitForces.bind(this) );
+                    this.commitForces() );
             } else {
                 this.commitForces();
             }
@@ -1615,7 +1615,16 @@ function (dojo, declare) {
          * Action to send forces
          */
         commitForces: function() {
-            console.log("Committing Forces: " + this.gamedatas.gamestate.args.committed);
+            if (this.checkAction("commitForce", true)) {
+                for (const[id, selected] of Object.entries(this.gamedatas.gamestate.args.committed)) {
+                    this.ajaxcall( "/perikles/perikles/commitUnit.html", { 
+                        unitid: id,
+                        location: selected.location,
+                        side: selected.side,
+                        lock: true 
+                    }, this, function( result ) {  }, function( is_error) { } );
+                }
+            }
         },
 
         ///////////////////////////////////////////////////

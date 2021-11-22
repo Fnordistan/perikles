@@ -94,4 +94,13 @@
       self::ajaxResponse( );
     }
 
+    public function commitUnit() {
+      self::setAjaxMode();     
+      $unitid = self::getArg( "unitid", AT_posint, true );
+      $location = self::getArg( "location", AT_alphanum, true );
+      $side = self::getArg( "side", AT_enum, true, null, array("attack", "defend") );
+      $this->game->sendToBattle($unitid, $location, $side);
+      self::ajaxResponse( );
+    }
+
   }

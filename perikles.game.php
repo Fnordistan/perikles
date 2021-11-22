@@ -969,8 +969,10 @@ class Perikles extends Table
         throw new BgaUserException("Take dead not implemented yet");
     }
 
-
-    function commitForce() {
+    function sendToBattle($unitid, $location, $side) {
+        self::checkAction('commitForce');
+        $player_id = self::getActivePlayerId();
+        throw new BgaVisibleSystemException("$player_id sent $unitid to $side $location");
 
     }
 
