@@ -32,12 +32,16 @@ define("PERSIA", "persia");
 define("ALPHA", "\u{003B1}");
 define("BETA", "\u{003B2}");
 // for wars
-define("ARGOS",   '100000');
-define("ATHENS",  '010000');
-define("CORINTH", '001000');
-define("MEGARA",  '000100');
-define("SPARTA",  '000010');
-define("THEBES",  '000001');
+define("ARGOS",   0b100000);
+define("ATHENS",  0b010000);
+define("CORINTH", 0b001000);
+define("MEGARA",  0b000100);
+define("SPARTA",  0b000010);
+define("THEBES",  0b000001);
+define("ATTACKER", 0);
+define("DEFENDER", 2);
+define("MAIN", 1);
+define("ALLY", 2);
 
 class Perikles extends Table
 {
@@ -250,7 +254,7 @@ class Perikles extends Table
                 $unittype = $u.$i;
                 if (isset($city[$unittype])) {
                     for ($t = 0; $t < $city[$unittype]; $t++) {
-                        self::DbQuery( "INSERT INTO MILITARY VALUES($idct,\"$cn\",\"$unit\",$strength,\"$cn\")" );
+                        self::DbQuery( "INSERT INTO MILITARY VALUES($idct,\"$cn\",\"$unit\",$strength,\"$cn\",0)" );
                         $idct++;
                     }
                 }
@@ -743,6 +747,46 @@ class Perikles extends Table
         return $deadpool;
     }
 
+    /**
+     * Set values for both cities war game state values
+     */
+    function declareWar($city1, $city2) {
+        if ($city1 == $city2) {
+            throw new BgaVisibleSystemException("City cannot declare war on itself!"); // NO18N
+        }
+        $warbits = $this->getWarBits();
+        $war1 = self::getGameStateValue($city1."_wars");
+        $war2 = self::getGameStateValue($city2."_wars");
+        self::setGameStateValue($city1."_wars", $war1 + $warbits[$city2]);
+        self::setGameStateValue($city2."_wars", $war2 + $warbits[$city1]);
+    }
+
+    /**
+     * Are these cities at war?
+     */
+    function isWar($city1, $city2) {
+        $warbits = $this->getWarBits();
+        $wars1 = self::getGameStateValue($city1."_wars");
+        return $wars1 & $warbits[$city2];
+    }
+
+    /**
+     * Associative array, city to war bitmask
+     */
+    function getWarBits() {
+        $warbits = array(
+            "argos" => ARGOS,
+            "athens" => ATHENS,
+            "corinth" => CORINTH,
+            "megara" => MEGARA,
+            "sparta" => SPARTA,
+            "thebes" => THEBES
+        );
+        return $warbits;
+    }
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -969,10 +1013,36 @@ class Perikles extends Table
         throw new BgaUserException("Take dead not implemented yet");
     }
 
-    function sendToBattle($unitid, $location, $side) {
+    function sendToBattle($unitid, $tolocation, $side) {
         self::checkAction('commitForce');
+        // do all the checks for whether this is a valid action
         $player_id = self::getActivePlayerId();
-        throw new BgaVisibleSystemException("$player_id sent $unitid to $side $location");
+        // do I own this unit?
+        $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$unitid");
+        if ($counter['location'] != $player_id) {
+            throw new BgaVisibleSystemException(self::_("You do not own this unit!"));
+        }
+        $unitcity = $counter['city'];
+        $strength = $counter['strength'];
+        $home_city = $this->cities[$unitcity]['name'];
+        $unit_type = ($counter['type'] == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
+        $unit_desc = self::_("$home_city $unit_type-$strength");
+
+        $battlecity = $this->locations[$tolocation]['city'];
+        // am I attacking my own city?
+        if ($side == "attack" && self::getGameStateValue($battlecity."_leader") == $player_id) {
+            throw new BgaUserException(self::_("$unit_desc cannot attack a city you control!"));
+        }
+        // is this unit at war with the destination location?
+        if ($side == "defend" && $this->isWar($unitcity, $battlecity)) {
+            throw new BgaUserException(self::_("$unit_desc cannot defend a city it is at war with!"));
+        }
+        // are we Main or Ally?
+        
+
+
+        $player_id = self::getActivePlayerId();
+        throw new BgaVisibleSystemException("$player_id sent $unitid to $side as ");
 
     }
 
