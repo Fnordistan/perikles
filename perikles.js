@@ -1186,13 +1186,20 @@ function (dojo, declare) {
          onSendUnit: function(id, city, unit, strength, side, battle) {
             this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit};
             this.setDescriptionOnMyTurn(_("You must commit forces")+'<br/>committed_forces');
+            // disabled the icon for future selections
         },
 
         /**
          * Player clicks "Commit Forces" button.
          */
         onCommitForces: function() {
-            console.log("Committing");
+            const sz = Object.keys(this.gamedatas.gamestate.args.committed).length;
+            if (sz == 0) {
+                this.confirmationDialog( _("You have not selected any forces"),
+                    this.commitForces.bind(this) );
+            } else {
+                this.commitForces();
+            }
         },
 
         onResetForces: function() {
@@ -1238,7 +1245,6 @@ function (dojo, declare) {
                 case 'commitForces':
                     const mils = $('mymilitary').getElementsByClassName("prk_military");
                     [...mils].forEach(m => {
-                        m.style.outline = "3px red dashed";
                         this.makeSelectable(m);
                     });
                     this.gamedatas.gamestate.args = {};
@@ -1377,11 +1383,10 @@ function (dojo, declare) {
         },
 
         makeSelectable: function(counter) {
+            counter.style.outline = "3px red dashed";
             counter.addEventListener('mouseenter', this.hoverUnit);
             counter.addEventListener('mouseleave', this.unhoverUnit);
-            counter.addEventListener('click', (event) => {
-                this.sendUnit(event);
-            });
+            counter.addEventListener('click', this.sendUnit.bind(this));
         },
 
         hoverUnit: function(evt) {
@@ -1389,6 +1394,13 @@ function (dojo, declare) {
         },
         unhoverUnit: function(evt) {
             evt.currentTarget.classList.remove("prk_military_active");
+        },
+
+        makeUnselectable: function(counter) {
+            counter.style.outline = null;
+            counter.removeEventListener('mouseenter', this.hoverUnit);
+            counter.removeEventListener('mouseleave', this.unhoverUnit);
+            counter.removeEventListener('click', this.sendUnit.bind(this));
         },
 
         /**
@@ -1414,7 +1426,7 @@ function (dojo, declare) {
                             <div style="display: flex; flex-direction: row; align-items: center;">'
                             +unitc + this.createLocationTileIcons(city)+
                             '</div>\
-                            <div id="commit_text" style="margin: 2px; text-align: center; color: #fff; background-color: #880808;"></div>\
+                            <div id="commit_text" style="margin: 2px; padding: 2px; text-align: center; color: #fff; background-color: #2e79ba;"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
                                 <div id="send_button" class="prk_btn prk_send_btn">'+_("Send Unit")+'</div>\
                                 <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
@@ -1453,6 +1465,19 @@ function (dojo, declare) {
                     $(commit_text).innerHTML = banner_txt;
                 }
             };
+        },
+
+        /**
+         * Check whether player can attack a city
+         * @param {string} city 
+         * @returns true if it's okay to attack
+         */
+        canAttack: function(city) {
+            let can_attack = true;
+            if (this.gamedatas.leaders[city] == this.player_id) {
+                can_attack = false;
+            }
+            return can_attack;
         },
 
         ///////////////////////////////////////////////////
@@ -1495,10 +1520,10 @@ function (dojo, declare) {
                 loc_html += '<div style="display: flex; flex-direction: row; align-items: center;">';
                 const battle = loc['location'];
                 // can't attack own city
-                if (BATTLES[battle].location == counter_city) {
-                    loc_html += '<div class="prk_blank_icon"></div>';
-                } else {
+                if (this.canAttack(BATTLES[battle].location)) {
                     loc_html += '<div id="attack_'+battle+'" class="prk_spartan_icon prk_sword"></div>';
+                } else {
+                    loc_html += '<div class="prk_blank_icon"></div>';
                 }
                 const loc_tile = this.createLocationTile(battle, 1);
                 loc_html += loc_tile;
@@ -1584,6 +1609,13 @@ function (dojo, declare) {
                 }, this, function( result ) {  }, function( is_error) { } );
             }
 
+        },
+
+        /**
+         * Action to send forces
+         */
+        commitForces: function() {
+            console.log("Committing Forces: " + this.gamedatas.gamestate.args.committed);
         },
 
         ///////////////////////////////////////////////////
