@@ -662,7 +662,7 @@ class Perikles extends Table
      * @param $player_id
      */
     function twoShardTiles($player_id) {
-        $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND card_type_arg=\"".INFLUENCE."\"", true);
+        $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND NOT card_type=\"any\" AND card_type_arg=\"".INFLUENCE."\"", true);
         return $shards;
     }
 
@@ -671,7 +671,7 @@ class Perikles extends Table
      * @param $player_id
      */
     function oneShardTiles($player_id) {
-        $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND card_type_arg!=\"".INFLUENCE."\"", true);
+        $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND (card_type=\"any\" OR card_type_arg!=\"".INFLUENCE."\")", true);
         return $shards;
     }
 
@@ -1070,6 +1070,7 @@ class Perikles extends Table
         }
         if ($state == "commit") {
             $city = reset($shards);
+            $city_name = ($city == "any") ? self::_("Any") : $this->cities[$city]['name'];
             $id = key($shards);
             $this->influence_tiles->moveCard($id, DISCARD);
             self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard ${city_name} tile'), array(
@@ -1079,7 +1080,7 @@ class Perikles extends Table
                 'id' => $id,
                 'shardct' => $s,
                 'city' => $city,
-                'city_name' => $this->cities[$city]['name'],
+                'city_name' => $city_name,
                 'preserve' => ['player_id', 'city']
             ));
         }
