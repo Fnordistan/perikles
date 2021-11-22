@@ -178,6 +178,12 @@
     height: 104px;
 }
 
+.prk_location_mil {
+    position: absolute;
+    width: 91px;
+    height: 49px;
+}
+
 .prk_location_tile {
     background-image: url(img/location_tiles.jpg);
     background-size: calc(var(--location_w)*7 *var(--location_scale)) calc(var(--location_h)*3*var(--location_scale));

@@ -226,7 +226,12 @@ class view_perikles_perikles extends game_view
             $this->page->insert_block('LOCATION_BLOCK', array(
               'LOC' => $l+1,
               'T' => $LOC_Y + ($l*$LOC_H)-$l,
-              'L' => 1000
+              'TT' => $LOC_Y + ($l*$LOC_H)-$l+55,
+              'L' => 1000,
+              'LA' => 899,
+              'LAA' => 802,
+              'LD' => 1078,
+              'LDA' => 1174,
             ));
         }
 
