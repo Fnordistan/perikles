@@ -1037,8 +1037,11 @@ class Perikles extends Table
         if ($side == "defend" && $this->isWar($unitcity, $battlecity)) {
             throw new BgaUserException(self::_("$unit_desc cannot defend a city it is at war with!"));
         }
-        // are we Main or Ally?
+        // do I have units on opposite sides?
+
         
+        // are we Main or Ally?
+
 
 
         $player_id = self::getActivePlayerId();

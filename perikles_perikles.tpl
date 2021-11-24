@@ -85,6 +85,8 @@ const jstpl_location_tile = '<div id="${id}_tile" class="prk_location_tile" styl
 
 const jstpl_military_counter = '<div id="${city}_${type}_${s}_${id}" class="prk_military prk_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
 
+var jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
+
 const jstpl_military_area = '<div id="${city}_military_${id}" class="prk_mil_board">\
                                 <h2 class="prk_hdr">${cityname}</h2>\
                                 <div id="${city}_mil_ctnr_${id}" class="prk_mil_container">\

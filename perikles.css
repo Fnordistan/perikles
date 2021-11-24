@@ -456,6 +456,20 @@
     border: 3px ridge darkslategray;
 }
 
+.prk_city_btn {
+    color: #fff;
+    font-size: 18px;
+    font-family: 'ThrumsSerifRegular';
+    font-weight: 700;
+    color: black;
+    text-align: center;
+    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
+    width: 100px;
+    height: 35px;
+    margin: 2px;
+    border: 4px ridge #767060;
+}
+
 .prk_mil_board {
     min-width: fit-content;
     min-height: fit-content;
