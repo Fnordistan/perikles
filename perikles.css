@@ -531,7 +531,7 @@
     min-height: fit-content;
 }
 
-.prk_spartan_icon {
+.prk_battle_icon {
     background-repeat: no-repeat;
     background-size: 50px 50px;
     width: 50px;
@@ -547,7 +547,8 @@
     margin: 5px;
 }
 
-.prk_spartan_icon:hover {
+.prk_battle_icon:hover {
+    cursor: pointer;
     box-shadow: 5px 5px 5px 0px rgba(110, 2, 2, 0.4);
 }
 

@@ -733,11 +733,14 @@ function (dojo, declare) {
                                 }
                             }
                             // option to spend Influence cube
-                            if (args.committed)
                             if (counters >= 2) {
                                 commit_log += '<hr/>';
-                                commit_log += _("You may spend an Influence cube to send 1 or 2 more units from that city")+'<br/>';
-                                commit_log += this.influenceCubesToSpend();
+                                if (args.committed.cube) {
+
+                                } else {
+                                    commit_log += _("You may spend an Influence cube to send 1 or 2 more units from that city")+'<br/>';
+                                    commit_log += this.createSpendInfluenceDiv();
+                                }
                             }
                             commit_log += '<br/>';
                             log = log.replace('committed_forces', commit_log);
@@ -1206,7 +1209,7 @@ function (dojo, declare) {
                 btn.addEventListener('click', this.onCommitExtraForces.bind(this));
             });
             // hide unit on military board
-            $(city+'_'+unit+'_'+strength+'_'+id).style.display = "None";
+            $(city+'_'+unit+'_'+strength+'_'+id).style.display = "none";
         },
 
         /**
@@ -1223,15 +1226,22 @@ function (dojo, declare) {
         },
 
         /**
-         * To spend a cube on sending extra counters.
+         * Player clicked a city button to spend a cube on sending extra counters.
          */
         onCommitExtraForces: function(evt) {
             const target = evt.currentTarget;
             const city = target.id.split('_')[0];
-            this.gamedatas.gamestate.args.committed['city'] = city;
+            this.gamedatas.gamestate.args.committed['cube'] = city;
             // hide other buttons
             $(COMMIT_INFLUENCE_CUBES).innerHTML = this.format_block('jstpl_city_banner', {city: city, city_name: this.getCityNameTr(city)});
-            $(COMMIT_INFLUENCE_CUBES).style.border = "4px solid #000";
+            // remove listeners except from chosen city
+            const civ_mils = $('mymilitary').getElementsByClassName('prk_mil_container');
+            [...civ_mils].forEach(civ => {
+                if (!civ.id.startsWith(city)) {
+                    const counters = civ.getElementsByClassName('prk_military');
+                    [...counters].forEach(ctr => this.makeUnselectable(ctr));
+                }
+            });
             console.log(target.id);
         },
 
@@ -1243,7 +1253,14 @@ function (dojo, declare) {
             this.setDescriptionOnMyTurn(_("You must commit forces"));
             // redisplay units that were hidden after being selected
             const mils = $('mymilitary').getElementsByClassName('prk_military ');
-            [...mils].forEach(m => m.style.display = "block");
+            [...mils].forEach(m => {
+                // redisplay counters that were hidden before
+                m.style.display = "block";
+                // reenable deselected counters
+                if (!m.style.outline) {
+                    this.makeSelectable(m);
+                }
+            });
         },
 
         ///////////////////////////////////////////////////
@@ -1441,6 +1458,7 @@ function (dojo, declare) {
          * @param {*} counter 
          */
         makeSelectable: function(counter) {
+            counter.setAttribute("data-selectable", true);
             counter.style.outline = "3px red dashed";
             counter.addEventListener('mouseenter', this.hoverUnit);
             counter.addEventListener('mouseleave', this.unhoverUnit);
@@ -1467,10 +1485,11 @@ function (dojo, declare) {
          * @param {*} counter 
          */
         makeUnselectable: function(counter) {
+            counter.setAttribute("data-selectable", false);
             counter.style.outline = null;
             counter.removeEventListener('mouseenter', this.hoverUnit);
             counter.removeEventListener('mouseleave', this.unhoverUnit);
-            counter.removeEventListener('click', this.sendUnit.bind(this));
+            counter.removeEventListener('click', this.sendUnit);
         },
 
         /**
@@ -1479,6 +1498,11 @@ function (dojo, declare) {
          */
         sendUnit: function(evt) {
             const selectedUnit = evt.currentTarget;
+            // hack because the click method doesn't actually get removed with unselectable
+            if (selectedUnit.getAttribute("selectable")) {
+                return;
+            }
+
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
 
@@ -1523,7 +1547,7 @@ function (dojo, declare) {
                     }
                 } else if (target.id == "cancel_button") {
                     this.commitDlg.destroy();
-                } else if (target.classList.contains("prk_spartan_icon")) {
+                } else if (target.classList.contains("prk_battle_icon")) {
                     const [side, loc] = target.id.split('_');
                     dlg.setAttribute("data-location", loc);
                     dlg.setAttribute("data-side", side);
@@ -1558,7 +1582,7 @@ function (dojo, declare) {
          * Create buttons to spend a city influence cube to send more units.
          * @returns html for cubes for cities I own
          */
-        influenceCubesToSpend: function() {
+        createSpendInfluenceDiv: function() {
             let html = '<div id="'+COMMIT_INFLUENCE_CUBES+'" style="display: inline-flex; flex-direction: row;">';
             html += this.createInfluenceCube(this.player_id, 'commit', '');
             for (const city of CITIES) {
@@ -1613,13 +1637,13 @@ function (dojo, declare) {
                 // can't attack own city
                 const battle_city = BATTLES[battle].location;
                 if (city != battle_city && this.canAttack(battle_city)) {
-                    loc_html += '<div id="attack_'+battle+'" class="prk_spartan_icon prk_sword"></div>';
+                    loc_html += '<div id="attack_'+battle+'" class="prk_battle_icon prk_sword"></div>';
                 } else {
                     loc_html += '<div class="prk_blank_icon"></div>';
                 }
                 const loc_tile = this.createLocationTile(battle, 1);
                 loc_html += loc_tile;
-                loc_html += '<div id="defend_'+battle+'" class="prk_spartan_icon prk_shield"></div>';
+                loc_html += '<div id="defend_'+battle+'" class="prk_battle_icon prk_shield"></div>';
                 loc_html += '</div>';
             });
             loc_html += '</div>';
