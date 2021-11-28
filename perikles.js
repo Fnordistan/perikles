@@ -26,6 +26,8 @@ const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
 
 const INFLUENCE_PILE = "influence_slot_0";
 
+const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
+
 const PLAYER_INF_MARGIN = "2px";
 
 const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
@@ -734,7 +736,7 @@ function (dojo, declare) {
                             if (args.committed)
                             if (counters >= 2) {
                                 commit_log += '<hr/>';
-                                commit_log += _("You may spend an Influence cube to send 1 or 2 more units")+'<br/>';
+                                commit_log += _("You may spend an Influence cube to send 1 or 2 more units from that city")+'<br/>';
                                 commit_log += this.influenceCubesToSpend();
                             }
                             commit_log += '<br/>';
@@ -1201,9 +1203,10 @@ function (dojo, declare) {
             // add event listeners
             const city_btns = document.getElementsByClassName("prk_city_btn");
             [...city_btns].forEach(btn => {
-                btn.addEventListener('click', this.onCommitExtraForces);
+                btn.addEventListener('click', this.onCommitExtraForces.bind(this));
             });
-
+            // hide unit on military board
+            $(city+'_'+unit+'_'+strength+'_'+id).style.display = "None";
         },
 
         /**
@@ -1226,6 +1229,9 @@ function (dojo, declare) {
             const target = evt.currentTarget;
             const city = target.id.split('_')[0];
             this.gamedatas.gamestate.args.committed['city'] = city;
+            // hide other buttons
+            $(COMMIT_INFLUENCE_CUBES).innerHTML = this.format_block('jstpl_city_banner', {city: city, city_name: this.getCityNameTr(city)});
+            $(COMMIT_INFLUENCE_CUBES).style.border = "4px solid #000";
             console.log(target.id);
         },
 
@@ -1235,6 +1241,9 @@ function (dojo, declare) {
         onResetForces: function() {
             this.gamedatas.gamestate.args['committed'] = {};
             this.setDescriptionOnMyTurn(_("You must commit forces"));
+            // redisplay units that were hidden after being selected
+            const mils = $('mymilitary').getElementsByClassName('prk_military ');
+            [...mils].forEach(m => m.style.display = "block");
         },
 
         ///////////////////////////////////////////////////
@@ -1546,11 +1555,11 @@ function (dojo, declare) {
         //// Component creation - create HTML elements
 
         /**
-         * 
+         * Create buttons to spend a city influence cube to send more units.
          * @returns html for cubes for cities I own
          */
         influenceCubesToSpend: function() {
-            let html = '<div style="display: inline-flex; flex-direction: row;">';
+            let html = '<div id="'+COMMIT_INFLUENCE_CUBES+'" style="display: inline-flex; flex-direction: row;">';
             html += this.createInfluenceCube(this.player_id, 'commit', '');
             for (const city of CITIES) {
                 if (this.isLeader(this.player_id, city)) {

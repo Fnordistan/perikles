@@ -457,17 +457,34 @@
 }
 
 .prk_city_btn {
-    color: #fff;
+    color: black;
     font-size: 18px;
     font-family: 'ThrumsSerifRegular';
     font-weight: 700;
-    color: black;
     text-align: center;
     text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
     width: 100px;
     height: 35px;
     margin: 2px;
     border: 4px ridge #767060;
+}
+
+.prk_city_btn:hover {
+    text-shadow: none;
+    border: 4px ridge lightgray;
+    transition: all 0.25s;
+}
+
+.prk_city_banner {
+    color: black;
+    font-size: 1em;
+    font-family: 'ThrumsSerifRegular';
+    font-weight: 800;
+    text-align: center;
+    width: 100px;
+    height: 35px;
+    margin: 2px;
+    border: 4px ridge #000;
 }
 
 .prk_mil_board {

@@ -87,6 +87,8 @@ const jstpl_military_counter = '<div id="${city}_${type}_${s}_${id}" class="prk_
 
 var jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
+var jstpl_city_banner = '<button id="${city}_commit_btn" type="button" class="prk_city_banner" style="background-color: var(--color_${city});">${city_name}</button>';
+
 const jstpl_military_area = '<div id="${city}_military_${id}" class="prk_mil_board">\
                                 <h2 class="prk_hdr">${cityname}</h2>\
                                 <div id="${city}_mil_ctnr_${id}" class="prk_mil_container">\
