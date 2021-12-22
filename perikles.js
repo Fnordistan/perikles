@@ -1486,9 +1486,9 @@ function (dojo, declare) {
         makeSelectable: function(counter) {
             counter.setAttribute("data-selectable", true);
             counter.style.outline = "3px red dashed";
-            counter.addEventListener('mouseenter', this.hoverUnit);
-            counter.addEventListener('mouseleave', this.unhoverUnit);
-            counter.addEventListener('click', this.sendUnit.bind(this));
+            this.connect(counter, 'mouseenter', this.hoverUnit);
+            this.connect(counter, 'mouseleave', this.unhoverUnit);
+            this.connect(counter, 'click', this.sendUnit.bind(this));
         },
 
         /**
@@ -1513,9 +1513,9 @@ function (dojo, declare) {
         makeUnselectable: function(counter) {
             counter.setAttribute("data-selectable", false);
             counter.style.outline = null;
-            counter.removeEventListener('mouseenter', this.hoverUnit);
-            counter.removeEventListener('mouseleave', this.unhoverUnit);
-            counter.removeEventListener('click', this.sendUnit);
+            this.disconnect(counter, 'mouseenter');
+            this.disconnect(counter, 'mouseleave');
+            this.disconnect(counter, 'click');
         },
 
         /**
