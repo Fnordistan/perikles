@@ -32,6 +32,8 @@ const PLAYER_INF_MARGIN = "2px";
 
 const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
 
+const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles'];
+
 const HOPLITE = "hoplite";
 const TRIREME = "trireme";
 
@@ -734,12 +736,15 @@ function (dojo, declare) {
                             }
                             // option to spend Influence cube
                             if (counters >= 2) {
-                                commit_log += '<hr/>';
                                 if (args.committed.cube) {
 
                                 } else {
-                                    commit_log += _("You may spend an Influence cube to send 1 or 2 more units from that city")+'<br/>';
-                                    commit_log += this.createSpendInfluenceDiv();
+                                    let spend_cubes_div = this.createSpendInfluenceDiv();
+                                    if (spend_cubes_div != null) {
+                                        commit_log += '<hr/>';
+                                        spend_cubes_div = _("You may spend an Influence cube to send 1 or 2 units from that city")+'<br/>'+spend_cubes_div;
+                                        commit_log += spend_cubes_div;
+                                    }
                                 }
                             }
                             commit_log += '<br/>';
@@ -1121,7 +1126,7 @@ function (dojo, declare) {
                 if (this.checkAction("proposeCandidate", true)) {
                     const cube_div = event.target;
                     // player must have a cube in the city
-                    if (enter && this.hasCubeInCity(city)) {
+                    if (enter && this.hasCubeInCity(city, true)) {
                         if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
                             cube_div.classList.add("prk_cubes_active");
                         }
@@ -1299,17 +1304,19 @@ function (dojo, declare) {
                     }
                     break;
                 case 'commitForces':
-                    const mils = $('mymilitary').getElementsByClassName("prk_military");
-                    [...mils].forEach(m => {
-                        this.makeSelectable(m);
-                    });
-                    this.gamedatas.gamestate.args = {};
-                    this.gamedatas.gamestate.args.committed = {};
-                    break;
+                    if (this.isCurrentPlayerActive()) {
+                        const mils = $('mymilitary').getElementsByClassName("prk_military");
+                        [...mils].forEach(m => {
+                            this.makeSelectable(m);
+                        });
+                        this.gamedatas.gamestate.args = {};
+                        this.gamedatas.gamestate.args.committed = {};
+                        break;
+                    }
                 case 'dummmy':
                     break;
             }
-            if (['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles'].includes(stateName)) {
+            if (MILITARY_DISPLAY_STATES.includes(stateName)) {
                 $('military_board').style['display'] = 'block';
             }
         },
@@ -1374,8 +1381,10 @@ function (dojo, declare) {
 
         /**
          * Is this player leader of this city?
+         * @param {string} player_id 
+         * @param {string} city 
          */
-        isLeader: function(player_id,city) {
+        isLeader: function(player_id, city) {
             let isLeader = false;
             const leader = $(city+'_leader').firstChild;
             if (leader) {
@@ -1388,17 +1397,34 @@ function (dojo, declare) {
         },
 
         /**
-         * Does current player have a cube in the city? Includes candidates
+         * Does the player have any uncommitted military units in that city?
+         * @param {string} player_id 
          * @param {string} city 
+         */
+        hasAvailableUnits: function(player_id, city) {
+            for (let u of [HOPLITE, TRIREME]) {
+                if ($(city+'_'+u+'_'+player_id).childElementCount > 0) {
+                    return true;
+                }
+            };
+            return false;
+        },
+
+        /**
+         * Does current player have a cube in the city?
+         * @param {string} city 
+         * @param {bool} candidates including candidates? default: false
          * @returns true if this player has a cube in city
          */
-        hasCubeInCity: function(city) {
+        hasCubeInCity: function(city, candidates=false) {
             const player_id = this.player_id;
-            if (document.getElementById(player_id+"_"+city+"_a")) {
-                return true;
-            }
-            if (document.getElementById(player_id+"_"+city+"_b")) {
-                return true;
+            if (candidates) {
+                if (document.getElementById(player_id+"_"+city+"_a")) {
+                    return true;
+                }
+                if (document.getElementById(player_id+"_"+city+"_b")) {
+                    return true;
+                }
             }
             if (document.getElementById(city+"_cubes_"+player_id).hasChildNodes) {
                 return true;
@@ -1580,20 +1606,27 @@ function (dojo, declare) {
 
         /**
          * Create buttons to spend a city influence cube to send more units.
-         * @returns html for cubes for cities I own
+         * @returns html for cubes for cities I own; null if none possible
          */
         createSpendInfluenceDiv: function() {
-            let html = '<div id="'+COMMIT_INFLUENCE_CUBES+'" style="display: inline-flex; flex-direction: row;">';
-            html += this.createInfluenceCube(this.player_id, 'commit', '');
+            let html = null;
+            let canSpend = false;
+            let civ_btns = "";
             for (const city of CITIES) {
                 if (this.isLeader(this.player_id, city)) {
                     //any cubes left?
-                    if ($(city+'_cubes_'+this.player_id).childElementCount > 0) {
-                        html += this.format_block('jstpl_city_btn', {city: city, city_name: this.getCityNameTr(city)});
+                    if (this.hasCubeInCity(city) && this.hasAvailableUnits(this.player_id, city)) {
+                        civ_btns += this.format_block('jstpl_city_btn', {city: city, city_name: this.getCityNameTr(city)});
+                        canSpend = true;
                     }
                 }
             }
-            html += '</div>';
+            if (canSpend) {
+                html = '<div id="'+COMMIT_INFLUENCE_CUBES+'" style="display: inline-flex; flex-direction: row;">';
+                html += this.createInfluenceCube(this.player_id, 'commit', '');
+                html += civ_btns;
+                html += '</div>';
+            }
             return html;
         },
 
