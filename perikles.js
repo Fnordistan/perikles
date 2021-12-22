@@ -1658,18 +1658,18 @@ function (dojo, declare) {
 
         /**
          * Create the div containing all the location tiles that go in a Commit Forces dialog.
-         * @param city city the unit is from
+         * @param unit_city city the unit is from
          * @returns html
          */
-        createLocationTileIcons: function(city) {
+        createLocationTileIcons: function(unit_city) {
             let loc_html = '<div style="display: flex; flex-direction: column; margin: 10px;">';
-            const location_tiles = document.getElementsByClassName("prk_location_tile");
+            const location_tiles = $('location_area').getElementsByClassName("prk_location_tile");
             [...location_tiles].forEach(loc => {
                 loc_html += '<div style="display: flex; flex-direction: row; align-items: center;">';
                 const battle = loc.id.split('_')[0];
                 // can't attack own city
                 const battle_city = BATTLES[battle].location;
-                if (city != battle_city && this.canAttack(battle_city)) {
+                if (unit_city != battle_city && this.canAttack(battle_city)) {
                     loc_html += '<div id="attack_'+battle+'" class="prk_battle_icon prk_sword"></div>';
                 } else {
                     loc_html += '<div class="prk_blank_icon"></div>';
