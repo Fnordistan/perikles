@@ -1215,6 +1215,11 @@ function (dojo, declare) {
             });
             // hide unit on military board
             $(city+'_'+unit+'_'+strength+'_'+id).style.display = "none";
+            // unselect units if we already have selected 2
+            if (Object.keys(this.gamedatas.gamestate.args.committed).length > 1) {
+                const mymil = $(mymilitary).getElementsByClassName("prk_military");
+                [...mymil].forEach(m => this.makeSelectable(m, false));
+            }
         },
 
         /**
@@ -1244,7 +1249,7 @@ function (dojo, declare) {
             [...civ_mils].forEach(civ => {
                 if (!civ.id.startsWith(city)) {
                     const counters = civ.getElementsByClassName('prk_military');
-                    [...counters].forEach(ctr => this.makeUnselectable(ctr));
+                    [...counters].forEach(ctr => this.makeSelectable(ctr, false));
                 }
             });
             console.log(target.id);
@@ -1480,15 +1485,22 @@ function (dojo, declare) {
         },
 
         /**
-         * For military counters, makes them selectable
-         * @param {*} counter 
+         * For military counters, makes them selectable/unselectable
+         * @param {DOM} counter 
+         * @param {bool} selectable (default true)
          */
-        makeSelectable: function(counter) {
-            counter.setAttribute("data-selectable", true);
-            counter.style.outline = "3px red dashed";
-            this.connect(counter, 'mouseenter', this.hoverUnit);
-            this.connect(counter, 'mouseleave', this.unhoverUnit);
-            this.connect(counter, 'click', this.sendUnit.bind(this));
+        makeSelectable: function(counter, selectable=true) {
+            counter.setAttribute("data-selectable", selectable);
+            counter.style.outline = selectable ? "3px red dashed" : null;
+            if (selectable) {
+                this.connect(counter, 'mouseenter', this.hoverUnit);
+                this.connect(counter, 'mouseleave', this.unhoverUnit);
+                this.connect(counter, 'click', this.sendUnit.bind(this));
+            } else {
+                this.disconnect(counter, 'mouseenter');
+                this.disconnect(counter, 'mouseleave');
+                this.disconnect(counter, 'click');
+            }
         },
 
         /**
@@ -1504,18 +1516,6 @@ function (dojo, declare) {
          */
         unhoverUnit: function(evt) {
             evt.currentTarget.classList.remove("prk_military_active");
-        },
-
-        /**
-         * Undo selectable for military counters.
-         * @param {*} counter 
-         */
-        makeUnselectable: function(counter) {
-            counter.setAttribute("data-selectable", false);
-            counter.style.outline = null;
-            this.disconnect(counter, 'mouseenter');
-            this.disconnect(counter, 'mouseleave');
-            this.disconnect(counter, 'click');
         },
 
         /**
