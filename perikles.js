@@ -1246,14 +1246,9 @@ function (dojo, declare) {
             this.gamedatas.gamestate.args.committed['cube'] = city;
             // hide other buttons
             $(COMMIT_INFLUENCE_CUBES).innerHTML = this.format_block('jstpl_city_banner', {city: city, city_name: this.getCityNameTr(city)});
-            // remove listeners except from chosen city
-            const civ_mils = $('mymilitary').getElementsByClassName('prk_mil_container');
-            [...civ_mils].forEach(civ => {
-                if (!civ.id.startsWith(city)) {
-                    const counters = civ.getElementsByClassName('prk_military');
-                    [...counters].forEach(ctr => this.makeSelectable(ctr, false));
-                }
-            });
+            // readd listeners to chosen city
+            const civ_mils = $(city+'_military_'+this.player_id).getElementsByClassName('prk_military');
+            [...civ_mils].forEach(ctr => this.makeSelectable(ctr));
             console.log(target.id);
         },
 
