@@ -742,7 +742,9 @@ function (dojo, declare) {
                                     let spend_cubes_div = this.createSpendInfluenceDiv();
                                     if (spend_cubes_div != null) {
                                         commit_log += '<hr/>';
-                                        spend_cubes_div = _("You may spend an Influence cube to send 1 or 2 units from that city")+'<br/>'+spend_cubes_div;
+                                        let cubehtml = this.createInfluenceCube(this.player_id, 'commit', '');
+                                        cubehtml = this.prependStyle(cubehtml, "display: inline-block; margin-left: 5px;");
+                                        spend_cubes_div = _("You may spend an Influence cube to send 1 or 2 units from that city")+cubehtml+'<br/>'+spend_cubes_div;
                                         commit_log += spend_cubes_div;
                                     }
                                 }
@@ -1623,7 +1625,6 @@ function (dojo, declare) {
             }
             if (canSpend) {
                 html = '<div id="'+COMMIT_INFLUENCE_CUBES+'" style="display: inline-flex; flex-direction: row;">';
-                html += this.createInfluenceCube(this.player_id, 'commit', '');
                 html += civ_btns;
                 html += '</div>';
             }
