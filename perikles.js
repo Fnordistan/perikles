@@ -711,7 +711,7 @@ function (dojo, declare) {
                         args.candidate_name  = this.spanPlayerName(args.candidate_id);
                     }
                     if (args.city_name) {
-                        args.city_name = this.spanCityName(args.city, args.city_name);
+                        args.city_name = this.spanCityName(args.city);
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.spanYou());
@@ -734,11 +734,11 @@ function (dojo, declare) {
          */
         createCommittedUnits: function(committed) {
             let commit_log = "";
-            // if spent cube from city for extra units
-            const commit_city = committed.cube;
             const attack_str = _("Send ${unit} to attack ${location}");
             const defend_str = _("Send ${unit} to defend ${location}");
             let counters = 0;
+            // if spent cube from city for extra units
+            const commit_city = committed.cube;
             let extra_forces = "";
             for (const[id, selected] of Object.entries(committed)) {
                 if (id != "cube") {
@@ -750,7 +750,7 @@ function (dojo, declare) {
                     loc_html = this.prependStyle(loc_html, 'display: inline-block');
                     commit_str = commit_str.replace('${location}', loc_html);
 
-                    if (commit_city == selected.city) {
+                    if (selected.cube) {
                         extra_forces += commit_str+'<br/>';
                     } else {
                         commit_log += commit_str+'<br/>';
@@ -763,7 +763,7 @@ function (dojo, declare) {
                 commit_log += '<hr/>';
                 if (commit_city) {
                     let city_commit = _("Additional unit(s) committed from ${city}");
-                    city_commit = city_commit.replace('${city}', this.getCityNameTr(commit_city));
+                    city_commit = city_commit.replace('${city}', this.spanCityName(commit_city));
                     commit_log += city_commit + '<br/>';
                     commit_log += extra_forces;
                 } else {
@@ -802,8 +802,13 @@ function (dojo, declare) {
             return you;
         },
 
-        spanCityName: function(city, city_name) {
-            return '<div class="prk_city_name" style="color:var(--color_'+city+');">'+city_name+'</div>';
+        /**
+         * Take a city name and put it in colored text and translate the name.
+         * @param {string} city 
+         * @returns decorated HTML div
+         */
+        spanCityName: function(city) {
+            return '<div class="prk_city_name" style="color:var(--color_'+city+');">'+this.getCityNameTr(city)+'</div>';
         },
 
         /**
@@ -1228,7 +1233,10 @@ function (dojo, declare) {
          * @param {*} battle 
          */
          onSendUnit: function(id, city, unit, strength, side, battle) {
-            this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit};
+            // is this an extra unit sent with a cube?
+            const commit_city = this.gamedatas.gamestate.args.committed['cube'];
+            const is_extra = (commit_city != null) && (commit_city == city);
+            this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit, cube: is_extra};
             this.setDescriptionOnMyTurn(_("You must commit forces")+'<br/>committed_forces');
             // add event listeners
             const city_btns = document.getElementsByClassName("prk_city_btn");
@@ -1238,10 +1246,31 @@ function (dojo, declare) {
             // hide unit on military board
             $(city+'_'+unit+'_'+strength+'_'+id).style.display = "none";
 
-            // unselect units if we already have selected 2
-            if (Object.keys(this.gamedatas.gamestate.args.committed).length > 1) {
+            // don't forget the cube is one of the keys
+            const len = Object.keys(this.gamedatas.gamestate.args.committed).length;
+
+            // don't unselect anything if < 2
+            if (len > 1) {
+                let selectable_city = null;
+                if (len > 2) {
+                    if (commit_city) {
+                        if (len == 4) {
+                            selectable_city = commit_city;
+                        } else if (len > 5) {
+                            // sanity check 2
+                            throw new Error("More than 4 units selected!");
+                        }
+                    } else {
+                        // sanity check
+                        throw new Error("More than 2 units selected without a cube!");
+                    }
+                }
                 const mymil = $(mymilitary).getElementsByClassName("prk_military");
                 [...mymil].forEach(m => this.makeSelectable(m, false));
+                if (selectable_city) {
+                    const selunits = $(selectable_city+"_mil_ctnr_"+this.player_id).getElementsByClassName("prk_military");
+                    [...selunits].forEach(s => this.makeSelectable(s));
+                }
             }
         },
 
@@ -1270,7 +1299,6 @@ function (dojo, declare) {
             // readd listeners to chosen city
             const civ_mils = $(city+'_military_'+this.player_id).getElementsByClassName('prk_military');
             [...civ_mils].forEach(ctr => this.makeSelectable(ctr));
-            console.log(target.id);
         },
 
         /**
@@ -1538,10 +1566,6 @@ function (dojo, declare) {
          */
         sendUnit: function(evt) {
             const selectedUnit = evt.currentTarget;
-            // hack because the click method doesn't actually get removed with unselectable
-            if (selectedUnit.getAttribute("selectable")) {
-                return;
-            }
 
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
@@ -1560,7 +1584,7 @@ function (dojo, declare) {
                             <div style="display: flex; flex-direction: row; align-items: center;">'
                             +unitc + this.createLocationTileIcons(city)+
                             '</div>\
-                            <div id="commit_text" style="margin: 2px; padding: 2px; text-align: center; color: #fff; background-color: #2e79ba; display: none;"></div>\
+                            <div id="commit_text" style="margin: 2px; padding: 2px; text-align: center; color: #fff; background-color: #4992D2; display: none;"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
                                 <div id="send_button" class="prk_btn prk_send_btn">'+_("Send Unit")+'</div>\
                                 <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
@@ -1584,6 +1608,8 @@ function (dojo, declare) {
                     if (location && sendto) {
                         this.onSendUnit(id, city, unit, strength, sendto, location);
                         this.commitDlg.destroy();
+                    } else {
+                        banner_txt = '<span style="color: white; font-size: larger; font-weight: bold;">'+_("You must select a location")+'</span>';
                     }
                 } else if (target.id == "cancel_button") {
                     this.commitDlg.destroy();
