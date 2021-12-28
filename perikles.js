@@ -1248,7 +1248,6 @@ function (dojo, declare) {
 
             // don't forget the cube is one of the keys
             const len = Object.keys(this.gamedatas.gamestate.args.committed).length;
-
             // don't unselect anything if < 2
             if (len > 1) {
                 let selectable_city = null;
@@ -1392,7 +1391,11 @@ function (dojo, declare) {
                     this.stripClassName("prk_cubes_remove");
                     break;
                 case 'commitForces':
-                    this.gamedatas.gamestate.args.committed = {};
+                    const mils = $('mymilitary').getElementsByClassName("prk_military");
+                    [...mils].forEach(m => {
+                        this.makeSelectable(m, false);
+                    });
+                this.gamedatas.gamestate.args.committed = {};
                     break;
                 case 'dummmy':
                     break;
@@ -1477,7 +1480,7 @@ function (dojo, declare) {
                     return true;
                 }
             }
-            if (document.getElementById(city+"_cubes_"+player_id).hasChildNodes) {
+            if ($(city+"_cubes_"+player_id).getElementsByClassName("prk_cube").length > 0) {
                 return true;
             }
             return false;
@@ -1803,16 +1806,31 @@ function (dojo, declare) {
          * Action to send forces
          */
         commitForces: function() {
-            if (this.checkAction("commitForce", true)) {
-                for (const[id, selected] of Object.entries(this.gamedatas.gamestate.args.committed)) {
-                    this.ajaxcall( "/perikles/perikles/commitUnit.html", { 
-                        unitid: id,
-                        location: selected.location,
-                        side: selected.side,
-                        lock: true 
-                    }, this, function( result ) {  }, function( is_error) { } );
+            if (this.checkAction("sendToBattle", true)) {
+                let cube = this.gamedatas.gamestate.args.committed['cube'] ?? "";
+                let units = this.packCommitForcesArg(this.gamedatas.gamestate.args.committed);
+                this.ajaxcall( "/perikles/perikles/commitUnits.html", { 
+                    units: units,
+                    cube: cube,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        /**
+         * Pack all units being sent into a space-delimited string "id_attdef_location"
+         * @param {Object} committed 
+         */
+        packCommitForcesArg: function(committed) {
+            let argstr = "";
+            for (const[id, selected] of Object.entries(committed)) {
+                if (id != "cube") {
+                    let location = selected.location;
+                    let side = selected.side;
+                    argstr += id+"_"+side+"_"+location+" ";
                 }
             }
+            return argstr;
         },
 
         ///////////////////////////////////////////////////

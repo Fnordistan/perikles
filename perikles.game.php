@@ -708,6 +708,14 @@ class Perikles extends Table
     }
 
     /**
+     * Check whether this player can spend an influence cube to commit extra units.
+     * Must have influence cube in the city, and be leader.
+     */
+    function canSpendInfluence($player_id, $city) {
+        return ($this->influenceInCity($player_id, $city) > 0) && ($player_id == self::getGameStateValue($city."_leader"));
+    }
+
+    /**
      * Return double associative array,
      * all cities this player is leader of, with lowest strength Hoplite and/or Trireme from the deadpool for each
      */
@@ -784,8 +792,6 @@ class Perikles extends Table
         );
         return $warbits;
     }
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -1013,10 +1019,33 @@ class Perikles extends Table
         throw new BgaUserException("Take dead not implemented yet");
     }
 
-    function sendToBattle($unitid, $tolocation, $side) {
-        self::checkAction('commitForce');
-        // do all the checks for whether this is a valid action
+    function sendToBattle($units, $cube) {
+        self::checkAction('sendToBattle');
+
         $player_id = self::getActivePlayerId();
+
+        // do all the checks for whether this is a valid action
+        // can I commit extra forces from the chosen city?
+        if ($cube != "") {
+            if (!$this->canSpendInfluence($player_id, $cube)) {
+                $errstr = clienttranslate('You cannot send extra units from ${city}');
+                $errstr = str_replace('${city}', $this->cities[$cube]['name'], $errstr);
+                throw new BgaUserException($errstr);
+            }
+        }
+
+        $counters = explode(" ", trim($units));
+        $battle = "";
+        foreach($counters as $counter) {
+            [$id, $side, $location] = explode("_", $counter);
+            $battle = $battle."sent $id to $side $location ";
+        }
+        throw new BgaUserException($battle);
+
+
+        
+
+
         // do I own this unit?
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$unitid");
         if ($counter['location'] != $player_id) {

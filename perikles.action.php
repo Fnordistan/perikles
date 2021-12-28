@@ -94,12 +94,14 @@
       self::ajaxResponse( );
     }
 
-    public function commitUnit() {
+    /**
+     * Send all the units committed to battles.
+     */
+    public function commitUnits() {
       self::setAjaxMode();     
-      $unitid = self::getArg( "unitid", AT_posint, true );
-      $location = self::getArg( "location", AT_alphanum, true );
-      $side = self::getArg( "side", AT_enum, true, null, array("attack", "defend") );
-      $this->game->sendToBattle($unitid, $location, $side);
+      $units = self::getArg( "units", AT_alphanum, true );
+      $cube = self::getArg( "cube", AT_alphanum, true );
+      $this->game->sendToBattle($units, $cube);
       self::ajaxResponse( );
     }
 
