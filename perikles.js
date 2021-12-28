@@ -717,39 +717,7 @@ function (dojo, declare) {
                         log = log.replace("You", this.spanYou());
 
                         if (args.committed) {
-                            let commit_log = "";
-                            const attack_str = "Send ${unit} to attack ${location}";
-                            const defend_str = "Send ${unit} to defend ${location}";
-                            let counters = 0;
-                            for (const[id, selected] of Object.entries(args.committed)) {
-                                if (id != "cube") {
-                                    let commit_str = (selected.id == "attack" ? attack_str : defend_str);
-                                    let mil_html = this.createMilitaryCounterRelative(id+"_dlg", selected.city, selected.strength, selected.unit);
-                                    mil_html = this.prependStyle(mil_html, 'display: inline-block');
-                                    commit_str = commit_str.replace('${unit}', mil_html);
-                                    let loc_html = this.createLocationTile(selected.location, 0);
-                                    loc_html = this.prependStyle(loc_html, 'display: inline-block');
-                                    commit_str = commit_str.replace('${location}', loc_html);
-                                    commit_log += commit_str+'<br/>';
-                                    counters++;
-                                }
-                            }
-                            // option to spend Influence cube
-                            if (counters >= 2) {
-                                if (args.committed.cube) {
-
-                                } else {
-                                    let spend_cubes_div = this.createSpendInfluenceDiv();
-                                    if (spend_cubes_div != null) {
-                                        commit_log += '<hr/>';
-                                        let cubehtml = this.createInfluenceCube(this.player_id, 'commit', '');
-                                        cubehtml = this.prependStyle(cubehtml, "display: inline-block; margin-left: 5px;");
-                                        spend_cubes_div = _("You may spend an Influence cube to send 1 or 2 units from that city")+cubehtml+'<br/>'+spend_cubes_div;
-                                        commit_log += spend_cubes_div;
-                                    }
-                                }
-                            }
-                            commit_log += '<br/>';
+                            const commit_log = this.createCommittedUnits(args.committed);
                             log = log.replace('committed_forces', commit_log);
                         }
                     }
@@ -758,6 +726,58 @@ function (dojo, declare) {
                 console.error(log, args, "Exception thrown", e.stack);
             }
             return this.inherited(arguments);
+        },
+
+        /**
+         * Show all the units that have been assigned to send to battles and display in commit dialog.
+         * @param {Object} committed Object from args
+         */
+        createCommittedUnits: function(committed) {
+            let commit_log = "";
+            // if spent cube from city for extra units
+            const commit_city = committed.cube;
+            const attack_str = _("Send ${unit} to attack ${location}");
+            const defend_str = _("Send ${unit} to defend ${location}");
+            let counters = 0;
+            let extra_forces = "";
+            for (const[id, selected] of Object.entries(committed)) {
+                if (id != "cube") {
+                    let commit_str = (selected.id == "attack" ? attack_str : defend_str);
+                    let mil_html = this.createMilitaryCounterRelative(id+"_dlg", selected.city, selected.strength, selected.unit);
+                    mil_html = this.prependStyle(mil_html, 'display: inline-block');
+                    commit_str = commit_str.replace('${unit}', mil_html);
+                    let loc_html = this.createLocationTile(selected.location, 0);
+                    loc_html = this.prependStyle(loc_html, 'display: inline-block');
+                    commit_str = commit_str.replace('${location}', loc_html);
+
+                    if (commit_city == selected.city) {
+                        extra_forces += commit_str+'<br/>';
+                    } else {
+                        commit_log += commit_str+'<br/>';
+                    }
+                    counters++;
+                }
+            }
+            // option to spend Influence cube
+            if (counters >= 2) {
+                commit_log += '<hr/>';
+                if (commit_city) {
+                    let city_commit = _("Additional unit(s) committed from ${city}");
+                    city_commit = city_commit.replace('${city}', this.getCityNameTr(commit_city));
+                    commit_log += city_commit + '<br/>';
+                    commit_log += extra_forces;
+                } else {
+                    let spend_cubes_div = this.createSpendInfluenceDiv();
+                    if (spend_cubes_div != null) {
+                        let cubehtml = this.createInfluenceCube(this.player_id, 'commit', '');
+                        cubehtml = this.prependStyle(cubehtml, "display: inline-block; margin-left: 5px;");
+                        spend_cubes_div = _("You may spend an Influence cube to send 1 or 2 units from that city")+cubehtml+'<br/>'+spend_cubes_div;
+                        commit_log += spend_cubes_div;
+                    }
+                }
+            }
+            commit_log += '<br/>';
+            return commit_log;
         },
 
         /**
@@ -1217,6 +1237,8 @@ function (dojo, declare) {
             });
             // hide unit on military board
             $(city+'_'+unit+'_'+strength+'_'+id).style.display = "none";
+
+
             // unselect units if we already have selected 2
             if (Object.keys(this.gamedatas.gamestate.args.committed).length > 1) {
                 const mymil = $(mymilitary).getElementsByClassName("prk_military");
@@ -1472,11 +1494,7 @@ function (dojo, declare) {
             const from_div = $(city+'_cubes_'+player_id);
             const ct = from_div.childElementCount;
             for (let i = 0; i < num; i++) {
-                // const toremove = player_id+"_"+city+"_"+(ct-(1+i));
                 const toremove = from_div.lastChild;
-                if (!$(toremove)) {
-                    debugger;
-                }
                 this.fadeOutAndDestroy(toremove, 500);
             }
         },
