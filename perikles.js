@@ -1238,7 +1238,6 @@ function (dojo, declare) {
             // hide unit on military board
             $(city+'_'+unit+'_'+strength+'_'+id).style.display = "none";
 
-
             // unselect units if we already have selected 2
             if (Object.keys(this.gamedatas.gamestate.args.committed).length > 1) {
                 const mymil = $(mymilitary).getElementsByClassName("prk_military");
@@ -1280,13 +1279,13 @@ function (dojo, declare) {
         onResetForces: function() {
             this.gamedatas.gamestate.args['committed'] = {};
             this.setDescriptionOnMyTurn(_("You must commit forces"));
-            // redisplay units that were hidden after being selected
+
             const mils = $('mymilitary').getElementsByClassName('prk_military ');
             [...mils].forEach(m => {
                 // redisplay counters that were hidden before
                 m.style.display = "block";
                 // reenable deselected counters
-                if (!m.style.outline) {
+                if (m.getAttribute("data-selectable") == "false") {
                     this.makeSelectable(m);
                 }
             });
