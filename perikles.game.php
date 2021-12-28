@@ -359,13 +359,27 @@ class Perikles extends Table
      */
     function getLeaders() {
         $leaders = array();
-        foreach ($this->cities as $cn => $city) {
+        foreach (array_keys($this->cities) as $cn) {
             $leader = self::getGameStateValue($cn."_leader");
             if ($leader != 0) {
                 $leaders[$cn] = $leader;
             }
         }
         return $leaders;
+    }
+
+    /**
+     * Get an array of cities led by this player.
+     */
+    function getControlledCities($player_id) {
+        $cities = array();
+        foreach (array_keys($this->cities) as $cn) {
+            $leader = self::getGameStateValue($cn."_leader");
+            if ($leader == $player_id) {
+                $cities[] = $cn;
+            }
+        }
+        return $cities;
     }
 
     /**
@@ -577,6 +591,16 @@ class Perikles extends Table
     }
 
     /**
+     * Create translateable description string of a unit
+     */
+    function unitDescription($city, $strength, $type) {
+        $home_city = $this->cities[$city]['name'];
+        $unit_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
+        $unit_desc = self::_("$home_city $unit_type-$strength");
+        return $unit_desc;
+    }
+
+    /**
      * Add cubes to a city and send notification.
      */
     function addInfluenceToCity($city, $player_id, $cubes) {
@@ -772,7 +796,7 @@ class Perikles extends Table
     /**
      * Are these cities at war?
      */
-    function isWar($city1, $city2) {
+    function atWar($city1, $city2) {
         $warbits = $this->getWarBits();
         $wars1 = self::getGameStateValue($city1."_wars");
         return $wars1 & $warbits[$city2];
@@ -1019,7 +1043,12 @@ class Perikles extends Table
         throw new BgaUserException("Take dead not implemented yet");
     }
 
-    function sendToBattle($units, $cube) {
+    /**
+     * Send units to battle locations.
+     * @param unitstr a space-delimited string id_attdef_battle
+     * @param cube null or cube spent for extra units
+     */
+    function sendToBattle($unitstr, $cube) {
         self::checkAction('sendToBattle');
 
         $player_id = self::getActivePlayerId();
@@ -1034,47 +1063,59 @@ class Perikles extends Table
             }
         }
 
-        $counters = explode(" ", trim($units));
+        $units = explode(" ", trim($unitstr));
         $battle = "";
-        foreach($counters as $counter) {
-            [$id, $side, $location] = explode("_", $counter);
-            $battle = $battle."sent $id to $side $location ";
+        $request_defend = [];
+        foreach($units as $unit) {
+            [$id, $side, $location] = explode("_", $unit);
+            $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
+            // Is this unit in my pool?
+            $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type']);
+            if ($counter['location'] != $player_id) {
+                throw new BgaUserException(self::_("$unit_desc is not in your available pool"));
+            }
+            $battlecity = $this->locations[$location]['city'];
+            // am I attacking my own city?
+            $owner = self::getGameStateValue($battlecity."_leader");
+            if ($side == "attack" && $owner == $player_id) {
+                throw new BgaUserException(self::_("$unit_desc cannot attack a city you control!"));
+            } else if ($side == "defend" && $owner != $player_id) {
+                // Do I own this city? If not, I need permission from defender
+                if (!in_array($location, $request_defend)) {
+                    $request_defend[] = $location;
+                }
+            }
+            // is this unit at war with the destination location?
+            if ($side == "defend" && $this->atWar($counter['city'], $battlecity)) {
+                throw new BgaUserException(self::_("$unit_desc cannot defend a city it is at war with!"));
+            }
+            // do I have units on opposite sides?
+            $mycities = $this->getControlledCities($player_id);
+            $maindef = MAIN+DEFENDER;
+            $allydef = ALLY+DEFENDER;
+            $mainatt = MAIN+ATTACKER;
+            $allyatt = ALLY+ATTACKER;
+            $defenders = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$maindef OR place=$allydef)", true);
+            $attackers = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$mainatt OR place=$allyatt)", true);
+            if ($side == "attack") {
+                foreach(array_keys($defenders) as $def) {
+                    if (in_array($def, $mycities)) {
+                        throw new BgaUserException(self::_("$unit_desc cannot attack a city which you are also defending!"));
+                    }
+                    // Is there already a main attacker who is not me?
+                }
+            } else if ($side == "defend") {
+                foreach(array_keys($attackers) as $att) {
+                    if (in_array($att, $mycities)) {
+                        throw new BgaUserException(self::_("$unit_desc cannot defend a city which you are also attacking!"));
+                    }
+                }
+            }
+
+            $battle = $battle."sent $unit_desc to $side ".$this->locations[$location]['name'];
         }
+
         throw new BgaUserException($battle);
-
-
-        
-
-
-        // do I own this unit?
-        $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$unitid");
-        if ($counter['location'] != $player_id) {
-            throw new BgaVisibleSystemException(self::_("You do not own this unit!"));
-        }
-        $unitcity = $counter['city'];
-        $strength = $counter['strength'];
-        $home_city = $this->cities[$unitcity]['name'];
-        $unit_type = ($counter['type'] == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
-        $unit_desc = self::_("$home_city $unit_type-$strength");
-
-        $battlecity = $this->locations[$tolocation]['city'];
-        // am I attacking my own city?
-        if ($side == "attack" && self::getGameStateValue($battlecity."_leader") == $player_id) {
-            throw new BgaUserException(self::_("$unit_desc cannot attack a city you control!"));
-        }
-        // is this unit at war with the destination location?
-        if ($side == "defend" && $this->isWar($unitcity, $battlecity)) {
-            throw new BgaUserException(self::_("$unit_desc cannot defend a city it is at war with!"));
-        }
-        // do I have units on opposite sides?
-
-        
-        // are we Main or Ally?
-
-
-
-        $player_id = self::getActivePlayerId();
-        throw new BgaVisibleSystemException("$player_id sent $unitid to $side as ");
 
     }
 
