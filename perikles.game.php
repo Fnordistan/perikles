@@ -1082,105 +1082,105 @@ class Perikles extends Table
      * @param cube null or cube spent for extra units
      */
     function sendToBattle($unitstr, $cube) {
-        // self::checkAction('sendToBattle');
+        self::checkAction('sendToBattle');
 
-        // $player_id = self::getActivePlayerId();
+        $player_id = self::getActivePlayerId();
 
-        // // do all the checks for whether this is a valid action
-        // // can I commit extra forces from the chosen city?
-        // if ($cube != "") {
-        //     if (!$this->canSpendInfluence($player_id, $cube)) {
-        //         throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->cities[$cube]['name']));
-        //     }
-        // }
+        // do all the checks for whether this is a valid action
+        // can I commit extra forces from the chosen city?
+        if ($cube != "") {
+            if (!$this->canSpendInfluence($player_id, $cube)) {
+                throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->cities[$cube]['name']));
+            }
+        }
 
-        // $units = explode(" ", trim($unitstr));
-        // $teststr = "";
-        // // cities where I am now the main attacke
-        // $main_attacker = [];
-        // $main_defender = [];
-        // $mycities = $this->getControlledCities($player_id);
-        // // MAKE NO CHANGES IN DB until this loop is completed!
-        // foreach($units as $unit) {
-        //     [$id, $side, $location] = explode("_", $unit);
-        //     $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
-        //     $battlename = $this->locations[$location]['name'];
-        //     // Is this unit in my pool?
-        //     $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battlename);
-        //     if ($counter['location'] != $player_id) {
-        //         throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
-        //     }
-        //     $battlecity = $this->locations[$location]['city'];
-        //     // am I attacking my own city?
-        //     if ($side == "attack" && in_array($battlecity, $mycities)) {
-        //         throw new BgaUserException(sprintf(self::_("%s cannot attack a city you control!"), $unit_desc));
-        //     } else if ($side == "defend" && !in_array($battlecity, $mycities)) {
-        //         // Do I own this city? If not, I need permission from defender
-        //         if (!$this->hasDefendPermission($player_id, $location)) {
-        //             throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->cities[$battlecity]['name'], $battlename));
-        //         }
-        //     }
-        //     // is this unit at war with the destination location?
-        //     if ($side == "defend" && $this->atWar($counter['city'], $battlecity)) {
-        //         throw new BgaUserException(sprintf(self::_("%s cannot defend a location belonging to a city it is at war with!"), $unit_desc));
-        //     }
-        //     $maindef = MAIN+DEFENDER;
-        //     $allydef = ALLY+DEFENDER;
-        //     $mainatt = MAIN+ATTACKER;
-        //     $allyatt = ALLY+ATTACKER;
-        //     $attacker = self::getUniqueValueFromDB("SELECT attacker FROM LOCATION WHERE card_type_arg=\"$location\"");
-        //     $defender = self::getUniqueValueFromDB("SELECT defender FROM LOCATION WHERE card_type_arg=\"$location\"");
-        //     if ($attacker != null) {
-        //         $main_attacker[$location] = $attacker;
-        //     }
-        //     if ($defender != null) {
-        //         $main_defender[$location] = $defender;
-        //     }
-        //     $defenders = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$maindef OR place=$allydef)", true);
-        //     $attackers = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$mainatt OR place=$allyatt)", true);
-        //     if ($side == "attack") {
-        //         foreach(array_keys($defenders) as $def) {
-        //             if (in_array($def, $mycities)) {
-        //                 throw new BgaUserException(sprintf(self::_("%s cannot attack a city which you are also defending!"), $unit_desc));
-        //             }
-        //         }
-        //         // Is there already a main attacker who is not me?
-        //         if ($attacker == null) {
-        //             // I am now the main attacker
-        //             $main_attacker[$location] = $player_id;
-        //         } else if ($attacker != $player_id) {
-        //             // is this unit at war with any of the other attackers?
-        //             foreach (array_keys($attackers) as $otheratt) {
-        //                 if ($this->atWar($counter['city'], $otheratt)) {
-        //                     throw new BgaUserException(sprintf(self::_("%s cannot ally with units from a city it is at war with!"), $unit_desc));
-        //                 }
-        //             }
-        //         }
-        //     } else if ($side == "defend") {
-        //         // is there already a main defender?
-        //         if ($defender == null) {
-        //             // I am now the main defender
-        //             $main_defender[$location] = $player_id;
-        //         } else if ($defender != $player_id) {
-        //             // is this unit at war with any of the other defenders?
-        //             foreach (array_keys($defenders) as $otherdef) {
-        //                 if ($this->atWar($counter['city'], $otherdef)) {
-        //                     throw new BgaUserException(sprintf(self::_("%s cannot ally with units from a city it is at war with!"), $unit_desc));
-        //                 }
-        //             }
-        //         }
-        //         foreach(array_keys($attackers) as $att) {
-        //             if (in_array($att, $mycities)) {
-        //                 throw new BgaUserException(sprintf(self::_("%s cannot attack a city which you are also defending!"), $unit_desc));
-        //             }
-        //         }
-        //     }
-        //     $teststr .= "sent $unit_desc ";
-        // }
-        // // all units passed all tests for valid assignment
+        $units = explode(" ", trim($unitstr));
+        $teststr = "";
+        // cities where I am now the main attacke
+        $main_attacker = [];
+        $main_defender = [];
+        $mycities = $this->getControlledCities($player_id);
+        // MAKE NO CHANGES IN DB until this loop is completed!
+        foreach($units as $unit) {
+            [$id, $side, $location] = explode("_", $unit);
+            $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
+            $battlename = $this->locations[$location]['name'];
+            // Is this unit in my pool?
+            $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battlename);
+            if ($counter['location'] != $player_id) {
+                throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
+            }
+            $battlecity = $this->locations[$location]['city'];
+            // am I attacking my own city?
+            if ($side == "attack" && in_array($battlecity, $mycities)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot attack a city you control!"), $unit_desc));
+            } else if ($side == "defend" && !in_array($battlecity, $mycities)) {
+                // Do I own this city? If not, I need permission from defender
+                if (!$this->hasDefendPermission($player_id, $location)) {
+                    throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->cities[$battlecity]['name'], $battlename));
+                }
+            }
+            // is this unit at war with the destination location?
+            if ($side == "defend" && $this->atWar($counter['city'], $battlecity)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot defend a location belonging to a city it is at war with!"), $unit_desc));
+            }
+            $maindef = MAIN+DEFENDER;
+            $allydef = ALLY+DEFENDER;
+            $mainatt = MAIN+ATTACKER;
+            $allyatt = ALLY+ATTACKER;
+            $attacker = self::getUniqueValueFromDB("SELECT attacker FROM LOCATION WHERE card_type_arg=\"$location\"");
+            $defender = self::getUniqueValueFromDB("SELECT defender FROM LOCATION WHERE card_type_arg=\"$location\"");
+            if ($attacker != null) {
+                $main_attacker[$location] = $attacker;
+            }
+            if ($defender != null) {
+                $main_defender[$location] = $defender;
+            }
+            $defenders = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$maindef OR place=$allydef)", true);
+            $attackers = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$mainatt OR place=$allyatt)", true);
+            if ($side == "attack") {
+                foreach(array_keys($defenders) as $def) {
+                    if (in_array($def, $mycities)) {
+                        throw new BgaUserException(sprintf(self::_("%s cannot attack a city which you are also defending!"), $unit_desc));
+                    }
+                }
+                // Is there already a main attacker who is not me?
+                if ($attacker == null) {
+                    // I am now the main attacker
+                    $main_attacker[$location] = $player_id;
+                } else if ($attacker != $player_id) {
+                    // is this unit at war with any of the other attackers?
+                    foreach (array_keys($attackers) as $otheratt) {
+                        if ($this->atWar($counter['city'], $otheratt)) {
+                            throw new BgaUserException(sprintf(self::_("%s cannot ally with units from a city it is at war with!"), $unit_desc));
+                        }
+                    }
+                }
+            } else if ($side == "defend") {
+                // is there already a main defender?
+                if ($defender == null) {
+                    // I am now the main defender
+                    $main_defender[$location] = $player_id;
+                } else if ($defender != $player_id) {
+                    // is this unit at war with any of the other defenders?
+                    foreach (array_keys($defenders) as $otherdef) {
+                        if ($this->atWar($counter['city'], $otherdef)) {
+                            throw new BgaUserException(sprintf(self::_("%s cannot ally with units from a city it is at war with!"), $unit_desc));
+                        }
+                    }
+                }
+                foreach(array_keys($attackers) as $att) {
+                    if (in_array($att, $mycities)) {
+                        throw new BgaUserException(sprintf(self::_("%s cannot attack a city which you are also defending!"), $unit_desc));
+                    }
+                }
+            }
+            $teststr .= "sent $unit_desc ";
+        }
+        // all units passed all tests for valid assignment
 
 
-        // throw new BgaUserException($teststr);
+        throw new BgaUserException($teststr);
 
     }
 
