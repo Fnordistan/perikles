@@ -742,7 +742,7 @@ function (dojo, declare) {
             let extra_forces = "";
             for (const[id, selected] of Object.entries(committed)) {
                 if (id != "cube") {
-                    let commit_str = (selected.id == "attack" ? attack_str : defend_str);
+                    let commit_str = (selected.side == "attack" ? attack_str : defend_str);
                     let mil_html = this.createMilitaryCounterRelative(id+"_dlg", selected.city, selected.strength, selected.unit);
                     mil_html = this.prependStyle(mil_html, 'display: inline-block');
                     commit_str = commit_str.replace('${unit}', mil_html);

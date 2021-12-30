@@ -678,6 +678,8 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
 
+        self::debug("sending unit $id to $location as $place ");
+
         self::DbQuery("UPDATE MILITARY SET location=\"$location\", place=$place WHERE id=$id");
 
         $role = $this->getRoleName($place);
@@ -1142,7 +1144,6 @@ class Perikles extends Table
         }
 
         $units = explode(" ", trim($unitstr));
-        $teststr = "";
         // get main attackers/defenders location => player
         $main_attacker = [];
         $main_defender = [];
@@ -1151,6 +1152,7 @@ class Perikles extends Table
         foreach($units as $unit) {
             [$id, $side, $location] = explode("_", $unit);
             $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
+            $counter['battle'] = $location;
             $battlename = $this->locations[$location]['name'];
             // Is this unit in my pool?
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battlename);
@@ -1222,7 +1224,6 @@ class Perikles extends Table
                     }
                 }
             }
-            $teststr .= "sent $unit_desc ";
         }
         // all units passed all tests for valid assignment
         // did we spend an influence cube?
@@ -1231,6 +1232,7 @@ class Perikles extends Table
             self::notifyAllPlayers('spentInfluence', clienttranslate('${player_name} spent an Influence cube from ${city_name} to send extra units'), array(
                 'i18n' => ['city_name'],
                 'candidate_id' => $player_id, // candidate because that's the notif arg
+                'player_id' => $player_id,
                 'player_name' => self::getActivePlayerName(),
                 'city' => $cube,
                 'city_name' => $this->cities[$cube]['name'],
@@ -1238,32 +1240,29 @@ class Perikles extends Table
             ));
         }
         // now ship 'em off
-        foreach($units as $unit) {
-            [$id, $side, $location] = explode("_", $unit);
-            $place = null;
-            if ($side == "attacker") {
-                $mainattacker = $main_attacker[$location];
-                if ($mainattacker == $player_id) {
-                    // I became main attacker
-                    $place = MAIN+ATTACKER;
-                    self::DbQuery("UPDATE LOCATION SET attacker=$player_id WHERE card_type_arg=\"$location\"");
-                } else {
-                    $place = ALLY+ATTACKER;
-                }
-            } else if ($side == "defender") {
-                $maindefender = $main_defender[$location];
-                if ($maindefender == $player_id) {
-                    $place = MAIN+DEFENDER;
-                    self::DbQuery("UPDATE LOCATION SET defender=$player_id WHERE card_type_arg=\"$location\"");
-                } else {
-                    $place = ALLY+DEFENDER;
-                }
+        foreach($attackers as $attacker) {
+            $attacking = $attacker['battle'];
+            $mainattacker = $main_attacker[$attacking];
+            if ($mainattacker == $player_id) {
+                // I became main attacker
+                $place = MAIN+ATTACKER;
+                self::DbQuery("UPDATE LOCATION SET attacker=$player_id WHERE card_type_arg=\"$location\"");
+            } else {
+                $place = ALLY+ATTACKER;
             }
-            $this->sendMilitaryToBattle($player_id, $id, $location, $place);
+            $this->sendMilitaryToBattle($player_id, $attacker['id'], $attacking, $place);
         }
-
-        throw new BgaUserException($teststr);
-
+        foreach($defenders as $defender) {
+            $defending = $defender['battle'];
+            $maindefender = $main_defender[$defending];
+            if ($maindefender == $player_id) {
+                $place = MAIN+DEFENDER;
+                self::DbQuery("UPDATE LOCATION SET defender=$player_id WHERE card_type_arg=\"$location\"");
+            } else {
+                $place = ALLY+DEFENDER;
+            }
+            $this->sendMilitaryToBattle($player_id, $defender['id'], $defending, $place);
+        }
     }
 
 //////////////////////////////////////////////////////////////////////////////
