@@ -1867,6 +1867,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'election', 500 );
             dojo.subscribe( 'useTile', this, "notif_useTile");
             this.notifqueue.setSynchronous( 'useTile', 500 );
+            dojo.subscribe( 'spentInfluence', this, "notif_cubeRemoved");
+            this.notifqueue.setSynchronous( 'spentInfluence', 500 );
         },
         
         // Notification handlers

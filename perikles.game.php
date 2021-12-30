@@ -672,6 +672,53 @@ class Perikles extends Table
     }
 
     /**
+     * 
+     */
+    function sendMilitaryToBattle($player_id, $id, $location, $place) {
+        $players = self::loadPlayersBasicInfos();
+        $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
+
+        self::DbQuery("UPDATE MILITARY SET location=\"$location\", place=$place WHERE id=$id");
+
+        $role = $this->getRoleName($place);
+
+        self::notifyAllPlayers("sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type}-${strength} to ${location_name} as ${battlerole}'), array(
+            'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'unit' => $id,
+            'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
+            'strength' => $counter['strength'],
+            'city' => $counter['city'],
+            'city_name' => $this->cities[$counter['city']]['name'],
+            'place' => $place,
+            'battlerole' => $role,
+            'location' => $location,
+            'location_name' => $this->locations[$location]['name'],
+            'preserve' => ['city', 'location'],
+        ));
+    }
+
+    /**
+     * Get the translated label for a battle side
+     */
+    function getRoleName($role) {
+        $rolename = "";
+        if ($role == ATTACKER+MAIN) {
+            $rolename = clienttranslate("Main attacker");
+        } else if ($role == ATTACKER+ALLY) {
+            $rolename = clienttranslate("Allied attacker");
+        } else if ($role == DEFENDER+MAIN) {
+            $rolename = clienttranslate("Main defender");
+        } else if ($role == DEFENDER+ALLY) {
+            $rolename = clienttranslate("Allied defender");
+        } else {
+            throw new BgaVisibleSystemException("Unrecognized role: $role"); // NOI18N
+        }
+        return $rolename;
+    }
+
+    /**
      * Faster check, just return true if at least one unit in deadpool to be retrieved by this player.
      */
     function hasDeadPool($player_id) {
@@ -1096,7 +1143,7 @@ class Perikles extends Table
 
         $units = explode(" ", trim($unitstr));
         $teststr = "";
-        // cities where I am now the main attacke
+        // get main attackers/defenders location => player
         $main_attacker = [];
         $main_defender = [];
         $mycities = $this->getControlledCities($player_id);
@@ -1178,7 +1225,42 @@ class Perikles extends Table
             $teststr .= "sent $unit_desc ";
         }
         // all units passed all tests for valid assignment
-
+        // did we spend an influence cube?
+        if ($cube != "" && count($units) > 2) {
+            $this->changeInfluenceInCity($cube, $player_id, -1);
+            self::notifyAllPlayers('spentInfluence', clienttranslate('${player_name} spent an Influence cube from ${city_name} to send extra units'), array(
+                'i18n' => ['city_name'],
+                'candidate_id' => $player_id, // candidate because that's the notif arg
+                'player_name' => self::getActivePlayerName(),
+                'city' => $cube,
+                'city_name' => $this->cities[$cube]['name'],
+                'preserve' => ['candidate_id', 'city'],
+            ));
+        }
+        // now ship 'em off
+        foreach($units as $unit) {
+            [$id, $side, $location] = explode("_", $unit);
+            $place = null;
+            if ($side == "attacker") {
+                $mainattacker = $main_attacker[$location];
+                if ($mainattacker == $player_id) {
+                    // I became main attacker
+                    $place = MAIN+ATTACKER;
+                    self::DbQuery("UPDATE LOCATION SET attacker=$player_id WHERE card_type_arg=\"$location\"");
+                } else {
+                    $place = ALLY+ATTACKER;
+                }
+            } else if ($side == "defender") {
+                $maindefender = $main_defender[$location];
+                if ($maindefender == $player_id) {
+                    $place = MAIN+DEFENDER;
+                    self::DbQuery("UPDATE LOCATION SET defender=$player_id WHERE card_type_arg=\"$location\"");
+                } else {
+                    $place = ALLY+DEFENDER;
+                }
+            }
+            $this->sendMilitaryToBattle($player_id, $id, $location, $place);
+        }
 
         throw new BgaUserException($teststr);
 
