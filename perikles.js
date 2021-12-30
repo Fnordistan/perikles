@@ -82,6 +82,14 @@ const BATTLES = {
     "solygeia" : {xy: [3,7], location: "corinth"},
 }
 
+// match MAIN/ALLY ATT/DEF constants in php
+const BATTLE_BOX = {
+    1: "att",
+    2: "att_ally",
+    3: "def",
+    4: "def_ally"
+}
+
 const DEAD_POOL = "deadpool";
 
 define([
@@ -937,6 +945,23 @@ function (dojo, declare) {
         },
 
         /**
+         * Move an object to a battle tile
+         * @param {*} military 
+         */
+        moveToBattle: function(player_id, city, unit, strength, id, slot, place) {
+            if (player_id == this.player_id) {
+                $(city+'_'+unit+'_'+strength+'_'+id).remove();
+            }
+
+            // move from city to battle
+            const counter_html = this.createMilitaryCounterRelative(id+"_location", city, strength, unit);
+            const milzone = $(city+"_military");
+            const counter = dojo.place(counter_html, milzone);
+            const destination = "battle_"+slot+"_"+unit+"_"+BATTLE_BOX[place];
+            this.slide(counter, destination, {from: milzone});
+        },
+
+        /**
          * Tisaac's slide method.
          * @param {DOMElement} mobile 
          * @param {string} targetId 
@@ -1522,7 +1547,6 @@ function (dojo, declare) {
          */
         removeInfluenceCubes: function(player_id, city, num) {
             const from_div = $(city+'_cubes_'+player_id);
-            const ct = from_div.childElementCount;
             for (let i = 0; i < num; i++) {
                 const toremove = from_div.lastChild;
                 this.fadeOutAndDestroy(toremove, 500);
@@ -1869,6 +1893,9 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'useTile', 500 );
             dojo.subscribe( 'spentInfluence', this, "notif_cubeRemoved");
             this.notifqueue.setSynchronous( 'spentInfluence', 500 );
+            dojo.subscribe( 'sendMilitary', this, "notif_sendMilitary");
+            this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
+            
         },
         
         // Notification handlers
@@ -2022,10 +2049,24 @@ function (dojo, declare) {
          */
         notif_takeMilitary: function(notif) {
             const military = notif.args.military;
-            const player_id = notif.args.player_id;
             for (const mil of military) {
                 this.moveMilitary(mil);
             }
+        },
+
+        /**
+         * Send military units to battle tiles.
+         * @param {Object} notif 
+         */
+        notif_sendMilitary: function(notif) {
+            const player_id = notif.args.player_id;
+            const id = notif.args.unit;
+            const city = notif.args.city;
+            const type = notif.args.type;
+            const strength = notif.args.strength;
+            const slot = notif.args.slot;
+            const place = notif.args.place;
+            this.moveToBattle(player_id, city, type, strength, id, slot, place);
         },
 
         /**

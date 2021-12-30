@@ -672,23 +672,24 @@ class Perikles extends Table
     }
 
     /**
-     * 
+     * Assumes all checks have been done. Send a military unit to a battle location.
      */
     function sendMilitaryToBattle($player_id, $id, $location, $place) {
         $players = self::loadPlayersBasicInfos();
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
 
-        self::debug("sending unit $id to $location as $place ");
-
         self::DbQuery("UPDATE MILITARY SET location=\"$location\", place=$place WHERE id=$id");
 
         $role = $this->getRoleName($place);
+
+        $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
 
         self::notifyAllPlayers("sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type}-${strength} to ${location_name} as ${battlerole}'), array(
             'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
             'unit' => $id,
+            'type' => $counter['type'],
             'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
             'strength' => $counter['strength'],
             'city' => $counter['city'],
@@ -696,6 +697,7 @@ class Perikles extends Table
             'place' => $place,
             'battlerole' => $role,
             'location' => $location,
+            'slot' => $slot,
             'location_name' => $this->locations[$location]['name'],
             'preserve' => ['city', 'location'],
         ));
