@@ -703,7 +703,7 @@ class Perikles extends Table
 
         $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
 
-        self::notifyAllPlayers("sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type}-${strength} to ${location_name} as ${battlerole}'), array(
+        self::notifyPlayer($player_id, "sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type}-${strength} to ${location_name} as ${battlerole}'), array(
             'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
@@ -711,6 +711,24 @@ class Perikles extends Table
             'type' => $counter['type'],
             'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
             'strength' => $counter['strength'],
+            'city' => $counter['city'],
+            'city_name' => $this->cities[$counter['city']]['name'],
+            'place' => $place,
+            'battlerole' => $role,
+            'location' => $location,
+            'slot' => $slot,
+            'location_name' => $this->locations[$location]['name'],
+            'preserve' => ['city', 'location'],
+        ));
+
+        self::notifyAllPlayers("sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
+            'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'unit' => 0,
+            'type' => $counter['type'],
+            'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
+            'strength' => 0,
             'city' => $counter['city'],
             'city_name' => $this->cities[$counter['city']]['name'],
             'place' => $place,

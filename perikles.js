@@ -963,11 +963,13 @@ function (dojo, declare) {
             }
 
             // move from city to battle
-            const counter_html = this.createMilitaryCounterRelative(id+"_location", city, strength, unit);
+            let [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
+            const stackct = $(battlepos).childElementCount;
+            const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 2*stackct, t: 0});
             const milzone = $(city+"_military");
             const counter = dojo.place(counter_html, milzone);
-            const destination = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
-            this.slide(counter, destination, {from: milzone});
+            this.slide(counter, battlepos, {from: milzone});
         },
 
         /**
@@ -2075,7 +2077,10 @@ function (dojo, declare) {
             const strength = notif.args.strength;
             const slot = notif.args.slot;
             const place = notif.args.place;
-            this.moveToBattle(player_id, city, type, strength, id, slot, place);
+            // if it's my own unit and this is the notif to other players, don't repeat sliding a blank counter
+            if (this.player_id != player_id || strength != 0) {
+                this.moveToBattle(player_id, city, type, strength, id, slot, place);
+            }
         },
 
         /**
