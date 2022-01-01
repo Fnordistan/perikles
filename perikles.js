@@ -83,7 +83,7 @@ const BATTLES = {
 }
 
 // match MAIN/ALLY ATT/DEF constants in php
-const BATTLE_BOX = {
+const BATTLE_POS = {
     1: "att",
     2: "att_ally",
     3: "def",
@@ -546,22 +546,31 @@ function (dojo, declare) {
                 const location = mil['location'];
                 let [xoff, yoff] = this.counterOffsets(city, strength, unit);
                 if (location == city) {
+                    // in a city stack
                     const city_military = $(city+"_military");
                     const ct = city_military.childElementCount;
                     const top = (unit == TRIREME) ? MIL_DIM.s : 0;
                     const counter = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: 2*ct, t: top});
                     dojo.place(counter, city_military);
                 } else if (location == DEAD_POOL) {
+                    // in the dead pool
 
                 } else if (Object.keys(BATTLES).includes(location)) {
-
+                    // sent to a battle
+                    const slotid = $(location+"_tile").parentNode.id;
+                    const slot = slotid[slotid.length-1];
+                    const place = mil['place'];
+                    const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
+                    const stackct = $(battlepos).childElementCount;
+                    const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 2*stackct, t: 0});
+                    dojo.place(battlecounter, $(battlepos));
                 } else {
+                    // it's in a player pool
                     const player_id = location;
                     if (player_id == this.player_id) {
                         this.createMilitaryArea(player_id, city);
                         const m = 1;
-                        const top = 0;
-                        const counter_div = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: m, t: top});
+                        const counter_div = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: m, t: 0});
                         const mil_zone = city+"_"+unit+"_"+player_id;
                         const counter = dojo.place(counter_div, $(mil_zone));
                         Object.assign(counter.style, {position: "relative"});
@@ -957,7 +966,7 @@ function (dojo, declare) {
             const counter_html = this.createMilitaryCounterRelative(id+"_location", city, strength, unit);
             const milzone = $(city+"_military");
             const counter = dojo.place(counter_html, milzone);
-            const destination = "battle_"+slot+"_"+unit+"_"+BATTLE_BOX[place];
+            const destination = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
             this.slide(counter, destination, {from: milzone});
         },
 
@@ -1830,7 +1839,7 @@ function (dojo, declare) {
          * Action to send forces
          */
         commitForces: function() {
-            if (this.checkAction("sendToBattle", true)) {
+            if (this.checkAction("assignUnits", true)) {
                 let cube = this.gamedatas.gamestate.args.committed['cube'] ?? "";
                 let units = this.packCommitForcesArg(this.gamedatas.gamestate.args.committed);
                 this.ajaxcall( "/perikles/perikles/commitUnits.html", { 
@@ -1893,7 +1902,7 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'useTile', 500 );
             dojo.subscribe( 'spentInfluence', this, "notif_cubeRemoved");
             this.notifqueue.setSynchronous( 'spentInfluence', 500 );
-            dojo.subscribe( 'sendMilitary', this, "notif_sendMilitary");
+            dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
             this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
             
         },
@@ -2058,7 +2067,7 @@ function (dojo, declare) {
          * Send military units to battle tiles.
          * @param {Object} notif 
          */
-        notif_sendMilitary: function(notif) {
+        notif_sendBattle: function(notif) {
             const player_id = notif.args.player_id;
             const id = notif.args.unit;
             const city = notif.args.city;

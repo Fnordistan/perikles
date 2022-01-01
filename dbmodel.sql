@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `INFLUENCE` (
 CREATE TABLE IF NOT EXISTS `LOCATION` (
   `card_id` TINYINT unsigned NOT NULL AUTO_INCREMENT,
   `card_type` varchar(8) NOT NULL COMMENT 'city',
-  `card_type_arg` varchar(16) NULL COMMENT 'battle name',
+  `card_type_arg` varchar(16) NOT NULL COMMENT 'battle name',
   `card_location` varchar(16) NOT NULL COMMENT 'deck, board, or player',
   `card_location_arg` TINYINT COMMENT 'slot #',
   `attacker` varchar(16) COMMENT 'main attacker',

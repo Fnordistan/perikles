@@ -369,13 +369,19 @@ class Perikles extends Table
     }
 
     /**
+     * Is this player leader of a city?
+     */
+    function isLeader($player_id, $city) {
+        return self::getGameStateValue($city."_leader") == $player_id;
+    }
+
+    /**
      * Get an array of cities led by this player.
      */
     function getControlledCities($player_id) {
         $cities = array();
         foreach (array_keys($this->cities) as $cn) {
-            $leader = self::getGameStateValue($cn."_leader");
-            if ($leader == $player_id) {
+            if ($this->isLeader($player_id, $cn)) {
                 $cities[] = $cn;
             }
         }
@@ -419,9 +425,22 @@ class Perikles extends Table
 
     /**
      * Get all military tokens with their locations.
+     * Hide the values for other players' units sent to battle.
      */
     function getMilitary() {
-        $military = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY");
+        $player_id = self::getCurrentPlayerId();
+        $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, place FROM MILITARY");
+        // but we need to show only the backs for units in battle that aren't mine
+        foreach (array_keys($military) as $id) {
+            // is it at a battle?
+            if (array_key_exists($military[$id]['location'], $this->locations)) {
+                // if it's not mine, zero the id and strength
+                if (!$this->isLeader($player_id, $military[$id]['city'])) {
+                    $military[$id]['id'] = 0;
+                    $military[$id]['strength'] = 0;
+                }
+            }
+        }
         return $military;
     }
 
@@ -674,7 +693,7 @@ class Perikles extends Table
     /**
      * Assumes all checks have been done. Send a military unit to a battle location.
      */
-    function sendMilitaryToBattle($player_id, $id, $location, $place) {
+    function sendToBattle($player_id, $id, $location, $place) {
         $players = self::loadPlayersBasicInfos();
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
 
@@ -889,8 +908,7 @@ class Perikles extends Table
         // make sure assigner owns it
         $assigner = self::getActivePlayerId();
         $location = self::getNonEmptyObjectFromDB("SELECT card_type city, permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
-        $leaders = $this->getLeaders();
-        if ($leaders[$location['city']] != $assigner) {
+        if (!$this->isLeader($assigner, $location['city'])) {
             throw new BgaUserException(self::_("You do not own this location's city"));
         }
         $permissions = $location['permissions'] == null ? [] : explode(",", $location['permissions']);
@@ -1132,8 +1150,8 @@ class Perikles extends Table
      * @param unitstr a space-delimited string id_attdef_battle
      * @param cube null or cube spent for extra units
      */
-    function sendToBattle($unitstr, $cube) {
-        self::checkAction('sendToBattle');
+    function assignUnits($unitstr, $cube) {
+        self::checkAction('assignUnits');
 
         $player_id = self::getActivePlayerId();
 
@@ -1150,6 +1168,10 @@ class Perikles extends Table
         $main_attacker = [];
         $main_defender = [];
         $mycities = $this->getControlledCities($player_id);
+        $myforces = array(
+            'attack' => [],
+            'defend' => [],
+        );
         // MAKE NO CHANGES IN DB until this loop is completed!
         foreach($units as $unit) {
             [$id, $side, $location] = explode("_", $unit);
@@ -1207,6 +1229,7 @@ class Perikles extends Table
                         }
                     }
                 }
+                $myforces['attack'][] = $counter;
             } else if ($side == "defend") {
                 // is there already a main defender?
                 if ($defender == null) {
@@ -1225,6 +1248,7 @@ class Perikles extends Table
                         throw new BgaUserException(sprintf(self::_("%s cannot attack a city which you are also defending!"), $unit_desc));
                     }
                 }
+                $myforces['defend'][] = $counter;
             }
         }
         // all units passed all tests for valid assignment
@@ -1242,29 +1266,22 @@ class Perikles extends Table
             ));
         }
         // now ship 'em off
-        foreach($attackers as $attacker) {
-            $attacking = $attacker['battle'];
-            $mainattacker = $main_attacker[$attacking];
-            if ($mainattacker == $player_id) {
-                // I became main attacker
-                $place = MAIN+ATTACKER;
-                self::DbQuery("UPDATE LOCATION SET attacker=$player_id WHERE card_type_arg=\"$location\"");
-            } else {
-                $place = ALLY+ATTACKER;
+        foreach($myforces as $attdef => $forces) {
+            foreach($forces as $f) {
+                $battle = $f['battle'];
+                $main = $attdef == "attack" ? $main_attacker[$battle] : $main_defender[$battle];
+                if ($main == $player_id) {
+                    // I became main
+                    $place = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
+                    $col = $attdef == "attack" ? "attacker" : "defender";
+                    self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$location\"");
+                } else {
+                    $place = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
+                }
+                $this->sendToBattle($player_id, $f['id'], $battle, $place);
             }
-            $this->sendMilitaryToBattle($player_id, $attacker['id'], $attacking, $place);
         }
-        foreach($defenders as $defender) {
-            $defending = $defender['battle'];
-            $maindefender = $main_defender[$defending];
-            if ($maindefender == $player_id) {
-                $place = MAIN+DEFENDER;
-                self::DbQuery("UPDATE LOCATION SET defender=$player_id WHERE card_type_arg=\"$location\"");
-            } else {
-                $place = ALLY+DEFENDER;
-            }
-            $this->sendMilitaryToBattle($player_id, $defender['id'], $defending, $place);
-        }
+       $this->gamestate->nextState();
     }
 
 //////////////////////////////////////////////////////////////////////////////

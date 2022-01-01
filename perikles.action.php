@@ -101,7 +101,7 @@
       self::setAjaxMode();     
       $units = self::getArg( "units", AT_alphanum, true );
       $cube = self::getArg( "cube", AT_alphanum, true );
-      $this->game->sendToBattle($units, $cube);
+      $this->game->assignUnits($units, $cube);
       self::ajaxResponse( );
     }
 

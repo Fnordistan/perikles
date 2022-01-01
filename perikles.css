@@ -417,6 +417,15 @@
     height: var(--military_s);
 }
 
+.prk_hoplite_battle {
+    transform: matrix(0.8, 0, 0, 0.8, 8, -20) rotate(90deg);
+}
+
+/* scaling hoplite counter to a battle slot */
+.prk_trireme_battle {
+    transform: matrix(0.8, 0, 0, 0.8, -8, -4);
+}
+
 .prk_btn {
     height: 50px;
     width: 200px;
