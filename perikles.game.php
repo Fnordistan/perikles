@@ -543,7 +543,7 @@ class Perikles extends Table
      */
     function canAnyoneNominate() {
         $players = self::loadPlayersBasicInfos();
-        foreach ($players as $player_id => $player) {
+        foreach (array_keys($players) as $player_id) {
             if ($this->canNominateAny($player_id)) {
                 return true;
             }
@@ -703,41 +703,25 @@ class Perikles extends Table
 
         $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
 
-        self::notifyPlayer($player_id, "sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type}-${strength} to ${location_name} as ${battlerole}'), array(
-            'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
-            'player_id' => $player_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'unit' => $id,
-            'type' => $counter['type'],
-            'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
-            'strength' => $counter['strength'],
-            'city' => $counter['city'],
-            'city_name' => $this->cities[$counter['city']]['name'],
-            'place' => $place,
-            'battlerole' => $role,
-            'location' => $location,
-            'slot' => $slot,
-            'location_name' => $this->locations[$location]['name'],
-            'preserve' => ['city', 'location'],
-        ));
-
-        self::notifyAllPlayers("sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
-            'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
-            'player_id' => $player_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'unit' => 0,
-            'type' => $counter['type'],
-            'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
-            'strength' => 0,
-            'city' => $counter['city'],
-            'city_name' => $this->cities[$counter['city']]['name'],
-            'place' => $place,
-            'battlerole' => $role,
-            'location' => $location,
-            'slot' => $slot,
-            'location_name' => $this->locations[$location]['name'],
-            'preserve' => ['city', 'location'],
-        ));
+        foreach (array_keys($players) as $pid) {
+            self::notifyPlayer($pid, "sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
+                'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
+                'player_id' => $player_id,
+                'player_name' => $players[$player_id]['player_name'],
+                'unit' => ($pid == $player_id) ? $id : 0,
+                'type' => $counter['type'],
+                'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
+                'strength' => ($pid == $player_id) ? $counter['strength'] : 0,
+                'city' => $counter['city'],
+                'city_name' => $this->cities[$counter['city']]['name'],
+                'place' => $place,
+                'battlerole' => $role,
+                'location' => $location,
+                'slot' => $slot,
+                'location_name' => $this->locations[$location]['name'],
+                'preserve' => ['city', 'location'],
+            ));
+        }
     }
 
     /**

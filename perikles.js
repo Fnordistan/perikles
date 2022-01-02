@@ -2078,10 +2078,7 @@ function (dojo, declare) {
             const strength = notif.args.strength;
             const slot = notif.args.slot;
             const place = notif.args.place;
-            // if it's my own unit and this is the notif to other players, don't repeat sliding a blank counter
-            if (this.player_id != player_id || strength != 0) {
-                this.moveToBattle(player_id, city, type, strength, id, slot, place);
-            }
+            this.moveToBattle(player_id, city, type, strength, id, slot, place);
         },
 
         /**
