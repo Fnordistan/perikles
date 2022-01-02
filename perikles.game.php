@@ -1165,14 +1165,30 @@ class Perikles extends Table
 
     /**
      * Send units to battle locations.
-     * @param unitstr a space-delimited string id_attdef_battle
-     * @param cube null or cube spent for extra units
+     * @param unitstr a space-delimited string id_attdef_battle (or empty)
+     * @param cube empty string or cube spent for extra units
      */
     function assignUnits($unitstr, $cube) {
         self::checkAction('assignUnits');
 
         $player_id = self::getActivePlayerId();
 
+        if ($unitstr == "") {
+            self::notifyAllPlayers('noCommits', clienttranslate('${player_name} commits no forces'), array(
+                'player_id' => $player_id,
+                'player_name' => self::getActivePlayerName(),
+                'preserve' => ['player_id'],
+            ));
+        } else {
+            $this->validateMilitaryCommits($player_id, $unitstr, $cube);
+        }
+        $this->gamestate->nextState();
+    }
+
+    /**
+     * Make sure all commitment assignments are valid.
+     */
+    function validateMilitaryCommits($player_id, $unitstr, $cube) {
         // do all the checks for whether this is a valid action
         // can I commit extra forces from the chosen city?
         if ($cube != "") {
@@ -1299,7 +1315,6 @@ class Perikles extends Table
                 $this->sendToBattle($player_id, $f['id'], $battle, $place);
             }
         }
-       $this->gamestate->nextState();
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1365,10 +1380,12 @@ class Perikles extends Table
      */
     function stNextCommit() {
         $state = "commit";
+
         $player_id = self::getActivePlayerId();
+        // use which of this player's tiles, 2 or 1 shard?
+        $s = 2;
         // do I have a 2-shard?
         $shards = $this->twoShardTiles($player_id);
-        $s = 2;
         if (empty($shards)) {
             // does anyone else have a two-shard tile left?
             if ($this->isTwoShardTileLeft()) {
@@ -1401,7 +1418,7 @@ class Perikles extends Table
             $city_name = ($city == "any") ? self::_("Any") : $this->cities[$city]['name'];
             $id = key($shards);
             $this->influence_tiles->moveCard($id, DISCARD);
-            self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard ${city_name} tile'), array(
+            self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${city_name} tile (${shardct} shards)'), array(
                 'i18n' => ['city_name'],
                 'player_id' => $player_id,
                 'player_name' => self::getActivePlayerName(),
@@ -1411,6 +1428,9 @@ class Perikles extends Table
                 'city_name' => $city_name,
                 'preserve' => ['player_id', 'city']
             ));
+
+            $next_player = self::activeNextPlayer();
+            self::giveExtraTime( $next_player );
         }
         $this->gamestate->nextState($state);
     }
@@ -1591,6 +1611,9 @@ class Perikles extends Table
                     $firstplayer = $this->chooseRandomPlayer();
                     $this->chooseNextPlayer($firstplayer);
                     break;
+                case 'commitForces':
+                    $this->assignUnits("", "");
+                    break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
                 	break;
@@ -1624,7 +1647,7 @@ class Perikles extends Table
      */
     function chooseRandomTile($player_id) {
         $tiles = $this->influence_tiles->getCardsInLocation(BOARD);
-        foreach ($tiles as $t =>$tile) {
+        foreach (array_values($tiles) as $tile) {
             $city = $tile['type'];
             if (!$this->hasCityInfluenceTile($player_id, $city)) {
                 return $tile;
@@ -1684,7 +1707,7 @@ class Perikles extends Table
                     $toremove[] = $c;
                 }
             }
-            foreach($players as $target_id => $player) {
+            foreach(array_keys($players) as $target_id) {
                 if ($player_id != $target_id && $this->influenceInCity($target_id, $cn) > 0) {
                     $toremove[] = $target_id;
                 }

@@ -1431,7 +1431,8 @@ function (dojo, declare) {
                     [...mils].forEach(m => {
                         this.makeSelectable(m, false);
                     });
-                this.gamedatas.gamestate.args.committed = {};
+                    this.gamedatas.gamestate.args = {};
+                    this.gamedatas.gamestate.args.committed = {};
                     break;
                 case 'dummmy':
                     break;
