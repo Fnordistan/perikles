@@ -101,7 +101,6 @@ define([
 function (dojo, declare) {
     return declare("bgagame.perikles", ebg.core.gamegui, {
         constructor: function(){
-            console.log('perikles constructor');
             this.influence_h = 199;
             this.influence_w = 128;
             this.location_w = 124;
@@ -122,10 +121,7 @@ function (dojo, declare) {
             "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
         */
         
-        setup: function( gamedatas )
-        {
-            console.log( "Starting game setup" );
-            
+        setup: function( gamedatas ) {
             this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCubes(gamedatas.influencecubes);
@@ -139,8 +135,6 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
-
-            console.log( "Ending game setup" );
         },
 
         /**
@@ -1940,10 +1934,7 @@ function (dojo, declare) {
                   your perikles.game.php file.
         
         */
-        setupNotifications: function()
-        {
-            console.log( 'notifications subscriptions setup' );
-            
+        setupNotifications: function() {
             dojo.subscribe( 'influenceCardTaken', this, "notif_influenceCardTaken" );
             this.notifqueue.setSynchronous( 'influenceCardTaken', 1000 );
             dojo.subscribe( 'influenceCubes', this, "notif_addInfluenceCubes");

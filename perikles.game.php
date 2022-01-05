@@ -1556,6 +1556,14 @@ class Perikles extends Table
         $this->gamestate->nextState();
     }
 
+    /**
+     * Do the battles.
+     */
+    function stResolveBattles() {
+        throw new BgaUserException("Resolve battles not implemented yet");
+    }
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
 ////////////
