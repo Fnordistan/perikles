@@ -562,7 +562,7 @@ function (dojo, declare) {
                     const place = mil['place'];
                     const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
                     const stackct = $(battlepos).childElementCount;
-                    const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 2*stackct, t: 0});
+                    const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 8*stackct, t: 0});
                     dojo.place(battlecounter, $(battlepos));
                 } else {
                     // it's in a player pool
@@ -966,7 +966,7 @@ function (dojo, declare) {
             let [xoff, yoff] = this.counterOffsets(city, strength, unit);
             const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
             const stackct = $(battlepos).childElementCount;
-            const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 2*stackct, t: 0});
+            const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 8*stackct, t: 0});
             const milzone = $(city+"_military");
             const counter = dojo.place(counter_html, milzone);
             this.slide(counter, battlepos, {from: milzone});
@@ -1397,8 +1397,13 @@ function (dojo, declare) {
                         });
                         this.gamedatas.gamestate.args = {};
                         this.gamedatas.gamestate.args.committed = {};
-                        break;
                     }
+                    const battleslots = $('location_area').getElementsByClassName("prk_battle");
+                    [...battleslots].forEach(b => {
+                        this.makeSplayable(b);
+                    });
+
+                    break;
                 case 'dummmy':
                     break;
             }
@@ -1588,7 +1593,7 @@ function (dojo, declare) {
          * 
          * @param {*} evt 
          */
-        hoverUnit: function(evt) {
+         hoverUnit: function(evt) {
             evt.currentTarget.classList.add("prk_military_active");
         },
         /**
@@ -1597,6 +1602,60 @@ function (dojo, declare) {
          */
         unhoverUnit: function(evt) {
             evt.currentTarget.classList.remove("prk_military_active");
+        },
+
+        /**
+         * For places to stack units at battles.
+         * @param {DOM} battleslot 
+         * @param {bool} splay 
+         */
+        makeSplayable: function(battleslot, splay=true) {
+            if (splay) {
+                this.connect(battleslot, 'click', this.splayUnits);
+                this.connect(battleslot, 'mouseenter', this.splayUnits);
+                this.connect(battleslot, 'mouseleave', this.unsplayUnits);
+            } else {
+                this.disconnect(battleslot, 'click', this.splayUnits);
+                this.disconnect(battleslot, 'mouseenter', this.splayUnits);
+                this.disconnect(battleslot, 'mouseleave', this.unsplayUnits);
+            }
+        },
+
+        /**
+         * Connected to military counters at battles.
+         * @param {*} evt 
+         */
+        splayUnits: function(evt) {
+            const units = evt.currentTarget.getElementsByClassName("prk_at_battle");
+            let i = 0;
+            [...units].forEach(u => {
+                if (u.classList.contains("prk_hoplite")) {
+                    let hoffset = 8+(i*50);
+                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, "+hoffset+", -20)";
+                } else {
+                    let toffset = -8+(i*80);
+                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, "+toffset+", -4)";
+                }
+                u.style['outline'] = "solid white 3px";
+                i++;
+            });
+        },
+
+        /**
+         * Connected to military counters at battles.
+         * @param {*} evt 
+         */
+        unsplayUnits: function(evt) {
+            const units = evt.currentTarget.getElementsByClassName("prk_at_battle");
+            let i = 0;
+            [...units].forEach(u => {
+                if (u.classList.contains("prk_hoplite")) {
+                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, 8, -20) rotate(90deg)";
+                } else {
+                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, -8, -4)";
+                }
+                u.style['outline'] = null;
+            });
         },
 
         /**

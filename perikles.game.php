@@ -1407,7 +1407,7 @@ class Perikles extends Table
             $city_name = ($city == "any") ? self::_("Any") : $this->cities[$city]['name'];
             $id = key($shards);
             $this->influence_tiles->moveCard($id, DISCARD);
-            self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${city_name} tile (${shardct} shards)'), array(
+            self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard tile (${city_name})'), array(
                 'i18n' => ['city_name'],
                 'player_id' => $player_id,
                 'player_name' => self::getActivePlayerName(),
