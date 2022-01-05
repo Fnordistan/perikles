@@ -433,7 +433,7 @@ class Perikles extends Table
         // but we need to show only the backs for units in battle that aren't mine
         foreach (array_keys($military) as $id) {
             // is it at a battle?
-            if (array_key_exists($military[$id]['location'], $this->locations)) {
+            if ($military[$id]['place'] != 0) {
                 // if it's not mine, zero the id and strength
                 if (!$this->isLeader($player_id, $military[$id]['city'])) {
                     $military[$id]['id'] = 0;
@@ -1215,6 +1215,11 @@ class Perikles extends Table
             if ($side == "defend" && $this->atWar($counter['city'], $battlecity)) {
                 throw new BgaUserException(sprintf(self::_("%s cannot defend a location belonging to a city it is at war with!"), $unit_desc));
             }
+            // are we sending a trireme to a land battle?
+            if ($this->locations[$location]['battle'] == "H" && $counter['type'] == TRIREME) {
+                throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
+            }
+
             $maindef = MAIN+DEFENDER;
             $allydef = ALLY+DEFENDER;
             $mainatt = MAIN+ATTACKER;
