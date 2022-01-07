@@ -1195,7 +1195,7 @@ function (dojo, declare) {
         },
 
         /**
-         * Mouse leaving player's Influence zone in city.
+         * Mouse clicking Influence zone in city.
          * @param {Object} event 
          */
          onInfluenceCubesClick: function(event, city, player_id) {
@@ -1203,7 +1203,7 @@ function (dojo, declare) {
                 if (this.checkAction("proposeCandidate", true)) {
                     const tgt = event.target;
                     // it's either the cube area or one of the cubes
-                    if ($(city).classList.contains("prk_city_active") && this.hasCubeInCity(city)) {
+                    if ($(city).classList.contains("prk_city_active") && this.hasCubeInCity(city, true)) {
                         if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
                             this.proposeCandidate(city, player_id);
                         }
@@ -1369,7 +1369,7 @@ function (dojo, declare) {
                     if (this.isCurrentPlayerActive()) {
                         for (const city of CITIES) {
                             const candidate_space = this.openCandidateSpace(city);
-                            if (candidate_space) {
+                            if (candidate_space && this.hasCubeInCity(city, true)) {
                                 const city_div = $(city);
                                 city_div.classList.add("prk_city_active");
                                 candidate_space.classList.add("prk_candidate_space_active");

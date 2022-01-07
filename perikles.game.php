@@ -522,8 +522,8 @@ class Perikles extends Table
      * Is there any city this player can nominate in?
      */
     function canNominateAny($player_id) {
-        foreach ($this->cities as $c => $city) {
-            if ($this->canNominate($player_id, $c)) {
+        foreach (array_keys($this->cities) as $city) {
+            if ($this->canNominate($player_id, $city)) {
                 return true;
             }
         }
@@ -1343,6 +1343,7 @@ class Perikles extends Table
     function stNextPlayer() {
         $state = "";
         if ($this->allInfluenceTilesTaken()) {
+            // we're nominating candidates
             if ($this->canAnyoneNominate()) {
                 $player_id = self::activeNextPlayer();
                 if ($this->canNominateAny($player_id)) {
@@ -1439,6 +1440,9 @@ class Perikles extends Table
         $state = "nextPlayer";
         if (self::getGameStateValue("deadpool_picked") == $nbr) {
             self::setGameStateValue("deadpool_picked", 0);
+            // reset to spartan_choice player to pick first
+            $nextplayer = self::getGameStateValue("spartan_choice");
+            $this->gamestate->changeActivePlayer($nextplayer);
             $state = "commitForces";
         } else {
             $player_id = self::getActivePlayerId();
