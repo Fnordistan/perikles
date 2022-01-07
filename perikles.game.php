@@ -1371,7 +1371,14 @@ class Perikles extends Table
     function stNextCommit() {
         $state = "commit";
 
-        $player_id = self::getActivePlayerId();
+        $player_id = self::getGameStateValue("spartan_choice");
+        if ($player_id != 0) {
+            $this->gamestate->changeActivePlayer($player_id);
+            self::setGameStateValue("spartan_choice", 0);
+        } else {
+            $player_id = self::activeNextPlayer();
+            self::giveExtraTime( $player_id );
+        }
         // use which of this player's tiles, 2 or 1 shard?
         $s = 2;
         // do I have a 2-shard?
@@ -1418,9 +1425,6 @@ class Perikles extends Table
                 'city_name' => $city_name,
                 'preserve' => ['player_id', 'city']
             ));
-
-            $next_player = self::activeNextPlayer();
-            self::giveExtraTime( $next_player );
         }
         $this->gamestate->nextState($state);
     }
@@ -1429,20 +1433,17 @@ class Perikles extends Table
      * Check whether player can collect units
      */
     function stDeadPool() {
-        $first_player = self::getGameStateValue("spartan_choice");
-        if ($first_player != 0) {
+        $picked = self::getGameStateValue("deadpool_picked");
+        if ($picked == 0) {
+            $first_player = self::getGameStateValue("spartan_choice");
             $this->gamestate->changeActivePlayer($first_player);
-        } else {
-            self::setGameStateValue("spartan_choice", 0);
         }
+
         $players = self::loadPlayersBasicInfos();
         $nbr = count($players);
         $state = "nextPlayer";
         if (self::getGameStateValue("deadpool_picked") == $nbr) {
             self::setGameStateValue("deadpool_picked", 0);
-            // reset to spartan_choice player to pick first
-            $nextplayer = self::getGameStateValue("spartan_choice");
-            $this->gamestate->changeActivePlayer($nextplayer);
             $state = "commitForces";
         } else {
             $player_id = self::getActivePlayerId();

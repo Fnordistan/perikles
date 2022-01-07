@@ -1631,6 +1631,7 @@ function (dojo, declare) {
                     u.style['transform'] = "matrix(0.8, 0, 0, 0.8, "+toffset+", -4)";
                 }
                 u.style['outline'] = "solid white 3px";
+                u.style['z-index'] = "99";
                 i++;
             });
         },
@@ -1641,14 +1642,16 @@ function (dojo, declare) {
          */
         unsplayUnits: function(evt) {
             const units = evt.currentTarget.getElementsByClassName("prk_at_battle");
-            let i = 0;
             [...units].forEach(u => {
                 if (u.classList.contains("prk_hoplite")) {
                     u.style['transform'] = "matrix(0.8, 0, 0, 0.8, 8, -20) rotate(90deg)";
                 } else {
                     u.style['transform'] = "matrix(0.8, 0, 0, 0.8, -8, -4)";
                 }
-                u.style['outline'] = null;
+                Object.assign(u.style, {
+                    'outline': null,
+                    'z-index': null
+                });
             });
         },
 
