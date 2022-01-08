@@ -1309,8 +1309,9 @@ function (dojo, declare) {
         onCommitForces: function() {
             const sz = Object.keys(this.gamedatas.gamestate.args.committed).length;
             if (sz == 0) {
-                this.confirmationDialog( _("You have not selected any forces"),
-                    this.commitForces() );
+                this.confirmationDialog( _("You have not selected any forces"), dojo.hitch( this, function() {
+                    this.commitForces() 
+                }));
             } else {
                 this.commitForces();
             }
@@ -1356,7 +1357,7 @@ function (dojo, declare) {
         //
         onEnteringState: function( stateName, args )
         {
-            console.log( 'Entering state: '+stateName );
+            console.log( this.player_id + ' Entering state: '+stateName );
             
             switch( stateName ) {
                 case 'choosePlaceInfluence':

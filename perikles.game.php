@@ -1370,14 +1370,13 @@ class Perikles extends Table
      */
     function stNextCommit() {
         $state = "commit";
-
-        $player_id = self::getGameStateValue("spartan_choice");
-        if ($player_id != 0) {
-            $this->gamestate->changeActivePlayer($player_id);
+        $player_id = self::activeNextPlayer();
+        // is this the first committer? Start with whoever Spartan player chose
+        $first_player = self::getGameStateValue("spartan_choice");
+        if ($first_player != 0) {
+            $this->gamestate->changeActivePlayer($first_player);
+            $player_id = $first_player;
             self::setGameStateValue("spartan_choice", 0);
-        } else {
-            $player_id = self::activeNextPlayer();
-            self::giveExtraTime( $player_id );
         }
         // use which of this player's tiles, 2 or 1 shard?
         $s = 2;
@@ -1425,6 +1424,11 @@ class Perikles extends Table
                 'city_name' => $city_name,
                 'preserve' => ['player_id', 'city']
             ));
+            // does this player actually still have forces to send?
+            $counters = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE location=$player_id");
+            if (empty($counters)) {
+                $state = "nextPlayer";
+            }
         }
         $this->gamestate->nextState($state);
     }
