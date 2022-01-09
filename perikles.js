@@ -539,7 +539,7 @@ function (dojo, declare) {
                 const strength = mil['strength'];
                 const location = mil['location'];
                 let [xoff, yoff] = this.counterOffsets(city, strength, unit);
-                if (location == city) {
+                if (location == city && mil['place'] == 0) {
                     // in a city stack
                     const city_military = $(city+"_military");
                     const ct = city_military.childElementCount;
@@ -1463,6 +1463,9 @@ function (dojo, declare) {
                         this.onResetForces();
                     }, null, null, 'red');
                     break;
+                case 'placeholder':
+                    this.addActionButton( 'donothing_btn', "Do Nothing", 'doNothing', null, false, 'green' );
+                    break;
                 }
             }
         },        
@@ -1961,7 +1964,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'spentInfluence', 500 );
             dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
             this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
-            
+            dojo.subscribe( 'newInfluence', this, "notif_newInfluence");
+            dojo.subscribe( 'newLocations', this, "notif_newLocations");
         },
         
         // Notification handlers
@@ -2145,6 +2149,28 @@ function (dojo, declare) {
             this.fadeOutAndDestroy(city+'_'+id, 2000, 0);
         },
 
+        /**
+         * Start of new turn, move all cards to Deck and deal new ones.
+         * @param {Object} notif 
+         */
+        notif_newInfluence: function(notif) {
+            const influencetiles = document.getElementsByClassName("prk_influence_tile");
+            [...influencetiles].forEach(t => {
+                this.slideToObjectAndDestroy(t, 'influence_slot_0', 500, 0);
+            });
+            const influence = notif.args.influence;
+            const sz = parseInt(notif.args.decksize);
+            this.setupInfluenceTiles(influence, sz);
+        },
+
+        /**
+         * Start of new turn, deal out new locations.
+         * @param {Object} notif 
+         */
+        notif_newLocations: function(notif) {
+            const locations = notif.args.locations;
+            this.setupLocationTiles(locations);
+        },
 
    });
 });

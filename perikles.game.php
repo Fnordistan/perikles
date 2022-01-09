@@ -120,6 +120,8 @@ class Perikles extends Table
                 self::initStat( 'player', $statues, 0, $player_id);
             }
         }
+        self::initStat('table', 'turns_number', 0);
+
         $sql .= implode(',', $values );
         self::DbQuery( $sql );
         self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
@@ -284,7 +286,7 @@ class Perikles extends Table
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
-        $result['influencetiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_location != \"".DECK."\" AND card_location != \"".DISCARD."\"");
+        $result['influencetiles'] = $this->getInfluenceDisplay();
         $result['decksize'] = $this->influence_tiles->countCardInLocation(DECK);
 
         $result['locationtiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
@@ -456,9 +458,9 @@ class Perikles extends Table
     */
     function getGameProgression()
     {
-        // TODO: compute and return the game progression
-
-        return 0;
+        $turn = self::getStat('turns_number');
+        $p = ($turn / 3.0) * 100;
+        return $p;
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -763,6 +765,7 @@ class Perikles extends Table
      * @param $player_id
      */
     function twoShardTiles($player_id) {
+        // "influence" cards are either 2 shards, or "Any" tiles (others are Candidate or Assassin)
         $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND NOT card_type=\"any\" AND card_type_arg=\"".INFLUENCE."\"", true);
         return $shards;
     }
@@ -772,14 +775,17 @@ class Perikles extends Table
      * @param $player_id
      */
     function oneShardTiles($player_id) {
+        // "influence" cards are either 2 shards, or "Any" tiles (others are Candidate or Assassin)
         $shards = self::getCollectionFromDB("SELECT card_id id, card_type city FROM INFLUENCE WHERE card_location=$player_id AND (card_type=\"any\" OR card_type_arg!=\"".INFLUENCE."\")", true);
         return $shards;
     }
 
     /**
-     * Check for either 1 or 2-shard tiles
+     * Check for either 1 or 2-shard tiles held in hands.
+     * @param num 1 or 2
+     * @return true if at least 1 player still has a tile of num shards
      */
-    protected function isTileLeft($num) {
+    private function isTileLeft($num) {
         $players = self::loadPlayersBasicInfos();
         foreach(array_keys($players) as $player_id) {
             $shards = ($num == 1) ? $this->oneShardTiles($player_id) : $this->twoShardTiles($player_id);
@@ -791,14 +797,14 @@ class Perikles extends Table
     }
 
     /**
-     * Does anyone have a two-shard tile in hand?
+     * Does anyone have a 2-shard tile in hand?
      */
     function isTwoShardTileLeft() {
         return $this->isTileLeft(2);
     }
 
     /**
-     * Does anyone have a one-shared tile in hand?
+     * Does anyone have a 1-shard tile in hand?
      */
     function isOneShardTileLeft() {
         return $this->isTileLeft(1);
@@ -919,6 +925,60 @@ class Perikles extends Table
             $newperms = implode(',', $permissions);
             self::DbQuery("UPDATE LOCATION SET permissions=$newperms");
         }
+    }
+
+    /**
+     * Check whether we have reached endgame
+     */
+    function isEndGame() {
+        if (self::getStat('turns_number') == 3) {
+            return true;
+        }
+        foreach(["sparta_defeats", "athens_defeats"] as $defeat) {
+            if (self::getGameStateValue($defeat) >= 4) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Move all the influence cards to deck, shuffle, and deal new ones.
+     */
+    function dealNewInfluence() {
+        $this->influence_tiles->moveAllCardsInLocation(null, DECK);
+        $this->influence_tiles->shuffle(DECK);
+        for ($i = 1; $i <= 10; $i++) {
+            $this->influence_tiles->pickCardForLocation(DECK, BOARD, $i);
+        }
+
+        self::notifyAllPlayers("newInfluence", "", array(
+            'influence' => $this->getInfluenceDisplay(),
+            'decksize' => $this->influence_tiles->countCardInLocation(DECK),
+        ));
+    }
+
+    /**
+     * Move old locations to 
+     */
+    function dealNewLocations() {
+        $this->location_tiles->shuffle(DECK);
+        for ($i = 1; $i <= 7; $i++) {
+            $this->location_tiles->pickCardForLocation(DECK, BOARD, $i);
+        }
+        $locations = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
+        self::notifyAllPlayers("newLocations", "", array(
+            'locations' => $locations
+        ));
+    }
+
+    /**
+     * Get all Influence tiles in current display.
+     */
+    function getInfluenceDisplay() {
+        $influence = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_location != \"".DECK."\" AND card_location != \"".DISCARD."\"");
+        return $influence;
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1306,6 +1366,31 @@ class Perikles extends Table
         }
     }
 
+    /**
+     * Resolve each battle.
+     */
+    function resolveBattle($location) {
+        $id = $location['id'];
+        $battle = $location['battle'];
+        $city = $location['city'];
+        $attacker = $location['attacker'];
+        $defender = $location['defender'];
+        $slot = $location['slot'];
+
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
+            'i18n' => ['location_name'],
+            'attacker' => $attacker,
+            'defender' => $defender,
+            'city' => $city,
+            'attacker_name' => $players[$attacker]['player_name'],
+            'defender_name' => $players[$defender]['player_name'],
+            'location_name' => $this->locations[$location]['name'],
+            'preserve' => ['attacker', 'defender'. 'city'],
+        ));
+
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -1370,25 +1455,24 @@ class Perikles extends Table
      */
     function stNextCommit() {
         $state = "commit";
-        $player_id = self::activeNextPlayer();
         // is this the first committer? Start with whoever Spartan player chose
-        $first_player = self::getGameStateValue("spartan_choice");
-        if ($first_player != 0) {
-            $this->gamestate->changeActivePlayer($first_player);
-            $player_id = $first_player;
+        $player_id = self::getGameStateValue("spartan_choice");
+        if ($player_id != 0) {
+            $this->gamestate->changeActivePlayer($player_id);
             self::setGameStateValue("spartan_choice", 0);
+        } else {
+            $player_id = self::activeNextPlayer();
+            self::giveExtraTime( $player_id );
         }
         // use which of this player's tiles, 2 or 1 shard?
         $s = 2;
-        // do I have a 2-shard?
+        // do I have a 2-shard tile?
         $shards = $this->twoShardTiles($player_id);
         if (empty($shards)) {
             // does anyone else have a two-shard tile left?
             if ($this->isTwoShardTileLeft()) {
                 // go to next player with 2-shards
                 $state = "nextPlayer";
-                $nextplayer = self::activeNextPlayer();
-                self::giveExtraTime( $nextplayer );
             } else {
                 // no 2-shards left.
                 // do I have a 1-shard?
@@ -1398,8 +1482,6 @@ class Perikles extends Table
                     if ($this->isOneShardTileLeft()) {
                         // go to next player with 1-shard
                         $state = "nextPlayer";
-                        $nextplayer = self::activeNextPlayer();
-                        self::giveExtraTime( $nextplayer );
                     } else {
                         // everyone is out of tiles
                         $state = "resolve";
@@ -1409,6 +1491,7 @@ class Perikles extends Table
                 }
             }
         }
+        // stayed commit if the current player has a playable tile
         if ($state == "commit") {
             $city = reset($shards);
             $city_name = ($city == "any") ? self::_("Any") : $this->cities[$city]['name'];
@@ -1443,12 +1526,12 @@ class Perikles extends Table
             $this->gamestate->changeActivePlayer($first_player);
         }
 
+        $state = "nextPlayer";
         $players = self::loadPlayersBasicInfos();
         $nbr = count($players);
-        $state = "nextPlayer";
-        if (self::getGameStateValue("deadpool_picked") == $nbr) {
+        if ($picked == $nbr) {
             self::setGameStateValue("deadpool_picked", 0);
-            $state = "commitForces";
+            $state = "startCommit";
         } else {
             $player_id = self::getActivePlayerId();
             if ($this->hasDeadPool($player_id)) {
@@ -1569,9 +1652,51 @@ class Perikles extends Table
      * Do the battles.
      */
     function stResolveBattles() {
-        throw new BgaUserException("Resolve battles not implemented yet");
+        $battles = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg battle, card_location_arg slot, attacker, defender FROM LOCATION WHERE card_location = \"board\" ORDER BY card_location_arg ASC");
+        foreach($battles as $battle) {
+            $this->resolveBattle($battle);
+        }
+        $this->gamestate->nextState();
     }
 
+    /**
+     * End of turn refresh.
+     */
+    function stEndTurn() {
+        self::incStat(1, 'turns_number');
+        $state = $this->isEndGame() ? "endGame" : "nextTurn";
+
+        $players = self::loadPlayersBasicInfos();
+        // add statues
+        foreach (array_keys($this->cities) as $cn) {
+            $leader = self::getGameStateValue($cn."_leader");
+            if ($leader != 0) {
+                self::setGameStateValue($cn."_leader", 0);
+                self::incStat(1, $cn."_statues", $leader);
+                self::notifyAllPlayers("addStatue", clienttranslate('${player_name} adds statue in ${city_name}'), array(
+                    'i18n' => ['city_name'],
+                    'city' => $cn,
+                    'city_name' => $this->cities[$cn]['name'],
+                    'player_id' => $leader,
+                    'player_name' => $players[$leader]['player_name'],
+                    'preserve' => ['player_id', 'city'],
+                ));
+            }
+        }
+        if ($state == "nextTurn") {
+            // reshuffle Influence deck and deal new cards
+            $this->dealNewInfluence();
+            $this->dealNewLocations();
+        }
+        $this->gamestate->nextState($state);
+    }
+
+    /**
+     * End of game scoring
+     */
+    function stScoring() {
+        $this->gamestate->nextState();
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
@@ -1620,8 +1745,7 @@ class Perikles extends Table
                 case 'commitForces':
                     $this->assignUnits("", "");
                     break;
-                default:
-                    $this->gamestate->nextState( "zombiePass" );
+                $this->gamestate->nextState( "zombiePass" );
                 	break;
             }
 

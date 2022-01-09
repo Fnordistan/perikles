@@ -34,6 +34,8 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("COMMIT_FORCES", 24);
     define("NEXT_COMMIT", 25);
     define("START_BATTLES", 26);
+    define("END_TURN", 28);
+    define("SCORING", 90);
     define("ENDGAME", 99);
  }
  
@@ -105,7 +107,6 @@ $machinestates = array(
     	"name" => "election",
     	"description" => "",
     	"type" => "game",
-        "updateGameProgression" => true,   
     	"action" => "stElections",
     	"transitions" => array( "" => SPARTAN_CHOICE )
     ),
@@ -124,7 +125,7 @@ $machinestates = array(
     	"description" => "",
     	"type" => "game",
     	"action" => "stDeadPool",
-    	"transitions" => array( "nextPlayer" => DEAD_POOL, "takeDead" => BRING_OUT_YOUR_DEAD, "commitForces" => NEXT_COMMIT)
+    	"transitions" => array( "nextPlayer" => DEAD_POOL, "takeDead" => BRING_OUT_YOUR_DEAD, "startCommit" => NEXT_COMMIT)
     ),
 
     BRING_OUT_YOUR_DEAD => array(
@@ -158,7 +159,16 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stResolveBattles",
-        "transitions" => array( "" => "battle" )
+        "transitions" => array( "" => END_TURN )
+    ),
+
+    END_TURN => array(
+        "name" => "endTurn",
+        "description" => "",
+        "updateGameProgression" => true,   
+    	"type" => "game",
+    	"action" => array( "stEndTurn" ),
+        "transitions" => array( "nextTurn" => TAKE_INFLUENCE, "endGame" => SCORING )
     ),
 
     NEXT_PLAYER => array(
@@ -167,6 +177,14 @@ $machinestates = array(
         "type" => "game",
         "action" => "stNextPlayer",
         "transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "proposeCandidate" => PROPOSE_CANDIDATE, "elections" => ELECTIONS, "nextPlayer" => NEXT_PLAYER )
+    ),
+
+    SCORING => array(
+        "name" => "finalScoring",
+        "description" => "",
+        "type" => "game",
+        "action" => "stScoring",
+        "transitions" => array( "" => ENDGAME )
     ),
 
     // Final state.
