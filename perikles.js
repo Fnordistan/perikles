@@ -2144,8 +2144,8 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_useTile: function(notif) {
-            const id = notif.args.id;
             const city = notif.args.city;
+            const id = notif.args.id;
             this.fadeOutAndDestroy(city+'_'+id, 2000, 0);
         },
 

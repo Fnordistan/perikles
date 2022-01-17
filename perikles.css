@@ -232,6 +232,7 @@
     position: relative;
     width: calc(var(--influence_w)*var(--influence_scale));
     height: calc(var(--influence_h)*var(--influence_scale));
+    outline: 1px gray ridge;
 }
 
 .prk_influence_tile_active {

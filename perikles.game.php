@@ -1214,19 +1214,25 @@ class Perikles extends Table
      */
     function assignUnits($unitstr, $cube) {
         self::checkAction('assignUnits');
-
         $player_id = self::getActivePlayerId();
 
         if ($unitstr == "") {
-            self::notifyAllPlayers('noCommits', clienttranslate('${player_name} commits no forces'), array(
-                'player_id' => $player_id,
-                'player_name' => self::getActivePlayerName(),
-                'preserve' => ['player_id'],
-            ));
+            $this->noCommitUnits($player_id);
         } else {
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
         $this->gamestate->nextState();
+    }
+
+    /**
+     * Send a message when there are no units being sent.
+     */
+    function noCommitUnits($player_id) {
+        self::notifyAllPlayers('noCommits', clienttranslate('${player_name} commits no forces'), array(
+            'player_id' => $player_id,
+            'player_name' => self::getActivePlayerName(),
+            'preserve' => ['player_id'],
+        ));
     }
 
     /**
@@ -1376,6 +1382,7 @@ class Perikles extends Table
         $attacker = $location['attacker'];
         $defender = $location['defender'];
         $slot = $location['slot'];
+        throw new BgaUserException("Battle of $battle - not implemented yet");
 
         $players = self::loadPlayersBasicInfos();
         self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
@@ -1510,6 +1517,7 @@ class Perikles extends Table
             // does this player actually still have forces to send?
             $counters = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE location=$player_id");
             if (empty($counters)) {
+                $this->noCommitUnits($player_id);
                 $state = "nextPlayer";
             }
         }
