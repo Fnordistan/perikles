@@ -159,6 +159,14 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stResolveBattles",
+        "transitions" => array( "" => 77 )
+    ),
+
+    77 => array(
+        "name" => "debugstate",
+        "description" => "",
+        "type" => "game",
+        "action" => "stDebug",
         "transitions" => array( "" => END_TURN )
     ),
 

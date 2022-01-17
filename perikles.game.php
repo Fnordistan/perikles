@@ -1376,26 +1376,76 @@ class Perikles extends Table
      * Resolve each battle.
      */
     function resolveBattle($location) {
+        $attacker = $location['attacker'];
+        $defender = $location['defender'];
+
+        if ($attacker == null || $defender == null) {
+            if ($attacker == null && $defender == null) {
+                $this->noBattle($location);
+            } else {
+                $this->uncontestedBattle($location);
+            }
+        } else {
+            $id = $location['id'];
+            $slot = $location['slot'];
+            $battle = $location['battle'];
+            $city = $location['city'];
+            $players = self::loadPlayersBasicInfos();
+            self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
+                'i18n' => ['location_name'],
+                'attacker' => $attacker,
+                'defender' => $defender,
+                'city' => $city,
+                'attacker_name' => $players[$attacker]['player_name'],
+                'defender_name' => $players[$defender]['player_name'],
+                'location_name' => $this->locations[$battle]['name'],
+                'preserve' => ['attacker', 'defender', 'city'],
+            ));
+        }
+    }
+
+    /**
+     * When there are no forces on either side at a city tile.
+     * According to Martin Wallace, should almost never happen!
+     * https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
+     */
+    function noBattle($location) {
+        $city = $location['city'];
+        $battle = $location['battle'];
+        self::notifyAllPlayers('noBattle', clienttranslate('No battle at ${location_name}'), array(
+            'i18n' => ['location_name'],
+            'city' => $city,
+            'location_name' => $this->locations[$battle]['name'],
+            'preserve' => ['city'],
+        ));
+    }
+
+    /**
+     * Only one side came to the party.
+     */
+    function uncontestedBattle($location) {
         $id = $location['id'];
         $battle = $location['battle'];
         $city = $location['city'];
         $attacker = $location['attacker'];
         $defender = $location['defender'];
         $slot = $location['slot'];
-        throw new BgaUserException("Battle of $battle - not implemented yet");
+        // should be null attacker or defender but not both
+        $noattacker = ($attacker == null);
 
+        $role = $noattacker ? clienttranslate("Attacker") : clienttranslate("Defender");
+        $player_id = $noattacker ? $defender : $attacker;
         $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
-            'i18n' => ['location_name'],
-            'attacker' => $attacker,
-            'defender' => $defender,
-            'city' => $city,
-            'attacker_name' => $players[$attacker]['player_name'],
-            'defender_name' => $players[$defender]['player_name'],
-            'location_name' => $this->locations[$location]['name'],
-            'preserve' => ['attacker', 'defender'. 'city'],
-        ));
 
+        self::notifyAllPlayers('winBattle', clienttranslate('${player_name} (${role}) wins ${location_name} without a battle'), array(
+            'i18n' => ['location_name', 'role'],
+            'city' => $city,
+            'role' => $role,
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'location_name' => $this->locations[$battle]['name'],
+            'preserve' => ['player_id', 'city'],
+        ));
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1665,6 +1715,10 @@ class Perikles extends Table
             $this->resolveBattle($battle);
         }
         $this->gamestate->nextState();
+    }
+
+    function stDebug() {
+        throw new BgaUserException("Implement battles not finished yet");
     }
 
     /**
