@@ -58,28 +58,28 @@ const PLAYER_COLORS = {
 const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;';
 
 // row,column
-const BATTLES = {
-    "amphipolis" : {xy: [1,1], location: "athens"},
-    "lesbos" : {xy: [1,2], location: "athens"},
-    "plataea" :  {xy: [1,3], location: "athens"},
-    "naupactus" : {xy: [1,4], location: "athens"},
-    "potidea" : {xy: [1,5], location: "athens"},
-    "acarnania" : {xy: [1,6], location: "athens"},
-    "attica" : {xy: [1,7], location: "athens"},
-    "melos" : {xy: [2,1], location: "sparta"},
-    "epidaurus" : {xy: [2,2], location: "sparta"},
-    "pylos" : {xy: [2,3], location: "sparta"},
-    "sicily" : {xy: [2,4], location: "sparta"},
-    "cephallenia" : {xy: [2,5], location: "sparta"},
-    "cythera" : {xy: [2,6], location: "sparta"},
-    "spartolus" : {xy: [2,7], location: "sparta"},
-    "megara" : {xy: [3,1], location: "megara"},
-    "mantinea" : {xy: [3,2], location: "argos"},
-    "delium" : {xy: [3,3], location: "thebes"},
-    "aetolia" : {xy: [3,4], location: "thebes"},
-    "corcyra" : {xy: [3,5], location: "corinth"},
-    "leucas" : {xy: [3,6], location: "corinth"},
-    "solygeia" : {xy: [3,7], location: "corinth"},
+const LOCATION_TILES = {
+    "amphipolis" : {xy: [1,1], city: "athens", "battle": "TH", "vp": 6, "bonus": "dh"},
+    "lesbos" : {xy: [1,2], city: "athens", "battle": "HT", "vp": 4, "bonus": "aht"},
+    "plataea" :  {xy: [1,3], city: "athens", "battle": "H", "vp": 4, "bonus": "dh"},
+    "naupactus" : {xy: [1,4], city: "athens", "battle": "TH", "vp": 4, "bonus": null},
+    "potidea" : {xy: [1,5], city: "athens", "battle": "TH", "vp": 5, "bonus": "ah"},
+    "acarnania" : {xy: [1,6], city: "athens", "battle": "TH", "vp": 3, "bonus": "dh"},
+    "attica" : {xy: [1,7], city: "athens", "battle": "H", "vp": 4, "bonus": null},
+    "melos" : {xy: [2,1], city: "sparta", "battle": "HT", "vp": 3, "bonus": "dht"},
+    "epidaurus" : {xy: [2,2], city: "sparta", "battle": "TH", "vp": 4, "bonus": null},
+    "pylos" : {xy: [2,3], city: "sparta", "battle": "TH", "vp": 4, "bonus": null},
+    "sicily" : {xy: [2,4], city: "sparta", "battle": "TH", "vp": 7, "bonus": "dht"},
+    "cephallenia" : {xy: [2,5], city: "sparta", "battle": "HT", "vp": 4, "bonus": null},
+    "cythera" : {xy: [2,6], city: "sparta", "battle": "HT", "vp": 3, "bonus": null},
+    "spartolus" : {xy: [2,7], city: "sparta", "battle": "TH", "vp": 4, "bonus": "ah"},
+    "megara" : {xy: [3,1], city: "megara", "battle": "TH", "vp": 5, "bonus": null},
+    "mantinea" : {xy: [3,2], city: "argos", "battle": "H", "vp": 5, "bonus": null},
+    "delium" : {xy: [3,3], city: "thebes", "battle": "TH", "vp": 5, "bonus": null},
+    "aetolia" : {xy: [3,4], city: "thebes", "battle": "TH", "vp": 3, "bonus": null},
+    "corcyra" : {xy: [3,5], city: "corinth", "battle": "HT", "vp": 3, "bonus": "aht"},
+    "leucas" : {xy: [3,6], city: "corinth", "battle": "HT", "vp": 4, "bonus": null},
+    "solygeia" : {xy: [3,7], city: "corinth", "battle": "HT", "vp": 4, "bonus": null},
 }
 
 // match MAIN/ALLY ATT/DEF constants in php
@@ -182,7 +182,6 @@ function (dojo, declare) {
          * @returns 
          */
         createSpecialTileTooltip: function(player, special) {
-            
             const TITLES = {
                 'perikles': _("PERIKLES"),
                 'persianfleet': _("PERSIAN FLEET"),
@@ -208,6 +207,85 @@ function (dojo, declare) {
             const text = DESC[special];
             const tt = this.format_block('jstpl_special_tt', {header: title, special: special, text: text, scale: 0.5});
             return tt;
+        },
+
+        /**
+         * Create the HTML tooltip for Location cards.
+         */
+        createLocationTileTooltip: function(location) {
+            const battlename = this.getBattleNameTr(location);
+
+            let desc = this.createBattleDescription(LOCATION_TILES[location].battle);
+            desc += '<br/>';
+            desc += this.createBonusDescription(LOCATION_TILES[location].bonus);
+            desc += '<br/>';
+            let vpstr = _("${vp} Victory Points");
+            vpstr = vpstr.replace('${vp}', LOCATION_TILES[location].vp);
+            desc += vpstr;
+            const city = LOCATION_TILES[location].city;
+            const x = -1 * (LOCATION_TILES[location].xy[1]-1) * this.location_w * this.location_s;
+            const y = -1 * (LOCATION_TILES[location].xy[0]-1) * this.location_h * this.location_s;
+
+            let defendingcity = _("Defender: ${cityname}");
+            defendingcity = defendingcity.replace('${cityname}', this.getCityNameTr(city));
+            const tt = this.format_block('jstpl_location_tt', {defender: defendingcity, battle: battlename, text: desc, x: x, y: y});
+            return tt;
+        },
+
+        /**
+         * Translated battle description string
+         * @param {string} battle 
+         */
+        createBattleDescription: function(battle) {
+            let battlestr = _("Order of Battle: ${units}");
+            const trireme = _("Triremes");
+            const hoplite = _("Hoplites");
+            const desc = {
+                "H": hoplite,
+                "HT": hoplite+'&#10142;'+trireme,
+                "TH": trireme+'&#10142;'+hoplite,
+            };
+            battlestr = battlestr.replace('${units}', desc[battle]);
+            return battlestr;
+        },
+
+        /**
+         * Translated string describing location tile native attackers/defenders.
+         * @param {string} bonus 
+         */
+        createBonusDescription: function(bonus) {
+            let desc = "";
+            if (bonus != null) {
+                const attacker = _("Attacker");
+                const defender = _("Defender");
+                const both = _("Hoplites and Triremes");
+                const hoplite = _("Hoplites");
+                let bonusstr = _("${combatant} adds 1 to ${unit} strength");
+                let combatant = "";
+                let units = "";
+                switch (bonus) {
+                    case "ah":
+                        combatant = attacker;
+                        units = hoplite;
+                        break;
+                    case "dh":
+                        combatant = defender;
+                        units = hoplite;
+                        break;
+                    case "aht":
+                        combatant = attacker;
+                        units = both;
+                        break;
+                    case "dht":
+                        combatant = defender;
+                        units = both;
+                        break;
+               }
+               bonusstr = bonusstr.replace('${combatant}', combatant);
+               bonusstr = bonusstr.replace('${unit}', units);
+               desc = bonusstr;
+            }
+            return desc;
         },
 
         /**
@@ -425,7 +503,9 @@ function (dojo, declare) {
                 const slot = loc['slot'];
                 const battle = loc['location'];
                 const loc_tile = this.createLocationTile(battle, 0)
-                dojo.place(loc_tile, $("location_"+slot));
+                const tile = dojo.place(loc_tile, $("location_"+slot));
+                const lochtml = this.createLocationTileTooltip(battle);
+                this.addTooltipHtml(tile.id, lochtml, '');
             }
         },
 
@@ -436,8 +516,8 @@ function (dojo, declare) {
          * @returns html div
          */
         createLocationTile: function(location, m) {
-            const x = -1 * (BATTLES[location].xy[1]-1) * this.location_w * this.location_s;
-            const y = -1 * (BATTLES[location].xy[0]-1) * this.location_h * this.location_s;
+            const x = -1 * (LOCATION_TILES[location].xy[1]-1) * this.location_w * this.location_s;
+            const y = -1 * (LOCATION_TILES[location].xy[0]-1) * this.location_h * this.location_s;
             const loc_html = this.format_block('jstpl_location_tile', {id: location, x: x, y: y, m: m});
             return loc_html;
         },
@@ -549,7 +629,7 @@ function (dojo, declare) {
                 } else if (location == DEAD_POOL) {
                     // in the dead pool
 
-                } else if (Object.keys(BATTLES).includes(location)) {
+                } else if (Object.keys(LOCATION_TILES).includes(location)) {
                     // sent to a battle
                     const slotid = $(location+"_tile").parentNode.id;
                     const slot = slotid[slotid.length-1];
@@ -1717,7 +1797,7 @@ function (dojo, declare) {
                     dlg.setAttribute("data-location", loc);
                     dlg.setAttribute("data-side", side);
                     banner_txt = side == "attack" ? attack_str : defend_str;
-                    banner_txt = banner_txt.replace('${location}', '<span style="color: var(--color_'+BATTLES[loc].location +');">'+this.getBattleNameTr(loc)+'</span>');
+                    banner_txt = banner_txt.replace('${location}', '<span style="color: var(--color_'+LOCATION_TILES[loc].city +');">'+this.getBattleNameTr(loc)+'</span>');
                     banner_txt = banner_txt.replace('${unit}', unit_str);
                 }
                 if (banner_txt) {
@@ -1806,7 +1886,7 @@ function (dojo, declare) {
                 loc_html += '<div style="display: flex; flex-direction: row; align-items: center;">';
                 const battle = loc.id.split('_')[0];
                 // can't attack own city
-                const battle_city = BATTLES[battle].location;
+                const battle_city = LOCATION_TILES[battle].city;
                 if (unit_city != battle_city && this.canAttack(battle_city)) {
                     loc_html += '<div id="attack_'+battle+'" class="prk_battle_icon prk_sword"></div>';
                 } else {

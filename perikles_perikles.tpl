@@ -119,6 +119,16 @@ const jstpl_influence_tt = '<div style="display: flex; flex-direction: row;">\
 
 const jstpl_influence_cards = '<div id="${id}_player_cards" class="prk_player_infl" style="--scale: ${scale};"></div>';
 
+const jstpl_location_tt = '<div style="display: flex; flex-direction: row;">\
+                                <div class="prk_location_tile" style="background-position: ${x}px ${y}px; margin: 5px;"></div>\
+                                <div style="flex: 1;">\
+                                    <h1 style="font-family: Bodoni Moda;">${battle}</h1>\
+                                    <h2>${defender}</h2>\
+                                    <span style="font-size: 22px;">${text}</span>\
+                                </div>\
+                            </div>';
+
+
 </script>  
 
 {OVERALL_GAME_FOOTER}
