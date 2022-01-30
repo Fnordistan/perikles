@@ -19,6 +19,7 @@
 
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
+//  MARTIN WALLACE'S ERRATA ON BGG: https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
 
 define("INFLUENCE", "influence");
 define("CANDIDATE", "candidate");
@@ -26,6 +27,7 @@ define("ASSASSIN", "assassin");
 define("DECK", "deck");
 define("DISCARD", "discard");
 define("BOARD", "board");
+define("UNCLAIMED", "unclaimed");
 define("HOPLITE", "hoplite");
 define("TRIREME", "trireme");
 define("PERSIA", "persia");
@@ -289,7 +291,7 @@ class Perikles extends Table
         $result['influencetiles'] = $this->getInfluenceDisplay();
         $result['decksize'] = $this->influence_tiles->countCardInLocation(DECK);
 
-        $result['locationtiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
+        $result['locationtiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg battle, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location !='".DECK."'");
         
         $result['specialtiles'] = $this->getSpecialTiles($current_player_id);
         $result['influencecubes'] = $this->getInfluenceCubes();
@@ -674,6 +676,15 @@ class Perikles extends Table
         ));
     }
 
+
+    /**
+     * Move a tile to the unclaimed pile
+     */
+    function unclaimedTile($id) {
+        $this->location_tiles->insertCardOnExtremePosition($id, UNCLAIMED, true);
+        self::DbQuery("UPDATE LOCATION SET attacker=NULL,defender=NULL,permissions=NULL WHERE card_id=$id");
+    }
+
     /**
      * As Leader of a city, player takes all military units.
      */
@@ -689,6 +700,23 @@ class Perikles extends Table
             'city_name' => $this->cities[$city]['name'],
             'military' => $units,
             'preserve' => ['player_id', 'city'],
+        ));
+    }
+
+    /**
+     * Move all military units from a battle location back to the city where it belongs
+     */
+    function returnMilitaryUnits($location) {
+        $battle = $location['battle'];
+        $slot = $location['slot'];
+        $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE location=$battle");
+        foreach($units as $unit) {
+            $id = $unit['id'];
+            $city = $unit['city'];
+            self::DbQuery("UPDATE MILITARY SET location=\"$city\", place=0 WHERE id=$id");
+        }
+        self::notifyAllPlayers("returnMilitary", "", array(
+            'slot' => $slot
         ));
     }
 
@@ -1386,9 +1414,11 @@ class Perikles extends Table
                 $this->uncontestedBattle($location);
             }
         } else {
+            // per Martin Wallace: if both sides fight the first round, but no one sent units to the second round of battle,
+            // then resolve the battle to see who loses a unit, but no one gets the tile, but the defender gets 2 cubes.
             $id = $location['id'];
-            $slot = $location['slot'];
             $battle = $location['battle'];
+            $slot = $location['slot'];
             $city = $location['city'];
             $players = self::loadPlayersBasicInfos();
             self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
@@ -1402,26 +1432,35 @@ class Perikles extends Table
                 'preserve' => ['attacker', 'defender', 'city'],
             ));
         }
+        $this->returnMilitaryUnits($location);
     }
 
     /**
      * When there are no forces on either side at a city tile.
      * According to Martin Wallace, should almost never happen!
+     * Neither side gets a tile or any cubes.
      * https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
      */
     function noBattle($location) {
-        $city = $location['city'];
         $battle = $location['battle'];
-        self::notifyAllPlayers('noBattle', clienttranslate('No battle at ${location_name}'), array(
+        self::notifyAllPlayers('unclaimedTile', clienttranslate('No battle at ${location_name}; no one claims the tile'), array(
             'i18n' => ['location_name'],
-            'city' => $city,
+            'location' => $battle,
             'location_name' => $this->locations[$battle]['name'],
-            'preserve' => ['city'],
         ));
+        $this->unclaimedTile($location['id']);
     }
 
     /**
      * Only one side came to the party.
+     * Per the rules:
+     *  1. If no one attacks the city, the defender does not get the tile, but gets 2 cubes.
+     * According to Martin Wallace: 
+     *  If there are no units in the second round of combat:
+     *      a) If the attacker was the only one to send units, but not to the second round of combat,
+     *      then no one gets the tile, and defender does not get cubes.
+     *      b) If only the defender has units in the first round, and no one has units in the second round,
+     *      then no one gets the tile, and the defeder gets 2 cubes.
      */
     function uncontestedBattle($location) {
         $id = $location['id'];
@@ -1433,7 +1472,7 @@ class Perikles extends Table
         // should be null attacker or defender but not both
         $noattacker = ($attacker == null);
 
-        $role = $noattacker ? clienttranslate("Attacker") : clienttranslate("Defender");
+        $role = $noattacker ? clienttranslate("Defender") : clienttranslate("Attacker");
         $player_id = $noattacker ? $defender : $attacker;
         $players = self::loadPlayersBasicInfos();
 
@@ -1715,10 +1754,6 @@ class Perikles extends Table
             $this->resolveBattle($battle);
         }
         $this->gamestate->nextState();
-    }
-
-    function stDebug() {
-        throw new BgaUserException("Implement battles not finished yet");
     }
 
     /**

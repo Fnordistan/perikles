@@ -501,11 +501,19 @@ function (dojo, declare) {
         setupLocationTiles: function(locationtiles) {
             for (const loc of locationtiles) {
                 const slot = loc['slot'];
-                const battle = loc['location'];
-                const loc_tile = this.createLocationTile(battle, 0)
-                const tile = dojo.place(loc_tile, $("location_"+slot));
-                const lochtml = this.createLocationTileTooltip(battle);
-                this.addTooltipHtml(tile.id, lochtml, '');
+                const battle = loc['battle'];
+                const location = loc['loc'];
+                const loc_tile = this.createLocationTile(battle, 0);
+                if (location == "board") {
+                    const tile = dojo.place(loc_tile, $("location_"+slot));
+                    const lochtml = this.createLocationTileTooltip(battle);
+                    this.addTooltipHtml(tile.id, lochtml, '');
+                } else if (location == "unclaimed") {
+                    const tile = dojo.place(loc_tile, $("unclaimed_tiles"));
+
+                } else {
+                    // player claimed
+                }
             }
         },
 
@@ -2046,8 +2054,10 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
             dojo.subscribe( 'newInfluence', this, "notif_newInfluence");
             dojo.subscribe( 'newLocations', this, "notif_newLocations");
+            dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
+            dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
         },
-        
+
         // Notification handlers
 
         /**
@@ -2252,5 +2262,27 @@ function (dojo, declare) {
             this.setupLocationTiles(locations);
         },
 
+        /**
+         * When a Location tile is not claimed after a battle.
+         * @param {Object} notif 
+         */
+        notif_unclaimedTile: function(notif) {
+            const loc = notif.args.location;
+            const tile = $(loc+'_tile');
+            debugger;
+            this.slideToObjectRelative(tile.id, 'unclaimed', 500, 0);
+        },
+
+        /**
+         * Return military from a battle to cities
+         * @param {Object} notif 
+         */
+        notif_returnMilitary: function(notif) {
+            slot = notif.args.slot;
+            const counters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
+            [...counters].forEach(c => {
+                const id = c.id;
+            });
+        },
    });
 });

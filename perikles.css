@@ -531,6 +531,7 @@
 .prk_hdr {
     font-family: 'ThrumsSerifRegular';
     font-style: normal;
+    margin: 5px 10px;
     font-weight: 700;
     color: #767060;
     text-align: center;
@@ -606,10 +607,28 @@
     background-color: #8F8C7E;
 }
 
+#unclaimed {
+    min-width: max-content;
+    max-height: calc(var(--location_h) + 10px);
+    border: 3px ridge gray;
+    background-image: linear-gradient(to right, #CBA9C2, #CEE0E2);
+}
+
+#unclaimed_tiles {
+    display: flex;
+    flex-direction: row;
+    margin: 0 5px;
+    padding: 5px;
+}
+
+#unclaimed_hdr {
+    color: white;
+}
+
 #military_board {
     min-height: fit-content;
     margin: 5px;
-    border: 3px ridge #8F8C7E;
+    border: 3px ridge #1E131B;
     background-color: lightgrey;
     overflow: auto;
     display: none;

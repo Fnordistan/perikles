@@ -27,15 +27,17 @@
         </div>
         <div id="location_area">
             <!-- BEGIN LOCATION_BLOCK -->
-            <div id="location_{LOC}" class="prk_location_slot" style="top: {T}px; left: {L}px;"></div>
-            <div id="battle_{LOC}_hoplite_att" class="prk_battle" style="top: {T}px; left: {LA}px;"></div>
-            <div id="battle_{LOC}_hoplite_att_ally" class="prk_battle" style="top: {T}px; left: {LAA}px;"></div>
-            <div id="battle_{LOC}_trireme_att" class="prk_battle" style="top: {TT}px; left: {LA}px;"></div>
-            <div id="battle_{LOC}_trireme_att_ally" class="prk_battle" style="top: {TT}px; left: {LAA}px;"></div>
-            <div id="battle_{LOC}_hoplite_def" class="prk_battle" style="top: {T}px; left: {LD}px;"></div>
-            <div id="battle_{LOC}_hoplite_def_ally" class="prk_battle" style="top: {T}px; left: {LDA}px;"></div>
-            <div id="battle_{LOC}_trireme_def" class="prk_battle" style="top: {TT}px; left: {LD}px;"></div>
-            <div id="battle_{LOC}_trireme_def_ally" class="prk_battle" style="top: {TT}px; left: {LDA}px;"></div>
+            <div id="battle_zone_{LOC}">
+                <div id="location_{LOC}" class="prk_location_slot" style="top: {T}px; left: {L}px;"></div>
+                <div id="battle_{LOC}_hoplite_att" class="prk_battle" style="top: {T}px; left: {LA}px;"></div>
+                <div id="battle_{LOC}_hoplite_att_ally" class="prk_battle" style="top: {T}px; left: {LAA}px;"></div>
+                <div id="battle_{LOC}_trireme_att" class="prk_battle" style="top: {TT}px; left: {LA}px;"></div>
+                <div id="battle_{LOC}_trireme_att_ally" class="prk_battle" style="top: {TT}px; left: {LAA}px;"></div>
+                <div id="battle_{LOC}_hoplite_def" class="prk_battle" style="top: {T}px; left: {LD}px;"></div>
+                <div id="battle_{LOC}_hoplite_def_ally" class="prk_battle" style="top: {T}px; left: {LDA}px;"></div>
+                <div id="battle_{LOC}_trireme_def" class="prk_battle" style="top: {TT}px; left: {LD}px;"></div>
+                <div id="battle_{LOC}_trireme_def_ally" class="prk_battle" style="top: {TT}px; left: {LDA}px;"></div>
+            </div>
             <!-- END LOCATION_BLOCK -->
         </div>
 
@@ -60,6 +62,10 @@
     </div>
     <div id="deadpool">
         <h1 class="prk_hdr">{DEADPOOL}</h1>
+    </div>
+    <div id="unclaimed">
+        <h1 class="prk_hdr" id="unclaimed_hdr">{UNCLAIMED}</h1>
+        <div id="unclaimed_tiles"></div>
     </div>
 </div>
 

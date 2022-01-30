@@ -164,9 +164,10 @@ $machinestates = array(
 
     77 => array(
         "name" => "debugstate",
-        "description" => "",
-        "type" => "game",
-        "action" => "stDebug",
+    	"description" => clienttranslate('${actplayer} is in debug state'),
+    	"descriptionmyturn" => clienttranslate('You are in debug state'),
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "rollDice" ),
         "transitions" => array( "" => END_TURN )
     ),
 
