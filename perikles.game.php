@@ -1446,7 +1446,7 @@ class Perikles extends Table
      *      a) If the attacker was the only one to send units, but not to the second round of combat,
      *      then no one gets the tile, and defender does not get cubes.
      *      b) If only the defender has units in the first round, and no one has units in the second round,
-     *      then no one gets the tile, and the defeder gets 2 cubes.
+     *      then no one gets the tile, and the defender gets 2 cubes.
      */
     function uncontestedBattle($location) {
         $id = $location['id'];
@@ -1462,15 +1462,28 @@ class Perikles extends Table
         $player_id = $noattacker ? $defender : $attacker;
         $players = self::loadPlayersBasicInfos();
 
-        self::notifyAllPlayers('winBattle', clienttranslate('${player_name} (${role}) wins ${location_name} without a battle'), array(
-            'i18n' => ['location_name', 'role'],
-            'city' => $city,
-            'role' => $role,
-            'player_id' => $player_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'location_name' => $this->locations[$battle]['name'],
-            'preserve' => ['player_id', 'city'],
-        ));
+        // am I the defender?
+        if ($player_id ==$defender) {
+            // don't win the tile, but get two cubes
+            self::notifyAllPlayers('unclaimedTile', clienttranslate('No battle at ${location_name}; no one claims the tile'), array(
+                'i18n' => ['location_name'],
+                'location' => $battle,
+                'location_name' => $this->locations[$battle]['name'],
+            ));
+            $this->addInfluenceToCity($city, $player_id, 2);
+        } else {
+            // attacker with no defenders
+            
+            self::notifyAllPlayers('winBattle', clienttranslate('${player_name} (${role}) wins ${location_name} without a battle'), array(
+                'i18n' => ['location_name', 'role'],
+                'city' => $city,
+                'role' => $role,
+                'player_id' => $player_id,
+                'player_name' => $players[$player_id]['player_name'],
+                'location_name' => $this->locations[$battle]['name'],
+                'preserve' => ['player_id', 'city'],
+            ));
+        }
     }
 
     /**
@@ -1497,6 +1510,12 @@ class Perikles extends Table
             'preserve' => ['attacker', 'defender', 'city'],
         ));
     }
+
+
+    function battleRound($type) {
+
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments

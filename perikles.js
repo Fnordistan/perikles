@@ -659,10 +659,10 @@ function (dojo, declare) {
 
         /**
          * Put a military unit on a city stack.
-         * @param {*} city 
-         * @param {*} unit 
-         * @param {*} strength 
-         * @param {*} id 
+         * @param {string} city 
+         * @param {string} unit 
+         * @param {string} strength 
+         * @param {string} id 
          */
         placeCityStack: function(city, unit, strength, id) {
             const city_military = $(city+"_military");
@@ -2295,7 +2295,7 @@ function (dojo, declare) {
             const counters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...counters].forEach(c => {
                 const counter_name = c.id;
-                const [city, unit, strength, ctr, id] = counter_name.split('_');
+                const [city, unit, strength, _, id] = counter_name.split('_');
                 const city_military = city+"_military";
                 this.slideToObjectAndDestroy(c, city_military, 1000, 500);
                 this.placeCityStack(city, unit, strength, id);
