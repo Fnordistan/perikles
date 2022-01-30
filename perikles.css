@@ -603,13 +603,14 @@
     min-width: max-content;
     margin: 0 5px;
     padding: 5px;
-    border: 3px ridge #8F8C7E;
+    border: 3px ridge #44443e;
     background-color: #8F8C7E;
 }
 
 #unclaimed {
+    height: fit-content;
     min-width: max-content;
-    max-height: calc(var(--location_h) + 10px);
+    min-height: calc(var(--location_h) + 10px);
     border: 3px ridge gray;
     background-image: linear-gradient(to right, #CBA9C2, #CEE0E2);
 }
@@ -618,7 +619,12 @@
     display: flex;
     flex-direction: row;
     margin: 0 5px;
+    width: 100%;
     padding: 5px;
+}
+
+#unclaimed_tiles > div {
+    margin: 5px;
 }
 
 #unclaimed_hdr {

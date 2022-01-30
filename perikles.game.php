@@ -709,7 +709,7 @@ class Perikles extends Table
     function returnMilitaryUnits($location) {
         $battle = $location['battle'];
         $slot = $location['slot'];
-        $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE location=$battle");
+        $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE location=\"$battle\"");
         foreach($units as $unit) {
             $id = $unit['id'];
             $city = $unit['city'];
@@ -723,22 +723,24 @@ class Perikles extends Table
     /**
      * Assumes all checks have been done. Send a military unit to a battle location.
      */
-    function sendToBattle($player_id, $id, $location, $place) {
+    function sendToBattle($player_id, $mil, $place) {
+        $id = $mil['id'];
+        $battle = $mil['battle'];
         $players = self::loadPlayersBasicInfos();
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
 
-        self::DbQuery("UPDATE MILITARY SET location=\"$location\", place=$place WHERE id=$id");
+        self::DbQuery("UPDATE MILITARY SET location=\"$battle\", place=$place WHERE id=$id");
 
         $role = $this->getRoleName($place);
 
-        $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
+        $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$battle\"");
 
         foreach (array_keys($players) as $pid) {
             self::notifyPlayer($pid, "sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
                 'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
-                'unit' => ($pid == $player_id) ? $id : 0,
+                'unit' => ($pid == $player_id) ? $counter['id'] : 0,
                 'type' => $counter['type'],
                 'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
                 'strength' => ($pid == $player_id) ? $counter['strength'] : 0,
@@ -746,9 +748,9 @@ class Perikles extends Table
                 'city_name' => $this->cities[$counter['city']]['name'],
                 'place' => $place,
                 'battlerole' => $role,
-                'location' => $location,
+                'location' => $battle,
                 'slot' => $slot,
-                'location_name' => $this->locations[$location]['name'],
+                'location_name' => $this->locations[$battle]['name'],
                 'preserve' => ['city', 'location'],
             ));
         }
@@ -1391,11 +1393,11 @@ class Perikles extends Table
                     // I became main
                     $place = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
                     $col = $attdef == "attack" ? "attacker" : "defender";
-                    self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$location\"");
+                    self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$battle\"");
                 } else {
                     $place = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
                 }
-                $this->sendToBattle($player_id, $f['id'], $battle, $place);
+                $this->sendToBattle($player_id, $f, $place);
             }
         }
     }
@@ -1414,23 +1416,7 @@ class Perikles extends Table
                 $this->uncontestedBattle($location);
             }
         } else {
-            // per Martin Wallace: if both sides fight the first round, but no one sent units to the second round of battle,
-            // then resolve the battle to see who loses a unit, but no one gets the tile, but the defender gets 2 cubes.
-            $id = $location['id'];
-            $battle = $location['battle'];
-            $slot = $location['slot'];
-            $city = $location['city'];
-            $players = self::loadPlayersBasicInfos();
-            self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
-                'i18n' => ['location_name'],
-                'attacker' => $attacker,
-                'defender' => $defender,
-                'city' => $city,
-                'attacker_name' => $players[$attacker]['player_name'],
-                'defender_name' => $players[$defender]['player_name'],
-                'location_name' => $this->locations[$battle]['name'],
-                'preserve' => ['attacker', 'defender', 'city'],
-            ));
+            $this->doBattle($location);
         }
         $this->returnMilitaryUnits($location);
     }
@@ -1484,6 +1470,31 @@ class Perikles extends Table
             'player_name' => $players[$player_id]['player_name'],
             'location_name' => $this->locations[$battle]['name'],
             'preserve' => ['player_id', 'city'],
+        ));
+    }
+
+    /**
+     * There are forces on both sides.
+     */
+    function doBattle($location) {
+        $attacker = $location['attacker'];
+        $defender = $location['defender'];
+        // per Martin Wallace: if both sides fight the first round, but no one sent units to the second round of battle,
+        // then resolve the battle to see who loses a unit, but no one gets the tile, but the defender gets 2 cubes.
+        $id = $location['id'];
+        $battle = $location['battle'];
+        $slot = $location['slot'];
+        $city = $location['city'];
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
+            'i18n' => ['location_name'],
+            'attacker' => $attacker,
+            'defender' => $defender,
+            'city' => $city,
+            'attacker_name' => $players[$attacker]['player_name'],
+            'defender_name' => $players[$defender]['player_name'],
+            'location_name' => $this->locations[$battle]['name'],
+            'preserve' => ['attacker', 'defender', 'city'],
         ));
     }
 
@@ -1749,7 +1760,7 @@ class Perikles extends Table
      * Do the battles.
      */
     function stResolveBattles() {
-        $battles = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg battle, card_location_arg slot, attacker, defender FROM LOCATION WHERE card_location = \"board\" ORDER BY card_location_arg ASC");
+        $battles = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg battle, card_location_arg slot, attacker, defender FROM LOCATION WHERE card_location = \"".BOARD."\" ORDER BY card_location_arg ASC");
         foreach($battles as $battle) {
             $this->resolveBattle($battle);
         }

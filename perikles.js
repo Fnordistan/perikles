@@ -503,14 +503,14 @@ function (dojo, declare) {
                 const slot = loc['slot'];
                 const battle = loc['battle'];
                 const location = loc['loc'];
-                const loc_tile = this.createLocationTile(battle, 0);
+                const loc_html = this.createLocationTile(battle, 0);
                 if (location == "board") {
-                    const tile = dojo.place(loc_tile, $("location_"+slot));
+                    const tile = dojo.place(loc_html, $("location_"+slot));
                     const lochtml = this.createLocationTileTooltip(battle);
                     this.addTooltipHtml(tile.id, lochtml, '');
                 } else if (location == "unclaimed") {
-                    const tile = dojo.place(loc_tile, $("unclaimed_tiles"));
-
+                    const tile = dojo.place(loc_html, $("unclaimed_tiles"));
+                    tile.style.margin = null;
                 } else {
                     // player claimed
                 }
@@ -629,11 +629,7 @@ function (dojo, declare) {
                 let [xoff, yoff] = this.counterOffsets(city, strength, unit);
                 if (location == city && mil['place'] == 0) {
                     // in a city stack
-                    const city_military = $(city+"_military");
-                    const ct = city_military.childElementCount;
-                    const top = (unit == TRIREME) ? MIL_DIM.s : 0;
-                    const counter = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: 2*ct, t: top});
-                    dojo.place(counter, city_military);
+                    this.placeCityStack(city, unit, strength, mil['id']);
                 } else if (location == DEAD_POOL) {
                     // in the dead pool
 
@@ -659,6 +655,22 @@ function (dojo, declare) {
                     }
                 }
             }
+        },
+
+        /**
+         * Put a military unit on a city stack.
+         * @param {*} city 
+         * @param {*} unit 
+         * @param {*} strength 
+         * @param {*} id 
+         */
+        placeCityStack: function(city, unit, strength, id) {
+            const city_military = $(city+"_military");
+            const ct = city_military.childElementCount;
+            const top = (unit == TRIREME) ? MIL_DIM.s : 0;
+            const [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            const counter = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: id, x: xoff, y: yoff, m: 2*ct, t: top});
+            dojo.place(counter, city_military);
         },
 
         /**
@@ -1048,7 +1060,7 @@ function (dojo, declare) {
             let [xoff, yoff] = this.counterOffsets(city, strength, unit);
             const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
             const stackct = $(battlepos).childElementCount;
-            const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 8*stackct, t: 0});
+            const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+id, x: xoff, y: yoff, m: 8*stackct, t: 0});
             const milzone = $(city+"_military");
             const counter = dojo.place(counter_html, milzone);
             this.slide(counter, battlepos, {from: milzone});
@@ -2269,8 +2281,9 @@ function (dojo, declare) {
         notif_unclaimedTile: function(notif) {
             const loc = notif.args.location;
             const tile = $(loc+'_tile');
-            debugger;
-            this.slideToObjectRelative(tile.id, 'unclaimed', 500, 0);
+            // clear margin before putting in box
+            tile.style.margin = null;
+            this.slideToObjectRelative(tile.id, 'unclaimed_tiles', 500, 0);
         },
 
         /**
@@ -2281,7 +2294,11 @@ function (dojo, declare) {
             slot = notif.args.slot;
             const counters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...counters].forEach(c => {
-                const id = c.id;
+                const counter_name = c.id;
+                const [city, unit, strength, ctr, id] = counter_name.split('_');
+                const city_military = city+"_military";
+                this.slideToObjectAndDestroy(c, city_military, 1000, 500);
+                this.placeCityStack(city, unit, strength, id);
             });
         },
    });
