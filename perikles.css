@@ -579,6 +579,14 @@
     transform: translateX(-5px);
 }
 
+.prk_crt {
+    position: absolute;
+    width: 40px;
+    height: 95px;
+    background-color: blue;
+    opacity: 0.5;
+}
+
 /* IDENTITIES */
 
 #periklesboard {
@@ -595,6 +603,14 @@
     background-repeat: no-repeat;
     min-width: 1298px;
     min-height: 1500px;
+}
+
+#crt_table {
+    position: absolute;
+    left: 917px;
+    top: 35px;
+    width: 330px;
+    height: 134px;
 }
 
 #deadpool {

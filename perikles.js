@@ -59,27 +59,27 @@ const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0
 
 // row,column
 const LOCATION_TILES = {
-    "amphipolis" : {xy: [1,1], city: "athens", "battle": "TH", "vp": 6, "bonus": "dh"},
-    "lesbos" : {xy: [1,2], city: "athens", "battle": "HT", "vp": 4, "bonus": "aht"},
-    "plataea" :  {xy: [1,3], city: "athens", "battle": "H", "vp": 4, "bonus": "dh"},
-    "naupactus" : {xy: [1,4], city: "athens", "battle": "TH", "vp": 4, "bonus": null},
-    "potidea" : {xy: [1,5], city: "athens", "battle": "TH", "vp": 5, "bonus": "ah"},
-    "acarnania" : {xy: [1,6], city: "athens", "battle": "TH", "vp": 3, "bonus": "dh"},
-    "attica" : {xy: [1,7], city: "athens", "battle": "H", "vp": 4, "bonus": null},
-    "melos" : {xy: [2,1], city: "sparta", "battle": "HT", "vp": 3, "bonus": "dht"},
-    "epidaurus" : {xy: [2,2], city: "sparta", "battle": "TH", "vp": 4, "bonus": null},
-    "pylos" : {xy: [2,3], city: "sparta", "battle": "TH", "vp": 4, "bonus": null},
-    "sicily" : {xy: [2,4], city: "sparta", "battle": "TH", "vp": 7, "bonus": "dht"},
-    "cephallenia" : {xy: [2,5], city: "sparta", "battle": "HT", "vp": 4, "bonus": null},
-    "cythera" : {xy: [2,6], city: "sparta", "battle": "HT", "vp": 3, "bonus": null},
-    "spartolus" : {xy: [2,7], city: "sparta", "battle": "TH", "vp": 4, "bonus": "ah"},
-    "megara" : {xy: [3,1], city: "megara", "battle": "TH", "vp": 5, "bonus": null},
-    "mantinea" : {xy: [3,2], city: "argos", "battle": "H", "vp": 5, "bonus": null},
-    "delium" : {xy: [3,3], city: "thebes", "battle": "TH", "vp": 5, "bonus": null},
-    "aetolia" : {xy: [3,4], city: "thebes", "battle": "TH", "vp": 3, "bonus": null},
-    "corcyra" : {xy: [3,5], city: "corinth", "battle": "HT", "vp": 3, "bonus": "aht"},
-    "leucas" : {xy: [3,6], city: "corinth", "battle": "HT", "vp": 4, "bonus": null},
-    "solygeia" : {xy: [3,7], city: "corinth", "battle": "HT", "vp": 4, "bonus": null},
+    "amphipolis" : {xy: [1,1], city: "athens", "rounds": "TH", "vp": 6, "intrinsic": "dh"},
+    "lesbos" : {xy: [1,2], city: "athens", "rounds": "HT", "vp": 4, "intrinsic": "aht"},
+    "plataea" :  {xy: [1,3], city: "athens", "rounds": "H", "vp": 4, "intrinsic": "dh"},
+    "naupactus" : {xy: [1,4], city: "athens", "rounds": "TH", "vp": 4, "intrinsic": null},
+    "potidea" : {xy: [1,5], city: "athens", "rounds": "TH", "vp": 5, "intrinsic": "ah"},
+    "acarnania" : {xy: [1,6], city: "athens", "rounds": "TH", "vp": 3, "intrinsic": "dh"},
+    "attica" : {xy: [1,7], city: "athens", "rounds": "H", "vp": 4, "intrinsic": null},
+    "melos" : {xy: [2,1], city: "sparta", "rounds": "HT", "vp": 3, "intrinsic": "dht"},
+    "epidaurus" : {xy: [2,2], city: "sparta", "rounds": "TH", "vp": 4, "intrinsic": null},
+    "pylos" : {xy: [2,3], city: "sparta", "rounds": "TH", "vp": 4, "intrinsic": null},
+    "sicily" : {xy: [2,4], city: "sparta", "rounds": "TH", "vp": 7, "intrinsic": "dht"},
+    "cephallenia" : {xy: [2,5], city: "sparta", "rounds": "HT", "vp": 4, "intrinsic": null},
+    "cythera" : {xy: [2,6], city: "sparta", "rounds": "HT", "vp": 3, "intrinsic": null},
+    "spartolus" : {xy: [2,7], city: "sparta", "rounds": "TH", "vp": 4, "intrinsic": "ah"},
+    "megara" : {xy: [3,1], city: "megara", "rounds": "TH", "vp": 5, "intrinsic": null},
+    "mantinea" : {xy: [3,2], city: "argos", "rounds": "H", "vp": 5, "intrinsic": null},
+    "delium" : {xy: [3,3], city: "thebes", "rounds": "TH", "vp": 5, "intrinsic": null},
+    "aetolia" : {xy: [3,4], city: "thebes", "rounds": "TH", "vp": 3, "intrinsic": null},
+    "corcyra" : {xy: [3,5], city: "corinth", "rounds": "HT", "vp": 3, "intrinsic": "aht"},
+    "leucas" : {xy: [3,6], city: "corinth", "rounds": "HT", "vp": 4, "intrinsic": null},
+    "solygeia" : {xy: [3,7], city: "corinth", "rounds": "HT", "vp": 4, "intrinsic": null},
 }
 
 // match MAIN/ALLY ATT/DEF constants in php
@@ -215,9 +215,9 @@ function (dojo, declare) {
         createLocationTileTooltip: function(location) {
             const battlename = this.getBattleNameTr(location);
 
-            let desc = this.createBattleDescription(LOCATION_TILES[location].battle);
+            let desc = this.createBattleDescription(LOCATION_TILES[location].rounds);
             desc += '<br/>';
-            desc += this.createBonusDescription(LOCATION_TILES[location].bonus);
+            desc += this.createBonusDescription(LOCATION_TILES[location].intrinsic);
             desc += '<br/>';
             let vpstr = _("${vp} Victory Points");
             vpstr = vpstr.replace('${vp}', LOCATION_TILES[location].vp);
@@ -234,9 +234,9 @@ function (dojo, declare) {
 
         /**
          * Translated battle description string
-         * @param {string} battle 
+         * @param {string} rounds TH/HT/H 
          */
-        createBattleDescription: function(battle) {
+        createBattleDescription: function(rounds) {
             let battlestr = _("Order of Battle: ${units}");
             const trireme = _("Triremes");
             const hoplite = _("Hoplites");
@@ -245,17 +245,17 @@ function (dojo, declare) {
                 "HT": hoplite+'&#10142;'+trireme,
                 "TH": trireme+'&#10142;'+hoplite,
             };
-            battlestr = battlestr.replace('${units}', desc[battle]);
+            battlestr = battlestr.replace('${units}', desc[rounds]);
             return battlestr;
         },
 
         /**
          * Translated string describing location tile native attackers/defenders.
-         * @param {string} bonus 
+         * @param {string} intrinsic 
          */
-        createBonusDescription: function(bonus) {
+        createBonusDescription: function(intrinsic) {
             let desc = "";
-            if (bonus != null) {
+            if (intrinsic != null) {
                 const attacker = _("Attacker");
                 const defender = _("Defender");
                 const both = _("Hoplites and Triremes");
@@ -263,7 +263,7 @@ function (dojo, declare) {
                 let bonusstr = _("${combatant} adds 1 to ${unit} strength");
                 let combatant = "";
                 let units = "";
-                switch (bonus) {
+                switch (intrinsic) {
                     case "ah":
                         combatant = attacker;
                         units = hoplite;
@@ -2068,6 +2068,7 @@ function (dojo, declare) {
             dojo.subscribe( 'newLocations', this, "notif_newLocations");
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
+            dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
         },
 
         // Notification handlers
@@ -2301,5 +2302,12 @@ function (dojo, declare) {
                 this.placeCityStack(city, unit, strength, id);
             });
         },
+
+
+        notif_crtOdds: function(notif) {
+            const slot = notif.args.slot;
+
+        },
+
    });
 });

@@ -48,30 +48,39 @@ $this->specialcards = array(
 
 $this->locations = array(
   // Athens
-  "amphipolis" => array("name" => clienttranslate("Amphipolis"), "city" => "athens", "battle" => "TH", "vp" => 6, "bonus" => "dh"),
-  "lesbos" => array("name" => clienttranslate("Lesbos"), "city" => "athens", "battle" => "HT", "vp" => 4, "bonus" => "aht"),
-  "plataea" => array("name" => clienttranslate("Plataea"), "city" => "athens", "battle" => "H", "vp" => 4, "bonus" => "dh"),
-  "naupactus" => array("name" => clienttranslate("Naupactus"), "city" => "athens", "battle" => "TH", "vp" => 4, "bonus" => null),
-  "potidea" => array("name" => clienttranslate("Potidea"), "city" => "athens", "battle" => "TH", "vp" => 5, "bonus" => "ah"),
-  "acarnania" => array("name" => clienttranslate("Acarnania"), "city" => "athens", "battle" => "TH", "vp" => 3, "bonus" => "dh"),
-  "attica" => array("name" => clienttranslate("Attica"), "city" => "athens", "battle" => "H", "vp" => 4, "bonus" => null),
+  "amphipolis" => array("name" => clienttranslate("Amphipolis"), "city" => "athens", "rounds" => "TH", "vp" => 6, "intrinsic" => "dh"),
+  "lesbos" => array("name" => clienttranslate("Lesbos"), "city" => "athens", "rounds" => "HT", "vp" => 4, "intrinsic" => "aht"),
+  "plataea" => array("name" => clienttranslate("Plataea"), "city" => "athens", "rounds" => "H", "vp" => 4, "intrinsic" => "dh"),
+  "naupactus" => array("name" => clienttranslate("Naupactus"), "city" => "athens", "rounds" => "TH", "vp" => 4, "intrinsic" => null),
+  "potidea" => array("name" => clienttranslate("Potidea"), "city" => "athens", "rounds" => "TH", "vp" => 5, "intrinsic" => "ah"),
+  "acarnania" => array("name" => clienttranslate("Acarnania"), "city" => "athens", "rounds" => "TH", "vp" => 3, "intrinsic" => "dh"),
+  "attica" => array("name" => clienttranslate("Attica"), "city" => "athens", "rounds" => "H", "vp" => 4, "intrinsic" => null),
   // Sparta
-  "melos" => array("name" => clienttranslate("Melos"), "city" => "sparta", "battle" => "HT", "vp" => 3, "bonus" => "dht"),
-  "epidaurus" => array("name" => clienttranslate("Epidaurus"), "city" => "sparta", "battle" => "TH", "vp" => 4, "bonus" => null),
-  "pylos" => array("name" => clienttranslate("Pylos"), "city" => "sparta", "battle" => "TH", "vp" => 4, "bonus" => null),
-  "sicily" => array("name" => clienttranslate("Sicily"), "city" => "sparta", "battle" => "TH", "vp" => 7, "bonus" => "dht"),
-  "cephallenia" => array("name" => clienttranslate("Cephallenia"), "city" => "sparta", "battle" => "HT", "vp" => 4, "bonus" => null),
-  "cythera" => array("name" => clienttranslate("Cythera"), "city" => "sparta", "battle" => "HT", "vp" => 3, "bonus" => null),
-  "spartolus" => array("name" => clienttranslate("Spartolus"), "city" => "sparta", "battle" => "TH", "vp" => 4, "bonus" => "ah"),
+  "melos" => array("name" => clienttranslate("Melos"), "city" => "sparta", "rounds" => "HT", "vp" => 3, "intrinsic" => "dht"),
+  "epidaurus" => array("name" => clienttranslate("Epidaurus"), "city" => "sparta", "rounds" => "TH", "vp" => 4, "intrinsic" => null),
+  "pylos" => array("name" => clienttranslate("Pylos"), "city" => "sparta", "rounds" => "TH", "vp" => 4, "intrinsic" => null),
+  "sicily" => array("name" => clienttranslate("Sicily"), "city" => "sparta", "rounds" => "TH", "vp" => 7, "intrinsic" => "dht"),
+  "cephallenia" => array("name" => clienttranslate("Cephallenia"), "city" => "sparta", "rounds" => "HT", "vp" => 4, "intrinsic" => null),
+  "cythera" => array("name" => clienttranslate("Cythera"), "city" => "sparta", "rounds" => "HT", "vp" => 3, "intrinsic" => null),
+  "spartolus" => array("name" => clienttranslate("Spartolus"), "city" => "sparta", "rounds" => "TH", "vp" => 4, "intrinsic" => "ah"),
   // Megara
-  "megara" => array("name" => clienttranslate("Megara"), "city" => "megara", "battle" => "TH", "vp" => 5, "bonus" => null),
+  "megara" => array("name" => clienttranslate("Megara"), "city" => "megara", "rounds" => "TH", "vp" => 5, "intrinsic" => null),
   // Argos
-  "mantinea" => array("name" => clienttranslate("Mantinea"), "city" => "argos", "battle" => "H", "vp" => 5, "bonus" => null),
+  "mantinea" => array("name" => clienttranslate("Mantinea"), "city" => "argos", "rounds" => "H", "vp" => 5, "intrinsic" => null),
   // Thebes
-  "delium" => array("name" => clienttranslate("Delium"), "city" => "thebes", "battle" => "TH", "vp" => 5, "bonus" => null),
-  "aetolia" => array("name" => clienttranslate("Aetolia"), "city" => "thebes", "battle" => "TH", "vp" => 3, "bonus" => null),
+  "delium" => array("name" => clienttranslate("Delium"), "city" => "thebes", "rounds" => "TH", "vp" => 5, "intrinsic" => null),
+  "aetolia" => array("name" => clienttranslate("Aetolia"), "city" => "thebes", "rounds" => "TH", "vp" => 3, "intrinsic" => null),
   // Corinth
-  "corcyra" => array("name" => clienttranslate("Corcyra"), "city" => "corinth", "battle" => "HT", "vp" => 3, "bonus" => "aht"),
-  "leucas" => array("name" => clienttranslate("Leucas"), "city" => "corinth", "battle" => "HT", "vp" => 4, "bonus" => null),
-  "solygeia" => array("name" => clienttranslate("Solygeia"), "city" => "corinth", "battle" => "HT", "vp" => 4, "bonus" => null),
+  "corcyra" => array("name" => clienttranslate("Corcyra"), "city" => "corinth", "rounds" => "HT", "vp" => 3, "intrinsic" => "aht"),
+  "leucas" => array("name" => clienttranslate("Leucas"), "city" => "corinth", "rounds" => "HT", "vp" => 4, "intrinsic" => null),
+  "solygeia" => array("name" => clienttranslate("Solygeia"), "city" => "corinth", "rounds" => "HT", "vp" => 4, "intrinsic" => null),
+);
+
+$this->combat_results_table = array(
+  1 => array("odds" => "1:2", "attacker" => 10, "defender" => 5),
+  2 => array("odds" => "-2", "attacker" => 9, "defender" => 6),
+  3 => array("odds" => "1:1", "attacker" => 8, "defender" => 7),
+  4 => array("odds" => "+2", "attacker" => 7, "defender" => 8),
+  5 => array("odds" => "2:1", "attacker" => 6, "defender" => 9),
+  6 => array("odds" => "3:1", "attacker" => 5, "defender" => 10),
 );

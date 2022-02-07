@@ -236,6 +236,19 @@ class view_perikles_perikles extends game_view
             ));
         }
 
+        // CRT BLOCK
+        $this->page->begin_block($template, 'CRT_BLOCK');
+        $CRTX = [971, 1017, 1061, 1106, 1150, 1194];
+        $CRTY = 62;
+        $c = 1;
+        foreach ($CRTX as $crtx) {
+          $this->page->insert_block('CRT_BLOCK', array(
+              'COL' => $c++,
+              'CRTY' => $CRTY,
+              'CRTX' => $crtx,
+          ));
+        }
+
         /*********** Do not change anything below this line  ************/
   }
 }
