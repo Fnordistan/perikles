@@ -1543,14 +1543,16 @@ class Perikles extends Table
         $allyattackers  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND place=".(ATTACKER+ALLY));
         $attackers = array_merge($mainattackers, $allyattackers);
         if (empty($attackers)) {
-            throw new BgaVisibleSystemException("No attacking units found for $location"); // NOI18N
+            // automatically win this battle
+            throw new BgaVisibleSystemException("No attacking units found for $location - implement autowin"); // NOI18N
         }
         // get all defending units
         $maindefenders = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND place=".(DEFENDER+MAIN));
         $allydefenders  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND place=".(DEFENDER+ALLY));
         $defenders = array_merge($maindefenders, $allydefenders);
         if (empty($defenders)) {
-            throw new BgaVisibleSystemException("No defending units found for $location"); // NOI18N
+            // automatically win this battle
+            throw new BgaVisibleSystemException("No defending units found for $location - implement autowin"); // NOI18N
         }
 
         $attstrength = 0;
@@ -1586,7 +1588,7 @@ class Perikles extends Table
         }
         $crt = $this->getCRT($attstrength, $defstrength);
         $battle_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
-        self::notifyAllPlayers('crtOdds', clienttranslate("${unit_type} battle of ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column"), array(
+        self::notifyAllPlayers('crtOdds', clienttranslate('${unit_type} battle of ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column'), array(
             'i18n' => ['unit_type', 'location_name'],
             'unit_type' => $battle_type,
             'location' => $location,
@@ -1604,7 +1606,7 @@ class Perikles extends Table
      * Calculate which column on the CRT to use
      */
     function getCRT($att, $def) {
-        if ($att >=  ($def*3)) {
+        if ($att >= ($def*3)) {
             // 3:1
             return 6;
         } else if ($att >= ($def*2)) {
@@ -1625,7 +1627,14 @@ class Perikles extends Table
         }
     }
 
+    function victory($player_id, $location, $attdef) {
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers('uncontestedVictory', clienttranslate('${player_name} (${role}) wins uncontested ${unit_type} battle in ${location_name}'), array(
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
 
+        ));
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments

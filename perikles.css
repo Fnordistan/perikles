@@ -583,8 +583,11 @@
     position: absolute;
     width: 40px;
     height: 95px;
-    background-color: blue;
-    opacity: 0.5;
+}
+
+.prk_crt_active {
+    background-color: red;
+    opacity: 0.3;
 }
 
 /* IDENTITIES */
