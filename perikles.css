@@ -590,6 +590,13 @@
     opacity: 0.3;
 }
 
+
+.prk_battle_token {
+    background-image: url(img/battle_token.png);
+    width: 36px;
+    height: 60px;
+}
+
 /* IDENTITIES */
 
 #periklesboard {

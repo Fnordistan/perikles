@@ -627,7 +627,7 @@ function (dojo, declare) {
                 const strength = mil['strength'];
                 const location = mil['location'];
                 let [xoff, yoff] = this.counterOffsets(city, strength, unit);
-                if (location == city && mil['place'] == 0) {
+                if (location == city && mil['battlepos'] == 0) {
                     // in a city stack
                     this.placeCityStack(city, unit, strength, mil['id']);
                 } else if (location == DEAD_POOL) {
@@ -635,13 +635,7 @@ function (dojo, declare) {
 
                 } else if (Object.keys(LOCATION_TILES).includes(location)) {
                     // sent to a battle
-                    const slotid = $(location+"_tile").parentNode.id;
-                    const slot = slotid[slotid.length-1];
-                    const place = mil['place'];
-                    const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
-                    const stackct = $(battlepos).childElementCount;
-                    const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+i, x: xoff, y: yoff, m: 8*stackct, t: 0});
-                    dojo.place(battlecounter, $(battlepos));
+                    this.placeCounterAtBattle(mil, i);
                 } else {
                     // it's in a player pool
                     const player_id = location;
@@ -655,6 +649,24 @@ function (dojo, declare) {
                     }
                 }
             }
+        },
+
+        /**
+         * Place a military counter on the battle stacks at a location tile.
+         * @param {Object} counter 
+         * @param {string} stackpos
+         */
+        placeCounterAtBattle: function(counter, stackpos) {
+            const slotid = $(counter['location']+"_tile").parentNode.id;
+            const slot = slotid[slotid.length-1];
+            const unit = counter['type'];
+            const city = counter['city'];
+            const strength = counter['strength'];
+            const place = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[counter['battlepos']];
+            const stackct = $(place).childElementCount;
+            let [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+stackpos, x: xoff, y: yoff, m: 8*stackct, t: 0});
+            dojo.place(battlecounter, $(place));
         },
 
         /**
@@ -1051,14 +1063,14 @@ function (dojo, declare) {
          * Move an object to a battle tile
          * @param {*} military 
          */
-        moveToBattle: function(player_id, city, unit, strength, id, slot, place) {
+        moveToBattle: function(player_id, city, unit, strength, id, slot, pos) {
             if (player_id == this.player_id) {
                 $(city+'_'+unit+'_'+strength+'_'+id).remove();
             }
 
             // move from city to battle
             let [xoff, yoff] = this.counterOffsets(city, strength, unit);
-            const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[place];
+            const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[pos];
             const stackct = $(battlepos).childElementCount;
             const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+id, x: xoff, y: yoff, m: 8*stackct, t: 0});
             const milzone = $(city+"_military");
@@ -2068,7 +2080,13 @@ function (dojo, declare) {
             dojo.subscribe( 'newLocations', this, "notif_newLocations");
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
+
+            dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
+            dojo.subscribe( 'battle', this, "notif_battle");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
+            dojo.subscribe( 'diceRoll', this, "notif_diceRoll");
+            dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
+            
         },
 
         // Notification handlers
@@ -2238,8 +2256,8 @@ function (dojo, declare) {
             const type = notif.args.type;
             const strength = notif.args.strength;
             const slot = notif.args.slot;
-            const place = notif.args.place;
-            this.moveToBattle(player_id, city, type, strength, id, slot, place);
+            const battlepos= notif.args.battlepos;
+            this.moveToBattle(player_id, city, type, strength, id, slot, battlepos);
         },
 
         /**
@@ -2303,6 +2321,23 @@ function (dojo, declare) {
             });
         },
 
+        /**
+         * Flip all the counters face up at a battle zone during the fight.
+         * @param {Object} notif 
+         */
+        notif_revealCounters: function(notif) {
+            const slot = notif.args.slot;
+            const military = notif.args.military;
+            // clear the old ones. TODO: animate flipping
+            const oldcounters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
+            [...oldcounters].forEach(c => {
+                c.remove();
+            });
+            let i = 0;
+            military.forEach(m => {
+                this.placeCounterAtBattle(m, i++);
+            });
+       },
 
         notif_crtOdds: function(notif) {
             const slot = notif.args.slot;
@@ -2310,8 +2345,18 @@ function (dojo, declare) {
             const crt_col = $('crt_'+crt);
             debugger;
             crt_col.classList.add("prk_crt_active");
+        },
+
+        notif_diceRoll: function(notif) {
 
         },
 
+        notif_resetBattleTokens: function(notif) {
+
+        },
+
+        notif_battle: function(notif) {
+
+        },
    });
 });

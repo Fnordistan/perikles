@@ -45,6 +45,9 @@ define("DEFENDER", 2);
 define("MAIN", 1);
 define("ALLY", 2);
 
+define("ATTACKER_TOKENS", "attacker_tokens");
+define("DEFENDER_TOKENS", "defender_tokens");
+
 class Perikles extends Table
 {
 	function __construct( )
@@ -84,13 +87,14 @@ class Perikles extends Table
             "megara_wars" => 43,
             "sparta_wars" => 44,
             "thebes_wars" => 45,
+            "active_battle" => 46,
 
             "last_influence_slot" => 37, // keep track of where to put next Influence tile
             "deadpool_picked" => 38, // how many players have been checked for deadpool?
             "spartan_choice" => 39, // who Sparta picked to go first in military phase
-            "attacker_tokens" => 50, // battle tokens won by attacker so far in current battle
-            "defender_tokens" => 51, // battle tokens won by defender so far in current battle
-        ) );        
+            ATTACKER_TOKENS => 50, // battle tokens won by attacker so far in current battle
+            DEFENDER_TOKENS => 51, // battle tokens won by defender so far in current battle
+        ) );
 
         $this->influence_tiles = self::getNew("module.common.deck");
         $this->influence_tiles->init("INFLUENCE");
@@ -143,8 +147,9 @@ class Perikles extends Table
         self::setGameStateInitialValue("last_influence_slot", 0);
         self::setGameStateInitialValue("deadpool_picked", 0);
         self::setGameStateInitialValue("spartan_choice", 0);
-        self::setGameStateInitialValue("attacker_tokens", 0);
-        self::setGameStateInitialValue("defender_tokens", 0);
+        self::setGameStateInitialValue(ATTACKER_TOKENS, 0);
+        self::setGameStateInitialValue(DEFENDER_TOKENS, 0);
+        self::setGameStateInitialValue("active_battle", 0);
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -437,19 +442,28 @@ class Perikles extends Table
      */
     function getMilitary() {
         $player_id = self::getCurrentPlayerId();
-        $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, place FROM MILITARY");
+        $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY");
         // but we need to show only the backs for units in battle that aren't mine
         foreach (array_keys($military) as $id) {
             // is it at a battle?
-            if ($military[$id]['place'] != 0) {
-                // if it's not mine, zero the id and strength
-                if (!$this->isLeader($player_id, $military[$id]['city'])) {
+            if ($military[$id]['battlepos'] != 0) {
+                // if it's not mine, zero the id and strength unless the counters have been flipped
+                // because it's an active battle
+                if (!($this->isLeader($player_id, $military[$id]['city']) || $this->isActiveBattleLocation($military[$id]['location']))) {
                     $military[$id]['id'] = 0;
                     $military[$id]['strength'] = 0;
                 }
             }
         }
         return $military;
+    }
+
+    /**
+     * Check whether the location slot is set to the current battle.
+     */
+    function isActiveBattleLocation($location) {
+        $slot = self::getUniqueValueFromDB("SELECT card_location_arg slot FROM LOCATION WHERE card_type_arg=\"$location\" AND card_location=\"".BOARD."\"");
+        return ($slot == self::getGameStateValue("active_battle"));
     }
 
     /*
@@ -717,9 +731,9 @@ class Perikles extends Table
         foreach($units as $unit) {
             $id = $unit['id'];
             $city = $unit['city'];
-            self::DbQuery("UPDATE MILITARY SET location=\"$city\", place=0 WHERE id=$id");
+            self::DbQuery("UPDATE MILITARY SET location=\"$city\", battlepos=0 WHERE id=$id");
         }
-        self::notifyAllPlayers("returnMilitary", "", array(
+        self::notifyAllPlayers("returnMilitary", '', array(
             'slot' => $slot
         ));
     }
@@ -727,15 +741,15 @@ class Perikles extends Table
     /**
      * Assumes all checks have been done. Send a military unit to a battle location.
      */
-    function sendToBattle($player_id, $mil, $place) {
+    function sendToBattle($player_id, $mil, $battlepos) {
         $id = $mil['id'];
         $battle = $mil['battle'];
         $players = self::loadPlayersBasicInfos();
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
 
-        self::DbQuery("UPDATE MILITARY SET location=\"$battle\", place=$place WHERE id=$id");
+        self::DbQuery("UPDATE MILITARY SET location=\"$battle\", battlepos=$battlepos WHERE id=$id");
 
-        $role = $this->getRoleName($place);
+        $role = $this->getRoleName($battlepos);
 
         $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$battle\"");
 
@@ -750,7 +764,7 @@ class Perikles extends Table
                 'strength' => ($pid == $player_id) ? $counter['strength'] : 0,
                 'city' => $counter['city'],
                 'city_name' => $this->cities[$counter['city']]['name'],
-                'place' => $place,
+                'battlepos' => $battlepos,
                 'battlerole' => $role,
                 'location' => $battle,
                 'slot' => $slot,
@@ -987,7 +1001,7 @@ class Perikles extends Table
             $this->influence_tiles->pickCardForLocation(DECK, BOARD, $i);
         }
 
-        self::notifyAllPlayers("newInfluence", "", array(
+        self::notifyAllPlayers("newInfluence", '', array(
             'influence' => $this->getInfluenceDisplay(),
             'decksize' => $this->influence_tiles->countCardInLocation(DECK),
         ));
@@ -1002,7 +1016,7 @@ class Perikles extends Table
             $this->location_tiles->pickCardForLocation(DECK, BOARD, $i);
         }
         $locations = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
-        self::notifyAllPlayers("newLocations", "", array(
+        self::notifyAllPlayers("newLocations", '', array(
             'locations' => $locations
         ));
     }
@@ -1020,9 +1034,37 @@ class Perikles extends Table
      * Reset the battle tokens.
      */
     function resetBattleTokens() {
-        self::setGameStateValue("attacker_tokens", 0);
-        self::setGameStateValue("defender_tokens", 0);
+        self::setGameStateValue(ATTACKER_TOKENS, 0);
+        self::setGameStateValue(DEFENDER_TOKENS, 0);
+        self::setGameStateValue("active_battle", 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
+    }
+
+    /**
+     * Calculate which column on the CRT to use
+     * @param $att attack strength
+     * @param $def defense strength
+     */
+    function getCRT($att, $def) {
+        if ($att >= ($def*3)) {
+            // 3:1
+            return 6;
+        } else if ($att >= ($def*2)) {
+            // 2:1
+            return 5;
+        } else if ($att >= ($def+2)) {
+            // +2
+            return 4;
+        } else if ($att >= $def || ($att > 1 && $att >= ($def-1))) {
+            // 1:1
+            return 3;
+        } else if (($att*2) > $def) {
+            // -2
+            return 2;
+        } else {
+            // 1:2
+            return 1;
+        }
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1342,8 +1384,8 @@ class Perikles extends Table
             if ($defender != null) {
                 $main_defender[$location] = $defender;
             }
-            $defenders = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$maindef OR place=$allydef)", true);
-            $attackers = self::getCollectionFromDB("SELECT city, place FROM MILITARY WHERE location=\"$location\" AND (place=$mainatt OR place=$allyatt)", true);
+            $defenders = self::getCollectionFromDB("SELECT city, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos=$maindef OR battlepos=$allydef)", true);
+            $attackers = self::getCollectionFromDB("SELECT city, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos=$mainatt OR battlepos=$allyatt)", true);
             if ($side == "attack") {
                 foreach(array_keys($defenders) as $def) {
                     if (in_array($def, $mycities)) {
@@ -1405,13 +1447,13 @@ class Perikles extends Table
                 $main = $attdef == "attack" ? $main_attacker[$battle] : $main_defender[$battle];
                 if ($main == $player_id) {
                     // I became main
-                    $place = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
+                    $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
                     $col = $attdef == "attack" ? "attacker" : "defender";
                     self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$battle\"");
                 } else {
-                    $place = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
+                    $battlepos = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
                 }
-                $this->sendToBattle($player_id, $f, $place);
+                $this->sendToBattle($player_id, $f, $battlepos);
             }
         }
     }
@@ -1422,7 +1464,14 @@ class Perikles extends Table
     function resolveBattle($battle) {
         $attacker = $battle['attacker'];
         $defender = $battle['defender'];
-
+        $location = $battle['location'];
+        $slot = $battle['slot'];
+        // flip all the counters
+        $counters = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\"");
+        self::notifyAllPlayers("revealCounters", '', array(
+            'slot' => $slot,
+            'military' => $counters
+        ));
 
         if ($attacker == null || $defender == null) {
             if ($attacker == null && $defender == null) {
@@ -1545,33 +1594,31 @@ class Perikles extends Table
         }
         $intrinsic = $this->locations[$location]['intrinsic'];
 
-        $this->battleRound($rounds, $location, $intrinsic, $slot);
+        $this->battleRounds($rounds, $location, $intrinsic, $slot);
+        // $this->battleVictory($attacker, $defender, $location);
     }
 
     /**
-     * Assumes that we already know attacks and defenders are both present.
+     * Assumes that we already know attacks and defenders are both present. Runs until both (or single) battle is done.
      * @param $rounds array (may be empty) that shifts each round typ
      * @param $location name of tile
      * @param $intrinsic any intrinsic defenders
      * @param $slot where the battle is on the board
      */
-    function battleRound($rounds, $location, $intrinsic, $slot) {
+    function battleRounds($rounds, $location, $intrinsic, $slot) {
         $type = array_shift($rounds);
-        if ($type == null) {
-            // resolve the battle
-
-        } else {
+        if ($type != null) {
             // get all attacking units
-            $mainattackers = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND place=".(ATTACKER+MAIN));
-            $allyattackers  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND place=".(ATTACKER+ALLY));
+            $mainattackers = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+MAIN));
+            $allyattackers  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+ALLY));
             $attackers = array_merge($mainattackers, $allyattackers);
             if (empty($attackers)) {
                 // automatically win this battle
                 throw new BgaVisibleSystemException("No attacking units found for $location - implement autowin"); // NOI18N
             }
             // get all defending units
-            $maindefenders = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND place=".(DEFENDER+MAIN));
-            $allydefenders  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND place=".(DEFENDER+ALLY));
+            $maindefenders = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+MAIN));
+            $allydefenders  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+ALLY));
             $defenders = array_merge($maindefenders, $allydefenders);
             if (empty($defenders)) {
                 // automatically win this battle
@@ -1622,39 +1669,19 @@ class Perikles extends Table
                 'crt' => $crt,
                 'odds' => $this->combat_results_table[$crt]['odds']
             ));
+            // go to next round
+            $this->battleRounds($rounds, $location, $intrinsic, $slot);
         }
     }
 
     /**
-     * Calculate which column on the CRT to use
+     * Resolve a single round - Hoplite or Trireme battle. Roll until one side wins.
      */
-    function getCRT($att, $def) {
-        if ($att >= ($def*3)) {
-            // 3:1
-            return 6;
-        } else if ($att >= ($def*2)) {
-            // 2:1
-            return 5;
-        } else if ($att >= ($def+2)) {
-            // +2
-            return 4;
-        } else if ($att >= $def || ($att > 1 && $att >= ($def-1))) {
-            // 1:1
-            return 3;
-        } else if (($att*2) > $def) {
-            // -2
-            return 2;
-        } else {
-            // 1:2
-            return 1;
-        }
-    }
-
     function rollBattle($crt) {
         $attacker_tn = $thiscombat_results_table[$crt]['attacker'];
         $defender_tn = $thiscombat_results_table[$crt]['defender'];
 
-        while (self::getGameStateValue("attacker_tokens") < 2 && self::getGameStateValue("defender_tokens") < 2) {
+        while (self::getGameStateValue(ATTACKER_TOKENS) < 2 && self::getGameStateValue(DEFENDER_TOKENS) < 2) {
             // roll for attacker
             $attd1 = bga_rand(1,6);
             $attd2 = bga_rand(1,6);
@@ -1663,43 +1690,47 @@ class Perikles extends Table
             $defd1 = bga_rand(1,6);
             $defd2 = bga_rand(1,6);
             $defhit = ($defd1 + $defd2) >= $defender_tn;
+            self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal}, Defender rolls ${defd1} ${defd2} ${deftotal}'), array(
+                'attd1' => $attd1,
+                'attd2' => $attd2,
+                'defd1' => $defd1,
+                'defd2' => $defd2,
+                'atttotal' => $attd1+$attd2,
+                'deftotal' => $defd1+$defd2,
+            ));
             // did either one hit?
             if ($atthit || $defhit) {
                 if ($atthit && $defhit) {
-                    // are they both at 1 and 1?
-                    if (self::getGameStateValue("attacker_tokens") == 1 && self::getGameStateValue("defender_tokens") == 1) {
-                        // keep going
-
-                    } else {
+                    // if they are both at 1 and 1 keep going
+                    if (self::getGameStateValue(ATTACKER_TOKENS) != 1 && self::getGameStateValue(DEFENDER_TOKENS) != 1) {
                         // both get a token
-                        self::incGameStateValue("attacker_tokens", 1);
-                        self::incGameStateValue("defender_tokens", 1);
+                        self::incGameStateValue(ATTACKER_TOKENS, 1);
+                        self::incGameStateValue(DEFENDER_TOKENS, 1);
                     }
-
                 } else {
                     // only one scored
                     if ($atthit) {
-                        self::incGameStateValue("attacker_tokens", 1);
+                        self::incGameStateValue(ATTACKER_TOKENS, 1);
                     } else {
-                        self::incGameStateValue("defender_tokens", 1);
+                        self::incGameStateValue(DEFENDER_TOKENS, 1);
                     }
                 }
             }
         }
         // we have a winner for this battle
-        $attacker_tokens = self::getGameStateValue("attacker_tokens");
-        $defender_tokens = self::getGameStateValue("defender_tokens");
+        $attacker_tokens = self::getGameStateValue(ATTACKER_TOKENS);
+        $defender_tokens = self::getGameStateValue(DEFENDER_TOKENS);
         // sanity check: one and only one should be at 2
         if ($attacker_tokens >= 2) {
             if ($defender_tokens >= 2) {
                 throw new BgaVisibleSystemException("both sides scored 2 battle tokens in battle"); // NOI18N
             } else {
-                self::setGameStateValue("attacker_tokens", 1);
-                self::setGameStateValue("defender_tokens", 0);
+                self::setGameStateValue(ATTACKER_TOKENS, 1);
+                self::setGameStateValue(DEFENDER_TOKENS, 0);
             }
         } elseif ($defender_tokens >= 2) {
-            self::setGameStateValue("attacker_tokens", 0);
-            self::setGameStateValue("defender_tokens", 1);
+            self::setGameStateValue(ATTACKER_TOKENS, 0);
+            self::setGameStateValue(DEFENDER_TOKENS, 1);
         } else {
             throw new BgaVisibleSystemException("no victory rolled in battle"); // NOI18N
         }
@@ -1709,11 +1740,11 @@ class Perikles extends Table
     /**
      * One side has won a battle and gets to claim the tile.
      */
-    function battleVictory($attacker_id, $defender_id, $location, $attdef) {
+    function battleVictory($attacker_id, $defender_id, $location) {
         $players = self::loadPlayersBasicInfos();
         // who won?
-        $attacker_tokens = self::getGameStateValue("attacker_tokens");
-        $defender_tokens = self::getGameStateValue("defender_tokens");
+        $attacker_tokens = self::getGameStateValue(ATTACKER_TOKENS);
+        $defender_tokens = self::getGameStateValue(DEFENDER_TOKENS);
         // one and only one should be 2
         $winner= null;
         $winner_id = 0;
@@ -2015,6 +2046,7 @@ class Perikles extends Table
     function stResolveBattles() {
         $battles = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot, attacker, defender FROM LOCATION WHERE card_location = \"".BOARD."\" ORDER BY card_location_arg ASC");
         foreach($battles as $battle) {
+            self::setGameStateValue("active_battle", $battle['slot']);
             $this->resolveBattle($battle);
             // reinitialize battle tokens after every battle
             $this->resetBattleTokens();
