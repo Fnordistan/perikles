@@ -836,6 +836,15 @@ function (dojo, declare) {
                     if (args.city_name) {
                         args.city_name = this.spanCityName(args.city);
                     }
+                    if (args.attd1) {
+                        args.attd1 = this.diceIcon(args.attd1);
+                        args.attd2 = this.diceIcon(args.attd2);
+                        args.defd1 = this.diceIcon(args.defd1, true);
+                        args.defd2 = this.diceIcon(args.defd2, true);
+                        args.atttotal = '<span class="prk_dicetotal">['+args.atttotal+']</span>';
+                        args.deftotal = '<span class="prk_dicetotal">['+args.deftotal+']</span>';
+                    }
+                        args.atttotal = '<span>'+args.atttotal+'</span>';
                     if (!this.isSpectator) {
                         log = log.replace("You", this.spanYou());
 
@@ -903,6 +912,22 @@ function (dojo, declare) {
             return commit_log;
         },
 
+        /**
+         * Create die icon.
+         * @param {string} val 
+         * @param {bool} def is defensive dice
+         * @returns html icon
+         */
+        diceIcon: function(val, def=false) {
+            const roll = toint(val);
+            const xoff = -33 * (roll-1);
+            let die_icon = this.format_block('jstpl_die', {x: xoff});
+            if (def) {
+                const def_color = "filter: sepia(100%)";
+                die_icon = this.prependStyle(die_icon, def_color);
+            }
+            return die_icon;
+        },
         /**
          * Create span with Player's name in color.
          * @param {int} player 
@@ -2347,6 +2372,10 @@ function (dojo, declare) {
             crt_col.classList.add("prk_crt_active");
         },
 
+        /**
+         * 
+         * @param {Object} notif 
+         */
         notif_diceRoll: function(notif) {
 
         },

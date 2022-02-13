@@ -590,11 +590,28 @@
     opacity: 0.3;
 }
 
-
 .prk_battle_token {
     background-image: url(img/battle_token.png);
+    background-repeat: no-repeat;
+    background-size: 36px 40px;
     width: 36px;
     height: 60px;
+}
+
+.prk_dice {
+    display: inline-block;
+    background-image: url(img/dice.png);
+    background-repeat: no-repeat;
+    background-size: 198px 33px;
+    width: 33px;
+    height: 33px;
+    vertical-align: bottom;
+}
+
+.prk_dicetotal {
+    font-family: 'ThrumsSerifRegular';
+    font-size: 18px;
+    font-weight: bold;
 }
 
 /* IDENTITIES */

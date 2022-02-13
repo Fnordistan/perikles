@@ -139,6 +139,7 @@ const jstpl_location_tt = '<div style="display: flex; flex-direction: row;">\
                                 </div>\
                             </div>';
 
+const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;"></div>';
 
 </script>  
 

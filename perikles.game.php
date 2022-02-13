@@ -1608,21 +1608,22 @@ class Perikles extends Table
     function battleRounds($rounds, $location, $intrinsic, $slot) {
         $type = array_shift($rounds);
         if ($type != null) {
+            $unopposed = null;
             // get all attacking units
             $mainattackers = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+MAIN));
             $allyattackers  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+ALLY));
             $attackers = array_merge($mainattackers, $allyattackers);
             if (empty($attackers)) {
-                // automatically win this battle
-                throw new BgaVisibleSystemException("No attacking units found for $location - implement autowin"); // NOI18N
+                // defenders automatically win this round
+                $unopposed = DEFENDER;
             }
             // get all defending units
             $maindefenders = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+MAIN));
             $allydefenders  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+ALLY));
             $defenders = array_merge($maindefenders, $allydefenders);
             if (empty($defenders)) {
-                // automatically win this battle
-                throw new BgaVisibleSystemException("No defending units found for $location - implement autowin"); // NOI18N
+                // attackers automatically win this round
+                $unopposed = ATTACKER;
             }
 
             $attstrength = 0;
@@ -1656,19 +1657,27 @@ class Perikles extends Table
                         throw new BgaVisibleSystemException("Invalid intrisinc location option: $intrinsic"); // NOI18N
                 }
             }
-            $crt = $this->getCRT($attstrength, $defstrength);
-            $battle_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
-            self::notifyAllPlayers('crtOdds', clienttranslate('${unit_type} battle of ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column'), array(
-                'i18n' => ['unit_type', 'location_name'],
-                'unit_type' => $battle_type,
-                'location' => $location,
-                'slot' => $slot,
-                'location_name' => $this->locations[$location]['name'],
-                'att' => $attstrength,
-                'def' => $defstrength,
-                'crt' => $crt,
-                'odds' => $this->combat_results_table[$crt]['odds']
-            ));
+            if ($unopposed == DEFENDER) {
+                self::incGameStateValue(DEFENDER_TOKENS, 1);
+            } elseif ($unopposed == ATTACKER && $defstrength == 0) {
+                self::incGameStateValue(ATTACKER_TOKENS, 1);
+            } else {
+                $crt = $this->getCRT($attstrength, $defstrength);
+                $battle_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
+                self::notifyAllPlayers('crtOdds', clienttranslate('${unit_type} battle of ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column'), array(
+                    'i18n' => ['unit_type', 'location_name'],
+                    'unit_type' => $battle_type,
+                    'location' => $location,
+                    'slot' => $slot,
+                    'location_name' => $this->locations[$location]['name'],
+                    'att' => $attstrength,
+                    'def' => $defstrength,
+                    'crt' => $crt,
+                    'odds' => $this->combat_results_table[$crt]['odds']
+                ));
+                $this->rollBattle($crt);
+            }
+
             // go to next round
             $this->battleRounds($rounds, $location, $intrinsic, $slot);
         }
@@ -1678,8 +1687,8 @@ class Perikles extends Table
      * Resolve a single round - Hoplite or Trireme battle. Roll until one side wins.
      */
     function rollBattle($crt) {
-        $attacker_tn = $thiscombat_results_table[$crt]['attacker'];
-        $defender_tn = $thiscombat_results_table[$crt]['defender'];
+        $attacker_tn = $this->combat_results_table[$crt]['attacker'];
+        $defender_tn = $this->combat_results_table[$crt]['defender'];
 
         while (self::getGameStateValue(ATTACKER_TOKENS) < 2 && self::getGameStateValue(DEFENDER_TOKENS) < 2) {
             // roll for attacker
@@ -1734,7 +1743,6 @@ class Perikles extends Table
         } else {
             throw new BgaVisibleSystemException("no victory rolled in battle"); // NOI18N
         }
-
     }
 
     /**
