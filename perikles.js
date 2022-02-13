@@ -2109,6 +2109,7 @@ function (dojo, declare) {
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'battle', this, "notif_battle");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
+            this.notifqueue.setSynchronous( 'crtOdds', 500 );
             dojo.subscribe( 'diceRoll', this, "notif_diceRoll");
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
             
@@ -2381,11 +2382,17 @@ function (dojo, declare) {
         },
 
         notif_resetBattleTokens: function(notif) {
-
+            const tokens = document.getElementsByClassName("prk_battle_token");
+            [...tokens].forEach(t => {
+                t.remove();
+            });
         },
 
         notif_battle: function(notif) {
-
+            for (i = 0; i < 4; i++) {
+                const token = '<div class="prk_battle_token"></div>';
+                dojo.place(token, $('battle_tokens'));
+            }
         },
    });
 });

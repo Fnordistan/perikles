@@ -593,9 +593,14 @@
 .prk_battle_token {
     background-image: url(img/battle_token.png);
     background-repeat: no-repeat;
-    background-size: 36px 40px;
+    background-size: 36px 60px;
     width: 36px;
     height: 60px;
+}
+
+.prk_token_box {
+    display: flex;
+    position: absolute;
 }
 
 .prk_dice {

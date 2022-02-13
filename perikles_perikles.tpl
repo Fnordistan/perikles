@@ -25,6 +25,9 @@
             <div id="influence_slot_{i}" class="prk_influence_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END INFLUENCE_TILES_BLOCK -->
         </div>
+        <div id="attacker_battle_tokens" class="prk_token_box" style="width: 188px; height: 65px; left: 802px; top: 586px;"></div>
+        <div id="battle_tokens" class="prk_token_box" style="width: 70px; height: 65px; left: 1001px; top: 586px;"></div>
+        <div id="defender_battle_tokens" class="prk_token_box" style="width: 188px; height: 65px; left: 1080px; top: 586px;"></div>
         <div id="location_area">
             <!-- BEGIN LOCATION_BLOCK -->
             <div id="battle_zone_{LOC}">
