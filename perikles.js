@@ -2389,6 +2389,7 @@ function (dojo, declare) {
         },
 
         notif_battle: function(notif) {
+            debugger;
             for (i = 0; i < 4; i++) {
                 const token = '<div class="prk_battle_token"></div>';
                 dojo.place(token, $('battle_tokens'));

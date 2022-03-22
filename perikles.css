@@ -594,13 +594,17 @@
     background-image: url(img/battle_token.png);
     background-repeat: no-repeat;
     background-size: 36px 60px;
+    padding: 3px;
+    margin: 2px;
     width: 36px;
     height: 60px;
 }
 
 .prk_token_box {
-    display: flex;
+    display: grid;
+    justify-content: center;
     position: absolute;
+    grid-template-columns: repeat(auto-fit,  minmax(10px, max-content));
 }
 
 .prk_dice {

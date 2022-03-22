@@ -36,14 +36,14 @@ $this->persia = array(
 );
 
 $this->specialcards = array(
-  1 => array('name' => clienttranslate("Perikles"), "description" => clienttranslate("Place two cubes in Athens.")),
-  2 => array('name' => clienttranslate("Persian Fleet"), "description" => clienttranslate("Start trireme combat with one victory marker.")),
-  3 => array('name' => clienttranslate("Slave Revolt"), "description" => clienttranslate("Remove one Spartan hoplite counter from the board or from the controlling player.")),
-  4 => array('name' => clienttranslate("Brasidas"), "description" => clienttranslate("Double value of all Spartan hoplites in one battle.")),
-  5 => array('name' => clienttranslate("Thessalanian Allies"), "description" => clienttranslate("Start hoplite combat with one victory marker.")),
-  6 => array('name' => clienttranslate("Alkibiades"), "description" => clienttranslate("Move any two cubes from any city or cities to any other city or cities.")),
-  7 => array('name' => clienttranslate("Phormio"), "description" => clienttranslate("Double value of all Athenian triremes in one battle.")),
-  8 => array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes.")),
+  1 => array('name' => clienttranslate("Perikles"), "description" => clienttranslate("Place two cubes in Athens."), "phase" => "influence"),//INFLUENCE
+  2 => array('name' => clienttranslate("Persian Fleet"), "description" => clienttranslate("Start trireme combat with one victory marker."), "phase" => "trireme"),//TRIREME
+  3 => array('name' => clienttranslate("Slave Revolt"), "description" => clienttranslate("Remove one Spartan hoplite counter from the board or from the controlling player."), "phase" => "commit"),//COMMIT
+  4 => array('name' => clienttranslate("Brasidas"), "description" => clienttranslate("Double value of all Spartan hoplites in one battle."), "phase" => "hoplite"),//HOPLITE
+  5 => array('name' => clienttranslate("Thessalanian Allies"), "description" => clienttranslate("Start hoplite combat with one victory marker."), "phase" => "hoplite"),//HOPLITE
+  6 => array('name' => clienttranslate("Alkibiades"), "description" => clienttranslate("Move any two cubes from any city or cities to any other city or cities."), "phase" => "influence"),//INFLUENCE
+  7 => array('name' => clienttranslate("Phormio"), "description" => clienttranslate("Double value of all Athenian triremes in one battle."), "phase" => "trireme"),//TRIREME
+  8 => array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes."), "phase" => "influence"),//INFLUENCE
 );
 
 $this->locations = array(

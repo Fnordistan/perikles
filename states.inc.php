@@ -34,6 +34,8 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("COMMIT_FORCES", 24);
     define("NEXT_COMMIT", 25);
     define("START_BATTLES", 26);
+    define("RESOLVE_BATTLE", 27);
+    define("NEXT_BATTLE", 30);
     define("END_TURN", 28);
     define("SCORING", 90);
     define("ENDGAME", 99);
@@ -155,11 +157,27 @@ $machinestates = array(
     ),
 
     START_BATTLES => array(
-        "name" => "resolveBattles",
+        "name" => "startBattles",
         "description" => "",
         "type" => "game",
-        "action" => "stResolveBattles",
-        "transitions" => array( "" => 77 )
+        "action" => "stStartBattles",
+        "transitions" => array( "resolve" => RESOLVE_BATTLE, "endTurn" => 77 )
+    ),
+
+    RESOLVE_BATTLE => array(
+        "name" => "resolveBattle",
+        "description" => "",
+        "type" => "game",
+        "action" => "stResolveBattle",
+        "transitions" => array( "special" => 77, "doBattle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
+    ),
+
+    NEXT_BATTLE => array(
+        "name" => "battle",
+        "description" => "",
+        "type" => "game",
+        "action" => "stBattle",
+        "transitions" => array( "battle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
     ),
 
     77 => array(
