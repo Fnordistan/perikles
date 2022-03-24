@@ -165,11 +165,11 @@ $machinestates = array(
     ),
 
     RESOLVE_BATTLE => array(
-        "name" => "resolveBattle",
+        "name" => "resolveLocation",
         "description" => "",
         "type" => "game",
-        "action" => "stResolveBattle",
-        "transitions" => array( "special" => 77, "doBattle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
+        "action" => "stResolveLocation",
+        "transitions" => array( "special" => USE_SPECIAL, "doBattle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
     ),
 
     NEXT_BATTLE => array(

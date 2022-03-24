@@ -1564,93 +1564,81 @@ class Perikles extends Table
     }
 
     /**
-     * Assumes that we already know attacks and defenders are both present. Runs until both (or single) battle is done.
-     * @param $rounds array (may be empty) that shifts each round typ
+     * Assumes that we already know attacks and defenders are both present. Runs until battle is done.
+     * @param $type HOPLITE or TRIREME
      * @param $location name of tile
      * @param $intrinsic any intrinsic defenders
      * @param $slot where the battle is on the board
      */
-    function battleRounds($rounds, $location, $intrinsic, $slot) {
-        $type = array_shift($rounds);
-        if ($type != null) {
-            // can someone play a Special?
-            $hasspecial = $this->canPlaySpecial($type);
-            if (!empty($hasspecial)) {
-                throw new BgaVisibleSystemException("Some has an available special card");
-            }
+    function doBattle($type, $location, $intrinsic, $slot) {
+        $unopposed = null;
+        // get all attacking units
+        $mainattackers = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+MAIN));
+        $allyattackers  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+ALLY));
+        $attackers = array_merge($mainattackers, $allyattackers);
+        if (empty($attackers)) {
+            // defenders automatically win this round
+            $unopposed = DEFENDER;
+        }
+        // get all defending units
+        $maindefenders = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+MAIN));
+        $allydefenders  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+ALLY));
+        $defenders = array_merge($maindefenders, $allydefenders);
+        if (empty($defenders)) {
+            // attackers automatically win this round
+            $unopposed = ATTACKER;
+        }
 
-            $unopposed = null;
-            // get all attacking units
-            $mainattackers = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+MAIN));
-            $allyattackers  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(ATTACKER+ALLY));
-            $attackers = array_merge($mainattackers, $allyattackers);
-            if (empty($attackers)) {
-                // defenders automatically win this round
-                $unopposed = DEFENDER;
-            }
-            // get all defending units
-            $maindefenders = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+MAIN));
-            $allydefenders  = self::getObjectListFromDB("SELECT id, city, strength FROM MILITARY WHERE type=\"$type\" AND location=\"$location\" AND battlepos=".(DEFENDER+ALLY));
-            $defenders = array_merge($maindefenders, $allydefenders);
-            if (empty($defenders)) {
-                // attackers automatically win this round
-                $unopposed = ATTACKER;
-            }
-
-            $attstrength = 0;
-            foreach($attackers as $a) {
-                $attstrength += $a['strength'];
-            }
-            $defstrength = 0;
-            foreach($defenders as $d) {
-                $defstrength += $d['strength'];
-            }
-            if ($intrinsic != null) {
-                switch ($intrinsic) {
-                    case "dht":
+        $attstrength = 0;
+        foreach($attackers as $a) {
+            $attstrength += $a['strength'];
+        }
+        $defstrength = 0;
+        foreach($defenders as $d) {
+            $defstrength += $d['strength'];
+        }
+        if ($intrinsic != null) {
+            switch ($intrinsic) {
+                case "dht":
+                    $defstrength++;
+                    break;
+                case "dh":
+                    if ($type == HOPLITE) {
                         $defstrength++;
-                        break;
-                    case "dh":
-                        if ($type == HOPLITE) {
-                            $defstrength++;
-                        }
-                        break;
-                    case "aht":
+                    }
+                    break;
+                case "aht":
+                    $attstrength++;
+                    break;
+                case "ah":
+                    if ($type == HOPLITE) {
                         $attstrength++;
-                        break;
-                    case "ah":
-                        if ($type == HOPLITE) {
-                            $attstrength++;
-                        }
-                        break;
-                    default:
-                    // should not happen!
-                        throw new BgaVisibleSystemException("Invalid intrisinc location option: $intrinsic"); // NOI18N
-                }
+                    }
+                    break;
+                default:
+                // should not happen!
+                    throw new BgaVisibleSystemException("Invalid intrisinc location option: $intrinsic"); // NOI18N
             }
-            if ($unopposed == DEFENDER) {
-                self::incGameStateValue(DEFENDER_TOKENS, 1);
-            } elseif ($unopposed == ATTACKER && $defstrength == 0) {
-                self::incGameStateValue(ATTACKER_TOKENS, 1);
-            } else {
-                $crt = $this->getCRT($attstrength, $defstrength);
-                $battle_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
-                self::notifyAllPlayers('crtOdds', clienttranslate('${unit_type} battle of ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column'), array(
-                    'i18n' => ['unit_type', 'location_name'],
-                    'unit_type' => $battle_type,
-                    'location' => $location,
-                    'slot' => $slot,
-                    'location_name' => $this->locations[$location]['name'],
-                    'att' => $attstrength,
-                    'def' => $defstrength,
-                    'crt' => $crt,
-                    'odds' => $this->combat_results_table[$crt]['odds']
-                ));
-                $this->rollBattle($crt);
-            }
-
-            // go to next round
-            $this->battleRounds($rounds, $location, $intrinsic, $slot);
+        }
+        if ($unopposed == DEFENDER) {
+            self::incGameStateValue(DEFENDER_TOKENS, 1);
+        } elseif ($unopposed == ATTACKER && $defstrength == 0) {
+            self::incGameStateValue(ATTACKER_TOKENS, 1);
+        } else {
+            $crt = $this->getCRT($attstrength, $defstrength);
+            $battle_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
+            self::notifyAllPlayers('crtOdds', clienttranslate('${unit_type} battle of ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column'), array(
+                'i18n' => ['unit_type', 'location_name'],
+                'unit_type' => $battle_type,
+                'location' => $location,
+                'slot' => $slot,
+                'location_name' => $this->locations[$location]['name'],
+                'att' => $attstrength,
+                'def' => $defstrength,
+                'crt' => $crt,
+                'odds' => $this->combat_results_table[$crt]['odds']
+            ));
+            $this->rollBattle($crt);
         }
     }
 
@@ -2039,17 +2027,20 @@ class Perikles extends Table
     }
 
     /**
-     * Resolve each battle.
+     * Resolve all the battles for the next location in the queue.
+     * Assumes we have already checked that there is another location tile to be fought for.
      */
-    function stResolveBattle() {
+    function stResolveLocation() {
         $battle = $this->nextBattle();
         // shouldn't happen!
         if ($battle == null) {
-            throw new BgaVisibleSystemException("No battle tiles for stResolveBattle");
+            throw new BgaVisibleSystemException("No battle tiles for stResolveLocation");
         }
         // default next state
         $state = "doBattle";
 
+        $attacker = $battle['attacker'];
+        $defender = $battle['defender'];
         $location = $battle['location'];
         $rounds = $this->locations[$location]['rounds'];
 
@@ -2060,8 +2051,6 @@ class Perikles extends Table
         $is_battle = true;
 
         if ($round == 0) {
-            $attacker = $battle['attacker'];
-            $defender = $battle['defender'];
             $slot = $battle['slot'];
             // flip all the counters
             $counters = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\"");
@@ -2087,11 +2076,17 @@ class Perikles extends Table
         if ($is_battle) {
             // can anyone play a special card now?
             $r = $rounds[$round];
-            if ($this->canPlaySpecial($r)) {
+            $phase = ($r == "H") ? HOPLITE : TRIREME;
+            $hascard = $this->canPlaySpecial($phase);
+            if (!empty($hascard)) {
                 $state = "special";
             }
         } else {
-            // battle over
+            // did someone win?
+            if (self::getGameStateValue(ATTACKER_TOKENS) > 0 xor self::getGameStateValue(DEFENDER_TOKENS) > 0) {
+                $this->battleVictory($attacker, $defender, $battle['id']);
+            }
+            // battle for this location is over
             $this->returnMilitaryUnits($battle);
             // reinitialize battle tokens after every battle
             $this->resetBattleTokens();
@@ -2102,7 +2097,7 @@ class Perikles extends Table
 
     /**
      * There are forces on both sides.
-     * Do the prep before launching the battle.
+     * We know there is a battle to be fought.
      */
     function stBattle() {
         $battle = $this->nextBattle();
@@ -2131,26 +2126,22 @@ class Perikles extends Table
             'preserve' => ['attacker', 'defender', 'city'],
         ));
 
-        $r = $this->locations[$location]['rounds'];
-        $rounds = [];
-        switch ($r) {
-            case "H":
-                $rounds = [HOPLITE];
-                break;
-            case "HT":
-                $rounds = [HOPLITE,TRIREME];
-                break;
-            case "TH":
-                $rounds = [TRIREME, HOPLITE];
-                break;
-            default:
-            // shouldn't happen!
-                throw new BgaVisibleSystemException("Unknown round value for $location: $rounds"); //NOI18N
+        $rounds = $this->locations[$location]['rounds'];
+        $r = self::getGameStateValue("battle_round");
+        $ti = $rounds[$r];
+        $type = null;
+        if ($ti == "H") {
+            $type = HOPLITE;
+        } elseif ($ti == "T") {
+            $type = TRIREME;
+        } else {
+            throw new BgaVisibleSystemException("failed to get unit type: $ti");
         }
+
         $intrinsic = $this->locations[$location]['intrinsic'];
 
-        $this->battleRounds($rounds, $location, $intrinsic, $slot);
-        // $this->battleVictory($attacker, $defender, $id);
+        $this->doBattle($type, $location, $intrinsic, $slot);
+        self::incGameStateValue("battle_round", 1);
     }
 
     /**
