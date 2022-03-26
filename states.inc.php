@@ -98,11 +98,12 @@ $machinestates = array(
 
     USE_SPECIAL => array(
     	"name" => "specialTile",
-    	"description" => clienttranslate('${actplayer} is using a Special Tile'),
-    	"descriptionmyturn" => clienttranslate('You must use your special Tile'),
-    	"type" => "activeplayer",
+    	"description" => clienttranslate('Special Tile phase'),
+    	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
+    	"type" => "multipleactiveplayer",
+        "action" => 'stUseSpecial',
     	"possibleactions" => array( "useSpecial" ),
-    	"transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "nextPlayer" => NEXT_PLAYER )
+    	"transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "nextPlayer" => NEXT_PLAYER, "doBattle" => NEXT_BATTLE )
     ),
 
     ELECTIONS => array(
@@ -161,7 +162,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stStartBattles",
-        "transitions" => array( "resolve" => RESOLVE_BATTLE, "endTurn" => 77 )
+        "transitions" => array( "resolve" => RESOLVE_BATTLE, "endTurn" => END_TURN )
     ),
 
     RESOLVE_BATTLE => array(
@@ -182,10 +183,10 @@ $machinestates = array(
 
     77 => array(
         "name" => "debugstate",
-    	"description" => clienttranslate('${actplayer} is in debug state'),
-    	"descriptionmyturn" => clienttranslate('You are in debug state'),
+    	"description" => clienttranslate('${actplayer} is paused'),
+    	"descriptionmyturn" => clienttranslate('You are paused'),
     	"type" => "activeplayer",
-    	"possibleactions" => array( "rollDice" ),
+    	"possibleactions" => array( "doSomething" ),
         "transitions" => array( "" => END_TURN )
     ),
 

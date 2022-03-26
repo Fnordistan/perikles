@@ -1109,6 +1109,18 @@ class Perikles extends Table
 //////////// Player actions
 //////////// 
 
+
+    function playSpecialTile($use) {
+        self::checkAction('useSpecial');
+        // 0 means player passed
+        if ($use) {
+            throw new BgaVisibleSystemException("player plays card");
+        } else {
+            throw new BgaVisibleSystemException("player passes");
+        }
+
+    }
+
     /**
      * Spartan player chose first player for influence phase.
      */
@@ -1648,6 +1660,7 @@ class Perikles extends Table
     function rollBattle($crt) {
         $attacker_tn = $this->combat_results_table[$crt]['attacker'];
         $defender_tn = $this->combat_results_table[$crt]['defender'];
+        throw new BgaVisibleSystemException("Rolling battle");
 
         while (self::getGameStateValue(ATTACKER_TOKENS) < 2 && self::getGameStateValue(DEFENDER_TOKENS) < 2) {
             // roll for attacker
@@ -1753,6 +1766,26 @@ class Perikles extends Table
 
         $this->claimTile($id, $winner_id);
     }
+
+    /**
+     * Assumes active battle has been set to current location tile and a round.
+     * Returns HOPLITE or TRIREME.
+     */
+    function getCurrentBattleType($location) {
+        $rounds = $this->locations[$location]['rounds'];
+        $r = self::getGameStateValue("battle_round");
+        $ti = $rounds[$r];
+        $type = null;
+        if ($ti == "H") {
+            $type = HOPLITE;
+        } elseif ($ti == "T") {
+            $type = TRIREME;
+        } else {
+            throw new BgaVisibleSystemException("failed to get unit type: $ti");
+        }
+        return $type;
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
@@ -2110,7 +2143,6 @@ class Perikles extends Table
         $defender = $battle['defender'];
         // per Martin Wallace: if both sides fight the first round, but no one sent units to the second round of battle,
         // then resolve the battle to see who loses a unit, but no one gets the tile, but the defender gets 2 cubes.
-        $id = $battle['id'];
         $location = $battle['location'];
         $slot = $battle['slot'];
         $city = $battle['city'];
@@ -2125,18 +2157,8 @@ class Perikles extends Table
             'location_name' => $this->locations[$location]['name'],
             'preserve' => ['attacker', 'defender', 'city'],
         ));
-
-        $rounds = $this->locations[$location]['rounds'];
-        $r = self::getGameStateValue("battle_round");
-        $ti = $rounds[$r];
-        $type = null;
-        if ($ti == "H") {
-            $type = HOPLITE;
-        } elseif ($ti == "T") {
-            $type = TRIREME;
-        } else {
-            throw new BgaVisibleSystemException("failed to get unit type: $ti");
-        }
+        
+        $$type = $this->getCurrentBattleType($location);
 
         $intrinsic = $this->locations[$location]['intrinsic'];
 
@@ -2181,6 +2203,29 @@ class Perikles extends Table
      */
     function stScoring() {
         $this->gamestate->nextState();
+    }
+
+    /**
+     * Choose players who can use a special tile
+     */
+    function stUseSpecial() {
+        $players = [];
+        $nextState = "";
+        // is this a commit round?
+        $is_battle = self::getGameStateValue('active_battle') != 0;
+        if ($is_battle) {
+            $battle = $this->nextBattle();
+            $location = $battle['location'];
+            $type = $this->getCurrentBattleType($location);
+            $players = $this->canPlaySpecial($type);
+            $nextState = "doBattle";
+        }
+        $this->gamestate->setPlayersMultiactive($players, $nextState, true);
+    }
+
+    function stDebug() {
+        $player = self::getActivePlayerName();
+        throw new BgaVisibleSystemException("$player in stDebug");
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2230,7 +2275,8 @@ class Perikles extends Table
                 case 'commitForces':
                     $this->assignUnits("", "");
                     break;
-                $this->gamestate->nextState( "zombiePass" );
+                default:
+                    $this->gamestate->nextState( "zombiePass" );
                 	break;
             }
 

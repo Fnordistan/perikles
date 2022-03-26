@@ -22,8 +22,8 @@
  */
   
   
-  class action_perikles extends APP_GameAction
-  { 
+class action_perikles extends APP_GameAction
+{ 
     // Constructor: please do not modify
    	public function __default()
   	{
@@ -105,4 +105,14 @@
       self::ajaxResponse( );
     }
 
-  }
+    /**
+     * Player plays Special Tile or declines
+     */
+    public function specialTile() {
+      self::setAjaxMode();     
+      $use = self::getArg( "use", AT_bool, true );
+      $this->game->playSpecialTile($use);
+      self::ajaxResponse( );
+    }
+
+}

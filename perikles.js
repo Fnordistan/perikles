@@ -1585,24 +1585,28 @@ function (dojo, declare) {
                       
             if( this.isCurrentPlayerActive() )
             {            
-                switch( stateName )
-                {
-                 case 'spartanChoice':
-                     for (player_id in this.gamedatas.players) {
-                        this.addActionButton( 'choose_'+player_id, this.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
-                     }
-                    break;
-                case 'commitForces':
-                    this.addActionButton( "commit_send_btn", _('Commit Forces'), () => {
-                        this.onCommitForces();
-                    });
-                    this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
-                        this.onResetForces();
-                    }, null, null, 'red');
-                    break;
-                case 'placeholder':
-                    this.addActionButton( 'donothing_btn', "Do Nothing", 'doNothing', null, false, 'green' );
-                    break;
+                switch( stateName ) {
+                    case 'spartanChoice':
+                        for (player_id in this.gamedatas.players) {
+                            this.addActionButton( 'choose_'+player_id, this.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
+                        }
+                        break;
+                    case 'commitForces':
+                        this.addActionButton( "commit_send_btn", _('Commit Forces'), () => {
+                            this.onCommitForces();
+                        });
+                        this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
+                            this.onResetForces();
+                        }, null, null, 'red');
+                        break;
+                    case 'specialTile':
+                        this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
+                            this.specialTile(true);
+                        }, null, false, 'blue' );
+                        this.addActionButton( 'pass_btn', _("Pass"), () => {
+                            this.specialTile(false);
+                        }, null, false, 'red' );
+                        break;
                 }
             }
         },        
@@ -2045,6 +2049,19 @@ function (dojo, declare) {
                 this.ajaxcall( "/perikles/perikles/commitUnits.html", { 
                     units: units,
                     cube: cube,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        /**
+         * Player declines to play Special Tile.
+         * @param {bool} use
+         */
+        specialTile: function($bUse) {
+            if (this.checkAction("useSpecial", true)) {
+                this.ajaxcall( "/perikles/perikles/specialTile.html", { 
+                    use: $bUse,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
             }
