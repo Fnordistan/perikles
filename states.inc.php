@@ -57,7 +57,8 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must take an Influence tile'),
     	"descriptionmyturn" => clienttranslate('You must take an Influence tile'),
     	"type" => "activeplayer",
-    	"possibleactions" => array( "takeInfluence" ),
+        "args" => "argsSpecial",
+    	"possibleactions" => array( "takeInfluence", "useSpecial" ),
     	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "choosePlaceCube" => CHOOSE_PLACE_INFLUENCE)
     ),
 
@@ -66,7 +67,7 @@ $machinestates = array(
     	"description" => "",
     	"type" => "game",
     	"action" => "stPlaceInfluence",
-    	"transitions" => array( "assassinate" => ASSASSINATE, "candidate" => PROPOSE_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
+    	"transitions" => array( "useSpecial" => USE_SPECIAL, "assassinate" => ASSASSINATE, "candidate" => PROPOSE_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
     ),
 
     CHOOSE_PLACE_INFLUENCE => array(
@@ -75,7 +76,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must choose a city to add an Influence cube'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "placeAnyCube" ),
-    	"transitions" => array( "" => NEXT_PLAYER )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => USE_SPECIAL )
     ),
 
     PROPOSE_CANDIDATE => array(
@@ -84,7 +85,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "proposeCandidate" ),
-    	"transitions" => array( "" => NEXT_PLAYER )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => USE_SPECIAL )
     ),
 
     ASSASSINATE => array(
@@ -93,7 +94,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must remove 1 Influence cube'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "chooseRemoveCube" ),
-    	"transitions" => array( "" => NEXT_PLAYER )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => USE_SPECIAL )
     ),
 
     USE_SPECIAL => array(

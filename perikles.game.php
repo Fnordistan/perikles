@@ -872,7 +872,7 @@ class Perikles extends Table
      * Return a list of players who are eligible to play a special tile now.
      * May be empty
      */
-    function canPlaySpecial($phase) {
+    function playersWithSpecial($phase) {
         $canplay = [];
         $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile FROM player WHERE special_tile_used IS NOT TRUE", true);
         foreach ($playertiles as $player_id => $tileid) {
@@ -880,6 +880,16 @@ class Perikles extends Table
                 $canplay[] = $player_id;
             }
         }
+        return $canplay;
+    }
+
+    /**
+     * Can a player play a Special Tile now.
+     * @return true if player_id can play a Special now
+     */
+    function canPlaySpecial($player_id, $phase) {
+        $players = $this->playersWithSpecial($phase);
+        $canplay = in_array($player_id, $players);
         return $canplay;
     }
 
@@ -1109,7 +1119,9 @@ class Perikles extends Table
 //////////// Player actions
 //////////// 
 
-
+    /**
+     * Player either Played or Passed on special tile button.
+     */
     function playSpecialTile($use) {
         self::checkAction('useSpecial');
         // 0 means player passed
@@ -1118,7 +1130,6 @@ class Perikles extends Table
         } else {
             throw new BgaVisibleSystemException("player passes");
         }
-
     }
 
     /**
@@ -1205,7 +1216,12 @@ class Perikles extends Table
         self::checkAction( 'placeAnyCube' );
         $player_id = self::getActivePlayerId();
         $this->addInfluenceToCity($city, $player_id, 1);
-        $this->gamestate->nextState();
+        $state = "nextPlayer";
+        if ($this->canPlaySpecial($player_id, "influence")) {
+            $state = "useSpecial";
+        }
+        self::debug("placeAnyCube: $state");
+        $this->gamestate->nextState($state);
     }
 
     /**
@@ -1256,8 +1272,10 @@ class Perikles extends Table
             'candidate' => $c,
             'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
+        $state = $this->canPlaySpecial($actingplayer, "influence") ? "useSpecial" : "nextPlayer";
+        self::debug("candidate: $state");
 
-        $this->gamestate->nextState();
+        $this->gamestate->nextState($state);
     }
 
     /**
@@ -1336,7 +1354,9 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'candidate_id', 'city']
             ));
         }
-        $this->gamestate->nextState();
+        $state = $this->canPlaySpecial($player_id, "influence") ? "useSpecial" : "nextPlayer";
+        self::debug("assassinate: $state");
+        $this->gamestate->nextState($state);
     }
 
     function chooseDeadUnits() {
@@ -1797,22 +1817,19 @@ class Perikles extends Table
         game state.
     */
 
-    /*
-    
-    Example for game state "MyGameState":
-    
-    function argMyGameState()
-    {
-        // Get some values from the current game situation in database...
-    
-        // return values:
+    /**
+     * Can the current active player play a special card during this Influence phase.
+     */
+    function argsSpecial() {
+        $player_id = self::getActivePlayerId();
         return array(
-            'variable1' => $value1,
-            'variable2' => $value2,
-            ...
+            '_private' => array(
+                $player_id => array(
+                    'special' => $this->canPlaySpecial($player_id, "influence")
+                )
+            )
         );
-    }    
-    */
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state actions
@@ -1960,7 +1977,10 @@ class Perikles extends Table
             $state = "assassinate";
         } else if ($type == 'candidate') {
             $state = "candidate";
+        } else if ($this->canPlaySpecial($player_id, "influence")) {
+            $state = "useSpecial";
         }
+        self::debug("stPlaceInfluence: $state");
         $this->gamestate->nextState( $state );
     }
 
@@ -2110,7 +2130,7 @@ class Perikles extends Table
             // can anyone play a special card now?
             $r = $rounds[$round];
             $phase = ($r == "H") ? HOPLITE : TRIREME;
-            $hascard = $this->canPlaySpecial($phase);
+            $hascard = $this->playersWithSpecial($phase);
             if (!empty($hascard)) {
                 $state = "special";
             }
@@ -2210,17 +2230,20 @@ class Perikles extends Table
      */
     function stUseSpecial() {
         $players = [];
-        $nextState = "";
         // is this a commit round?
         $is_battle = self::getGameStateValue('active_battle') != 0;
         if ($is_battle) {
             $battle = $this->nextBattle();
             $location = $battle['location'];
             $type = $this->getCurrentBattleType($location);
-            $players = $this->canPlaySpecial($type);
-            $nextState = "doBattle";
+            $players = $this->playersWithSpecial($type);
+            $this->gamestate->setPlayersMultiactive($players, "doBattle", true);
+        } else {
+            // take influence phase
+            // TODO: this will make all players with an Influence-phase tile active...
+            $players = $this->playersWithSpecial("influence");
+            $this->gamestate->setPlayersMultiactive($players, "nextPlayer", true);
         }
-        $this->gamestate->setPlayersMultiactive($players, $nextState, true);
     }
 
     function stDebug() {

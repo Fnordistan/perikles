@@ -1599,6 +1599,17 @@ function (dojo, declare) {
                             this.onResetForces();
                         }, null, null, 'red');
                         break;
+                    case 'takeInfluence':
+                        if (args._private.special) {
+                            this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
+                                this.specialTile(true);
+                            }, null, false, 'blue' );
+                            this.addActionButton( 'pass_btn', _("Pass"), () => {
+                                this.specialTile(false);
+                            }, null, false, 'red' );
+                            break;
+                        }
+                        break;
                     case 'specialTile':
                         this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
                             this.specialTile(true);
