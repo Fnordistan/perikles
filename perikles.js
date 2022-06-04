@@ -1604,9 +1604,6 @@ function (dojo, declare) {
                             this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
                                 this.specialTile(true);
                             }, null, false, 'blue' );
-                            this.addActionButton( 'pass_btn', _("Pass"), () => {
-                                this.specialTile(false);
-                            }, null, false, 'red' );
                             break;
                         }
                         break;
@@ -2133,6 +2130,8 @@ function (dojo, declare) {
             dojo.subscribe( 'newLocations', this, "notif_newLocations");
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
+            dojo.subscribe( 'playSpecial', this, "notif_playSpecial");
+            this.notifqueue.setSynchronous( 'notif_playSpecial', 500 );
 
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'battle', this, "notif_battle");
@@ -2322,6 +2321,20 @@ function (dojo, declare) {
             const city = notif.args.city;
             const id = notif.args.id;
             this.fadeOutAndDestroy(city+'_'+id, 2000, 0);
+        },
+
+        /**
+         * Player played a special tile
+         * @param {Object} notif 
+         */
+        notif_playSpecial: function(notif) {
+            const player_id = notif.args.player_id;
+            // get this player's special card
+            const player_div = $(player_id+"_player_cards");
+            const spec = player_div.getElementsByClassName("prk_special_tile")[0];
+            debugger;
+            spec.classList.remove("prk_special_tile_back");
+            spec.classList.add("prk_special_tile_front", "prk_special_tile_used");
         },
 
         /**

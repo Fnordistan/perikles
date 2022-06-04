@@ -140,12 +140,20 @@
 }
 
 .prk_special_tile {
-    background-image: url(img/special_tiles.jpg);
-    background-size: calc(var(--scale) * var(--special_sprites_w)) calc(var(--scale) * var(--special_sprites_h));
     background-repeat: no-repeat;
     position: relative;
     width: calc(var(--scale) * var(--special_w));
     height: calc(var(--scale) * var(--special_h));
+}
+
+.prk_special_tile_front {
+    background-image: url(img/special_tiles.jpg);
+    background-size: calc(var(--scale) * var(--special_sprites_w)) calc(var(--scale) * var(--special_sprites_h));
+}
+
+.prk_special_tile_back {
+    background-image: url(img/special_cardback.jpg);
+    background-size: calc(var(--special_w)*var(--scale)) calc(var(--special_h)*var(--scale));
 }
 
 .prk_special_tile_tt {
@@ -161,15 +169,6 @@
 .prk_special_tile_used {
     opacity: 0.5;
     transform: rotate(180deg);
-}
-
-.prk_special_tile_back {
-    background-image: url(img/special_cardback.jpg);
-    background-size: calc(var(--special_w)*var(--scale)) calc(var(--special_h)*var(--scale));
-    background-repeat: no-repeat;
-    position: relative;
-    width: calc(var(--special_w)*var(--scale));
-    height: calc(var(--special_h)*var(--scale));
 }
 
 .prk_location_slot {

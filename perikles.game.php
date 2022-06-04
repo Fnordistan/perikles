@@ -89,6 +89,7 @@ class Perikles extends Table
             "thebes_wars" => 45,
             "active_battle" => 46,
             "battle_round" => 47, // 0,1
+            "influence_phase" => 48,
 
             "last_influence_slot" => 37, // keep track of where to put next Influence tile
             "deadpool_picked" => 38, // how many players have been checked for deadpool?
@@ -152,6 +153,8 @@ class Perikles extends Table
         self::setGameStateInitialValue(DEFENDER_TOKENS, 0);
         self::setGameStateInitialValue("active_battle", 0);
         self::setGameStateInitialValue("battle_round", 0);
+        // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with Elections.
+        self::setGameStateInitialValue("influence_phase", 1);
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -489,6 +492,13 @@ class Perikles extends Table
 //////////// Utility functions
 ////////////    
 
+    /**
+     * Name of current state
+     */
+    function getStateName() {
+        $state = $this->gamestate->state();
+        return $state['name'];
+    }
 
     /**
      * Returns true if this player has at least once Influence tile of this city
@@ -1124,12 +1134,66 @@ class Perikles extends Table
      */
     function playSpecialTile($use) {
         self::checkAction('useSpecial');
+        $nextstate = "nextPlayer";
         // 0 means player passed
         if ($use) {
-            throw new BgaVisibleSystemException("player plays card");
-        } else {
-            throw new BgaVisibleSystemException("player passes");
+            $player_id = self::getCurrentPlayerId(); // we are in multiplayeractive
+            $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+            // sanity check
+            if ($special == null) {
+                throw new BgaVisibleSystemException("No special tile found"); // NOI18N
+            } else if ($special['used']) {
+                throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
+            }
+            $t = $special['tile'];
+            $tile = $this->specialcards[$t];
+            $state = $this->getStateName();
+            switch ($t) {
+                case 1: // Perikles
+                    if (self::getGameStateValue("influence_phase") == 0) {
+                        throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
+                    }
+                    $this->addInfluenceToCity('athens', $player_id, 2);
+                    break;
+                case 2; // Persian Fleet
+                    break;
+                case 3; // Slave Revolt
+                    break;
+                case 4; // Brasidas
+                    break;
+                case 5; // Thessalanian Allies
+                    break;
+                case 6; // Alkibiades
+                    break;
+                case 7; // Phormio
+                    break;
+                case 8; // Plague
+                    if (self::getGameStateValue("influence_phase") == 0) {
+                        throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
+                    }
+                    throw new BgaVisibleSystemException($tile['name']." in $state"); // NOI18N
+                    break;
+                default:
+                    throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
+            }
+            $this->flipSpecialTile($player_id, $tile);
         }
+        $this->gamestate->nextState($nextstate);
+    }
+
+    /**
+     * Player played their Special Tile. Flip it and mark it used.
+     */
+    function flipSpecialTile($player_id, $tile) {
+
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
+            'i18n' => ['special_tile'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'special_tile' => $tile['name'],
+        ));
+        self::DbQuery("UPDATE player SET special_tile_used=1 WHERE player_id=$player_id");
     }
 
     /**
@@ -1989,6 +2053,8 @@ class Perikles extends Table
      */
     function stElections() {
         $players = self::loadPlayersBasicInfos();
+        // end of influence phase
+        self::setGameStateValue("influence_phase", 0);
         foreach ($this->cities as $cn => $city) {
             $city_name = $city['name'];
 
@@ -2308,8 +2374,9 @@ class Perikles extends Table
 
         if ($state['type'] === "multipleactiveplayer") {
             // Make sure player is in a non blocking status for role turn
-            $this->gamestate->setPlayerNonMultiactive( $active_player, '' );
-            
+            $is_battle = self::getGameStateValue('active_battle') != 0;
+            $nextState = $is_battle ? "doBattle" : "nextPlayer";
+            $this->gamestate->setPlayerNonMultiactive( $active_player, $nextState );
             return;
         }
 

@@ -85,9 +85,9 @@ const jstpl_influence_tile = '<div id="${city}_${id}" class="prk_influence_tile"
 
 const jstpl_influence_back = '<div id="cardback_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; position: absolute; margin: -${m}px ${m}px;"></div>';
 
-const jstpl_special_tile = '<div id="${special}_special_tile" class="prk_special_tile ${special}" style="--scale: ${scale}; margin: ${margin};"></div>';
+const jstpl_special_tile = '<div id="${special}_special_tile" class="prk_special_tile prk_special_tile_front ${special}" style="--scale: ${scale}; margin: ${margin};"></div>';
 
-const jstpl_special_back = '<div id="special_${id}" class="prk_special_tile_back" style="--scale: ${scale};"></div>';
+const jstpl_special_back = '<div id="special_${id}" class="prk_special_tile prk_special_tile_back" style="--scale: ${scale};"></div>';
 
 const jstpl_defeat = '<div id="${city}_defeat_${num}" class="prk_defeat_counter"></div>';
 
