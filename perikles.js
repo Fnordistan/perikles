@@ -152,17 +152,18 @@ function (dojo, declare) {
                 const player_cards = this.format_block('jstpl_influence_cards', {id: player_id, scale: special_scale});
                 const player_cards_div = dojo.place(player_cards, $('player_board_'+player_id));
 
+                let used = false;
                 if (spec == 0) {
                     var specialtile = this.format_block('jstpl_special_back', {id: player_id, scale: special_scale});
                 } else {
                     const spec_i = SPECIAL_TILES[Math.abs(spec-1)];
                     specialtile = this.format_block('jstpl_special_tile', {special: spec_i, scale: special_scale, margin: PLAYER_INF_MARGIN});
-                    const used = (spec < 0 || player_id != this.player_id);
-                    if (used) {
-                        tile.classList.add("prk_special_tile_used");
-                    }
+                    used = (spec < 0 || player_id != this.player_id);
                 }
                 const tile = dojo.place(specialtile, player_cards_div);
+                if (used) {
+                    tile.classList.add("prk_special_tile_used");
+                }
                 if (spec == 0) {
                     let ttext = _("${player_name}'s Special tile");
                     const player_name = this.spanPlayerName(player_id);
@@ -2332,7 +2333,6 @@ function (dojo, declare) {
             // get this player's special card
             const player_div = $(player_id+"_player_cards");
             const spec = player_div.getElementsByClassName("prk_special_tile")[0];
-            debugger;
             spec.classList.remove("prk_special_tile_back");
             spec.classList.add("prk_special_tile_front", "prk_special_tile_used");
         },

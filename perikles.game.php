@@ -1150,10 +1150,7 @@ class Perikles extends Table
             $state = $this->getStateName();
             switch ($t) {
                 case 1: // Perikles
-                    if (self::getGameStateValue("influence_phase") == 0) {
-                        throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
-                    }
-                    $this->addInfluenceToCity('athens', $player_id, 2);
+                    $this->playPerikles($player_id);
                     break;
                 case 2; // Persian Fleet
                     break;
@@ -1176,22 +1173,32 @@ class Perikles extends Table
                 default:
                     throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
             }
-            $this->flipSpecialTile($player_id, $tile);
         }
         $this->gamestate->nextState($nextstate);
     }
 
     /**
+     * Play Perikles Special tile.
+     */
+    function playPerikles($player_id) {
+        if (self::getGameStateValue("influence_phase") == 0) {
+            throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
+        }
+        $this->flipSpecialTile($player_id, $this->specialcards[1]['name']);
+        $this->addInfluenceToCity('athens', $player_id, 2);
+    }
+
+    /**
      * Player played their Special Tile. Flip it and mark it used.
      */
-    function flipSpecialTile($player_id, $tile) {
+    function flipSpecialTile($player_id, $tile_name) {
 
         $players = self::loadPlayersBasicInfos();
         self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
             'i18n' => ['special_tile'],
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
-            'special_tile' => $tile['name'],
+            'special_tile' => $tile_name,
         ));
         self::DbQuery("UPDATE player SET special_tile_used=1 WHERE player_id=$player_id");
     }
