@@ -156,7 +156,7 @@ function (dojo, declare) {
                 if (spec == 0) {
                     var specialtile = this.format_block('jstpl_special_back', {id: player_id, scale: special_scale});
                 } else {
-                    const spec_i = SPECIAL_TILES[Math.abs(spec-1)];
+                    const spec_i = SPECIAL_TILES[Math.abs(spec)-1];
                     specialtile = this.format_block('jstpl_special_tile', {special: spec_i, scale: special_scale, margin: PLAYER_INF_MARGIN});
                     used = (spec < 0 || player_id != this.player_id);
                 }
@@ -170,7 +170,7 @@ function (dojo, declare) {
                     ttext = ttext.replace('${player_name}', player_name);
                     this.addTooltip(tile.id, ttext, '');
                 } else {
-                    const thtml = this.createSpecialTileTooltip(SPECIAL_TILES[Math.abs(spec-1)]);
+                    const thtml = this.createSpecialTileTooltip(SPECIAL_TILES[Math.abs(spec)-1]);
                     this.addTooltipHtml(tile.id, thtml, '');
                 }
             }

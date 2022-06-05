@@ -1214,8 +1214,10 @@ class Perikles extends Table
                     'i18n' => ['city_name'],
                     'player_id' => $p,
                     'player_name' => $player['player_name'],
+                    'city' => $city,
                     'city_name' => $this->cities[$city]['name'],
                     'nbr' => $to_reduce,
+                    'preserve' => ['city'],
                 ));
                 $this->changeInfluenceInCity($city, $p, -$to_reduce);
                 for ($i = 0; $i < $to_reduce; $i++) {
