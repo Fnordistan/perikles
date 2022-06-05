@@ -58,7 +58,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must take an Influence tile'),
     	"type" => "activeplayer",
         "args" => "argsSpecial",
-    	"possibleactions" => array( "takeInfluence", "useSpecial" ),
+    	"possibleactions" => array( "takeInfluence", "useSpecial", "plague" ),
     	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "choosePlaceCube" => CHOOSE_PLACE_INFLUENCE)
     ),
 
@@ -103,7 +103,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
     	"type" => "multipleactiveplayer",
         "action" => 'stUseSpecial',
-    	"possibleactions" => array( "useSpecial" ),
+    	"possibleactions" => array( "useSpecial", "plague" ),
     	"transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "nextPlayer" => NEXT_PLAYER, "doBattle" => NEXT_BATTLE )
     ),
 

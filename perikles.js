@@ -1625,13 +1625,14 @@ function (dojo, declare) {
         },
 
         /**
-         * 
+         * Check cards before submitting to the specialTile function.
          */
         specialTileWrapper: function() {
             const mycards = $(this.player_id+"_player_cards");
             const myspecial = mycards.getElementsByClassName("prk_special_tile")[0];
             if (myspecial.classList.contains("plague")) {
                 this.addPlagueButtons();
+                this.specialTile(true);
             } else {
                 this.specialTile(true);
             }
@@ -1646,7 +1647,7 @@ function (dojo, declare) {
             let plaguebuttons = document.getElementsByClassName("prk_plague_btn");
             [...plaguebuttons].forEach( p => p.addEventListener('click', () => {
                 const city = p.id.split("_")[0];
-                console.log("A plague upon "+city);
+                this.onPlagueCity(city);
             }));
 
             this.addActionButton( "plague_cancel_btn", _('Cancel'), () => {
@@ -2120,10 +2121,23 @@ function (dojo, declare) {
          * Player plays or declines to play Special Tile.
          * @param {bool} use
          */
-        specialTile: function($bUse) {
+        specialTile: function(bUse) {
             if (this.checkAction("useSpecial", true)) {
                 this.ajaxcall( "/perikles/perikles/specialTile.html", { 
-                    use: $bUse,
+                    use: bUse,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        /**
+         * 
+         * @param {string} city 
+         */
+        onPlagueCity: function(city) {
+            if (this.checkPossibleActions("useSpecial", true) || this.checkPossibleActions("takeInfluence", true)) {
+                this.ajaxcall( "/perikles/perikles/plague.html", { 
+                    city: city,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
             }
@@ -2186,6 +2200,8 @@ function (dojo, declare) {
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
             dojo.subscribe( 'playSpecial', this, "notif_playSpecial");
             this.notifqueue.setSynchronous( 'notif_playSpecial', 500 );
+
+            
 
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'battle', this, "notif_battle");

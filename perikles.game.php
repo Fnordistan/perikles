@@ -1134,7 +1134,6 @@ class Perikles extends Table
      */
     function playSpecialTile($use) {
         self::checkAction('useSpecial');
-        $nextstate = "nextPlayer";
         // 0 means player passed
         if ($use) {
             $player_id = self::getCurrentPlayerId(); // we are in multiplayeractive
@@ -1146,8 +1145,6 @@ class Perikles extends Table
                 throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
             }
             $t = $special['tile'];
-            $tile = $this->specialcards[$t];
-            $state = $this->getStateName();
             switch ($t) {
                 case 1: // Perikles
                     $this->playPerikles($player_id);
@@ -1168,13 +1165,11 @@ class Perikles extends Table
                     if (self::getGameStateValue("influence_phase") == 0) {
                         throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
                     }
-                    throw new BgaVisibleSystemException($tile['name']." in $state"); // NOI18N
                     break;
                 default:
                     throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
             }
         }
-        $this->gamestate->nextState($nextstate);
     }
 
     /**
@@ -1191,8 +1186,44 @@ class Perikles extends Table
     /**
      * Play Plague special tile.
      */
-    function playPlague($player_id) {
-
+    function playPlague($city) {
+        $this->gamestate->checkPossibleAction( "plague" );
+        $player_id = self::getCurrentPlayerId();
+        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+        // sanity check
+        if ($special['tile'] != 8 || $special['used']) {
+            throw new BgaVisibleSystemException("You cannot play Plague"); // NOI18N
+        }
+        $players = self::loadPlayersBasicInfos();
+        // how many cubes does each player have? Count candidates
+        foreach ($players as $p => $player) {
+            $cubes = $this->influenceInCity($p, $city);
+            foreach(["a", "b"] as $c) {
+                $cv = $city."_".$c;
+                $candidate = self::getGameStateValue($cv);
+                if ($candidate == $p) {
+                    $cubes += 1;
+                }
+            }
+            $to_reduce = floor($cubes/2);
+            if ($to_reduce > 0) {
+                self::notifyAllPlayers("plagueReduce", clienttranslate('Plague removes ${nbr} of ${player_name}\'s cubes in ${city_name}'), array(
+                    'i18n' => ['city_name'],
+                    'player_id' => $p,
+                    'player_name' => $player['player_name'],
+                    'city_name' => $this->cities[$city]['name'],
+                    'nbr' => $to_reduce,
+                ));
+                $this->changeInfluenceInCity($city, $p, -$to_reduce);
+                for ($i = 0; $i < $to_reduce; $i++) {
+                    self::notifyAllPlayers("cubeRemoved", '', array(
+                        'candidate_id' => $p,
+                        'city' => $city,
+                        'preserve' => ['candidate_id', 'city']
+                    ));
+                }
+            }
+        }
     }
 
     /**

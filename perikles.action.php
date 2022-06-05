@@ -115,4 +115,14 @@ class action_perikles extends APP_GameAction
       self::ajaxResponse( );
     }
 
+    /**
+     * Player chose a city for Plague
+     */
+    public function plague() {
+      self::setAjaxMode();     
+      $city = self::getArg( "city", AT_alphanum, true );
+      $this->game->playPlague($city);
+      self::ajaxResponse( );
+    }
+
 }
