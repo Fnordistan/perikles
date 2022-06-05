@@ -1194,6 +1194,7 @@ class Perikles extends Table
         if ($special['tile'] != 8 || $special['used']) {
             throw new BgaVisibleSystemException("You cannot play Plague"); // NOI18N
         }
+        $this->flipSpecialTile($player_id, $this->specialcards[8]['name']);
         $players = self::loadPlayersBasicInfos();
         // how many cubes does each player have? Count candidates
         foreach ($players as $p => $player) {

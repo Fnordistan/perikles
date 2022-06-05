@@ -170,7 +170,7 @@ function (dojo, declare) {
                     ttext = ttext.replace('${player_name}', player_name);
                     this.addTooltip(tile.id, ttext, '');
                 } else {
-                    const thtml = this.createSpecialTileTooltip(players[player_id], SPECIAL_TILES[Math.abs(spec-1)]);
+                    const thtml = this.createSpecialTileTooltip(SPECIAL_TILES[Math.abs(spec-1)]);
                     this.addTooltipHtml(tile.id, thtml, '');
                 }
             }
@@ -178,11 +178,10 @@ function (dojo, declare) {
 
         /**
          * HTML for Special tile tooltip.
-         * @param {Object} player 
          * @param {string} tilenum 
          * @returns 
          */
-        createSpecialTileTooltip: function(player, special) {
+        createSpecialTileTooltip: function(special) {
             const TITLES = {
                 'perikles': _("PERIKLES"),
                 'persianfleet': _("PERSIAN FLEET"),
@@ -410,6 +409,24 @@ function (dojo, declare) {
                 "solygeia" : _("Solygeia"),
             };
             return locationnames[battle];
+        },
+
+        /**
+         * Get the translation string for a special tile
+         * @param {string} special 
+         */
+        getSpecialTileTr: function(special) {
+            const special_names = {
+                'perikles': _("Perikles"),
+                'persianfleet': _("Persian Fleet"),
+                'slaverevolt': _("Slave Revolt"),
+                'brasidas': _("Brasidas"),
+                'thessalanianallies': _("Thessalanian Allies"),
+                'alkibiades': _("Alkibiades"),
+                'phormio': _("Phormio"),
+                'plague': _("Plague")
+            };
+            return special_names[special];
         },
 
         /**
@@ -1606,14 +1623,16 @@ function (dojo, declare) {
                         break;
                     case 'takeInfluence':
                         if (args._private.special) {
-                            this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
+                            const buttonlbl = this.getSpecialButtonLabel(this.player_id);
+                            this.addActionButton( 'play_btn', buttonlbl, () => {
                                 this.specialTileWrapper();
                             }, null, false, 'blue' );
                             break;
                         }
                         break;
                     case 'specialTile':
-                        this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
+                        const buttonlbl = this.getSpecialButtonLabel(this.player_id);
+                        this.addActionButton( 'play_btn', buttonlbl, () => {
                             this.specialTileWrapper();
                         }, null, false, 'blue' );
                         this.addActionButton( 'pass_btn', _("Pass"), () => {
@@ -1625,14 +1644,41 @@ function (dojo, declare) {
         },
 
         /**
+         * Get the translatable label for a Special Tile button
+         * @param {string} player_id 
+         * @returns "Use ${special} tile"
+         */
+        getSpecialButtonLabel: function(player_id) {
+            let buttonlbl = _("Use ${special_name} tile");
+            const speciallbl = this.getPlayerSpecial(player_id);
+            const specialtr = this.getSpecialTileTr(speciallbl);
+            buttonlbl = buttonlbl.replace('${special_name}', specialtr);
+            return buttonlbl;
+        },
+
+        /**
+         * Get the translated a player's Special Tile label.
+         * @param {string} player_id 
+         * @returns label.
+         */
+        getPlayerSpecial: function(player_id) {
+            const mycards = $(player_id+"_player_cards");
+            const myspecial = mycards.getElementsByClassName("prk_special_tile")[0];
+            for (const s of SPECIAL_TILES) {
+                if (myspecial.classList.contains(s)) {
+                    return s;
+                }
+            }
+            return null;
+        },
+
+        /**
          * Check cards before submitting to the specialTile function.
          */
         specialTileWrapper: function() {
-            const mycards = $(this.player_id+"_player_cards");
-            const myspecial = mycards.getElementsByClassName("prk_special_tile")[0];
-            if (myspecial.classList.contains("plague")) {
+            const special = this.getPlayerSpecial(this.player_id);
+            if (special == "plague") {
                 this.addPlagueButtons();
-                this.specialTile(true);
             } else {
                 this.specialTile(true);
             }
@@ -1640,6 +1686,8 @@ function (dojo, declare) {
 
         /**
          * Player has Plague Special tile.
+         * Clicking "Use Special" will add the City Plage buttons.
+         * Cancel needs to restore to pre-
          */
         addPlagueButtons: function() {
             this.setDescriptionOnMyTurn(_("Select a city to be struck with plague"), {'plague': true});
