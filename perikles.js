@@ -853,6 +853,10 @@ function (dojo, declare) {
                             const commit_log = this.createCommittedUnits(args.committed);
                             log = log.replace('committed_forces', commit_log);
                         }
+                        if (args.plague) {
+                            const plague_btns = this.createPlagueButtons();
+                            log += plague_btns;
+                        }
                     }
                 }
             } catch (e) {
@@ -1001,7 +1005,7 @@ function (dojo, declare) {
          * @param {string} text
          * @param {Array} moreargs
          */
-         setDescriptionOnMyTurn : function(text, moreargs) {
+         setDescriptionOnMyTurn: function(text, moreargs) {
             this.gamedatas.gamestate.descriptionmyturn = text;
             let tpl = Object.assign({}, this.gamedatas.gamestate.args);
             if (!tpl) {
@@ -1603,14 +1607,14 @@ function (dojo, declare) {
                     case 'takeInfluence':
                         if (args._private.special) {
                             this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
-                                this.specialTile(true);
+                                this.specialTileWrapper();
                             }, null, false, 'blue' );
                             break;
                         }
                         break;
                     case 'specialTile':
                         this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
-                            this.specialTile(true);
+                            this.specialTileWrapper();
                         }, null, false, 'blue' );
                         this.addActionButton( 'pass_btn', _("Pass"), () => {
                             this.specialTile(false);
@@ -1618,7 +1622,41 @@ function (dojo, declare) {
                         break;
                 }
             }
-        },        
+        },
+
+        /**
+         * 
+         */
+        specialTileWrapper: function() {
+            const mycards = $(this.player_id+"_player_cards");
+            const myspecial = mycards.getElementsByClassName("prk_special_tile")[0];
+            if (myspecial.classList.contains("plague")) {
+                this.addPlagueButtons();
+            } else {
+                this.specialTile(true);
+            }
+        },
+
+        /**
+         * Player has Plague Special tile.
+         */
+        addPlagueButtons: function() {
+            this.setDescriptionOnMyTurn(_("Select a city to be struck with plague"), {'plague': true});
+            this.removeActionButtons();
+            let plaguebuttons = document.getElementsByClassName("prk_plague_btn");
+            [...plaguebuttons].forEach( p => p.addEventListener('click', () => {
+                const city = p.id.split("_")[0];
+                console.log("A plague upon "+city);
+            }));
+
+            this.addActionButton( "plague_cancel_btn", _('Cancel'), () => {
+                this.setDescriptionOnMyTurn(_("You must take an Influence tile"));
+                this.removeActionButtons();
+                this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
+                    this.specialTileWrapper();
+                }, null, false, 'blue' );
+            }, null, null, 'red');
+        },
 
         ///////////////////////////////////////////////////
         //// Utility methods
@@ -1971,6 +2009,21 @@ function (dojo, declare) {
             return loc_html;
         },
 
+        /**
+         * Create buttons to afflict city with plague
+         * @returns html for plague buttons
+         */
+         createPlagueButtons: function() {
+            let plaguecivs = "";
+            for (const city of CITIES) {
+                plaguecivs += this.format_block('jstpl_plague_btn', {city: city, city_name: this.getCityNameTr(city)});
+            }
+            let html = '<div id="plague_city_div" style="display: inline-flex; flex-direction: row;">';
+            html += plaguecivs;
+            html += '</div>';
+            return html;
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
         
@@ -2064,7 +2117,7 @@ function (dojo, declare) {
         },
 
         /**
-         * Player declines to play Special Tile.
+         * Player plays or declines to play Special Tile.
          * @param {bool} use
          */
         specialTile: function($bUse) {

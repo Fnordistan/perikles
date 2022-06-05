@@ -1189,6 +1189,13 @@ class Perikles extends Table
     }
 
     /**
+     * Play Plague special tile.
+     */
+    function playPlague($player_id) {
+
+    }
+
+    /**
      * Player played their Special Tile. Flip it and mark it used.
      */
     function flipSpecialTile($player_id, $tile_name) {

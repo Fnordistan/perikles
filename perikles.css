@@ -334,19 +334,23 @@
 }
 
 .prk_candidate_space_active {
-    animation: prk_candidate_space_pulse 5s infinite;
+    background-color: lightpink;
+    border: red solid 1px;
+    border-radius: 4px;
+    opacity: 0.5;
+/* animation: prk_candidate_space_pulse 3s infinite; */
 }
 
-@keyframes prk_candidate_space_pulse {
+/* @keyframes prk_candidate_space_pulse {
     0% {
         border: white solid 2px;
         border-radius: 4px;
     }
     100% {
-        border: red solid 6px;
+        border: red solid 4px;
         border-radius: 4px;
     }
-}
+} */
 
 .prk_cube {
     position: relative;
@@ -476,6 +480,11 @@
     height: 35px;
     margin: 2px;
     border: 4px ridge #767060;
+}
+
+.prk_plague_btn {
+    border: 4px groove black;
+    box-shadow: 2px 2px 15px 5px darkslategray;
 }
 
 .prk_city_btn:hover {
