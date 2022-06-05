@@ -1134,9 +1134,9 @@ class Perikles extends Table
      */
     function playSpecialTile($use) {
         self::checkAction('useSpecial');
-        // 0 means player passed
+
+        $player_id = self::getCurrentPlayerId(); // we are in multiplayeractive
         if ($use) {
-            $player_id = self::getCurrentPlayerId(); // we are in multiplayeractive
             $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
             // sanity check
             if ($special == null) {
@@ -1169,6 +1169,8 @@ class Perikles extends Table
                 default:
                     throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
             }
+        } else {
+            $this->gamestate->setAllPlayersNonMultiactive('nextPlayer');
         }
     }
 

@@ -101,6 +101,7 @@ $machinestates = array(
     	"name" => "specialTile",
     	"description" => clienttranslate('Special Tile phase'),
     	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
+        "args" => "argsSpecial",
     	"type" => "multipleactiveplayer",
         "action" => 'stUseSpecial',
     	"possibleactions" => array( "useSpecial", "plague" ),

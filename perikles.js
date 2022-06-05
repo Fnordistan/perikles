@@ -1635,9 +1635,12 @@ function (dojo, declare) {
                         this.addActionButton( 'play_btn', buttonlbl, () => {
                             this.specialTileWrapper();
                         }, null, false, 'blue' );
-                        this.addActionButton( 'pass_btn', _("Pass"), () => {
-                            this.specialTile(false);
-                        }, null, false, 'red' );
+                        // only the player whose turn it is can move on
+                        if (args._private && args._private.special) {
+                            this.addActionButton( 'pass_btn', _("Pass"), () => {
+                                this.specialTile(false);
+                            }, null, false, 'red' );
+                        }
                         break;
                 }
             }
