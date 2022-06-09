@@ -19,7 +19,7 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("TAKE_INFLUENCE", 2);
     define("PLACE_INFLUENCE", 3);
     define("CHOOSE_PLACE_INFLUENCE", 33);
-    define("USE_SPECIAL", 4);
+    define("SPECIAL_TILE", 4);
     define("ASSIGN_CANDIDATE", 5);
     define("ASSASSINATE", 6);
     define("NEXT_PLAYER", 7);
@@ -67,7 +67,7 @@ $machinestates = array(
     	"description" => "",
     	"type" => "game",
     	"action" => "stPlaceInfluence",
-    	"transitions" => array( "useSpecial" => USE_SPECIAL, "assassinate" => ASSASSINATE, "candidate" => PROPOSE_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
+    	"transitions" => array( "useSpecial" => SPECIAL_TILE, "assassinate" => ASSASSINATE, "candidate" => PROPOSE_CANDIDATE, "nextPlayer" => NEXT_PLAYER )
     ),
 
     CHOOSE_PLACE_INFLUENCE => array(
@@ -76,7 +76,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must choose a city to add an Influence cube'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "placeAnyCube" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => USE_SPECIAL )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => SPECIAL_TILE )
     ),
 
     PROPOSE_CANDIDATE => array(
@@ -85,7 +85,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "proposeCandidate" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => USE_SPECIAL )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => SPECIAL_TILE )
     ),
 
     ASSASSINATE => array(
@@ -94,17 +94,16 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must remove 1 Influence cube'),
     	"type" => "activeplayer",
     	"possibleactions" => array( "chooseRemoveCube" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => USE_SPECIAL )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => SPECIAL_TILE )
     ),
 
-    USE_SPECIAL => array(
+    SPECIAL_TILE => array(
     	"name" => "specialTile",
     	"description" => clienttranslate('Special Tile phase'),
     	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
         "args" => "argsSpecial",
-    	"type" => "multipleactiveplayer",
-        "action" => 'stUseSpecial',
-    	"possibleactions" => array( "useSpecial", "plague" ),
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "useSpecial" ),
     	"transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "nextPlayer" => NEXT_PLAYER, "doBattle" => NEXT_BATTLE )
     ),
 
@@ -172,7 +171,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stResolveLocation",
-        "transitions" => array( "special" => USE_SPECIAL, "doBattle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
+        "transitions" => array( "special" => SPECIAL_TILE, "doBattle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
     ),
 
     NEXT_BATTLE => array(

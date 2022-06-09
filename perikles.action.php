@@ -111,7 +111,7 @@ class action_perikles extends APP_GameAction
     public function specialTile() {
       self::setAjaxMode();     
       $use = self::getArg( "use", AT_bool, true );
-      $this->game->playSpecialTile($use);
+      $this->game->useSpecialTile($use);
       self::ajaxResponse( );
     }
 

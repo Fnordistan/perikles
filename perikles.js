@@ -1606,7 +1606,7 @@ function (dojo, declare) {
             console.log( 'onUpdateActionButtons: '+stateName );
                       
             if( this.isCurrentPlayerActive() )
-            {            
+            {
                 switch( stateName ) {
                     case 'spartanChoice':
                         for (player_id in this.gamedatas.players) {
@@ -1621,29 +1621,34 @@ function (dojo, declare) {
                             this.onResetForces();
                         }, null, null, 'red');
                         break;
-                    case 'takeInfluence':
-                        if (args._private.special) {
-                            const buttonlbl = this.getSpecialButtonLabel(this.player_id);
-                            this.addActionButton( 'play_btn', buttonlbl, () => {
-                                this.specialTileWrapper();
-                            }, null, false, 'blue' );
-                            break;
-                        }
-                        break;
                     case 'specialTile':
+                        this.addActionButton( 'pass_btn', _("Pass"), () => {
+                            this.specialTile(false);
+                        }, null, false, 'red' );
+                        break;
+                }
+            }
+            // buttons that can be added even for non-current player
+            switch( stateName ) {
+                case 'takeInfluence':
+                    if (args._private.special) {
                         const buttonlbl = this.getSpecialButtonLabel(this.player_id);
                         this.addActionButton( 'play_btn', buttonlbl, () => {
                             this.specialTileWrapper();
                         }, null, false, 'blue' );
-                        // only the player whose turn it is can move on
-                        if (args._private && args._private.special) {
-                            this.addActionButton( 'pass_btn', _("Pass"), () => {
-                                this.specialTile(false);
-                            }, null, false, 'red' );
-                        }
                         break;
-                }
-            }
+                    }
+                    break;
+                case 'specialTile':
+                    if (args._private.special) {
+                        const buttonlbl = this.getSpecialButtonLabel(this.player_id);
+                        this.addActionButton( 'play_btn', buttonlbl, () => {
+                            this.specialTileWrapper();
+                        }, null, false, 'blue' );
+                    }
+                    break;
+        }
+
         },
 
         /**

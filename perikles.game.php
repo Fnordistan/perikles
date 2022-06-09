@@ -1129,48 +1129,69 @@ class Perikles extends Table
 //////////// Player actions
 //////////// 
 
+
+    /**
+     * Choose players who can use a special tile
+     */
+    function useSpecialTile($use) {
+        self::checkAction('useSpecial');
+        if ($use) {
+            $this->playSpecialTile();
+        } else {
+            $is_battle = self::getGameStateValue('active_battle') != 0;
+            $this->gamestate->nextState($is_battle ? "doBattle" : "nextPlayer");
+        }
+        // $players = [];
+        // is this a commit round?
+        // if ($is_battle) {
+        //     $battle = $this->nextBattle();
+        //     $location = $battle['location'];
+        //     // $type = $this->getCurrentBattleType($location);
+        //     $players = $this->playersWithSpecial($type);
+        //     $this->gamestate->setPlayersMultiactive($players, "doBattle", true);
+        // } else {
+        //     // take influence phase
+        //     $players = $this->playersWithSpecial("influence");
+        // }
+    }
+
     /**
      * Player either Played or Passed on special tile button.
      */
-    function playSpecialTile($use) {
-        self::checkAction('useSpecial');
+    function playSpecialTile() {
 
-        $player_id = self::getCurrentPlayerId(); // we are in multiplayeractive
-        if ($use) {
-            $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
-            // sanity check
-            if ($special == null) {
-                throw new BgaVisibleSystemException("No special tile found"); // NOI18N
-            } else if ($special['used']) {
-                throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
-            }
-            $t = $special['tile'];
-            switch ($t) {
-                case 1: // Perikles
-                    $this->playPerikles($player_id);
-                    break;
-                case 2; // Persian Fleet
-                    break;
-                case 3; // Slave Revolt
-                    break;
-                case 4; // Brasidas
-                    break;
-                case 5; // Thessalanian Allies
-                    break;
-                case 6; // Alkibiades
-                    break;
-                case 7; // Phormio
-                    break;
-                case 8; // Plague
-                    if (self::getGameStateValue("influence_phase") == 0) {
-                        throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
-                    }
-                    break;
-                default:
-                    throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
-            }
-        } else {
-            $this->gamestate->setAllPlayersNonMultiactive('nextPlayer');
+        $player_id = self::getActivePlayerId();
+        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+        // sanity check
+        if ($special == null) {
+            throw new BgaVisibleSystemException("No special tile found"); // NOI18N
+        } else if ($special['used']) {
+            throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
+        }
+        $t = $special['tile'];
+        switch ($t) {
+            case 1: // Perikles
+                $this->playPerikles($player_id);
+                break;
+            case 2; // Persian Fleet
+                break;
+            case 3; // Slave Revolt
+                break;
+            case 4; // Brasidas
+                break;
+            case 5; // Thessalanian Allies
+                break;
+            case 6; // Alkibiades
+                break;
+            case 7; // Phormio
+                break;
+            case 8; // Plague
+                if (self::getGameStateValue("influence_phase") == 0) {
+                    throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
+                }
+                break;
+            default:
+                throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
         }
     }
 
@@ -1935,13 +1956,13 @@ class Perikles extends Table
      * Can the current active player play a special card during this Influence phase.
      */
     function argsSpecial() {
-        $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+        $private = array();
+        foreach (array_keys($players) as $player_id) {
+            $private[$player_id] = array('special' => $this->canPlaySpecial($player_id, "influence"));
+        }
         return array(
-            '_private' => array(
-                $player_id => array(
-                    'special' => $this->canPlaySpecial($player_id, "influence")
-                )
-            )
+            '_private' => $private
         );
     }
 
@@ -2339,27 +2360,6 @@ class Perikles extends Table
      */
     function stScoring() {
         $this->gamestate->nextState();
-    }
-
-    /**
-     * Choose players who can use a special tile
-     */
-    function stUseSpecial() {
-        $players = [];
-        // is this a commit round?
-        $is_battle = self::getGameStateValue('active_battle') != 0;
-        if ($is_battle) {
-            $battle = $this->nextBattle();
-            $location = $battle['location'];
-            $type = $this->getCurrentBattleType($location);
-            $players = $this->playersWithSpecial($type);
-            $this->gamestate->setPlayersMultiactive($players, "doBattle", true);
-        } else {
-            // take influence phase
-            // TODO: this will make all players with an Influence-phase tile active...
-            $players = $this->playersWithSpecial("influence");
-            $this->gamestate->setPlayersMultiactive($players, "nextPlayer", true);
-        }
     }
 
     function stDebug() {
