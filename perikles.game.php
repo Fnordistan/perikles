@@ -1131,12 +1131,12 @@ class Perikles extends Table
 
 
     /**
-     * Choose players who can use a special tile
+     * A player clicked a Special Tile Button or the Pass button
      */
-    function useSpecialTile($use) {
-        self::checkAction('useSpecial');
+    function useSpecialTile($player_id, $use) {
+        // self::checkAction('useSpecial');
         if ($use) {
-            $this->playSpecialTile();
+            $this->playSpecialTile($player_id);
         } else {
             $is_battle = self::getGameStateValue('active_battle') != 0;
             $this->gamestate->nextState($is_battle ? "doBattle" : "nextPlayer");
@@ -1157,10 +1157,9 @@ class Perikles extends Table
 
     /**
      * Player either Played or Passed on special tile button.
+     * @param player_id
      */
-    function playSpecialTile() {
-
-        $player_id = self::getActivePlayerId();
+    function playSpecialTile($player_id) {
         $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
         // sanity check
         if ($special == null) {
@@ -1174,16 +1173,22 @@ class Perikles extends Table
                 $this->playPerikles($player_id);
                 break;
             case 2; // Persian Fleet
+                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 3; // Slave Revolt
+                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 4; // Brasidas
+                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 5; // Thessalanian Allies
+                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 6; // Alkibiades
+                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 7; // Phormio
+                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 8; // Plague
                 if (self::getGameStateValue("influence_phase") == 0) {

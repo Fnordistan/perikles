@@ -1631,18 +1631,11 @@ function (dojo, declare) {
             // buttons that can be added even for non-current player
             switch( stateName ) {
                 case 'takeInfluence':
-                    if (args._private.special) {
-                        const buttonlbl = this.getSpecialButtonLabel(this.player_id);
-                        this.addActionButton( 'play_btn', buttonlbl, () => {
-                            this.specialTileWrapper();
-                        }, null, false, 'blue' );
-                        break;
-                    }
-                    break;
                 case 'specialTile':
                     if (args._private.special) {
                         const buttonlbl = this.getSpecialButtonLabel(this.player_id);
-                        this.addActionButton( 'play_btn', buttonlbl, () => {
+                        this.addActionButton( 'play_special_btn', buttonlbl, () => {
+                            console.log("click 1");
                             this.specialTileWrapper();
                         }, null, false, 'blue' );
                     }
@@ -1685,6 +1678,7 @@ function (dojo, declare) {
          */
         specialTileWrapper: function() {
             const special = this.getPlayerSpecial(this.player_id);
+            console.log("click 2");
             if (special == "plague") {
                 this.addPlagueButtons();
             } else {
@@ -1709,7 +1703,7 @@ function (dojo, declare) {
             this.addActionButton( "plague_cancel_btn", _('Cancel'), () => {
                 this.setDescriptionOnMyTurn(_("You must take an Influence tile"));
                 this.removeActionButtons();
-                this.addActionButton( 'play_btn', _("Use Special Tile"), () => {
+                this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
                     this.specialTileWrapper();
                 }, null, false, 'blue' );
             }, null, null, 'red');
@@ -2178,8 +2172,11 @@ function (dojo, declare) {
          * @param {bool} use
          */
         specialTile: function(bUse) {
-            if (this.checkAction("useSpecial", true)) {
-                this.ajaxcall( "/perikles/perikles/specialTile.html", { 
+            console.log("click 3");
+            if (this.checkPossibleActions("useSpecial", true)) {
+                console.log(this.player_id + " clicked Special "+bUse);
+                this.ajaxcall( "/perikles/perikles/specialTile.html", {
+                    player: this.player_id,
                     use: bUse,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
@@ -2191,7 +2188,7 @@ function (dojo, declare) {
          * @param {string} city 
          */
         onPlagueCity: function(city) {
-            if (this.checkPossibleActions("useSpecial", true) || this.checkPossibleActions("takeInfluence", true)) {
+            if (this.checkPossibleActions("useSpecial", true)) {
                 this.ajaxcall( "/perikles/perikles/plague.html", { 
                     city: city,
                     lock: true 
@@ -2460,6 +2457,10 @@ function (dojo, declare) {
             const spec = player_div.getElementsByClassName("prk_special_tile")[0];
             spec.classList.remove("prk_special_tile_back");
             spec.classList.add("prk_special_tile_front", "prk_special_tile_used");
+            // remove button
+            if (this.player_id == player_id) {
+                $('play_special_btn').remove();
+            }
         },
 
         /**
