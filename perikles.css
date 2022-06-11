@@ -381,6 +381,22 @@
     outline: 1px dotted white;
 }
 
+.prk_cube_alibiades {
+    margin-left: 4px;
+}
+
+.prk_cube_alkibiades_active {
+    border-radius: 4px;
+    outline: 2px dotted green;
+    cursor: pointer;
+}
+
+.prk_cube_alkibiades_active:hover {
+    transform: scale(1.1) rotate(180deg);
+    transition: transform 0.25s;
+    box-shadow: lightgray 0px 2px 4px 4px;
+}
+
 .prk_statue_zone {
     position: absolute;
     width: 40px;
@@ -485,6 +501,32 @@
 .prk_plague_btn {
     border: 4px groove black;
     box-shadow: 2px 2px 15px 5px darkslategray;
+}
+
+.prk_alkibiades_btn {
+    color: black;
+    font-size: 18px;
+    font-family: 'ThrumsSerifRegular';
+    font-weight: 700;
+    text-align: center;
+    width: 100px;
+    height: 35px;
+    margin: 2px;
+    border: 4px ridge darkslategray;
+}
+
+.prk_alkibiades_row {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.prk_alkibiades_civs {
+    display: inline-flex;
+    flex-direction: column;
+    border: groove darkgray 12px;
+    padding: 2px;
+    margin: 5px;
 }
 
 .prk_city_btn:hover {
