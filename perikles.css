@@ -395,6 +395,7 @@
     transform: scale(1.1) rotate(180deg);
     transition: transform 0.25s;
     box-shadow: lightgray 0px 2px 4px 4px;
+    cursor: grabbing;
 }
 
 .prk_statue_zone {
@@ -504,6 +505,10 @@
 }
 
 .prk_alkibiades_btn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     color: black;
     font-size: 18px;
     font-family: 'ThrumsSerifRegular';
@@ -512,7 +517,16 @@
     width: 100px;
     height: 35px;
     margin: 2px;
-    border: 4px ridge darkslategray;
+    border: 14px ridge white;
+    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(255, 255, 255, 1);
+}
+
+.prk_alkibiades_btn > div {
+    margin-left: 4px;
+}
+
+.prk_alkibiades_btn_active {
+    background-color: black;
 }
 
 .prk_alkibiades_row {

@@ -90,6 +90,9 @@ const BATTLE_POS = {
     4: "def_ally"
 }
 
+// tracks cubes being moved by Alkibiades Special Tile
+const ALKIBIADES_CUBES = "alkibiades_cubes"
+
 const DEAD_POOL = "deadpool";
 
 define([
@@ -135,6 +138,8 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
+            // refresh any Alkibiades cubes
+            this.ALKIBIADES_CUBES = [];
         },
 
         /**
@@ -501,6 +506,7 @@ function (dojo, declare) {
         decorateInfluenceCubes: function(city, player_id) {
             const id = city+"_cubes_"+player_id;
             const cubes_div = $(id);
+
             cubes_div.addEventListener('mouseenter', (event) => {
                 this.onInfluenceCubesHover(event, city, true);
             });
@@ -613,7 +619,7 @@ function (dojo, declare) {
          * @param {int} player_id
          * @param {string} city
          * @param {string} tag
-         * @returns colored influence cube
+         * @returns html for colored influence cube
          */
         createInfluenceCube: function(player_id, city, tag) {
             const player = this.gamedatas.players[player_id];
@@ -1342,17 +1348,15 @@ function (dojo, declare) {
          * @param {bool} enter
          */
          onInfluenceCubesHover: function(event, city, enter) {
-            if( this.isCurrentPlayerActive()) {
-                if (this.checkAction("proposeCandidate", true)) {
-                    const cube_div = event.target;
-                    // player must have a cube in the city
-                    if (enter && this.hasCubeInCity(city, true)) {
-                        if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
-                            cube_div.classList.add("prk_cubes_active");
-                        }
-                    } else {
-                        cube_div.classList.remove("prk_cubes_active");
+            if (this.isCurrentPlayerActive() && this.checkAction("proposeCandidate", true)) {
+                const cube_div = event.target;
+                // player must have a cube in the city
+                if (enter && this.hasCubeInCity(city, true)) {
+                    if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
+                        cube_div.classList.add("prk_cubes_active");
                     }
+                } else {
+                    cube_div.classList.remove("prk_cubes_active");
                 }
             }
         },
@@ -1360,6 +1364,8 @@ function (dojo, declare) {
         /**
          * Mouse clicking Influence zone in city.
          * @param {Object} event 
+         * @param {string} city
+         * @param {string} player_id
          */
          onInfluenceCubesClick: function(event, city, player_id) {
             if( this.isCurrentPlayerActive() ) {
@@ -1692,10 +1698,14 @@ function (dojo, declare) {
             }
         },
 
+        ///////////////////////////////////////////////////
+        //// Handling Special Tiles
+        ///////////////////////////////////////////////////
+
+        // PLAGUE
+
         /**
-         * Player has Plague Special tile.
-         * Clicking "Use Special" will add the City Plage buttons.
-         * Cancel needs to restore to pre-
+         * Player clicked "Use Plague" button.
          */
         addPlagueButtons: function() {
             this.setDescriptionOnMyTurn(_("Select a city to be struck with plague"), {'plague': true});
@@ -1709,28 +1719,48 @@ function (dojo, declare) {
             this.addSpecialTileCancel("cancel");
         },
 
+        // ALKIBIADES
+
         /**
-         * Player has Alibiades Special tile.
+         * Player clicked "Use Alkibiades" button.
          */
-        addAlkibiadesButtons: function() {
+         addAlkibiadesButtons: function() {
             this.setDescriptionOnMyTurn(_("Select 2 cubes to move"), {'alkibiades': true});
             this.removeActionButtons();
 
+            // recolor the to_civ buttons
+            const to_civs = $('alkibiades_to_cities').getElementsByClassName('prk_alkibiades_btn');
+            [...to_civs].forEach(civ => {
+                civ.style['background-color'] = 'white';
+                civ.addEventListener('mouseenter', () => this.enterCivBtnAlkibiades(civ));
+                civ.addEventListener('mouseleave', () => this.leaveCivBtnAlkibiades(civ));
+                civ.addEventListener('click', () => this.clickCivBtnAlkibiades(civ));
+            });
+
             let alkibiadescubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube');
             [...alkibiadescubes].forEach( c => this.addAlkibiadesCubesEventListeners(c));
+
+            // for (player_id in this.gamedatas.players) {
+            //     for (city of CITIES) {
+            //         this.decorateInfluenceCubes(city, player_id, true);
+            //     }
+            // }
 
             this.addSpecialTileCancel("alkibiades");
         },
 
         /**
-         * 
+         * Add listeners to cubes in the Alkibiades banner.
+         * Makes them light up and spin when hovered, or add to local ALKIBIADES_CUBES array if selected.
          * @param {Object} cube 
          */
-        addAlkibiadesCubesEventListeners: function(cube) {
+         addAlkibiadesCubesEventListeners: function(cube) {
             cube.classList.add("prk_cube_alibiades");
             cube.addEventListener('click', () => {
-                const [player_id, city, _] = cube.id.split("_");
-                this.onMoveCube(player_id, city);
+                const selectedcube = cube.id.split("_").slice(0,2);
+                const len = this.ALKIBIADES_CUBES.push(selectedcube);
+                this.decorateAlkibiadesToDiv(selectedcube[0]);
+                console.log("Alkibiades cubes selected: "+len);
             });
             cube.addEventListener('mouseenter', () => {
                 cube.classList.add("prk_cube_alkibiades_active");
@@ -1738,6 +1768,60 @@ function (dojo, declare) {
             cube.addEventListener('mouseleave', () => {
                 cube.classList.remove("prk_cube_alkibiades_active");
             });
+        },
+
+        /**
+         * Highlight the Alkibiades "To" div with player cube color.
+         * @param {string} player_id 
+         */
+        decorateAlkibiadesToDiv: function(player_id) {
+            let pcolor = this.playerColor(player_id);
+            if (pcolor == 'white') {
+                pcolor = 'gray';
+            }
+            const to_city_container = $('alkibiades_to_cities');
+            to_city_container.style['box-shadow'] = '2px 2px 15px 5px '+pcolor;
+        },
+
+        /**
+         * When entering one of the Alkibiades To buttons, color it if it's not the from city.
+         * @param {element} tociv 
+         */
+        enterCivBtnAlkibiades: function(tociv) {
+            if (this.ALKIBIADES_CUBES.length > 0) {
+                const movecube = this.ALKIBIADES_CUBES[this.ALKIBIADES_CUBES.length-1];
+                const tocity = tociv.id.split("_")[0];
+                if (movecube[1] != tocity) {
+                    Object.assign(tociv.style, {
+                        'background-color': 'var(--color_'+tocity+')',
+                        'cursor': 'grab'
+                    });
+                }
+            }
+        },
+
+        /**
+         * Uncolor Alkibiades To button.
+         * @param {element} tociv 
+         */
+         leaveCivBtnAlkibiades: function(tociv) {
+            tociv.style['background-color'] = 'white';
+        },
+
+        /**
+         * Dropping a cube on a city to move it there.
+         * @param {element} tociv
+         */
+         clickCivBtnAlkibiades: function(tociv) {
+            if (this.ALKIBIADES_CUBES.length > 0) {
+                const [player_id, fromcity] = this.ALKIBIADES_CUBES[this.ALKIBIADES_CUBES.length-1];
+                const tocity = tociv.id.split("_")[0];
+                if (fromcity != tocity) {
+                    tociv.style['background-color'] = 'white';
+                    const cubehtml = this.createInfluenceCube(player_id, fromcity, 'move');
+                    dojo.place(cubehtml, tociv);
+                }
+            }
         },
 
         /**
@@ -2127,24 +2211,32 @@ function (dojo, declare) {
          * Create buttons to move cubes with Alkibiades.
          */
         createAlkibiadesButtons: function() {
-            let alkibiadescivs = '';
+            let fromcivs = '';
+            let tocivs = '';
             for (const city of CITIES) {
-                alkibiadescivs += '<div class="prk_alkibiades_row">';
-                alkibiadescivs += this.format_block('jstpl_alkibiades_btn', {city: city, city_name: this.getCityNameTr(city)});
+                fromcivs += '<div class="prk_alkibiades_row">';
+                tocivs += '<div class="prk_alkibiades_row">';
+                fromcivs += this.format_block('jstpl_alkibiades_btn', {city: city, city_name: this.getCityNameTr(city), tag: "from"});
+                tocivs += this.format_block('jstpl_alkibiades_btn', {city: city, city_name: this.getCityNameTr(city),  tag: "to"});
                 for (player_id in this.gamedatas.players) {
                     const cubes_div = $(city+"_cubes_"+player_id);
                     const cubes = cubes_div.childElementCount;
                     if (cubes > 0) {
                         const cube = this.createInfluenceCube(player_id, city, 'alkibiades');
-                        alkibiadescivs += cube;
+                        fromcivs += cube;
                     }
                 }
-                alkibiadescivs += '</div>';
+                fromcivs += '</div>';
+                tocivs += '</div>';
             }
-            let html = '<div id="alkibiades_from_cities" class="prk_alkibiades_civs" style="background-color: lightgray;">';
+            let html = '<br/><div id="alkibiades_from_cities" class="prk_alkibiades_civs" style="background-color: lightgray;">';
             html += '<h2 style="font-family: \'Bodoni Moda\';">'+_('From')+'</h2>';
-            html += alkibiadescivs;
+            html += fromcivs;
             html += '</div>';
+            html += '<div id="alkibiades_to_cities" class="prk_alkibiades_civs" style="background-color: lightgray;">';
+            html += '<h2 style="font-family: \'Bodoni Moda\';">'+_('To')+'</h2>';
+            html += tocivs;
+            html += '</div><br/>';
             return html;
         },
 
@@ -2267,15 +2359,6 @@ function (dojo, declare) {
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
             }
-        },
-
-        /**
-         * Alkibidiades player clicked a cube to move
-         * @param {string} player_id 
-         * @param {string} city 
-         */
-        onMoveCube: function(player_id, city) {
-            console.log("Moving " + player_id + " to " + city);
         },
 
         /**
