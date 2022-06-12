@@ -90,9 +90,6 @@ const BATTLE_POS = {
     4: "def_ally"
 }
 
-// tracks cubes being moved by Alkibiades Special Tile
-const ALKIBIADES_CUBES = "alkibiades_cubes"
-
 const DEAD_POOL = "deadpool";
 
 define([
@@ -138,8 +135,6 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
-            // refresh any Alkibiades cubes
-            this.ALKIBIADES_CUBES = [];
         },
 
         /**
@@ -1728,46 +1723,64 @@ function (dojo, declare) {
             this.setDescriptionOnMyTurn(_("Select 2 cubes to move"), {'alkibiades': true});
             this.removeActionButtons();
 
-            // recolor the to_civ buttons
-            const to_civs = $('alkibiades_to_cities').getElementsByClassName('prk_alkibiades_btn');
-            [...to_civs].forEach(civ => {
-                civ.style['background-color'] = 'white';
-                civ.addEventListener('mouseenter', () => this.enterCivBtnAlkibiades(civ));
-                civ.addEventListener('mouseleave', () => this.leaveCivBtnAlkibiades(civ));
-                civ.addEventListener('click', () => this.clickCivBtnAlkibiades(civ));
-            });
-
+            // add listeners to the cubes in the From cities
             let alkibiadescubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube');
             [...alkibiadescubes].forEach( c => this.addAlkibiadesCubesEventListeners(c));
 
-            // for (player_id in this.gamedatas.players) {
-            //     for (city of CITIES) {
-            //         this.decorateInfluenceCubes(city, player_id, true);
-            //     }
-            // }
+            // add listeners to the To-buttons
+            const to_civs = $('alkibiades_to_cities').getElementsByClassName('prk_alkibiades_btn');
+            [...to_civs].forEach(civ => this.addAlkibiadesToCivListeners(civ));
 
             this.addSpecialTileCancel("alkibiades");
         },
 
         /**
          * Add listeners to cubes in the Alkibiades banner.
-         * Makes them light up and spin when hovered, or add to local ALKIBIADES_CUBES array if selected.
+         * Makes them light up and spin when hovered
          * @param {Object} cube 
          */
          addAlkibiadesCubesEventListeners: function(cube) {
             cube.classList.add("prk_cube_alibiades");
-            cube.addEventListener('click', () => {
-                const selectedcube = cube.id.split("_").slice(0,2);
-                const len = this.ALKIBIADES_CUBES.push(selectedcube);
-                this.decorateAlkibiadesToDiv(selectedcube[0]);
-                console.log("Alkibiades cubes selected: "+len);
-            });
+            // spin and highlight
             cube.addEventListener('mouseenter', () => {
-                cube.classList.add("prk_cube_alkibiades_active");
+                const cubes = this.getAlkibiadesCubesToMove();
+                if (cubes.length < 2) {
+                    cube.classList.add("prk_cube_alkibiades_active");
+                }
             });
+            // unhighlight
             cube.addEventListener('mouseleave', () => {
                 cube.classList.remove("prk_cube_alkibiades_active");
             });
+            cube.addEventListener('click', () => {
+                const cubes = this.getAlkibiadesCubesToMove();
+                if (cubes.length < 2) {
+                    // unmark any previous cube
+                    const selected = this.getAlkibiadesCubeSelected();
+                    if (selected) {
+                        selected.classList.remove('prk_alkibiades_selected');
+                    }
+                    // mark the cube
+                    cube.classList.add('prk_alkibiades_selected');
+                    // highlight the To box with the selected player's color
+                    const selected_pid = cube.id.split("_")[0];
+                    this.decorateAlkibiadesToDiv(selected_pid);
+                }
+            });
+        },
+
+        /**
+         * Add listeners to the To buttons for Alkibiades
+         * @param {Object} civ 
+         */
+        addAlkibiadesToCivListeners: function(civ) {
+            civ.style['background-color'] = 'white';
+            // colored when hovered
+            civ.addEventListener('mouseenter', () => this.enterCivBtnAlkibiades(civ));
+            // uncolor when left
+            civ.addEventListener('mouseleave', () => this.leaveCivBtnAlkibiades(civ));
+            // clicking a Civ to place cube there
+            civ.addEventListener('click', () => this.clickCivBtnAlkibiades(civ));
         },
 
         /**
@@ -1788,10 +1801,12 @@ function (dojo, declare) {
          * @param {element} tociv 
          */
         enterCivBtnAlkibiades: function(tociv) {
-            if (this.ALKIBIADES_CUBES.length > 0) {
-                const movecube = this.ALKIBIADES_CUBES[this.ALKIBIADES_CUBES.length-1];
-                const tocity = tociv.id.split("_")[0];
-                if (movecube[1] != tocity) {
+            // get the selected cube
+            const selected = this.getAlkibiadesCubeSelected();
+            if (selected) {
+                const fromcity = selected.id.split("_")[1];
+                const tocity = tociv.id.split("_")[1];
+                if (fromcity != tocity) {
                     Object.assign(tociv.style, {
                         'background-color': 'var(--color_'+tocity+')',
                         'cursor': 'grab'
@@ -1813,14 +1828,50 @@ function (dojo, declare) {
          * @param {element} tociv
          */
          clickCivBtnAlkibiades: function(tociv) {
-            if (this.ALKIBIADES_CUBES.length > 0) {
-                const [player_id, fromcity] = this.ALKIBIADES_CUBES[this.ALKIBIADES_CUBES.length-1];
+            const selected = this.getAlkibiadesCubeSelected();
+            if (selected == null) {
+                throw new Error("No cube selected to move!");
+            }
+            const previouscubes = this.getAlkibiadesCubesToMove();
+            // how many have already been put down? Should be 0 or 1
+            const movedcubes = previouscubes.length;
+            if (movedcubes < 2) {
+                const [player_id, fromcity] = selected.id.split("_").splice(0,2);
                 const tocity = tociv.id.split("_")[0];
                 if (fromcity != tocity) {
                     tociv.style['background-color'] = 'white';
-                    const cubehtml = this.createInfluenceCube(player_id, fromcity, 'move');
+                    const cubehtml = this.createInfluenceCube(player_id, fromcity, 'move'+(movedcubes+1));
                     dojo.place(cubehtml, tociv);
                 }
+            }
+            // if this was the second, then activate submit button
+            if (movedcubes == 1) {
+                console.log("Second cube placed");
+            }
+        },
+
+        /**
+         * Get all the cubes currently on the To-Move box
+         * @returns arraylike DOM list
+         */
+        getAlkibiadesCubesToMove: function() {
+            const cubes = $('alkibiades_to_cities').getElementsByClassName('prk_cube');
+            return cubes;
+        },
+
+        /**
+         * Get the Alkibiades cube that was clicked to be moved.
+         * @return a selected cube or null
+         */
+        getAlkibiadesCubeSelected: function() {
+            const selected = $('alkibiades_from_cities').getElementsByClassName('prk_alkibiades_selected');
+            if (selected.length > 1) {
+                throw new Error("Multiple Alkibiades cubes have been marked as selected");
+            }
+            if (selected.length == 0) {
+                return null;
+            } else {
+                return selected[0];
             }
         },
 
