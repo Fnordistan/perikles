@@ -1640,7 +1640,6 @@ function (dojo, declare) {
                     if (args._private.special) {
                         const buttonlbl = this.getSpecialButtonLabel(this.player_id);
                         this.addActionButton( 'play_special_btn', buttonlbl, () => {
-                            console.log("click 1");
                             this.specialTileWrapper();
                         }, null, false, 'blue' );
                     }
@@ -1683,7 +1682,6 @@ function (dojo, declare) {
          */
         specialTileWrapper: function() {
             const special = this.getPlayerSpecial(this.player_id);
-            console.log("click 2");
             if (special == "plague") {
                 this.addPlagueButtons();
             } else if(special == "alkibiades") {
@@ -1731,6 +1729,9 @@ function (dojo, declare) {
             const to_civs = $('alkibiades_to_cities').getElementsByClassName('prk_alkibiades_btn');
             [...to_civs].forEach(civ => this.addAlkibiadesToCivListeners(civ));
 
+            this.addActionButton( 'alkibiades_move_btn', _("Confirm"), () => {
+                console.log("Alkibiades move");
+            }, null, false, 'blue' );
             this.addSpecialTileCancel("alkibiades");
         },
 
@@ -1756,15 +1757,12 @@ function (dojo, declare) {
                 const cubes = this.getAlkibiadesCubesToMove();
                 if (cubes.length < 2) {
                     // unmark any previous cube
-                    const selected = this.getAlkibiadesCubeSelected();
-                    if (selected) {
-                        selected.classList.remove('prk_alkibiades_selected');
-                    }
+                    this.deselectAlkibiadesCube();
                     // mark the cube
                     cube.classList.add('prk_alkibiades_selected');
                     // highlight the To box with the selected player's color
-                    const selected_pid = cube.id.split("_")[0];
-                    this.decorateAlkibiadesToDiv(selected_pid);
+                    const [selected_pid, fromcity] = cube.id.split("_").splice(0, 2);
+                    this.decorateAlkibiadesToDiv(selected_pid, fromcity);
                 }
             });
         },
@@ -1785,15 +1783,17 @@ function (dojo, declare) {
 
         /**
          * Highlight the Alkibiades "To" div with player cube color.
-         * @param {string} player_id 
+         * @param {string} player_id
+         * @param {string} fromcity
          */
-        decorateAlkibiadesToDiv: function(player_id) {
+        decorateAlkibiadesToDiv: function(player_id, fromcity) {
             let pcolor = this.playerColor(player_id);
             if (pcolor == 'white') {
                 pcolor = 'gray';
             }
             const to_city_container = $('alkibiades_to_cities');
             to_city_container.style['box-shadow'] = '2px 2px 15px 5px '+pcolor;
+            $(fromcity+"_alkibiades_to_btn").classList.add('prk_alkibiades_civ_noselect');
         },
 
         /**
@@ -1805,7 +1805,7 @@ function (dojo, declare) {
             const selected = this.getAlkibiadesCubeSelected();
             if (selected) {
                 const fromcity = selected.id.split("_")[1];
-                const tocity = tociv.id.split("_")[1];
+                const tocity = tociv.id.split("_")[0];
                 if (fromcity != tocity) {
                     Object.assign(tociv.style, {
                         'background-color': 'var(--color_'+tocity+')',
@@ -1820,7 +1820,9 @@ function (dojo, declare) {
          * @param {element} tociv 
          */
          leaveCivBtnAlkibiades: function(tociv) {
-            tociv.style['background-color'] = 'white';
+             if (!tociv.classList.contains('prk_alkibiades_civ_noselect')) {
+                tociv.style['background-color'] = 'white';
+             }
         },
 
         /**
@@ -1829,24 +1831,24 @@ function (dojo, declare) {
          */
          clickCivBtnAlkibiades: function(tociv) {
             const selected = this.getAlkibiadesCubeSelected();
-            if (selected == null) {
-                throw new Error("No cube selected to move!");
-            }
-            const previouscubes = this.getAlkibiadesCubesToMove();
-            // how many have already been put down? Should be 0 or 1
-            const movedcubes = previouscubes.length;
-            if (movedcubes < 2) {
-                const [player_id, fromcity] = selected.id.split("_").splice(0,2);
-                const tocity = tociv.id.split("_")[0];
-                if (fromcity != tocity) {
-                    tociv.style['background-color'] = 'white';
-                    const cubehtml = this.createInfluenceCube(player_id, fromcity, 'move'+(movedcubes+1));
-                    dojo.place(cubehtml, tociv);
+            if (selected) {
+                const previouscubes = this.getAlkibiadesCubesToMove();
+                // how many have already been put down? Should be 0 or 1
+                const movedcubes = previouscubes.length;
+                if (movedcubes < 2) {
+                    const [player_id, fromcity] = selected.id.split("_").splice(0,2);
+                    const tocity = tociv.id.split("_")[0];
+                    if (fromcity != tocity) {
+                        tociv.style['background-color'] = 'white';
+                        const cubehtml = this.createInfluenceCube(player_id, fromcity, 'move'+(movedcubes+1));
+                        dojo.place(cubehtml, tociv);
+                        this.deselectAlkibiadesCube();
+                    }
                 }
-            }
-            // if this was the second, then activate submit button
-            if (movedcubes == 1) {
-                console.log("Second cube placed");
+                // if this was the second, then activate submit button
+                if (movedcubes == 1) {
+                    console.log("Second cube placed");
+                }
             }
         },
 
@@ -1872,6 +1874,17 @@ function (dojo, declare) {
                 return null;
             } else {
                 return selected[0];
+            }
+        },
+
+        /**
+         * Cube selected for Alkibiades movement is unselected.
+         */
+        deselectAlkibiadesCube: function() {
+            // unmark any previous cube
+            const selected = this.getAlkibiadesCubeSelected();
+            if (selected) {
+                selected.classList.remove('prk_alkibiades_selected');
             }
         },
 
@@ -2388,9 +2401,7 @@ function (dojo, declare) {
          * @param {bool} use
          */
         specialTile: function(bUse) {
-            console.log("click 3");
             if (this.checkPossibleActions("useSpecial", true)) {
-                console.log(this.player_id + " clicked Special "+bUse);
                 this.ajaxcall( "/perikles/perikles/specialTile.html", {
                     player: this.player_id,
                     use: bUse,

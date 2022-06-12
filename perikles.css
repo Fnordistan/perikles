@@ -549,6 +549,10 @@
     margin: 5px;
 }
 
+.prk_alkibiades_civ_noselect {
+    background-color: lightgray
+}
+
 .prk_city_btn:hover {
     text-shadow: none;
     border: 4px ridge lightgray;
