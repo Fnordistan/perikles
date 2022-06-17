@@ -398,6 +398,17 @@
     cursor: grabbing;
 }
 
+/* .prk_alkibiades_banner {
+    display: flex;
+    flex-direction: row;
+    width: 50%;
+    margin: auto;
+} */
+
+/* .prk_alkibiades_banner > span, div {
+    margin-left: 2px;
+} */
+
 .prk_statue_zone {
     position: absolute;
     width: 40px;

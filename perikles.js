@@ -1712,7 +1712,7 @@ function (dojo, declare) {
             this.addSpecialTileCancel("cancel");
         },
 
-        // ALKIBIADES
+        /////////////////////////////////////////////////// ALKIBIADES ///////////////////////////////////////////////////
 
         /**
          * Player clicked "Use Alkibiades" button.
@@ -1730,8 +1730,9 @@ function (dojo, declare) {
             [...to_civs].forEach(civ => this.addAlkibiadesToCivListeners(civ));
 
             this.addActionButton( 'alkibiades_move_btn', _("Confirm"), () => {
-                console.log("Alkibiades move");
+                this.onAlkibiadesMove();
             }, null, false, 'blue' );
+            $('alkibiades_move_btn').classList.add('disabled');
             this.addSpecialTileCancel("alkibiades");
         },
 
@@ -1835,23 +1836,37 @@ function (dojo, declare) {
          * @param {element} tociv
          */
          clickCivBtnAlkibiades: function(tociv) {
+             if (tociv.classList.contains('prk_alkibiades_civ_noselect')) {
+                 return;
+             }
             const selected = this.getAlkibiadesCubeSelected();
             if (selected) {
+                const [player_id, fromcity] = selected.id.split("_").splice(0,2);
+                const tocity = tociv.id.split("_")[0];
                 const previouscubes = this.getAlkibiadesCubesToMove();
                 // how many have already been put down? Should be 0 or 1
                 const movedcubes = previouscubes.length;
                 if (movedcubes < 2) {
-                    const [player_id, fromcity] = selected.id.split("_").splice(0,2);
-                    const tocity = tociv.id.split("_")[0];
                     if (fromcity != tocity) {
                         const cubehtml = this.createInfluenceCube(player_id, fromcity, 'move'+(movedcubes+1));
                         dojo.place(cubehtml, tociv);
                         this.deselectAlkibiadesCube();
                     }
-                }
-                // if this was the second, then activate submit button
-                if (movedcubes == 1) {
-                    console.log("Second cube placed");
+                    let movestr = _("Move ${player_name} cube from ${from_city} to ${to_city}");
+                    const from_city_name = this.spanCityName(fromcity);
+                    const to_city_name = this.spanCityName(tocity);
+                    // const cube = this.createInfluenceCube(player_id, fromcity, 'banner');
+                    movestr = movestr.replace('${player_name}', this.spanPlayerName(player_id));
+                    movestr = movestr.replace('${from_city}', from_city_name);
+                    movestr = movestr.replace('${to_city}', to_city_name);
+                    // movestr = movestr.replace('${cube}', cube);
+                    $('alkibiades_selections').innerHTML += (movedcubes == 0 ? '' : '<br/>') + movestr;
+                    if (movedcubes == 1) {
+                        // if this was the second, then activate submit button
+                        $('alkibiades_move_btn').classList.remove('disabled');
+                    }
+                } else {
+                    throw new Error("Too many cubes selected!");
                 }
             }
         },
@@ -2307,6 +2322,7 @@ function (dojo, declare) {
             html += '<h2 style="font-family: \'Bodoni Moda\';">'+_('To')+'</h2>';
             html += tocivs;
             html += '</div><br/>';
+            html += '<div id="alkibiades_selections" class="prk_alkibiades_banner"></div>';
             return html;
         },
 
@@ -2426,6 +2442,20 @@ function (dojo, declare) {
                     city: city,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        /**
+         * Player clicked Confirm on Alkibiades.
+         */
+        onAlkibiadesMove: function() {
+            if (this.checkPossibleActions("useSpecial", true)) {
+                const cubes = this.getAlkibiadesCubesToMove();
+                if (cubes.length == 2) {
+                    [...cubes].forEach(c => console.log(c.id));
+                } else {
+                    console.log("Two cubes not selected!");
+                }
             }
         },
 
