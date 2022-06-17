@@ -381,7 +381,7 @@
     outline: 1px dotted white;
 }
 
-.prk_cube_alibiades {
+.prk_cube_alkibiades {
     margin-left: 4px;
 }
 
@@ -550,7 +550,7 @@
 }
 
 .prk_alkibiades_civ_noselect {
-    background-color: lightgray
+    background-color: lightgray !important;
 }
 
 .prk_city_btn:hover {

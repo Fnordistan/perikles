@@ -105,7 +105,9 @@ var jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_c
 
 var jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_city_btn prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
-var jstpl_alkibiades_btn = '<div id="${city}_alkibiades_${tag}_btn" class="prk_alkibiades_btn" style="background-color: var(--color_${city});">${city_name}</div>';
+var jstpl_alkibiades_from_btn = '<div id="${city}_alkibiades_from_btn" class="prk_alkibiades_btn" style="background-color: var(--color_${city});">${city_name}</div>';
+
+var jstpl_alkibiades_to_btn = '<div id="${city}_alkibiades_to_btn" class="prk_alkibiades_btn" style="background-color: white;">${city_name}</div>';
 
 var jstpl_city_banner = '<button id="${city}_commit_btn" type="button" class="prk_city_banner" style="background-color: var(--color_${city});">${city_name}</button>';
 

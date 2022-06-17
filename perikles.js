@@ -1741,7 +1741,7 @@ function (dojo, declare) {
          * @param {Object} cube 
          */
          addAlkibiadesCubesEventListeners: function(cube) {
-            cube.classList.add("prk_cube_alibiades");
+            cube.classList.add("prk_cube_alkibiades");
             // spin and highlight
             cube.addEventListener('mouseenter', () => {
                 const cubes = this.getAlkibiadesCubesToMove();
@@ -1772,7 +1772,6 @@ function (dojo, declare) {
          * @param {Object} civ 
          */
         addAlkibiadesToCivListeners: function(civ) {
-            civ.style['background-color'] = 'white';
             // colored when hovered
             civ.addEventListener('mouseenter', () => this.enterCivBtnAlkibiades(civ));
             // uncolor when left
@@ -1793,6 +1792,9 @@ function (dojo, declare) {
             }
             const to_city_container = $('alkibiades_to_cities');
             to_city_container.style['box-shadow'] = '2px 2px 15px 5px '+pcolor;
+            const toButtons = to_city_container.getElementsByClassName('prk_alkibiades_btn ');
+            // remove any previously disabled toCiv marks
+            [...toButtons].forEach(tb => tb.classList.remove('prk_alkibiades_civ_noselect'));
             $(fromcity+"_alkibiades_to_btn").classList.add('prk_alkibiades_civ_noselect');
         },
 
@@ -1821,7 +1823,10 @@ function (dojo, declare) {
          */
          leaveCivBtnAlkibiades: function(tociv) {
              if (!tociv.classList.contains('prk_alkibiades_civ_noselect')) {
-                tociv.style['background-color'] = 'white';
+                Object.assign(tociv.style, {
+                    'background-color': 'white',
+                    'cursor': 'default'
+                });
              }
         },
 
@@ -1839,7 +1844,6 @@ function (dojo, declare) {
                     const [player_id, fromcity] = selected.id.split("_").splice(0,2);
                     const tocity = tociv.id.split("_")[0];
                     if (fromcity != tocity) {
-                        tociv.style['background-color'] = 'white';
                         const cubehtml = this.createInfluenceCube(player_id, fromcity, 'move'+(movedcubes+1));
                         dojo.place(cubehtml, tociv);
                         this.deselectAlkibiadesCube();
@@ -1881,11 +1885,13 @@ function (dojo, declare) {
          * Cube selected for Alkibiades movement is unselected.
          */
         deselectAlkibiadesCube: function() {
-            // unmark any previous cube
-            const selected = this.getAlkibiadesCubeSelected();
-            if (selected) {
-                selected.classList.remove('prk_alkibiades_selected');
-            }
+            const to_city_container = $('alkibiades_to_cities');
+            to_city_container.style['box-shadow'] = '';
+            const toButtons = to_city_container.getElementsByClassName('prk_alkibiades_btn');
+            // remove any previously disabled toCiv marks
+            [...toButtons].forEach(tb => tb.classList.remove('prk_alkibiades_civ_noselect'));
+            const fromCubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube_alkibiades');
+            [...fromCubes].forEach(c => c.classList.remove('prk_alkibiades_selected'));
         },
 
         /**
@@ -2280,8 +2286,8 @@ function (dojo, declare) {
             for (const city of CITIES) {
                 fromcivs += '<div class="prk_alkibiades_row">';
                 tocivs += '<div class="prk_alkibiades_row">';
-                fromcivs += this.format_block('jstpl_alkibiades_btn', {city: city, city_name: this.getCityNameTr(city), tag: "from"});
-                tocivs += this.format_block('jstpl_alkibiades_btn', {city: city, city_name: this.getCityNameTr(city),  tag: "to"});
+                fromcivs += this.format_block('jstpl_alkibiades_from_btn', {city: city, city_name: this.getCityNameTr(city)});
+                tocivs += this.format_block('jstpl_alkibiades_to_btn', {city: city, city_name: this.getCityNameTr(city)});
                 for (player_id in this.gamedatas.players) {
                     const cubes_div = $(city+"_cubes_"+player_id);
                     const cubes = cubes_div.childElementCount;
