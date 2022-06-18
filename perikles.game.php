@@ -174,8 +174,10 @@ class Perikles extends Table
      * Assign Special tile to each player at start of game.
      */
     protected function assignSpecialTiles() {
-        $spec = [1,2,3,4,5,6,7,8];
-        shuffle($spec);
+        // $spec = [1,2,3,4,5,6,7,8];
+        // for testing
+        $spec = [2,3,4,5,7,1,6,8];
+        // shuffle($spec);
         $players = self::loadPlayersBasicInfos();
         foreach ($players as $player_id => $player) {
             $tile = array_pop($spec);
@@ -1400,7 +1402,6 @@ class Perikles extends Table
         if ($this->canPlaySpecial($player_id, "influence")) {
             $state = "useSpecial";
         }
-        self::debug("placeAnyCube: $state");
         $this->gamestate->nextState($state);
     }
 
@@ -1453,7 +1454,6 @@ class Perikles extends Table
             'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
         $state = $this->canPlaySpecial($actingplayer, "influence") ? "useSpecial" : "nextPlayer";
-        self::debug("candidate: $state");
 
         $this->gamestate->nextState($state);
     }
@@ -2160,7 +2160,6 @@ class Perikles extends Table
         } else if ($this->canPlaySpecial($player_id, "influence")) {
             $state = "useSpecial";
         }
-        self::debug("stPlaceInfluence: $state");
         $this->gamestate->nextState( $state );
     }
 

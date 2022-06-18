@@ -1032,7 +1032,10 @@ function (dojo, declare) {
          * @param {Array} moreargs
          */
          setDescriptionOnMyTurn: function(text, moreargs) {
+            const oldtext = this.isCurrentPlayerActive() ? this.gamedatas.gamestate.descriptionmyturn : this.gamedatas.gamestate.description;
+            this.gamedatas.gamestate.olddescriptionmyturn = oldtext;
             this.gamedatas.gamestate.descriptionmyturn = text;
+            this.gamedatas.gamestate.oldargs = this.gamedatas.gamestate.args;
             let tpl = Object.assign({}, this.gamedatas.gamestate.args);
             if (!tpl) {
                 tpl = {};
@@ -1058,6 +1061,18 @@ function (dojo, declare) {
                 this.setMainTitle(title);
             }
         },
+
+        /**
+         * Restore title text.
+         */
+        restoreDescriptionOnMyTurn: function() {
+            const text = this.gamedatas.gamestate.olddescriptionmyturn;
+            if (text) {
+                const acting = this.spanPlayerName(this.getActivePlayerId());
+                this.setDescriptionOnMyTurn(text, {actplayer: acting});
+            }
+        },
+
 
         /**
          * Change the title banner.
@@ -1934,11 +1949,8 @@ function (dojo, declare) {
          * @param {string} special
          */
         addSpecialTileCancel: function(special) {
-            let desc = _("${player} must take an Influence tile");
-            const player = this.isCurrentPlayerActive() ? this.spanYou() : this.spanPlayerName(this.getActivePlayerId());
-            desc = desc.replace('${player}', player);
             this.addActionButton( special+"_cancel_btn", _('Cancel'), () => {
-                this.setDescriptionOnMyTurn(desc);
+                this.restoreDescriptionOnMyTurn();
                 this.removeActionButtons();
                 this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
                 this.specialTileWrapper();
@@ -2302,12 +2314,10 @@ function (dojo, declare) {
          * @returns html for plague buttons
          */
          createPlagueButtons: function() {
-            let plaguecivs = "";
+            let html = '<div id="plague_city_div">';
             for (const city of CITIES) {
-                plaguecivs += this.format_block('jstpl_plague_btn', {city: city, city_name: this.getCityNameTr(city)});
+                html += this.format_block('jstpl_plague_btn', {city: city, city_name: this.getCityNameTr(city)});
             }
-            let html = '<div id="plague_city_div" style="display: inline-flex; flex-direction: row;">';
-            html += plaguecivs;
             html += '</div>';
             return html;
         },
@@ -2449,6 +2459,7 @@ function (dojo, declare) {
                     use: bUse,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
+                this.restoreDescriptionOnMyTurn();
             }
         },
 
@@ -2462,6 +2473,7 @@ function (dojo, declare) {
                     city: city,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
+                this.restoreDescriptionOnMyTurn();
             }
         },
 
@@ -2481,6 +2493,7 @@ function (dojo, declare) {
                         to2: cubes[1].to(),
                         lock: true
                     }, this, function( result ) {  }, function( is_error) { } );
+                    this.restoreDescriptionOnMyTurn();
                 } else {
                     throw new Error("Two cubes must be selected!");
                 }
@@ -2767,13 +2780,7 @@ function (dojo, declare) {
             const spec = player_div.getElementsByClassName("prk_special_tile")[0];
             spec.classList.remove("prk_special_tile_back");
             spec.classList.add("prk_special_tile_front", "prk_special_tile_used");
-            // remove button
-            if (this.player_id == player_id) {
-                const specbtn = $('play_special_btn');
-                if (specbtn) {
-                    specbtn.remove();
-                }
-            }
+            this.removeActionButtons();
         },
 
         /**

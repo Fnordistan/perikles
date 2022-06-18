@@ -398,17 +398,6 @@
     cursor: grabbing;
 }
 
-/* .prk_alkibiades_banner {
-    display: flex;
-    flex-direction: row;
-    width: 50%;
-    margin: auto;
-} */
-
-/* .prk_alkibiades_banner > span, div {
-    margin-left: 2px;
-} */
-
 .prk_statue_zone {
     position: absolute;
     width: 40px;
@@ -513,6 +502,11 @@
 .prk_plague_btn {
     border: 4px groove black;
     box-shadow: 2px 2px 15px 5px darkslategray;
+}
+
+.prk_plague_btn:hover {
+    background-color: black !important;
+    color: white;
 }
 
 .prk_alkibiades_btn {
@@ -780,4 +774,10 @@
 #mymilitary {
     display: flex;
     flex-direction: row;
+}
+
+#plague_city_div {
+    display: inline-flex;
+    flex-direction: row;
+    margin-left: 4px;
 }
