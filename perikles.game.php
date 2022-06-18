@@ -1141,18 +1141,6 @@ class Perikles extends Table
             $is_battle = self::getGameStateValue('active_battle') != 0;
             $this->gamestate->nextState($is_battle ? "doBattle" : "nextPlayer");
         }
-        // $players = [];
-        // is this a commit round?
-        // if ($is_battle) {
-        //     $battle = $this->nextBattle();
-        //     $location = $battle['location'];
-        //     // $type = $this->getCurrentBattleType($location);
-        //     $players = $this->playersWithSpecial($type);
-        //     $this->gamestate->setPlayersMultiactive($players, "doBattle", true);
-        // } else {
-        //     // take influence phase
-        //     $players = $this->playersWithSpecial("influence");
-        // }
     }
 
     /**
@@ -1198,6 +1186,58 @@ class Perikles extends Table
             default:
                 throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
         }
+    }
+
+    /**
+     * Play the Alkibiades Special tile
+     */
+    function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
+        $player_id = self::getCurrentPlayerId();
+        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+        // sanity check
+        if ($special['tile'] != 6 || $special['used']) {
+            throw new BgaVisibleSystemException("You cannot play Alkibiades"); // NOI18N
+        }
+        // check players have influence
+        $influence1 = $this->influenceInCity($owner1, $from_city1);
+        if ($influence1 == 0) {
+            throw new BgaVisibleSystemException("$owner1 does not have any cubes to remove from $from_city1"); // NOI18N
+        }
+        $influence2 = $this->influenceInCity($owner2, $from_city2);
+        if ($influence2 == 0) {
+            throw new BgaVisibleSystemException("$owner2 does not have any cubes to remove from $from_city2"); // NOI18N
+        }
+        // check the case of moving two cities of the same player from the same city
+        if ($owner1 == $owner2 && $from_city1 == $from_city2) {
+            if ($influence1 < 2) {
+                throw new BgaVisibleSystemException("$owner2 does not have 2 to remove from $from_city2"); // NOI18N
+            }
+        }
+        // passed all checks.
+        $this->flipSpecialTile($player_id, $this->specialcards[6]['name']);
+        $this->changeInfluenceInCity($from_city1, $owner1, -1);
+        $this->changeInfluenceInCity($from_city2, $owner2, -1);
+        $this->changeInfluenceInCity($to_city1, $owner1, 1);
+        $this->changeInfluenceInCity($to_city2, $owner2, 1);
+        $this->alkibiadesNotify($owner1, $from_city1, $to_city1);
+        $this->alkibiadesNotify($owner2, $from_city2, $to_city2);
+    }
+
+    /**
+     * Send a notification about a cube being moved between cities.
+     */
+    function alkibiadesNotify($player_id, $city, $city2) {
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers("alkibiadesMove", clienttranslate('1 of ${player_name}\'s cubes moved from ${city_name} to ${city_name2}'), array(
+            'i18n' => ['city_name', 'city_name2'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'city' => $city,
+            'city2' => $city2,
+            'city_name' => $this->cities[$city]['name'],
+            'city_name2' => $this->cities[$city2]['name'],
+            'preserve' => ['player_id', 'city', 'city2'],
+        ));
     }
 
     /**

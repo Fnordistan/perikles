@@ -96,10 +96,11 @@ define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
     "ebg/counter",
-    "ebg/zone"
+    "ebg/zone",
+    g_gamethemeurl + "modules/alkibiades.js"
 ],
 function (dojo, declare) {
-    return declare("bgagame.perikles", ebg.core.gamegui, {
+    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades], {
         constructor: function(){
             this.influence_h = 199;
             this.influence_w = 128;
@@ -854,6 +855,9 @@ function (dojo, declare) {
                     }
                     if (args.city_name) {
                         args.city_name = this.spanCityName(args.city);
+                    }
+                    if (args.city_name2) {
+                        args.city_name2 = this.spanCityName(args.city2);
                     }
                     if (args.attd1) {
                         args.attd1 = this.diceIcon(args.attd1);
@@ -1861,7 +1865,13 @@ function (dojo, declare) {
                     movestr = movestr.replace('${to_city}', to_city_name);
                     // movestr = movestr.replace('${cube}', cube);
                     $('alkibiades_selections').innerHTML += (movedcubes == 0 ? '' : '<br/>') + movestr;
-                    if (movedcubes == 1) {
+                    if (movedcubes == 0) {
+                        // if this was the first cube, and it was the only cube that player had in the city, take it off the Alkibiades banner
+                        const remainingcubes = $(fromcity+'_cubes_'+player_id).getElementsByClassName("prk_cube");
+                        if (remainingcubes.length < 2) {
+                            $(player_id+'_'+fromcity+'_alkibiades').remove();
+                        }
+                    } else {
                         // if this was the second, then activate submit button
                         $('alkibiades_move_btn').classList.remove('disabled');
                     }
@@ -1873,11 +1883,21 @@ function (dojo, declare) {
 
         /**
          * Get all the cubes currently on the To-Move box
-         * @returns arraylike DOM list
+         * @returns alkibades cube array
          */
         getAlkibiadesCubesToMove: function() {
-            const cubes = $('alkibiades_to_cities').getElementsByClassName('prk_cube');
-            return cubes;
+            alkcubes = [];
+            for (const city of CITIES) {
+                const citybtn = $(city+'_alkibiades_to_btn');
+                const cubes = citybtn.getElementsByClassName('prk_cube');
+                [...cubes].forEach(c => {
+                    const alk = new perikles.alkibiades();
+                    alk.setToCity(city);
+                    alk.setValues(c);
+                    alkcubes.push(alk);
+                });
+            }
+            return alkcubes;
         },
 
         /**
@@ -2452,9 +2472,17 @@ function (dojo, declare) {
             if (this.checkPossibleActions("useSpecial", true)) {
                 const cubes = this.getAlkibiadesCubesToMove();
                 if (cubes.length == 2) {
-                    [...cubes].forEach(c => console.log(c.id));
+                    this.ajaxcall( "/perikles/perikles/alkibiades.html", {
+                        player1: cubes[0].player(),
+                        player2: cubes[1].player(),
+                        from1: cubes[0].from(),
+                        from2: cubes[1].from(),
+                        to1: cubes[0].to(),
+                        to2: cubes[1].to(),
+                        lock: true
+                    }, this, function( result ) {  }, function( is_error) { } );
                 } else {
-                    console.log("Two cubes not selected!");
+                    throw new Error("Two cubes must be selected!");
                 }
             }
         },
@@ -2516,8 +2544,8 @@ function (dojo, declare) {
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
             dojo.subscribe( 'playSpecial', this, "notif_playSpecial");
             this.notifqueue.setSynchronous( 'notif_playSpecial', 500 );
-
-            
+            dojo.subscribe( 'alkibiadesMove', this, "notif_alkibiadesMove");
+            this.notifqueue.setSynchronous( 'notif_alkibiadesMove', 500 );
 
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'battle', this, "notif_battle");
@@ -2652,6 +2680,25 @@ function (dojo, declare) {
         },
 
         /**
+         * Move a cube selected by Alkibiades.
+         * @param {Object} notif 
+         */
+        notif_alkibiadesMove: function(notif) {
+            const owner = notif.args.player_id;
+            const fromcity = notif.args.city;
+            const tocity = notif.args.city2;
+            const player_cubes = $(fromcity+"_cubes_"+owner);
+            const cube1 = player_cubes.firstChild;
+            this.fadeOutAndDestroy( cube1.id, 250);
+
+            const from_div = $(fromcity+'_cubes_'+owner);
+            const to_div = $(tocity+'_cubes_'+owner);
+            const i = to_div.childElementCount+1;
+            const cube = this.createInfluenceCube(owner, tocity, i);
+            this.moveCube(cube, from_div, to_div, 1000);
+        },
+
+        /**
          * Remove candidate cubes, place Leader counters.
          * @param {Object} notif 
          */
@@ -2722,7 +2769,10 @@ function (dojo, declare) {
             spec.classList.add("prk_special_tile_front", "prk_special_tile_used");
             // remove button
             if (this.player_id == player_id) {
-                $('play_special_btn').remove();
+                const specbtn = $('play_special_btn');
+                if (specbtn) {
+                    specbtn.remove();
+                }
             }
         },
 
