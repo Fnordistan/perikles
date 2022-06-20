@@ -896,7 +896,7 @@ class Perikles extends Table
     }
 
     /**
-     * Can a player play a Special Tile now.
+     * Can a player play a Special Tile now?
      * @return true if player_id can play a Special now
      */
     function canPlaySpecial($player_id, $phase) {
@@ -2022,8 +2022,13 @@ class Perikles extends Table
     function argsSpecial() {
         $players = self::loadPlayersBasicInfos();
         $private = array();
+        $state = $this->getStateName();
+        $phases = array(
+            "takeInfluence" => "influence",
+            "commitForces" => "commit",
+        );
         foreach (array_keys($players) as $player_id) {
-            $private[$player_id] = array('special' => $this->canPlaySpecial($player_id, "influence"));
+            $private[$player_id] = array('special' => $this->canPlaySpecial($player_id, $phases[$state]));
         }
         return array(
             '_private' => $private

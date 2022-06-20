@@ -156,6 +156,7 @@ $machinestates = array(
     	"name" => "commitForces",
     	"description" => clienttranslate('${actplayer} must commit forces'),
     	"descriptionmyturn" => clienttranslate('You must commit forces'),
+        "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "assignUnits" ),
     	"transitions" => array( "nextPlayer" => NEXT_COMMIT)

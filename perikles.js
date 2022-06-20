@@ -97,7 +97,8 @@ define([
     "ebg/core/gamegui",
     "ebg/counter",
     "ebg/zone",
-    g_gamethemeurl + "modules/alkibiades.js"
+    g_gamethemeurl + "modules/alkibiades.js",
+    g_gamethemeurl + "modules/slaverevolt.js"
 ],
 function (dojo, declare) {
     return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades], {
@@ -107,6 +108,8 @@ function (dojo, declare) {
             this.location_w = 124;
             this.location_h = 195;
             this.location_s = 0.55;
+
+            this.slaverevolt = new perikles.slaverevolt();
         },
         
         /*
@@ -1665,7 +1668,8 @@ function (dojo, declare) {
             switch( stateName ) {
                 case 'takeInfluence':
                 case 'specialTile':
-                    if (args._private.special) {
+                case 'commitForces':
+                        if (args._private.special) {
                         const buttonlbl = this.getSpecialButtonLabel(this.player_id);
                         this.addActionButton( 'play_special_btn', buttonlbl, () => {
                             this.specialTileWrapper();
@@ -1718,6 +1722,8 @@ function (dojo, declare) {
                 this.addPlagueButtons();
             } else if(special == "alkibiades") {
                 this.addAlkibiadesButtons();
+            } else if(special == "slaverevolt") {
+                this.addSlaveRevoltButtons();
             } else {
                 this.specialTile(true);
             }
@@ -1978,6 +1984,33 @@ function (dojo, declare) {
             [...toButtons].forEach(tb => tb.classList.remove('prk_alkibiades_civ_noselect'));
             const fromCubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube_alkibiades');
             [...fromCubes].forEach(c => c.classList.remove('prk_alkibiades_selected'));
+        },
+
+        /////////////////////// SLAVE REVOLT ///////////////////////
+
+        /**
+         * 
+         */
+        addSlaveRevoltButtons: function() {
+            const spartanleader = this.getSpartanLeader();
+            console.log(spartanleader);
+            const spartans = this.slaverevolt.getSpartanHopliteLocs();
+            for (const spartan of spartans) {
+                console.log(spartan);
+            }
+        },
+
+        /**
+         * Get the current player in control of Sparta
+         * @returns player_id or null
+         */
+         getSpartanLeader: function() {
+            for (const player_id in this.gamedatas.players) {
+                if (this.isLeader(player_id, "sparta")) {
+                    return player_id;
+                }
+            }
+            return null;
         },
 
         ///////////////////////////////////////////////////
