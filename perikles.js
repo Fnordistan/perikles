@@ -1538,6 +1538,7 @@ function (dojo, declare) {
                     this.makeSelectable(m);
                 }
             });
+            this.toggleAssignmentCancelButton(false);
         },
 
         ///////////////////////////////////////////////////
@@ -1649,9 +1650,11 @@ function (dojo, declare) {
                         this.addActionButton( "commit_send_btn", _('Commit Forces'), () => {
                             this.onCommitForces();
                         });
+                        // add Cancel button if some units have already been assigned
                         this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
                             this.onResetForces();
                         }, null, null, 'red');
+                        this.toggleAssignmentCancelButton(false);
                         break;
                     case 'specialTile':
                         this.addSpecialPassButton();
@@ -2086,7 +2089,7 @@ function (dojo, declare) {
             if (selectable) {
                 this.connect(counter, 'mouseenter', this.hoverUnit);
                 this.connect(counter, 'mouseleave', this.unhoverUnit);
-                this.connect(counter, 'click', this.sendUnit.bind(this));
+                this.connect(counter, 'click', this.assignUnit.bind(this));
             } else {
                 this.disconnect(counter, 'mouseenter');
                 this.disconnect(counter, 'mouseleave');
@@ -2167,10 +2170,10 @@ function (dojo, declare) {
         },
 
         /**
-         * Button to send a unit to a battle.
+         * Button to assign a unit to a battle.
          * @param {Object} evt event
          */
-        sendUnit: function(evt) {
+        assignUnit: function(evt) {
             const selectedUnit = evt.currentTarget;
 
             this.commitDlg = new ebg.popindialog();
@@ -2192,7 +2195,7 @@ function (dojo, declare) {
                             '</div>\
                             <div id="commit_text" style="margin: 2px; padding: 2px; text-align: center; color: #fff; background-color: #4992D2; display: none;"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
-                                <div id="send_button" class="prk_btn prk_send_btn">'+_("Send Unit")+'</div>\
+                                <div id="send_button" class="prk_btn prk_send_btn">'+_("Assign Unit")+'</div>\
                                 <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
                             </div>\
                         </div>';
@@ -2232,6 +2235,7 @@ function (dojo, declare) {
                     $(commit_text).innerHTML = banner_txt;
                 }
             };
+            this.toggleAssignmentCancelButton(true);
         },
 
         /**
@@ -2245,6 +2249,20 @@ function (dojo, declare) {
                 can_attack = false;
             }
             return can_attack;
+        },
+
+        /**
+         * Toggle the "Cancel" button for unit assignments.
+         * @param {bool} enable turn it on or off
+         */
+        toggleAssignmentCancelButton: function(enable) {
+            if (enable) {
+                $('commit_cancel_btn').classList.remove('disabled');
+                $('commit_cancel_btn').style['display'] = 'inline';
+            } else {
+                $('commit_cancel_btn').classList.add('disabled');
+                $('commit_cancel_btn').style['display'] = 'none';
+            }
         },
 
         ///////////////////////////////////////////////////
