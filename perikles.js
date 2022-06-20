@@ -1649,9 +1649,7 @@ function (dojo, declare) {
                         }, null, null, 'red');
                         break;
                     case 'specialTile':
-                        this.addActionButton( 'pass_btn', _("Pass"), () => {
-                            this.specialTile(false);
-                        }, null, false, 'red' );
+                        this.addSpecialPassButton();
                         break;
                 }
             }
@@ -1670,12 +1668,16 @@ function (dojo, declare) {
 
         },
 
+        ///////////////////////////////////////////////////
+        //// Handling Special Tiles
+        ///////////////////////////////////////////////////
+
         /**
          * Get the translatable label for a Special Tile button
          * @param {string} player_id 
          * @returns "Use ${special} tile"
          */
-        getSpecialButtonLabel: function(player_id) {
+         getSpecialButtonLabel: function(player_id) {
             let buttonlbl = _("Use ${special_name} tile");
             const speciallbl = this.getPlayerSpecial(player_id);
             const specialtr = this.getSpecialTileTr(speciallbl);
@@ -1702,7 +1704,7 @@ function (dojo, declare) {
         /**
          * Check cards before submitting to the specialTile function.
          */
-        specialTileWrapper: function() {
+         specialTileWrapper: function() {
             const special = this.getPlayerSpecial(this.player_id);
             if (special == "plague") {
                 this.addPlagueButtons();
@@ -1713,11 +1715,34 @@ function (dojo, declare) {
             }
         },
 
-        ///////////////////////////////////////////////////
-        //// Handling Special Tiles
-        ///////////////////////////////////////////////////
+        /**
+         * When Special tile is canceled, re-add it.
+         * Also add the Pass button if it's the Special Tile phase.
+         * @param {string} special
+         */
+         addSpecialTileCancel: function(special) {
+            this.addActionButton( special+"_cancel_btn", _("Cancel"), () => {
+                this.restoreDescriptionOnMyTurn();
+                this.removeActionButtons();
+                this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
+                    this.specialTileWrapper();
+                }, null, false, 'blue' );
+                if (this.gamedatas.gamestate.name == "specialTile") {
+                    this.addSpecialPassButton();
+                }
+            }, null, null, 'red');
+        },
 
-        // PLAGUE
+        /**
+         * Add the 'Pass' button to pass on playing a Special tile.
+         */
+        addSpecialPassButton: function() {
+            this.addActionButton( 'pass_btn', _("Pass"), () => {
+                this.specialTile(false);
+            }, null, false, 'red' );
+        },
+
+        /////////////////////// PLAGUE ///////////////////////
 
         /**
          * Player clicked "Use Plague" button.
@@ -1725,7 +1750,7 @@ function (dojo, declare) {
         addPlagueButtons: function() {
             this.setDescriptionOnMyTurn(_("Select a city to be struck with plague"), {'plague': true});
             this.removeActionButtons();
-            let plaguebuttons = document.getElementsByClassName("prk_plague_btn");
+            const plaguebuttons = document.getElementsByClassName("prk_plague_btn");
             [...plaguebuttons].forEach( p => p.addEventListener('click', () => {
                 const city = p.id.split("_")[0];
                 this.onPlagueCity(city);
@@ -1734,7 +1759,7 @@ function (dojo, declare) {
             this.addSpecialTileCancel("cancel");
         },
 
-        /////////////////////////////////////////////////// ALKIBIADES ///////////////////////////////////////////////////
+        /////////////////////// ALKIBIADES ///////////////////////
 
         /**
          * Player clicked "Use Alkibiades" button.
@@ -1744,7 +1769,7 @@ function (dojo, declare) {
             this.removeActionButtons();
 
             // add listeners to the cubes in the From cities
-            let alkibiadescubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube');
+            const alkibiadescubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube');
             [...alkibiadescubes].forEach( c => this.addAlkibiadesCubesEventListeners(c));
 
             // add listeners to the To-buttons
@@ -1874,7 +1899,7 @@ function (dojo, declare) {
                         dojo.place(cubehtml, tociv);
                         this.deselectAlkibiadesCube();
                     }
-                    let movestr = _("Move ${player_name} cube from ${from_city} to ${to_city}");
+                    let movestr = _("Move one of ${player_name}'s cubes from ${from_city} to ${to_city}");
                     const from_city_name = this.spanCityName(fromcity);
                     const to_city_name = this.spanCityName(tocity);
                     // const cube = this.createInfluenceCube(player_id, fromcity, 'banner');
@@ -1945,20 +1970,6 @@ function (dojo, declare) {
             [...toButtons].forEach(tb => tb.classList.remove('prk_alkibiades_civ_noselect'));
             const fromCubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube_alkibiades');
             [...fromCubes].forEach(c => c.classList.remove('prk_alkibiades_selected'));
-        },
-
-        /**
-         * When Special tile is canceled, re-add it.
-         * @param {string} special
-         */
-        addSpecialTileCancel: function(special) {
-            this.addActionButton( special+"_cancel_btn", _('Cancel'), () => {
-                this.restoreDescriptionOnMyTurn();
-                this.removeActionButtons();
-                this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
-                this.specialTileWrapper();
-                }, null, false, 'blue' );
-            }, null, null, 'red');
         },
 
         ///////////////////////////////////////////////////
@@ -2347,12 +2358,13 @@ function (dojo, declare) {
                 fromcivs += '</div>';
                 tocivs += '</div>';
             }
-            let html = '<br/><div id="alkibiades_from_cities" class="prk_alkibiades_civs" style="background-color: lightgray;">';
-            html += '<h2 style="font-family: \'Bodoni Moda\';">'+_('From')+'</h2>';
+            const bgcolor = 'lightgray';
+            let html = '<br/><div id="alkibiades_from_cities" class="prk_alkibiades_civs">';
+            html += '<h2>'+_('From')+'</h2>';
             html += fromcivs;
             html += '</div>';
-            html += '<div id="alkibiades_to_cities" class="prk_alkibiades_civs" style="background-color: lightgray;">';
-            html += '<h2 style="font-family: \'Bodoni Moda\';">'+_('To')+'</h2>';
+            html += '<div id="alkibiades_to_cities" class="prk_alkibiades_civs">';
+            html += '<h2>'+_('To')+'</h2>';
             html += tocivs;
             html += '</div><br/>';
             html += '<div id="alkibiades_selections" class="prk_alkibiades_banner"></div>';
@@ -2783,7 +2795,9 @@ function (dojo, declare) {
             const spec = player_div.getElementsByClassName("prk_special_tile")[0];
             spec.classList.remove("prk_special_tile_back");
             spec.classList.add("prk_special_tile_front", "prk_special_tile_used");
-            this.removeActionButtons();
+            if (this.player_id == player_id) {
+                this.removeActionButtons();
+            }
         },
 
         /**

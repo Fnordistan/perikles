@@ -102,9 +102,9 @@
 .prk_city_name {
     display: inline-block;
     font-family: 'ThrumsSerifRegular';
-    font-size: 16px;
-    font-weight: 500;
-    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px 1px 0px rgba(0,0,0,.8);
+    font-size: 110%;
+    font-weight: 700;
+    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 1px 1px 1px rgba(0,0,0,.8);
     padding: 0 2px;
 }
 
@@ -172,8 +172,8 @@
 }
 
 .prk_special_log {
-    font-family: Bodoni Moda;
-    font-size: large;
+    font-family: 'Bodoni Moda';
+    font-size: medium;
     font-weight: bold;
 }
 
@@ -555,9 +555,14 @@
 .prk_alkibiades_civs {
     display: inline-flex;
     flex-direction: column;
+    background-color: lightgray;
     border: groove darkgray 12px;
     padding: 2px;
     margin: 5px;
+}
+
+.prk_alkibiades_civs > h2 {
+    font-family: 'Bodoni Moda';
 }
 
 .prk_alkibiades_civ_noselect {
