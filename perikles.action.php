@@ -117,6 +117,21 @@ class action_perikles extends APP_GameAction
     }
 
     /**
+     * Player chose cubes to move with Alkibiades.
+     */
+    public function alkibiades() {
+      self::setAjaxMode();
+      $player1 = self::getArg( "player1", AT_alphanum, true );
+      $player2 = self::getArg( "player2", AT_alphanum, true );
+      $from1 = self::getArg( "from1", AT_alphanum, true );
+      $from2 = self::getArg( "from2", AT_alphanum, true );
+      $to1 = self::getArg( "to1", AT_alphanum, true );
+      $to2 = self::getArg( "to2", AT_alphanum, true );
+      $this->game->playAlkibiades($player1, $from1, $to1, $player2, $from2, $to2);
+      self::ajaxResponse( );
+  }
+
+  /**
      * Player chose a city for Plague
      */
     public function plague() {
@@ -124,21 +139,6 @@ class action_perikles extends APP_GameAction
       $city = self::getArg( "city", AT_alphanum, true );
       $this->game->playPlague($city);
       self::ajaxResponse( );
-    }
-
-    /**
-     * Player chose cubes to move with Alkibiades.
-     */
-    public function alkibiades() {
-        self::setAjaxMode();
-        $player1 = self::getArg( "player1", AT_alphanum, true );
-        $player2 = self::getArg( "player2", AT_alphanum, true );
-        $from1 = self::getArg( "from1", AT_alphanum, true );
-        $from2 = self::getArg( "from2", AT_alphanum, true );
-        $to1 = self::getArg( "to1", AT_alphanum, true );
-        $to2 = self::getArg( "to2", AT_alphanum, true );
-        $this->game->playAlkibiades($player1, $from1, $to1, $player2, $from2, $to2);
-        self::ajaxResponse( );
     }
 
 }

@@ -1127,20 +1127,44 @@ class Perikles extends Table
         }
     }
 
+
+    /**
+     * Do a validity check and if it passes, return the Special tile belonging to this player.
+     * Checks that player's Special tile has not been used, and it's the current game state.
+     * 
+     * @param player_id player_id player playing the tile
+     * @param gamestate influence_phase or active_battle
+     */
+    function getSpecialTile($player_id, $gamestate) {
+        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+        // sanity check
+        if ($special == null) {
+            throw new BgaVisibleSystemException("No special tile found"); // NOI18N
+        } else if ($special['used']) {
+            throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
+        }
+        if (self::getGameStateValue($gamestate) == 0) {
+            throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
+        }
+        return $special;
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
 
 
     /**
-     * A player clicked a Special Tile Button or the Pass button
+     * A player clicked a Special Tile Button or the Pass button.
+     * Skipped by Plague and Alkibiades.
      */
     function useSpecialTile($player_id, $use) {
         // self::checkAction('useSpecial');
         if ($use) {
             $this->playSpecialTile($player_id);
-        } else {
-            $is_battle = self::getGameStateValue('active_battle') != 0;
+        }
+        $is_battle = self::getGameStateValue('active_battle') != 0;
+        if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
             $this->gamestate->nextState($is_battle ? "doBattle" : "nextPlayer");
         }
     }
@@ -1150,13 +1174,8 @@ class Perikles extends Table
      * @param player_id
      */
     function playSpecialTile($player_id) {
-        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+        $special = $this->getSpecialTile($player_id, "influence_phase");
         // sanity check
-        if ($special == null) {
-            throw new BgaVisibleSystemException("No special tile found"); // NOI18N
-        } else if ($special['used']) {
-            throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
-        }
         $t = $special['tile'];
         switch ($t) {
             case 1: // Perikles
@@ -1175,15 +1194,13 @@ class Perikles extends Table
                 throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 6; // Alkibiades
-                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
+                throw new BgaVisibleSystemException("Invalid Special card played: $t"); // NOI18N
                 break;
             case 7; // Phormio
                 throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
             case 8; // Plague
-                if (self::getGameStateValue("influence_phase") == 0) {
-                    throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
-                }
+                throw new BgaVisibleSystemException("Invalid Special card played: $t"); // NOI18N
                 break;
             default:
                 throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
@@ -1191,13 +1208,21 @@ class Perikles extends Table
     }
 
     /**
+     * Play Perikles Special tile.
+     */
+    function playPerikles($player_id) {
+        $this->flipSpecialTile($player_id, $this->specialcards[1]['name']);
+        $this->addInfluenceToCity('athens', $player_id, 2);
+    }
+
+    /**
      * Play the Alkibiades Special tile
      */
     function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
         $player_id = self::getCurrentPlayerId();
-        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+        $special = $this->getSpecialTile($player_id, "influence_phase");
         // sanity check
-        if ($special['tile'] != 6 || $special['used']) {
+        if ($special['tile'] != 6) {
             throw new BgaVisibleSystemException("You cannot play Alkibiades"); // NOI18N
         }
         // check players have influence
@@ -1223,6 +1248,9 @@ class Perikles extends Table
         $this->changeInfluenceInCity($to_city2, $owner2, 1);
         $this->alkibiadesNotify($owner1, $from_city1, $to_city1);
         $this->alkibiadesNotify($owner2, $from_city2, $to_city2);
+        if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
+            $this->gamestate->nextState("nextPlayer");
+        }
     }
 
     /**
@@ -1243,25 +1271,13 @@ class Perikles extends Table
     }
 
     /**
-     * Play Perikles Special tile.
-     */
-    function playPerikles($player_id) {
-        if (self::getGameStateValue("influence_phase") == 0) {
-            throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
-        }
-        $this->flipSpecialTile($player_id, $this->specialcards[1]['name']);
-        $this->addInfluenceToCity('athens', $player_id, 2);
-    }
-
-    /**
      * Play Plague special tile.
      */
     function playPlague($city) {
-        $this->gamestate->checkPossibleAction( "plague" );
         $player_id = self::getCurrentPlayerId();
-        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+        $special = $this->getSpecialTile($player_id, "influence_phase");
         // sanity check
-        if ($special['tile'] != 8 || $special['used']) {
+        if ($special['tile'] != 8) {
             throw new BgaVisibleSystemException("You cannot play Plague"); // NOI18N
         }
         $this->flipSpecialTile($player_id, $this->specialcards[8]['name']);
@@ -1296,6 +1312,9 @@ class Perikles extends Table
                     ));
                 }
             }
+        }
+        if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
+            $this->gamestate->nextState("nextPlayer");
         }
     }
 

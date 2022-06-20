@@ -171,6 +171,12 @@
     transform: rotate(180deg);
 }
 
+.prk_special_log {
+    font-family: Bodoni Moda;
+    font-size: large;
+    font-weight: bold;
+}
+
 .prk_location_slot {
     position: absolute;
     width: 70px;

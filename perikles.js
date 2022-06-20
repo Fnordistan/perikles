@@ -859,6 +859,9 @@ function (dojo, declare) {
                     if (args.city_name2) {
                         args.city_name2 = this.spanCityName(args.city2);
                     }
+                    if (args.special_tile) {
+                        args.special_tile = '<span class="prk_special_log">'+args.special_tile+'</span>';
+                    }
                     if (args.attd1) {
                         args.attd1 = this.diceIcon(args.attd1);
                         args.attd2 = this.diceIcon(args.attd2);
@@ -866,8 +869,8 @@ function (dojo, declare) {
                         args.defd2 = this.diceIcon(args.defd2, true);
                         args.atttotal = '<span class="prk_dicetotal">['+args.atttotal+']</span>';
                         args.deftotal = '<span class="prk_dicetotal">['+args.deftotal+']</span>';
-                    }
                         args.atttotal = '<span>'+args.atttotal+'</span>';
+                    }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.spanYou());
 
@@ -2453,7 +2456,7 @@ function (dojo, declare) {
          * @param {bool} use
          */
         specialTile: function(bUse) {
-            if (this.checkPossibleActions("useSpecial", true)) {
+            if (this.checkPossibleActions("useSpecialTile", true)) {
                 this.ajaxcall( "/perikles/perikles/specialTile.html", {
                     player: this.player_id,
                     use: bUse,
@@ -2468,7 +2471,7 @@ function (dojo, declare) {
          * @param {string} city 
          */
         onPlagueCity: function(city) {
-            if (this.checkPossibleActions("useSpecial", true)) {
+            if (this.checkPossibleActions("useSpecialTile", true)) {
                 this.ajaxcall( "/perikles/perikles/plague.html", { 
                     city: city,
                     lock: true 
@@ -2481,7 +2484,7 @@ function (dojo, declare) {
          * Player clicked Confirm on Alkibiades.
          */
         onAlkibiadesMove: function() {
-            if (this.checkPossibleActions("useSpecial", true)) {
+            if (this.checkPossibleActions("useSpecialTile", true)) {
                 const cubes = this.getAlkibiadesCubesToMove();
                 if (cubes.length == 2) {
                     this.ajaxcall( "/perikles/perikles/alkibiades.html", {

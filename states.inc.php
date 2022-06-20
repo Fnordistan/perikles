@@ -58,7 +58,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must take an Influence tile'),
     	"type" => "activeplayer",
         "args" => "argsSpecial",
-    	"possibleactions" => array( "takeInfluence", "useSpecial", "plague" ),
+    	"possibleactions" => array( "takeInfluence", "useSpecialTile" ),
     	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "choosePlaceCube" => CHOOSE_PLACE_INFLUENCE)
     ),
 
@@ -97,14 +97,17 @@ $machinestates = array(
     	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => SPECIAL_TILE )
     ),
 
+    /**
+     * This is the optional check to use Special after regular phase.
+     */
     SPECIAL_TILE => array(
     	"name" => "specialTile",
     	"description" => clienttranslate('Special Tile phase'),
     	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
         "args" => "argsSpecial",
     	"type" => "activeplayer",
-    	"possibleactions" => array( "useSpecial" ),
-    	"transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "nextPlayer" => NEXT_PLAYER, "doBattle" => NEXT_BATTLE )
+    	"possibleactions" => array( "useSpecialTile" ),
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "doBattle" => NEXT_BATTLE )
     ),
 
     ELECTIONS => array(
