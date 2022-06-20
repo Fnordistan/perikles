@@ -1,5 +1,5 @@
 
-define(["dojo", "dojo/_base/declare"], function (dojo, declare) {
+define(["dojo/_base/declare"], function (declare) {
     return declare("perikles.alkibiades", null, {
         /**
          * Hold data about a cube being moved with the Alkibiades special action.
