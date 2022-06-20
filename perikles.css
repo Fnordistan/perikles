@@ -104,8 +104,11 @@
     font-family: 'ThrumsSerifRegular';
     font-size: 110%;
     font-weight: 700;
-    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 1px 1px 1px rgba(0,0,0,.8);
     padding: 0 2px;
+}
+
+.prk_shadow {
+    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 1px 1px 1px rgba(0,0,0,.8);
 }
 
 @keyframes prk_border_pulse {

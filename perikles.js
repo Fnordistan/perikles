@@ -844,7 +844,7 @@ function (dojo, declare) {
             try {
                 if (log && args && !args.processed) {
                     args.processed = true;
-                    if (args.player_name) {
+                    if (args.player_name && args.player_id) {
                         args.player_name = this.spanPlayerName(args.player_id);
                     }
                     if (args.actplayer) {
@@ -990,7 +990,12 @@ function (dojo, declare) {
          * @returns decorated HTML div
          */
         spanCityName: function(city) {
-            return '<div class="prk_city_name" style="color:var(--color_'+city+');">'+this.getCityNameTr(city)+'</div>';
+            let cityclass = "prk_city_name";
+            if (city != "any") {
+                cityclass += " prk_shadow"
+            }
+            const city_name = '<div class="'+cityclass+'" style="color:var(--color_'+city+');">'+this.getCityNameTr(city)+'</div>';
+            return city_name;
         },
 
         /**
