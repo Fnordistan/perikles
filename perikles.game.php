@@ -174,10 +174,10 @@ class Perikles extends Table
      * Assign Special tile to each player at start of game.
      */
     protected function assignSpecialTiles() {
-        // $spec = [1,2,3,4,5,6,7,8];
+        $spec = range(1,8);
         // for testing
-        $spec = [2,3,4,5,7,1,6,8];
-        // shuffle($spec);
+        // $spec = [2,3,4,5,7,1,6,8];
+        shuffle($spec);
         $players = self::loadPlayersBasicInfos();
         foreach ($players as $player_id => $player) {
             $tile = array_pop($spec);
@@ -1135,7 +1135,7 @@ class Perikles extends Table
      * @param player_id player_id player playing the tile
      * @param gamestate influence_phase or active_battle
      */
-    function getSpecialTile($player_id, $gamestate) {
+    function checkSpecialTile($player_id, $gamestate) {
         $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
         // sanity check
         if ($special == null) {
@@ -1174,7 +1174,7 @@ class Perikles extends Table
      * @param player_id
      */
     function playSpecialTile($player_id) {
-        $special = $this->getSpecialTile($player_id, "influence_phase");
+        $special = $this->checkSpecialTile($player_id, "influence_phase");
         // sanity check
         $t = $special['tile'];
         switch ($t) {
@@ -1220,7 +1220,7 @@ class Perikles extends Table
      */
     function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
         $player_id = self::getCurrentPlayerId();
-        $special = $this->getSpecialTile($player_id, "influence_phase");
+        $special = $this->checkSpecialTile($player_id, "influence_phase");
         // sanity check
         if ($special['tile'] != 6) {
             throw new BgaVisibleSystemException("You cannot play Alkibiades"); // NOI18N
@@ -1275,7 +1275,7 @@ class Perikles extends Table
      */
     function playPlague($city) {
         $player_id = self::getCurrentPlayerId();
-        $special = $this->getSpecialTile($player_id, "influence_phase");
+        $special = $this->checkSpecialTile($player_id, "influence_phase");
         // sanity check
         if ($special['tile'] != 8) {
             throw new BgaVisibleSystemException("You cannot play Plague"); // NOI18N
@@ -2476,6 +2476,9 @@ class Perikles extends Table
                     break;
                 case 'commitForces':
                     $this->assignUnits("", "");
+                    break;
+                case 'specialTile':
+                    $this->useSpecialTile($active_player, false);
                     break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
