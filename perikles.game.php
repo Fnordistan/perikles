@@ -1916,7 +1916,7 @@ class Perikles extends Table
     function rollBattle($crt) {
         $attacker_tn = $this->combat_results_table[$crt]['attacker'];
         $defender_tn = $this->combat_results_table[$crt]['defender'];
-        throw new BgaVisibleSystemException("Rolling battle");
+        // throw new BgaVisibleSystemException("Rolling battle");
 
         while (self::getGameStateValue(ATTACKER_TOKENS) < 2 && self::getGameStateValue(DEFENDER_TOKENS) < 2) {
             // roll for attacker
@@ -2443,7 +2443,7 @@ class Perikles extends Table
             'preserve' => ['attacker', 'defender', 'city'],
         ));
         
-        $$type = $this->getCurrentBattleType($location);
+        $type = $this->getCurrentBattleType($location);
 
         $intrinsic = $this->locations[$location]['intrinsic'];
 
