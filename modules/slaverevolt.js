@@ -16,8 +16,9 @@ define(["dojo/_base/declare"], function (declare) {
          * slot: battle_n_hoplite_(att|def)(_ally?)
          * spartans: counters
          */
-        getSpartanHopliteLocs: function() {
+        getSpartanHoplites: function() {
             const spartans = [];
+            // get all the Spartan Hoplites on a battle location
             for (let i = 1; i <= 7; i++) {
                 const loctile = $('location_'+i).firstChild;
                 const locname = loctile.id.split("_")[0];
@@ -27,9 +28,8 @@ define(["dojo/_base/declare"], function (declare) {
                 for (const slot of ['att', 'def']) {
                     const hopliteloc = battle+slot;
                     for (const hoplitestack of [hopliteloc, hopliteloc+'_ally']) {
-                        const hoplites = this.getSpartanHoplites(hoplitestack);
-                        if (hoplites.length > 0) {
-                            const spartanObj = this.createSpartans(locname, hoplitestack, hoplites);
+                        if (this.hasSpartanHoplites(hoplitestack)) {
+                            const spartanObj = this.createSpartans(locname, hoplitestack);
                             spartans.push(spartanObj);
                         }
                     }
@@ -39,34 +39,31 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * location, slot, spartans
+         * location, slot
          * @param {string} loc 
          * @param {string} slot 
-         * @param {DOMelements} counters 
          * @returns simple Object
          */
-        createSpartans: function(loc, slot, counters) {
+        createSpartans: function(loc, slot) {
             return {
                 location: loc,
                 slot: slot,
-                spartans: counters
             };
         },
 
         /**
          * Check whether any Spartan Hoplites are present at this battle slot.
          * @param {string} id 
-         * @return array of counters (may be empty)
+         * @return true if any Hoplite stacks
          */
-        getSpartanHoplites: function(loc_id) {
-            const spartans = [];
+        hasSpartanHoplites: function(loc_id) {
             const hoplites = $(loc_id).children;
             for (const h of hoplites) {
                 if (h.id.split("_")[0] == "sparta") {
-                    spartans.push(h);
+                    return true;
                 }
             }
-            return spartans;
+            return false;
         },
 
     })

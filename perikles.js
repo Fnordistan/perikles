@@ -886,8 +886,12 @@ function (dojo, declare) {
                             log += plague_btns;
                         }
                         if (args.alkibiades) {
-                            const alkibiades_btsn = this.createAlkibiadesButtons();
-                            log += alkibiades_btsn;
+                            const alkibiades_btns = this.createAlkibiadesButtons();
+                            log += alkibiades_btns;
+                        }
+                        if (args.slaverevolt) {
+                            const slaverevolt_btns = this.createSlaveRevoltButtons();
+                            log += slaverevolt_btns;
                         }
                     }
                 }
@@ -1770,7 +1774,7 @@ function (dojo, declare) {
                 this.onPlagueCity(city);
             }));
 
-            this.addSpecialTileCancel("cancel");
+            this.addSpecialTileCancel("plague");
         },
 
         /////////////////////// ALKIBIADES ///////////////////////
@@ -1989,29 +1993,41 @@ function (dojo, declare) {
         /////////////////////// SLAVE REVOLT ///////////////////////
 
         /**
-         * 
+         * Player clicked "Use Slave Revolt" button
          */
         addSlaveRevoltButtons: function() {
-            const spartanleader = this.getSpartanLeader();
-            console.log(spartanleader);
-            const spartans = this.slaverevolt.getSpartanHopliteLocs();
-            for (const spartan of spartans) {
-                console.log(spartan);
-            }
+            this.setDescriptionOnMyTurn(_("Choose location for Slave Revolt (one Spartan Hoplite counter will be removed"), {'slaverevolt': true});
+            this.removeActionButtons();
+            const srbtns = $('slaverevolt_div').getElementsByClassName("prk_slaverevolt_btn");
+            [...srbtns].forEach(b => this.addSlaveRevoltListeners(b));
+
+            this.addSpecialTileCancel("slaverevolt");
         },
 
         /**
-         * Get the current player in control of Sparta
-         * @returns player_id or null
+         * 
+         * @param {Object} button 
          */
-         getSpartanLeader: function() {
-            for (const player_id in this.gamedatas.players) {
-                if (this.isLeader(player_id, "sparta")) {
-                    return player_id;
-                }
-            }
-            return null;
+        addSlaveRevoltListeners: function(button) {
+            // clicking a Civ to place cube there
+            button.addEventListener('click', () => {
+                const id = button.id.split("_")[0];
+                this.onSlaveRevolt(id);
+            });
         },
+
+        // /**
+        //  * Get the current player in control of Sparta
+        //  * @returns player_id or null
+        //  */
+        //  getSpartanLeader: function() {
+        //     for (const player_id in this.gamedatas.players) {
+        //         if (this.isLeader(player_id, "sparta")) {
+        //             return player_id;
+        //         }
+        //     }
+        //     return null;
+        // },
 
         ///////////////////////////////////////////////////
         //// Utility methods
@@ -2427,6 +2443,32 @@ function (dojo, declare) {
             return html;
         },
 
+        /**
+         * Create buttons for choosing Slave Revolt location.
+         * @returns
+         */
+        createSlaveRevoltButtons: function() {
+            let html = '<div id="slaverevolt_div">';
+            const spartabtn = this.format_block('jstpl_slaverevolt_btn', {loc: "sparta", city: "sparta", location_name: this.getCityNameTr("sparta")});
+            html += spartabtn;
+            const spartans = this.slaverevolt.getSpartanHoplites();
+            for (const spartan of spartans) {
+                const city = LOCATION_TILES[spartan.location].city;
+                const battle = this.getBattleNameTr(spartan.location);
+                // const slot = spartan.slot;
+                // const segs = slot.split("_");
+                // const role = segs[3];
+                // let roletr = (role == "att") ? _("Attacker") : _("Defender");
+                // let lbl = _("${location} (${side})");
+                // lbl = lbl.replace('${location}', battle);
+                // lbl = lbl.replace('${side}', roletr);
+                const locbtn = this.format_block('jstpl_slaverevolt_btn', {loc: spartan.location, city: city, location_name: battle});
+                html += locbtn;
+            }
+            html += '</div>';
+            return html;
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
         
@@ -2568,6 +2610,20 @@ function (dojo, declare) {
                 } else {
                     throw new Error("Two cubes must be selected!");
                 }
+            }
+        },
+
+        /**
+         * Player clicked a Slave Revolt button.
+         * @param {string} loc sparta or battle location
+         */
+        onSlaveRevolt: function(loc) {
+            if (this.checkPossibleActions("useSpecialTile", true)) {
+                this.ajaxcall( "/perikles/perikles/slaverevolt.html", {
+                    location: loc,
+                    loc: true
+                }, this, function( result ) {  }, function( is_error) { } );
+                this.restoreDescriptionOnMyTurn();
             }
         },
 

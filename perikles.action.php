@@ -141,4 +141,14 @@ class action_perikles extends APP_GameAction
       self::ajaxResponse( );
     }
 
+  /**
+     * Player chose a stack for Slave Revolt
+     */
+    public function slaverevolt() {
+      self::setAjaxMode();     
+      $location = self::getArg( "location", AT_alphanum, true );
+      $this->game->playSlaveRevolt($location);
+      self::ajaxResponse( );
+    }
+
 }

@@ -109,6 +109,8 @@ var jstpl_alkibiades_from_btn = '<div id="${city}_alkibiades_from_btn" class="pr
 
 var jstpl_alkibiades_to_btn = '<div id="${city}_alkibiades_to_btn" class="prk_alkibiades_btn" style="background-color: white;">${city_name}</div>';
 
+var jstpl_slaverevolt_btn = '<div id="${loc}_slaverevolt" class="prk_slaverevolt_btn" style="background-color: var(--color_${city});">${location_name}</div>';
+
 var jstpl_city_banner = '<button id="${city}_commit_btn" type="button" class="prk_city_banner" style="background-color: var(--color_${city});">${city_name}</button>';
 
 const jstpl_military_area = '<div id="${city}_military_${id}" class="prk_mil_board">\

@@ -518,6 +518,26 @@
     color: white;
 }
 
+.prk_slaverevolt_btn {
+    color: black;
+    font-size: 18px;
+    font-family: 'ThrumsSerifRegular';
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 0px 1px 0px rgba(219, 7, 7, 0), 0px -1px 0px rgba(174, 4, 4, 0.7);
+    width: 100px;
+    height: 35px;
+    margin: 2px;
+    border: 4px ridge #767060;
+}
+
+.prk_slaverevolt_btn:hover {
+    color: black;
+    background-color: orangered !important;
+    border: 4px groove yellow;
+    cursor: grabbing;
+}
+
 .prk_alkibiades_btn {
     display: flex;
     flex-direction: row;
@@ -794,4 +814,14 @@
     display: inline-flex;
     flex-direction: row;
     margin-left: 4px;
+}
+
+#slaverevolt_div {
+    display: inline-flex;
+    flex-direction: row;
+    margin-left: 4px;
+}
+
+#slaverevolt_div > div {
+ margin-left: 4px;
 }

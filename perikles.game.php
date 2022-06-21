@@ -1163,7 +1163,6 @@ class Perikles extends Table
 //////////// Player actions
 //////////// 
 
-
     /**
      * A player clicked a Special Tile Button or the Pass button.
      * Skipped by Plague and Alkibiades.
@@ -1326,6 +1325,30 @@ class Perikles extends Table
         if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
             $this->gamestate->nextState("nextPlayer");
         }
+    }
+
+    /**
+     * Player selected Slave Revolt
+     */
+    function playSlaveRevolt($location) {
+        $player_id = self::getCurrentPlayerId();
+        $special = $this->checkSpecialTile($player_id, "commit_phase");
+        // sanity check
+        if ($special['tile'] != 3) {
+            throw new BgaVisibleSystemException("You cannot play Slave Revolt"); // NOI18N
+        }
+        if ($location == "sparta") {
+            $location = self::getGameStateValue("sparta_leader");
+        }
+        $hoplites = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"sparta\" AND type=\"".HOPLITE."\" AND location=\"$location\"");
+        if (empty($hoplites)) {
+            throw new BgaVisibleSystemException("No Spartan Hoplites at $location");
+        }
+        shuffle($hoplites);
+        $revolted = array_pop($hoplites);
+
+
+        throw new BgaVisibleSystemException("$location revolts ".$revolted['id']);
     }
 
     /**
