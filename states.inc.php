@@ -158,8 +158,8 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must commit forces'),
         "args" => "argsSpecial",
     	"type" => "activeplayer",
-    	"possibleactions" => array( "assignUnits" ),
-    	"transitions" => array( "nextPlayer" => NEXT_COMMIT)
+    	"possibleactions" => array( "assignUnits", "useSpecialTile" ),
+    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE)
     ),
 
     START_BATTLES => array(
@@ -209,7 +209,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "proposeCandidate" => PROPOSE_CANDIDATE, "elections" => ELECTIONS, "nextPlayer" => NEXT_PLAYER )
+        "transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "proposeCandidate" => PROPOSE_CANDIDATE, "elections" => ELECTIONS, "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT )
     ),
 
     SCORING => array(

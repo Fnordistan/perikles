@@ -90,6 +90,7 @@ class Perikles extends Table
             "active_battle" => 46,
             "battle_round" => 47, // 0,1
             "influence_phase" => 48,
+            "commit_phase" => 49,
 
             "last_influence_slot" => 37, // keep track of where to put next Influence tile
             "deadpool_picked" => 38, // how many players have been checked for deadpool?
@@ -155,6 +156,8 @@ class Perikles extends Table
         self::setGameStateInitialValue("battle_round", 0);
         // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with Elections.
         self::setGameStateInitialValue("influence_phase", 1);
+        // when we are in the committing phase. Start with first commit, end with battle phase.
+        self::setGameStateInitialValue("commit_phase", 0);
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -176,8 +179,8 @@ class Perikles extends Table
     protected function assignSpecialTiles() {
         $spec = range(1,8);
         // for testing
-        // $spec = [2,3,4,5,7,1,6,8];
-        shuffle($spec);
+        $spec = [2,4,5,7,1,6,8,3];
+        // shuffle($spec);
         $players = self::loadPlayersBasicInfos();
         foreach ($players as $player_id => $player) {
             $tile = array_pop($spec);
@@ -888,8 +891,15 @@ class Perikles extends Table
         $canplay = [];
         $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile FROM player WHERE special_tile_used IS NOT TRUE", true);
         foreach ($playertiles as $player_id => $tileid) {
+            $playable = true;
             if ($phase == $this->specialcards[$tileid]["phase"]) {
-                $canplay[] = $player_id;
+                // slaverevolt, only "commit" Special tile, can only be played on player's turn
+                if ($phase == "commit") {
+                    $playable = ($player_id == self::getActivePlayerId());
+                }
+                if ($playable) {
+                    $canplay[] = $player_id;
+                }
             }
         }
         return $canplay;
@@ -1133,9 +1143,9 @@ class Perikles extends Table
      * Checks that player's Special tile has not been used, and it's the current game state.
      * 
      * @param player_id player_id player playing the tile
-     * @param gamestate influence_phase or active_battle
+     * @param phase influence_phase or active_battle
      */
-    function checkSpecialTile($player_id, $gamestate) {
+    function checkSpecialTile($player_id, $phase) {
         $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
         // sanity check
         if ($special == null) {
@@ -1143,7 +1153,7 @@ class Perikles extends Table
         } else if ($special['used']) {
             throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
         }
-        if (self::getGameStateValue($gamestate) == 0) {
+        if (self::getGameStateValue($phase) == 0) {
             throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
         }
         return $special;
@@ -1576,7 +1586,11 @@ class Perikles extends Table
         } else {
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
-        $this->gamestate->nextState();
+        $state = "nextPlayer";
+        if ($this->canPlaySpecial($player_id, "commit")) {
+            $state = "useSpecial";
+        }
+        $this->gamestate->nextState($state);
     }
 
     /**
@@ -2022,17 +2036,35 @@ class Perikles extends Table
     function argsSpecial() {
         $players = self::loadPlayersBasicInfos();
         $private = array();
-        $state = $this->getStateName();
-        $phases = array(
-            "takeInfluence" => "influence",
-            "commitForces" => "commit",
-        );
+        $phase = $this->checkPhase();
         foreach (array_keys($players) as $player_id) {
-            $private[$player_id] = array('special' => $this->canPlaySpecial($player_id, $phases[$state]));
+            $private[$player_id] = array('special' => $this->canPlaySpecial($player_id, $phase));
         }
         return array(
             '_private' => $private
         );
+    }
+
+    /**
+     * Get the phase to check against for use of a Special tile.
+     * @return "influence, commit, or
+     */
+    function checkPhase() {
+        $state = $this->getStateName();
+        if ($state == "takeInfluence") {
+            return "influence";
+        } elseif ($state == "commitForces") {
+            return "commit";
+        } elseif ($state == "specialTile") {
+            if (self::getGameStateValue("influence_phase") == 1) {
+                return "influence";
+            } elseif (self::getGameStateValue("commit_phase") == 1) {
+                return "commit";
+            }
+            // we may be in TakeInfluence or Commit stage
+            throw new BgaVisibleSystemException("State is $state");
+        }
+        return null;
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2044,25 +2076,29 @@ class Perikles extends Table
      */
     function stNextPlayer() {
         $state = "";
-        if ($this->allInfluenceTilesTaken()) {
-            // we're nominating candidates
-            if ($this->canAnyoneNominate()) {
-                $player_id = self::activeNextPlayer();
-                if ($this->canNominateAny($player_id)) {
-                    self::giveExtraTime( $player_id );
-                    $state = "proposeCandidate";
-                } else {
+        if (self::getGameStateValue("influence_phase") == 1) {
+            if ($this->allInfluenceTilesTaken()) {
+                // we're nominating candidates
+                if ($this->canAnyoneNominate()) {
                     $player_id = self::activeNextPlayer();
-                    $state = "nextPlayer";
+                    if ($this->canNominateAny($player_id)) {
+                        self::giveExtraTime( $player_id );
+                        $state = "proposeCandidate";
+                    } else {
+                        $player_id = self::activeNextPlayer();
+                        $state = "nextPlayer";
+                    }
+                } else {
+                    $state = "elections";
                 }
             } else {
-                $state = "elections";
+                $this->drawInfluenceTile();
+                $player_id = self::activeNextPlayer();
+                self::giveExtraTime( $player_id );
+                $state = "takeInfluence";
             }
-        } else {
-            $this->drawInfluenceTile();
-            $player_id = self::activeNextPlayer();
-            self::giveExtraTime( $player_id );
-            $state = "takeInfluence";
+        } elseif (self::getGameStateValue("commit_phase") == 1) {
+            $state = "nextCommit";
         }
         $this->gamestate->nextState($state);
     }
@@ -2077,6 +2113,7 @@ class Perikles extends Table
         if ($player_id != 0) {
             $this->gamestate->changeActivePlayer($player_id);
             self::setGameStateValue("spartan_choice", 0);
+            self::setGameStateValue("commit_phase", 1);
         } else {
             $player_id = self::activeNextPlayer();
             self::giveExtraTime( $player_id );
@@ -2275,9 +2312,9 @@ class Perikles extends Table
      */
     function stStartBattles() {
         $state = "resolve";
+        self::setGameStateValue("commit_phase", 0);
 
         $battle = $this->nextBattle();
-
         if ($battle == null) {
             $state = "endTurn";
         }

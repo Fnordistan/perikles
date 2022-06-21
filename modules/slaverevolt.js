@@ -12,8 +12,9 @@ define(["dojo/_base/declare"], function (declare) {
 
         /**
          * Return an array of Objects.
-         * 
-         * 
+         * location: battle loc
+         * slot: battle_n_hoplite_(att|def)(_ally?)
+         * spartans: counters
          */
         getSpartanHopliteLocs: function() {
             const spartans = [];
