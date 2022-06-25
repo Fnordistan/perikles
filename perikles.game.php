@@ -154,7 +154,7 @@ class Perikles extends Table
         self::setGameStateInitialValue(DEFENDER_TOKENS, 0);
         self::setGameStateInitialValue("active_battle", 0);
         self::setGameStateInitialValue("battle_round", 0);
-        // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with Elections.
+        // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with candidate nominations.
         self::setGameStateInitialValue("influence_phase", 1);
         // when we are in the committing phase. Start with first commit, end with battle phase.
         self::setGameStateInitialValue("commit_phase", 0);
@@ -1143,9 +1143,10 @@ class Perikles extends Table
      * Checks that player's Special tile has not been used, and it's the current game state.
      * 
      * @param player_id player_id player playing the tile
-     * @param phase influence_phase or active_battle
+     * @param phase matched against commit, influence, or commit
+     * @param tile expected tile number (optional)
      */
-    function checkSpecialTile($player_id, $phase) {
+    function checkSpecialTile($player_id, $phase, $tile = 0) {
         $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
         // sanity check
         if ($special == null) {
@@ -1156,6 +1157,10 @@ class Perikles extends Table
         if (self::getGameStateValue($phase) == 0) {
             throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
         }
+        if ($tile != 0 && $special['tile'] != $tile) {
+            throw new BgaVisibleSystemException(sprintf("You cannot play %s", $this->specialcards[$tile]['name'])); // NOI18N
+        }
+
         return $special;
     }
 
@@ -1229,11 +1234,8 @@ class Perikles extends Table
      */
     function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
         $player_id = self::getCurrentPlayerId();
-        $special = $this->checkSpecialTile($player_id, "influence_phase");
-        // sanity check
-        if ($special['tile'] != 6) {
-            throw new BgaVisibleSystemException("You cannot play Alkibiades"); // NOI18N
-        }
+        $this->checkSpecialTile($player_id, "influence_phase", 6);
+
         // check players have influence
         $influence1 = $this->influenceInCity($owner1, $from_city1);
         if ($influence1 == 0) {
@@ -1284,11 +1286,8 @@ class Perikles extends Table
      */
     function playPlague($city) {
         $player_id = self::getCurrentPlayerId();
-        $special = $this->checkSpecialTile($player_id, "influence_phase");
-        // sanity check
-        if ($special['tile'] != 8) {
-            throw new BgaVisibleSystemException("You cannot play Plague"); // NOI18N
-        }
+        $this->checkSpecialTile($player_id, "influence_phase", 8);
+
         $this->flipSpecialTile($player_id, $this->specialcards[8]['name']);
         $players = self::loadPlayersBasicInfos();
         // how many cubes does each player have? Count candidates
@@ -1330,25 +1329,61 @@ class Perikles extends Table
     /**
      * Player selected Slave Revolt
      */
-    function playSlaveRevolt($location) {
+    function playSlaveRevolt($revoltlocation) {
         $player_id = self::getCurrentPlayerId();
-        $special = $this->checkSpecialTile($player_id, "commit_phase");
-        // sanity check
-        if ($special['tile'] != 3) {
-            throw new BgaVisibleSystemException("You cannot play Slave Revolt"); // NOI18N
-        }
-        if ($location == "sparta") {
+        $this->checkSpecialTile($player_id, "commit_phase", 3);
+
+        $location = "";
+        $location_name = "";
+        if ($revoltlocation == "sparta") {
             $location = self::getGameStateValue("sparta_leader");
+            $players = self::loadPlayersBasicInfos();
+            $location_name = $players[$location]['player_name'];
+        } else {
+            $location = $revoltlocation;
+            $location_name = $this->locations[$location]['name'];
         }
+        // locaion is now either location tile name or Sparta player id
+        // get all Hoplite counters
         $hoplites = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"sparta\" AND type=\"".HOPLITE."\" AND location=\"$location\"");
         if (empty($hoplites)) {
-            throw new BgaVisibleSystemException("No Spartan Hoplites at $location");
+            throw new BgaVisibleSystemException("No Spartan Hoplites at $location"); // NOI18N
         }
+        // randomize and pick one
         shuffle($hoplites);
         $revolted = array_pop($hoplites);
+        $id = $revolted['id'];
+        // need to flip the counter
+        $counter = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE id=$id")[0];
+
+        // relocate it to Sparta
+        self::DbQuery("UPDATE MILITARY SET location=\"sparta\", battlepos=0 WHERE id=$id");
+
+        // 
+        self::notifyAllPlayers("slaveRevolt", '', array(
+            'military' => $counter,
+            'location' => $revoltlocation, // may be sparta or a battle name
+            'sparta_player' => self::getGameStateValue("sparta_leader"),
+        ));
 
 
-        throw new BgaVisibleSystemException("$location revolts ".$revolted['id']);
+        // self::notifyAllPlayers("revoltHoplites", clienttranslate('Hoplite counter returned to Sparta from ${location_name}'), array(
+        //     'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
+        //     'player_id' => $player_id,
+        //     'player_name' => $players[$player_id]['player_name'],
+        //     'unit' => ($pid == $player_id) ? $counter['id'] : 0,
+        //     'type' => $counter['type'],
+        //     'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
+        //     'strength' => ($pid == $player_id) ? $counter['strength'] : 0,
+        //     'battlepos' => $battlepos,
+        //     'battlerole' => $role,
+        //     'location' => $battle,
+        //     'slot' => $slot,
+        //     'location_name' => $location_name,
+        //     'preserve' => ['city', 'location'],
+        // ));
+
+
     }
 
     /**
@@ -2079,13 +2114,12 @@ class Perikles extends Table
         } elseif ($state == "commitForces") {
             return "commit";
         } elseif ($state == "specialTile") {
+            // this may be 0, 1, or 2 (2 = candidate phase, no special tiles)
             if (self::getGameStateValue("influence_phase") == 1) {
                 return "influence";
             } elseif (self::getGameStateValue("commit_phase") == 1) {
                 return "commit";
             }
-            // we may be in TakeInfluence or Commit stage
-            throw new BgaVisibleSystemException("State is $state");
         }
         return null;
     }
@@ -2099,8 +2133,11 @@ class Perikles extends Table
      */
     function stNextPlayer() {
         $state = "";
-        if (self::getGameStateValue("influence_phase") == 1) {
+        if (self::getGameStateValue("influence_phase") > 0) {
             if ($this->allInfluenceTilesTaken()) {
+                // no longer taking influence, enter candidates phase
+                self::setGameStateValue("influence_phase", 2);
+
                 // we're nominating candidates
                 if ($this->canAnyoneNominate()) {
                     $player_id = self::activeNextPlayer();
@@ -2252,8 +2289,9 @@ class Perikles extends Table
      */
     function stElections() {
         $players = self::loadPlayersBasicInfos();
-        // end of influence phase
+        // end influence phase
         self::setGameStateValue("influence_phase", 0);
+
         foreach ($this->cities as $cn => $city) {
             $city_name = $city['name'];
 

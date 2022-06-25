@@ -98,10 +98,10 @@ define([
     "ebg/counter",
     "ebg/zone",
     g_gamethemeurl + "modules/alkibiades.js",
-    g_gamethemeurl + "modules/slaverevolt.js"
+    g_gamethemeurl + "modules/slaverevolt.js",
 ],
 function (dojo, declare) {
-    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades], {
+    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades, perikles.slaverevolt], {
         constructor: function(){
             this.influence_h = 199;
             this.influence_w = 128;
@@ -199,7 +199,7 @@ function (dojo, declare) {
             const DESC = {
                 'perikles': _("Place two Influence cubes in Athens. This tile can be played when it is your turn to select an Influence tile, either just before or just after taking the tile."),
                 'persianfleet': _("This tile can be played just before a trireme battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
-                'slaverevolt': _("This tile can be played when it is your turn to commit forces to a location. Take one Spartan hoplite counter, either from the board or from the controlling player, and place it back in Sparta. That counter cannot be involved in combat this turn. You cannot examine the counter you remove. The counter will come back into play in the next turn."),
+                'slaverevolt': _("This tile can be played when it is your turn to commit forces to a location. Take one Spartan hoplite counter, either from the board or from the controlling player, and place it back in Sparta. That counter cannot be involved in combat this turn. You cannot examine the counter you remove. (It is selected randomly.) The counter will come back into play in the next turn."),
                 'brasidas': _("This tile can be played just before a hoplite battle is about to be resolved. All Spartan hoplite counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled."),
                 'thessalanianallies': _("This tile can be played just before a hoplite battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
                 'alkibiades': _("Player can take two Influence cubes of any color from any city/cities and move them to any city of their choice. These cubes may not be moved from a candidate space, nor may they be moved to one."),
@@ -573,8 +573,12 @@ function (dojo, declare) {
          */
         setupLeaders: function(leaders) {
             for (const [city, player_id] of Object.entries(leaders)) {
-                const leader = this.createLeaderCounter(player_id, city, "leader", 1);
-                dojo.place(leader, $(city+"_leader"));
+                const leaderhtml = this.createLeaderCounter(player_id, city, "leader", 1);
+                const leader = dojo.place(leaderhtml, $(city+"_leader"));
+                let tt = _("${player_name} is Leader of ${city_name}");
+                tt = tt.replace('${player_name}', this.spanPlayerName(player_id));
+                tt = tt.replace('${city_name}', this.getCityNameTr(city));
+                this.addTooltip(leader.id, tt, '');
             }
         },
 
@@ -677,7 +681,7 @@ function (dojo, declare) {
         /**
          * Place a military counter on the battle stacks at a location tile.
          * @param {Object} counter 
-         * @param {string} stackpos
+         * @param {int} stackpos 0-indexed place in the stack
          */
         placeCounterAtBattle: function(counter, stackpos) {
             const slotid = $(counter['location']+"_tile").parentNode.id;
@@ -687,7 +691,7 @@ function (dojo, declare) {
             const strength = counter['strength'];
             const place = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[counter['battlepos']];
             const stackct = $(place).childElementCount;
-            let [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            const [xoff, yoff] = this.counterOffsets(city, strength, unit);
             const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+stackpos, x: xoff, y: yoff, m: 8*stackct, t: 0});
             dojo.place(battlecounter, $(place));
         },
@@ -2688,6 +2692,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'notif_alkibiadesMove', 500 );
 
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
+            dojo.subscribe( 'slaveRevolt', this, "notif_slaveRevolt");
+
             dojo.subscribe( 'battle', this, "notif_battle");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
             this.notifqueue.setSynchronous( 'crtOdds', 500 );
@@ -2980,6 +2986,25 @@ function (dojo, declare) {
                 this.placeCounterAtBattle(m, i++);
             });
        },
+
+       /**
+        * A single Hoplite counter needs to be flipped and moved back to Sparta
+        * @param {Object} notif 
+        */
+       notif_slaveRevolt: function(notif) {
+            const counter = notif.args.military;
+            const location = notif.args.location;
+            const sparta_leader = notif.args.sparta_player;
+            const counter_id = "sparta_hoplite_"+counter.strength+"_"+counter.id;
+            console.log("revolt " + location + " @ " + counter_id);
+            // first flip the revolting Hoplite unit, if it's not mine and it's at a battle
+            if (location != "sparta" && this.player_id != sparta_leader) {
+                // pick one of the 
+                let flipped_counter = "sparta_hoplite_0_"+counter.id;
+            }
+            // now move it back to Sparta
+
+        },
 
         notif_crtOdds: function(notif) {
             const slot = notif.args.slot;

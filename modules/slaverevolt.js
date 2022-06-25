@@ -3,7 +3,7 @@ define(["dojo/_base/declare"], function (declare) {
     return declare("perikles.slaverevolt", null, {
 
         /**
-         * Hold data about a cube being moved with the Alkibiades special action.
+         * Hold data about a Spartan Hoplites
          * @param {string} to_city
          * @param {string} cubeid
          */
