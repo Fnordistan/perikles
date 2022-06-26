@@ -34,25 +34,9 @@ const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 't
 
 const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles'];
 
-const HOPLITE = "hoplite";
-const TRIREME = "trireme";
-
 const CANDIDATES = {
     "\u{003B1}" : "a",
     "\u{003B2}" : "b"
-}
-
-const MIL_DIM = {
-    "l": 100,
-    "s": 62
-}
-
-const PLAYER_COLORS = {
-    "E53738" : "red",
-    "37BC4C" : "green",
-    "39364F" : "black",
-    "E5A137" : "orange",
-    "FFF" : "white",
 }
 
 const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;';
@@ -99,9 +83,11 @@ define([
     "ebg/zone",
     g_gamethemeurl + "modules/alkibiades.js",
     g_gamethemeurl + "modules/slaverevolt.js",
+    g_gamethemeurl + "modules/counter.js",
+    g_gamethemeurl + "modules/decorator.js",
 ],
 function (dojo, declare) {
-    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades, perikles.slaverevolt], {
+    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades, perikles.slaverevolt, perikles.counter, perikles.decorator], {
         constructor: function(){
             this.influence_h = 199;
             this.influence_w = 128;
@@ -109,6 +95,7 @@ function (dojo, declare) {
             this.location_h = 195;
             this.location_s = 0.55;
 
+            this.counters = new perikles.counter();
             this.slaverevolt = new perikles.slaverevolt();
         },
         
@@ -126,6 +113,8 @@ function (dojo, declare) {
         */
         
         setup: function( gamedatas ) {
+            this.decorator = new perikles.decorator(gamedatas.players);
+
             this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCubes(gamedatas.influencecubes);
@@ -136,6 +125,7 @@ function (dojo, declare) {
             this.setupMilitary(gamedatas.military);
             this.setupDefeats(gamedatas.defeats);
             this.setupCities();
+
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -170,7 +160,7 @@ function (dojo, declare) {
                 }
                 if (spec == 0) {
                     let ttext = _("${player_name}'s Special tile");
-                    const player_name = this.spanPlayerName(player_id);
+                    const player_name = this.decorator.spanPlayerName(player_id);
                     ttext = ttext.replace('${player_name}', player_name);
                     this.addTooltip(tile.id, ttext, '');
                 } else {
@@ -576,7 +566,7 @@ function (dojo, declare) {
                 const leaderhtml = this.createLeaderCounter(player_id, city, "leader", 1);
                 const leader = dojo.place(leaderhtml, $(city+"_leader"));
                 let tt = _("${player_name} is Leader of ${city_name}");
-                tt = tt.replace('${player_name}', this.spanPlayerName(player_id));
+                tt = tt.replace('${player_name}', this.decorator.spanPlayerName(player_id));
                 tt = tt.replace('${city_name}', this.getCityNameTr(city));
                 this.addTooltip(leader.id, tt, '');
             }
@@ -613,7 +603,7 @@ function (dojo, declare) {
          * @returns statue or leader div
          */
         createLeaderCounter: function(player_id, city, type, n) {
-            const counter = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: this.playerColor(player_id)});
+            const counter = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: this.decorator.playerColor(player_id)});
             return counter;
         },
 
@@ -637,14 +627,11 @@ function (dojo, declare) {
          * @param {Object} military 
          */
         setupMilitary: function(military) {
-            this.military_zones = {};
-            let mz = 'persia_military';
-            this.decorateMilitaryStacks("persia", mz);
-            this.military_zones[mz] = {'spread': false};
+            // first add Persia
+            this.createStack("persia");
+            // stack for each city
             for (const city of CITIES) {
-                mz = city+"_military";
-                this.decorateMilitaryStacks(city, mz);
-                this.military_zones[mz] = {'spread': false};
+                this.createStack(city);
             }
 
             for(const i in military) {
@@ -653,7 +640,6 @@ function (dojo, declare) {
                 const unit = mil['type'];
                 const strength = mil['strength'];
                 const location = mil['location'];
-                let [xoff, yoff] = this.counterOffsets(city, strength, unit);
                 if (location == city && mil['battlepos'] == 0) {
                     // in a city stack
                     this.placeCityStack(city, unit, strength, mil['id']);
@@ -668,14 +654,27 @@ function (dojo, declare) {
                     const player_id = location;
                     if (player_id == this.player_id) {
                         this.createMilitaryArea(player_id, city);
-                        const m = 1;
-                        const counter_div = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: m, t: 0});
+                        // const counter_div = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: m, t: 0});
+                        const counter_div = this.counters.createCounter(city, unit, strength, mil['id'], 1, 0);
                         const mil_zone = city+"_"+unit+"_"+player_id;
                         const counter = dojo.place(counter_div, $(mil_zone));
                         Object.assign(counter.style, {position: "relative"});
                     }
                 }
             }
+        },
+
+        /**
+         * Create a military stack, add a tooltip.
+         * @param {string} city 
+         */
+        createStack: function(city) {
+            const stack = city+"_military";
+            this.counters.decorateMilitaryStack(stack);
+            const city_name = this.getCityNameTr(city);
+            let tt = _("${city} military: click to inspect stack");
+            tt = tt.replace('${city}', city_name);
+            this.addTooltip(stack, tt, '');
         },
 
         /**
@@ -691,7 +690,7 @@ function (dojo, declare) {
             const strength = counter['strength'];
             const place = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[counter['battlepos']];
             const stackct = $(place).childElementCount;
-            const [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            const [xoff, yoff] = this.counters.getOffsets(city, strength, unit);
             const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+stackpos, x: xoff, y: yoff, m: 8*stackct, t: 0});
             dojo.place(battlecounter, $(place));
         },
@@ -707,109 +706,9 @@ function (dojo, declare) {
             const city_military = $(city+"_military");
             const ct = city_military.childElementCount;
             const top = (unit == TRIREME) ? MIL_DIM.s : 0;
-            const [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            const [xoff, yoff] = this.counters.getOffsets(city, strength, unit);
             const counter = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: id, x: xoff, y: yoff, m: 2*ct, t: top});
             dojo.place(counter, city_military);
-        },
-
-        /**
-         * Create array[2] with background-position offsets for a military counter.
-         * @param {*} city 
-         * @param {*} strength 
-         * @param {*} unit
-         * @param returns [x,y] values
-         */
-        counterOffsets: function(city, strength, unit) {
-            var xdim, ydim;
-            if (unit == HOPLITE) {
-                xdim = MIL_DIM.s;
-                ydim = MIL_DIM.l;
-            } else if (unit == TRIREME) {
-                xdim = MIL_DIM.l;
-                ydim = MIL_DIM.s;
-            } else {
-                throw Error("invalid unit type: "+ unit);
-            }
-            let xoff = -1 * strength * xdim;
-            let yoff = -1 * MILITARY_ROW[city] * ydim;
-            return [xoff,yoff];
-        },
-
-        /**
-         * Make military display available counters
-         */
-        decorateMilitaryStacks: function(city, city_mil_id) {
-            const city_mil = $(city_mil_id);
-            city_mil.addEventListener('click', () => {
-                if (this.isSpread(city_mil_id)) {
-                    this.unspread(city_mil);
-                } else {
-                    this.spreadMilitaryUnits(city_mil);
-                }
-            });
-
-            let tt = _("${city} military: click to inspect stack");
-            tt = tt.replace('${city}', this.getCityNameTr(city) );
-            this.addTooltip(city_mil_id, tt, '');
-            city_mil.addEventListener('mouseleave', () => {
-                this.unspread(city_mil);
-            });
-        },
-
-        /**
-         * Are the military units in the city spread already?
-         * @param {Object} city_mil 
-         */
-        isSpread: function(city_mil) {
-            return this.military_zones[city_mil]['spread'];
-        },
-
-        /**
-         * Unspread military units.
-         * @param {Object} city_mil 
-         */
-        unspread: function(city_mil) {
-            for (const mil of city_mil.children) {
-                Object.assign(mil.style, {'transform' : null, 'z-index': null});
-            }
-            this.military_zones[city_mil.id]['spread'] = false;
-        },
-
-        /**
-         * Spread out all Hoplite and Trireme counters
-         */
-        spreadMilitaryUnits: function(city_mil) {
-            const hoplites = [];
-            const triremes = [];
-            for (const mil of city_mil.children) {
-                if (mil.classList.contains("prk_hoplite")) {
-                    hoplites.push(mil.id);
-                } else if  (mil.classList.contains("prk_trireme")) {
-                    triremes.push(mil.id);
-                }
-            }
-            let n = 0;
-            // Athens spreads to left
-            let athens_off = 0;
-            if (city_mil.id == "athens_military") {
-                athens_off = -1 * Math.max((hoplites.length * MIL_DIM.s), (triremes.length * MIL_DIM.l));
-            }
-            for (hop of hoplites) {
-                let xoff = athens_off+(n*MIL_DIM.s);
-                let yoff = n*-2;
-                Object.assign($(hop).style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
-                n++;
-            }
-            const rec = city_mil.getBoundingClientRect();
-            n = 0;
-            for (tri of triremes) {
-                let tridim = $(tri).getBoundingClientRect();
-                let xoff = (-2 * hoplites.length) + athens_off+(n*MIL_DIM.l);
-                let yoff = 22 + rec.bottom - tridim.top;
-                Object.assign($(tri).style, {'transform' : "translate("+xoff+"px,"+yoff+"px)", 'z-index': 1});
-                n++;
-            }
-            this.military_zones[city_mil.id]['spread'] = true;
         },
 
         /**
@@ -852,13 +751,13 @@ function (dojo, declare) {
                 if (log && args && !args.processed) {
                     args.processed = true;
                     if (args.player_name && args.player_id) {
-                        args.player_name = this.spanPlayerName(args.player_id);
+                        args.player_name = this.decorator.spanPlayerName(args.player_id);
                     }
                     if (args.actplayer) {
                         args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF;'+WHITE_OUTLINE);
                     }
                     if (args.candidate_name) {
-                        args.candidate_name  = this.spanPlayerName(args.candidate_id);
+                        args.candidate_name  = this.decorator.spanPlayerName(args.candidate_id);
                     }
                     if (args.city_name) {
                         args.city_name = this.spanCityName(args.city);
@@ -879,7 +778,7 @@ function (dojo, declare) {
                         args.atttotal = '<span>'+args.atttotal+'</span>';
                     }
                     if (!this.isSpectator) {
-                        log = log.replace("You", this.spanYou());
+                        log = log.replace("You", this.decorator.spanYou(this.player_id));
 
                         if (args.committed) {
                             const commit_log = this.createCommittedUnits(args.committed);
@@ -920,11 +819,11 @@ function (dojo, declare) {
             for (const[id, selected] of Object.entries(committed)) {
                 if (id != "cube") {
                     let commit_str = (selected.side == "attack" ? attack_str : defend_str);
-                    let mil_html = this.createMilitaryCounterRelative(id+"_dlg", selected.city, selected.strength, selected.unit);
-                    mil_html = this.prependStyle(mil_html, 'display: inline-block');
+                    let mil_html = this.counters.createCounterRelative(selected.city, selected.unit, selected.strength, id+"_dlg");
+                    mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
                     commit_str = commit_str.replace('${unit}', mil_html);
                     let loc_html = this.createLocationTile(selected.location, 0);
-                    loc_html = this.prependStyle(loc_html, 'display: inline-block');
+                    loc_html = this.decorator.prependStyle(loc_html, 'display: inline-block');
                     commit_str = commit_str.replace('${location}', loc_html);
 
                     if (selected.cube) {
@@ -947,7 +846,7 @@ function (dojo, declare) {
                     let spend_cubes_div = this.createSpendInfluenceDiv();
                     if (spend_cubes_div != null) {
                         let cubehtml = this.createInfluenceCube(this.player_id, 'commit', '');
-                        cubehtml = this.prependStyle(cubehtml, "display: inline-block; margin-left: 5px;");
+                        cubehtml = this.decorator.prependStyle(cubehtml, "display: inline-block; margin-left: 5px;");
                         spend_cubes_div = _("You may spend an Influence cube to send 1 or 2 units from that city")+cubehtml+'<br/>'+spend_cubes_div;
                         commit_log += spend_cubes_div;
                     }
@@ -969,30 +868,9 @@ function (dojo, declare) {
             let die_icon = this.format_block('jstpl_die', {x: xoff});
             if (def) {
                 const def_color = "filter: sepia(100%)";
-                die_icon = this.prependStyle(die_icon, def_color);
+                die_icon = this.decorator.prependStyle(die_icon, def_color);
             }
             return die_icon;
-        },
-        /**
-         * Create span with Player's name in color.
-         * @param {int} player 
-         */
-         spanPlayerName: function(player_id) {
-            const player = this.gamedatas.players[player_id];
-            const color_bg = this.colorBg(player);
-            const pname = "<span style=\"font-weight:bold;color:#" + player.color + ";" + color_bg + "\">" + player.name + "</span>";
-            return pname;
-        },
-
-        /**
-         * From BGA Cookbook. Return "You" in this player's color
-         */
-         spanYou: function() {
-            const player = this.gamedatas.players[this.player_id]; 
-            const color = player.color;
-            const color_bg = this.colorBg(player);
-            const you = "<span style=\"font-weight:bold;color:#" + color + ";" + color_bg + "\">" + __("lang_mainsite", "You") + "</span>";
-            return you;
         },
 
         /**
@@ -1007,42 +885,6 @@ function (dojo, declare) {
             }
             const city_name = '<div class="'+cityclass+'" style="color:var(--color_'+city+');">'+this.getCityNameTr(city)+'</div>';
             return city_name;
-        },
-
-        /**
-         * Get the style tag for background-color for a player name (shadow for white text)
-         * @param {Object} player 
-         * @returns css tag or empty string
-         */
-        colorBg: function(player) {
-            let color_bg = "";
-            if (player.color_back) {
-                color_bg = "background-color:#"+player.color_back+";";
-            } else if (player.color == "FFF") {
-                color_bg = WHITE_OUTLINE;
-            }
-            return color_bg;
-        },
-
-        /**
-         * Put a new style element into an HTML div's style attribute
-         * @param {string} html 
-         * @param {string} style 
-         * @returns 
-         */
-        prependStyle: function(html, style) {
-            html = html.replace('style="', 'style="'+style+';');
-            return html;
-        },
-
-        /**
-         * Customized player colors per player_id
-         * @param {string} player_id 
-         */
-        playerColor: function(player_id) {
-            const player = this.gamedatas.players[player_id];
-            const color = player.color;
-            return PLAYER_COLORS[color];
         },
 
         /**
@@ -1069,15 +911,15 @@ function (dojo, declare) {
  
             let title = "";
             if (this.isCurrentPlayerActive() && text !== null) {
-                tpl.you = this.spanYou();
+                tpl.you = this.decorator.spanYou(this.player_id);
             }
             if (text !== null) {
                 title = this.format_string_recursive(text, tpl);
             }
             if (title == "") {
-                this.setMainTitle("&nbsp;");
+                this.decorator.setMainTitle("&nbsp;");
             } else {
-                this.setMainTitle(title);
+                this.decorator.setMainTitle(title);
             }
         },
 
@@ -1087,18 +929,9 @@ function (dojo, declare) {
         restoreDescriptionOnMyTurn: function() {
             const text = this.gamedatas.gamestate.olddescriptionmyturn;
             if (text) {
-                const acting = this.spanPlayerName(this.getActivePlayerId());
+                const acting = this.decorator.spanPlayerName(this.getActivePlayerId());
                 this.setDescriptionOnMyTurn(text, {actplayer: acting});
             }
-        },
-
-
-        /**
-         * Change the title banner.
-         * @param {string} text 
-         */
-         setMainTitle : function(text) {
-            $('pagemaintitletext').innerHTML = text;
         },
 
         /**
@@ -1159,7 +992,7 @@ function (dojo, declare) {
             }
 
             // move from city to battle
-            let [xoff, yoff] = this.counterOffsets(city, strength, unit);
+            let [xoff, yoff] = this.counters.getOffsets(city, strength, unit);
             const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[pos];
             const stackct = $(battlepos).childElementCount;
             const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+id, x: xoff, y: yoff, m: 8*stackct, t: 0});
@@ -1248,7 +1081,7 @@ function (dojo, declare) {
                 token.style.top = box.t + "px";
             }, () => {
                 token.style.removeProperty("transition");
-                this.stripPosition(token);
+                this.decorator.stripPosition(token);
                 token.classList.remove('moving_token');
                 // Perikles additions
                 if (token.classList.contains("prk_military")) {
@@ -1287,23 +1120,6 @@ function (dojo, declare) {
             box.t += box.h - cbox.h;
             mobile.offsetTop;//force re-flow
             return box;
-        },
-
-        /**
-         * This method will remove all inline style added to element that affect positioning
-         */
-         stripPosition: function (token) {
-            // console.log(token + " STRIPPING");
-            // remove any added positioning style
-            token = $(token);
-
-            token.style.removeProperty("display");
-            token.style.removeProperty("top");
-            token.style.removeProperty("bottom");
-            token.style.removeProperty("left");
-            token.style.removeProperty("right");
-            token.style.removeProperty("position");
-            // dojo.style(token, "transform", null);
         },
 
         /**
@@ -1654,7 +1470,7 @@ function (dojo, declare) {
                 switch( stateName ) {
                     case 'spartanChoice':
                         for (player_id in this.gamedatas.players) {
-                            this.addActionButton( 'choose_'+player_id, this.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
+                            this.addActionButton( 'choose_'+player_id, this.decorator.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
                         }
                         break;
                     case 'commitForces':
@@ -1856,7 +1672,7 @@ function (dojo, declare) {
          * @param {string} fromcity
          */
         decorateAlkibiadesToDiv: function(player_id, fromcity) {
-            let pcolor = this.playerColor(player_id);
+            let pcolor = this.decorator.playerColor(player_id);
             if (pcolor == 'white') {
                 pcolor = 'gray';
             }
@@ -1925,7 +1741,7 @@ function (dojo, declare) {
                     const from_city_name = this.spanCityName(fromcity);
                     const to_city_name = this.spanCityName(tocity);
                     // const cube = this.createInfluenceCube(player_id, fromcity, 'banner');
-                    movestr = movestr.replace('${player_name}', this.spanPlayerName(player_id));
+                    movestr = movestr.replace('${player_name}', this.decorator.spanPlayerName(player_id));
                     movestr = movestr.replace('${from_city}', from_city_name);
                     movestr = movestr.replace('${to_city}', to_city_name);
                     // movestr = movestr.replace('${cube}', cube);
@@ -2020,19 +1836,6 @@ function (dojo, declare) {
             });
         },
 
-        // /**
-        //  * Get the current player in control of Sparta
-        //  * @returns player_id or null
-        //  */
-        //  getSpartanLeader: function() {
-        //     for (const player_id in this.gamedatas.players) {
-        //         if (this.isLeader(player_id, "sparta")) {
-        //             return player_id;
-        //         }
-        //     }
-        //     return null;
-        // },
-
         ///////////////////////////////////////////////////
         //// Utility methods
 
@@ -2045,7 +1848,7 @@ function (dojo, declare) {
             let isLeader = false;
             const leader = $(city+'_leader').firstChild;
             if (leader) {
-                const color = this.playerColor(player_id);
+                const color = this.decorator.playerColor(player_id);
                 if (leader.classList.contains('prk_leader_'+color)) {
                     isLeader = true;
                 }
@@ -2140,8 +1943,8 @@ function (dojo, declare) {
             counter.setAttribute("data-selectable", selectable);
             counter.style.outline = selectable ? "3px red dashed" : null;
             if (selectable) {
-                this.connect(counter, 'mouseenter', this.hoverUnit);
-                this.connect(counter, 'mouseleave', this.unhoverUnit);
+                this.connect(counter, 'mouseenter', this.counters.hoverUnit);
+                this.connect(counter, 'mouseleave', this.counters.unhoverUnit);
                 this.connect(counter, 'click', this.assignUnit.bind(this));
             } else {
                 this.disconnect(counter, 'mouseenter');
@@ -2151,75 +1954,20 @@ function (dojo, declare) {
         },
 
         /**
-         * 
-         * @param {*} evt 
-         */
-         hoverUnit: function(evt) {
-            evt.currentTarget.classList.add("prk_military_active");
-        },
-        /**
-         * 
-         * @param {*} evt 
-         */
-        unhoverUnit: function(evt) {
-            evt.currentTarget.classList.remove("prk_military_active");
-        },
-
-        /**
          * For places to stack units at battles.
          * @param {DOM} battleslot 
          * @param {bool} splay 
          */
         makeSplayable: function(battleslot, splay=true) {
             if (splay) {
-                this.connect(battleslot, 'click', this.splayUnits);
-                this.connect(battleslot, 'mouseenter', this.splayUnits);
-                this.connect(battleslot, 'mouseleave', this.unsplayUnits);
+                this.connect(battleslot, 'click', this.counters.splayUnits);
+                this.connect(battleslot, 'mouseenter', this.counters.splayUnits);
+                this.connect(battleslot, 'mouseleave', this.counters.unsplayUnits);
             } else {
-                this.disconnect(battleslot, 'click', this.splayUnits);
-                this.disconnect(battleslot, 'mouseenter', this.splayUnits);
-                this.disconnect(battleslot, 'mouseleave', this.unsplayUnits);
+                this.disconnect(battleslot, 'click', this.counters.splayUnits);
+                this.disconnect(battleslot, 'mouseenter', this.counters.splayUnits);
+                this.disconnect(battleslot, 'mouseleave', this.counters.unsplayUnits);
             }
-        },
-
-        /**
-         * Connected to military counters at battles.
-         * @param {*} evt 
-         */
-        splayUnits: function(evt) {
-            const units = evt.currentTarget.getElementsByClassName("prk_at_battle");
-            let i = 0;
-            [...units].forEach(u => {
-                if (u.classList.contains("prk_hoplite")) {
-                    let hoffset = 8+(i*50);
-                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, "+hoffset+", -20)";
-                } else {
-                    let toffset = -8+(i*80);
-                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, "+toffset+", -4)";
-                }
-                u.style['outline'] = "solid white 3px";
-                u.style['z-index'] = "99";
-                i++;
-            });
-        },
-
-        /**
-         * Connected to military counters at battles.
-         * @param {*} evt 
-         */
-        unsplayUnits: function(evt) {
-            const units = evt.currentTarget.getElementsByClassName("prk_at_battle");
-            [...units].forEach(u => {
-                if (u.classList.contains("prk_hoplite")) {
-                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, 8, -20) rotate(90deg)";
-                } else {
-                    u.style['transform'] = "matrix(0.8, 0, 0, 0.8, -8, -4)";
-                }
-                Object.assign(u.style, {
-                    'outline': null,
-                    'z-index': null
-                });
-            });
         },
 
         /**
@@ -2232,7 +1980,7 @@ function (dojo, declare) {
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
 
-            const unitc = this.createCopyCounter(selectedUnit);
+            const unitc = this.counters.copy(selectedUnit);
             const [city,unit,strength,id] = selectedUnit.id.split('_');
             let unit_str = _("${city_name} ${unit}-${strength}");
             unit_str = unit_str.replace('${city_name}', '<span style="color: var(--color_'+city+');")>'+this.getCityNameTr(city)+'</span>');
@@ -2344,32 +2092,6 @@ function (dojo, declare) {
                 html += '</div>';
             }
             return html;
-        },
-
-        /**
-         * Copy a military counter as a dialog icon from an existing one
-         * @param {*} counter 
-         * @returns relative div
-         */
-         createCopyCounter: function(counter) {
-            const [city,unit,strength,id] = counter.id.split('_');
-            let counter_html = this.createMilitaryCounterRelative(id+"_copy", city, strength, unit);
-            return counter_html;
-        },
-
-        /**
-         * Create a military counter with relative dimensions.
-         * @param {*} id 
-         * @param {*} city 
-         * @param {*} strength 
-         * @param {*} unit 
-         * @returns relative html div
-         */
-        createMilitaryCounterRelative: function(id, city, strength, unit) {
-            const [xoff, yoff] = this.counterOffsets(city, strength, unit);
-            let counter_html = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: id, x: xoff, y: yoff, m: 5, t: 0});
-            counter_html = this.prependStyle(counter_html, 'position: relative');
-            return counter_html;
         },
 
         /**
