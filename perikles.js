@@ -95,7 +95,7 @@ function (dojo, declare) {
             this.location_h = 195;
             this.location_s = 0.55;
 
-            this.counters = new perikles.counter();
+            this.stacks = new perikles.counter();
             this.slaverevolt = new perikles.slaverevolt();
         },
         
@@ -642,7 +642,7 @@ function (dojo, declare) {
                 const location = mil['location'];
                 if (location == city && mil['battlepos'] == 0) {
                     // in a city stack
-                    this.placeCityStack(city, unit, strength, mil['id']);
+                    this.stacks.addToStack(city, unit, strength, mil['id']);
                 } else if (location == DEAD_POOL) {
                     // in the dead pool
 
@@ -654,8 +654,7 @@ function (dojo, declare) {
                     const player_id = location;
                     if (player_id == this.player_id) {
                         this.createMilitaryArea(player_id, city);
-                        // const counter_div = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: mil['id'], x: xoff, y: yoff, m: m, t: 0});
-                        const counter_div = this.counters.createCounter(city, unit, strength, mil['id'], 1, 0);
+                        const counter_div = this.stacks.createCounter(city, unit, strength, mil['id'], 1, 0);
                         const mil_zone = city+"_"+unit+"_"+player_id;
                         const counter = dojo.place(counter_div, $(mil_zone));
                         Object.assign(counter.style, {position: "relative"});
@@ -670,7 +669,7 @@ function (dojo, declare) {
          */
         createStack: function(city) {
             const stack = city+"_military";
-            this.counters.decorateMilitaryStack(stack);
+            this.stacks.decorateMilitaryStack(stack);
             const city_name = this.getCityNameTr(city);
             let tt = _("${city} military: click to inspect stack");
             tt = tt.replace('${city}', city_name);
@@ -690,25 +689,8 @@ function (dojo, declare) {
             const strength = counter['strength'];
             const place = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[counter['battlepos']];
             const stackct = $(place).childElementCount;
-            const [xoff, yoff] = this.counters.getOffsets(city, strength, unit);
-            const battlecounter = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+stackpos, x: xoff, y: yoff, m: 8*stackct, t: 0});
+            const battlecounter = this.stacks.createCounterAtBattle(city, unit, strength, "counter_"+stackpos, stackct);
             dojo.place(battlecounter, $(place));
-        },
-
-        /**
-         * Put a military unit on a city stack.
-         * @param {string} city 
-         * @param {string} unit 
-         * @param {string} strength 
-         * @param {string} id 
-         */
-        placeCityStack: function(city, unit, strength, id) {
-            const city_military = $(city+"_military");
-            const ct = city_military.childElementCount;
-            const top = (unit == TRIREME) ? MIL_DIM.s : 0;
-            const [xoff, yoff] = this.counters.getOffsets(city, strength, unit);
-            const counter = this.format_block('jstpl_military_counter', {city: city, type: unit, s: strength, id: id, x: xoff, y: yoff, m: 2*ct, t: top});
-            dojo.place(counter, city_military);
         },
 
         /**
@@ -819,7 +801,7 @@ function (dojo, declare) {
             for (const[id, selected] of Object.entries(committed)) {
                 if (id != "cube") {
                     let commit_str = (selected.side == "attack" ? attack_str : defend_str);
-                    let mil_html = this.counters.createCounterRelative(selected.city, selected.unit, selected.strength, id+"_dlg");
+                    let mil_html = this.stacks.createCounterRelative(selected.city, selected.unit, selected.strength, id+"_dlg");
                     mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
                     commit_str = commit_str.replace('${unit}', mil_html);
                     let loc_html = this.createLocationTile(selected.location, 0);
@@ -990,12 +972,11 @@ function (dojo, declare) {
             if (player_id == this.player_id) {
                 $(city+'_'+unit+'_'+strength+'_'+id).remove();
             }
-
+            debugger;
             // move from city to battle
-            let [xoff, yoff] = this.counters.getOffsets(city, strength, unit);
             const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[pos];
             const stackct = $(battlepos).childElementCount;
-            const counter_html = this.format_block('jstpl_battle_counter', {city: city, type: unit, s: strength, id: "counter_"+id, x: xoff, y: yoff, m: 8*stackct, t: 0});
+            const counter_html = this.stacks.createCounterAtBattle(city, unit, strength, "counter_"+id, stackct);
             const milzone = $(city+"_military");
             const counter = dojo.place(counter_html, milzone);
             this.slide(counter, battlepos, {from: milzone});
@@ -1943,8 +1924,8 @@ function (dojo, declare) {
             counter.setAttribute("data-selectable", selectable);
             counter.style.outline = selectable ? "3px red dashed" : null;
             if (selectable) {
-                this.connect(counter, 'mouseenter', this.counters.hoverUnit);
-                this.connect(counter, 'mouseleave', this.counters.unhoverUnit);
+                this.connect(counter, 'mouseenter', this.stacks.hoverUnit);
+                this.connect(counter, 'mouseleave', this.stacks.unhoverUnit);
                 this.connect(counter, 'click', this.assignUnit.bind(this));
             } else {
                 this.disconnect(counter, 'mouseenter');
@@ -1960,13 +1941,13 @@ function (dojo, declare) {
          */
         makeSplayable: function(battleslot, splay=true) {
             if (splay) {
-                this.connect(battleslot, 'click', this.counters.splayUnits);
-                this.connect(battleslot, 'mouseenter', this.counters.splayUnits);
-                this.connect(battleslot, 'mouseleave', this.counters.unsplayUnits);
+                this.connect(battleslot, 'click', this.stacks.splayUnits);
+                this.connect(battleslot, 'mouseenter', this.stacks.splayUnits);
+                this.connect(battleslot, 'mouseleave', this.stacks.unsplayUnits);
             } else {
-                this.disconnect(battleslot, 'click', this.counters.splayUnits);
-                this.disconnect(battleslot, 'mouseenter', this.counters.splayUnits);
-                this.disconnect(battleslot, 'mouseleave', this.counters.unsplayUnits);
+                this.disconnect(battleslot, 'click', this.stacks.splayUnits);
+                this.disconnect(battleslot, 'mouseenter', this.stacks.splayUnits);
+                this.disconnect(battleslot, 'mouseleave', this.stacks.unsplayUnits);
             }
         },
 
@@ -1980,7 +1961,7 @@ function (dojo, declare) {
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
 
-            const unitc = this.counters.copy(selectedUnit);
+            const unitc = this.stacks.copy(selectedUnit);
             const [city,unit,strength,id] = selectedUnit.id.split('_');
             let unit_str = _("${city_name} ${unit}-${strength}");
             unit_str = unit_str.replace('${city_name}', '<span style="color: var(--color_'+city+');")>'+this.getCityNameTr(city)+'</span>');
@@ -2687,7 +2668,7 @@ function (dojo, declare) {
                 const [city, unit, strength, _, id] = counter_name.split('_');
                 const city_military = city+"_military";
                 this.slideToObjectAndDestroy(c, city_military, 1000, 500);
-                this.placeCityStack(city, unit, strength, id);
+                this.stacks.addToStack(city, unit, strength, id);
             });
         },
 

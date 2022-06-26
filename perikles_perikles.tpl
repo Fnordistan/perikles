@@ -97,10 +97,6 @@ const jstpl_cube = '<div id="${id}"" class="prk_cube" style="background-color: #
 
 const jstpl_location_tile = '<div id="${id}_tile" class="prk_location_tile" style="background-position: ${x}px ${y}px; margin: ${m}px;"></div>';
 
-const jstpl_military_counter = '<div id="${city}_${type}_${s}_${id}" class="prk_military prk_${type}" style="background-position: ${x}px ${y}px; margin: ${m}px; top: ${t}px;"></div>';
-
-const jstpl_battle_counter = '<div id="${city}_${type}_${s}_${id}" class="prk_military prk_${type} prk_${type}_battle prk_at_battle" style="background-position: ${x}px ${y}px; margin-left: ${m}px; top: ${t}px;"></div>';
-
 var jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
 var jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_city_btn prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';

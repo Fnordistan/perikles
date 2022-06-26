@@ -104,6 +104,24 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Creates a military counter at a battle slot
+         * @param {string} city 
+         * @param {string} type HOPLITE or TRIREME
+         * @param {string} strength 
+         * @param {string} id tag at end of id string
+         * @param {int} ct stack count
+         * @returns html div for a military counter
+         */
+        createCounterAtBattle: function(city, type, strength, id, ct) {
+            const counter_id = city+"_"+type+"_"+strength+"_"+id;
+            const class_id = "prk_military prk_"+type+" prk_"+type+"_battle prk_at_battle";
+            const [xoff, yoff] = this.getOffsets(city, strength, type);
+            const style = "background-position: "+xoff+"px "+yoff+"px; margin-left: "+(8*ct)+"px; top: 0px;";
+            const html = '<div id=\"'+counter_id+'"\" class=\"'+class_id+'"\" style=\"'+style+'"></div>';
+            return html;
+        },
+
+        /**
          * Create array[2] with background-position offsets for a military counter.
          * @param {*} city 
          * @param {*} strength 
@@ -211,6 +229,21 @@ define(["dojo/_base/declare"], function (declare) {
             city_mil.addEventListener('mouseleave', () => {
                 this.unspread(city_mil_id);
             });
+        },
+
+        /**
+         * Put a military unit on a city stack.
+         * @param {string} city 
+         * @param {string} unit 
+         * @param {string} strength 
+         * @param {string} id 
+         */
+         addToStack: function(city, unit, strength, id) {
+            const stack = $(city+"_military");
+            const ct = stack.childElementCount;
+            const top = (unit == TRIREME) ? MIL_DIM.s : 0;
+            const counter = this.createCounter(city, unit, strength, id, 2*ct, top);
+            dojo.place(counter, stack);
         },
 
         /**
