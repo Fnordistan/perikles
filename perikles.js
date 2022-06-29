@@ -66,14 +66,6 @@ const LOCATION_TILES = {
     "solygeia" : {xy: [3,7], city: "corinth", "rounds": "HT", "vp": 4, "intrinsic": null},
 }
 
-// match MAIN/ALLY ATT/DEF constants in php
-const BATTLE_POS = {
-    1: "att",
-    2: "att_ally",
-    3: "def",
-    4: "def_ally"
-}
-
 const DEAD_POOL = "deadpool";
 
 define([
@@ -83,11 +75,12 @@ define([
     "ebg/zone",
     g_gamethemeurl + "modules/alkibiades.js",
     g_gamethemeurl + "modules/slaverevolt.js",
+    g_gamethemeurl + "modules/stack.js",
     g_gamethemeurl + "modules/counter.js",
     g_gamethemeurl + "modules/decorator.js",
 ],
 function (dojo, declare) {
-    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades, perikles.slaverevolt, perikles.counter, perikles.decorator], {
+    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades, perikles.slaverevolt, perikles.stack, perikles.counter, perikles.decorator], {
         constructor: function(){
             this.influence_h = 199;
             this.influence_w = 128;
@@ -95,7 +88,7 @@ function (dojo, declare) {
             this.location_h = 195;
             this.location_s = 0.55;
 
-            this.stacks = new perikles.counter();
+            this.stacks = new perikles.stack();
             this.slaverevolt = new perikles.slaverevolt();
         },
         
@@ -638,29 +631,44 @@ function (dojo, declare) {
                 const mil = military[i];
                 const city = mil['city'];
                 const unit = mil['type'];
-                const strength = mil['strength'];
-                const location = mil['location'];
-                if (location == city && mil['battlepos'] == 0) {
+                const counter = this.militaryToCounter(mil);
+                if (counter.getLocation() == counter.getCity() && counter.getPosition() == 0) {
                     // in a city stack
-                    this.stacks.addToStack(city, unit, strength, mil['id']);
-                } else if (location == DEAD_POOL) {
+                    counter.addToStack();
+                } else if (counter.getLocation() == DEAD_POOL) {
                     // in the dead pool
 
-                } else if (Object.keys(LOCATION_TILES).includes(location)) {
+                } else if (Object.keys(LOCATION_TILES).includes(counter.getLocation())) {
                     // sent to a battle
-                    this.placeCounterAtBattle(mil, i);
+                    this.placeCounterAtBattle(counter, i);
                 } else {
                     // it's in a player pool
-                    const player_id = location;
+                    const player_id = counter.getLocation();
                     if (player_id == this.player_id) {
                         this.createMilitaryArea(player_id, city);
-                        const counter_div = this.stacks.createCounter(city, unit, strength, mil['id'], 1, 0);
+                        const counter_div = counter.toDiv(1, 0);
                         const mil_zone = city+"_"+unit+"_"+player_id;
-                        const counter = dojo.place(counter_div, $(mil_zone));
-                        Object.assign(counter.style, {position: "relative"});
+                        const counterObj = dojo.place(counter_div, $(mil_zone));
+                        Object.assign(counterObj.style, {position: "relative"});
                     }
                 }
             }
+        },
+
+        /**
+         * Factory method: create a counter from the PHP object in datas.
+         * @param {Object} military 
+         * @returns perikles.counter
+         */
+        militaryToCounter: function(military) {
+            const city = military['city'];
+            const unit = military['type'];
+            const strength = military['strength'];
+            const id = military['id'];
+            const location = military['location'];
+            const position = military['battlepos'];
+            const counter = new perikles.counter(city, unit, strength, id, location, position);
+            return counter;
         },
 
         /**
@@ -682,14 +690,12 @@ function (dojo, declare) {
          * @param {int} stackpos 0-indexed place in the stack
          */
         placeCounterAtBattle: function(counter, stackpos) {
-            const slotid = $(counter['location']+"_tile").parentNode.id;
+            const slotid = $(counter.getLocation()+"_tile").parentNode.id;
             const slot = slotid[slotid.length-1];
-            const unit = counter['type'];
-            const city = counter['city'];
-            const strength = counter['strength'];
-            const place = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[counter['battlepos']];
+            const place = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
             const stackct = $(place).childElementCount;
-            const battlecounter = this.stacks.createCounterAtBattle(city, unit, strength, "counter_"+stackpos, stackct);
+            counter.setId("counter_"+stackpos);
+            const battlecounter = counter.toBattleDiv(stackct);
             dojo.place(battlecounter, $(place));
         },
 
@@ -801,7 +807,8 @@ function (dojo, declare) {
             for (const[id, selected] of Object.entries(committed)) {
                 if (id != "cube") {
                     let commit_str = (selected.side == "attack" ? attack_str : defend_str);
-                    let mil_html = this.stacks.createCounterRelative(selected.city, selected.unit, selected.strength, id+"_dlg");
+                    const counter = new perikles.counter(selected.city, selected.unit, selected.strength, id+"_dlg");
+                    let mil_html = counter.toRelativeDiv();
                     mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
                     commit_str = commit_str.replace('${unit}', mil_html);
                     let loc_html = this.createLocationTile(selected.location, 0);
@@ -949,18 +956,15 @@ function (dojo, declare) {
          * @param {Object} military
          */
         moveMilitary: function(military) {
-            const city = military['city'];
-            const unit = military['type'];
-            const strength = military['strength'];
-            const id = military['id'];
+            const counter = this.militaryToCounter(military);
             const player_id = military['location'];
-            const counter = $(city+'_'+unit+'_'+strength+'_'+id);
+            const counterObj = $(counter.getId());
             if (player_id == this.player_id) {
-                this.createMilitaryArea(player_id, city);
-                const mil_zone = city+"_"+unit+"_"+player_id;
-                this.slideToObjectRelative(counter, $(mil_zone), 500, 500, null, "last");
+                this.createMilitaryArea(player_id, counter.getCity());
+                const mil_zone = counter.getCity()+"_"+counter.getType()+"_"+player_id;
+                this.slideToObjectRelative(counterObj, $(mil_zone), 500, 500, null, "last");
             } else {
-                this.slideToObjectAndDestroy(counter, $('player_board_'+player_id), 500, 500);
+                this.slideToObjectAndDestroy(counterObj, $('player_board_'+player_id), 500, 500);
             }
         },
 
@@ -968,18 +972,18 @@ function (dojo, declare) {
          * Move an object to a battle tile
          * @param {*} military 
          */
-        moveToBattle: function(player_id, city, unit, strength, id, slot, pos) {
+        moveToBattle: function(player_id, counter, slot) {
             if (player_id == this.player_id) {
-                $(city+'_'+unit+'_'+strength+'_'+id).remove();
+                $(counter.getCity()+'_'+counter.getType()+'_'+counter.getStrength()+'_'+counter.getId()).remove();
             }
-            debugger;
             // move from city to battle
-            const battlepos = "battle_"+slot+"_"+unit+"_"+BATTLE_POS[pos];
+            const battlepos = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
             const stackct = $(battlepos).childElementCount;
-            const counter_html = this.stacks.createCounterAtBattle(city, unit, strength, "counter_"+id, stackct);
-            const milzone = $(city+"_military");
-            const counter = dojo.place(counter_html, milzone);
-            this.slide(counter, battlepos, {from: milzone});
+            counter.setId("counter_"+counter.getId());
+            const counter_html = counter.toBattleDiv(stackct);
+            const milzone = $(counter.getCity()+"_military");
+            const counterObj = dojo.place(counter_html, milzone);
+            this.slide(counterObj, battlepos, {from: milzone});
         },
 
         /**
@@ -1960,9 +1964,9 @@ function (dojo, declare) {
 
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
-
-            const unitc = this.stacks.copy(selectedUnit);
             const [city,unit,strength,id] = selectedUnit.id.split('_');
+            const unitc = new perikles.counter(city,unit,strength,id).copy();
+
             let unit_str = _("${city_name} ${unit}-${strength}");
             unit_str = unit_str.replace('${city_name}', '<span style="color: var(--color_'+city+');")>'+this.getCityNameTr(city)+'</span>');
             unit_str = unit_str.replace('${unit}', '<b>${unit}</b>');
@@ -2137,7 +2141,7 @@ function (dojo, declare) {
                 fromcivs += '</div>';
                 tocivs += '</div>';
             }
-            const bgcolor = 'lightgray';
+
             let html = '<br/><div id="alkibiades_from_cities" class="prk_alkibiades_civs">';
             html += '<h2>'+_('From')+'</h2>';
             html += fromcivs;
@@ -2591,8 +2595,10 @@ function (dojo, declare) {
             const type = notif.args.type;
             const strength = notif.args.strength;
             const slot = notif.args.slot;
+            const location = notif.args.location;
             const battlepos= notif.args.battlepos;
-            this.moveToBattle(player_id, city, type, strength, id, slot, battlepos);
+            const counter = new perikles.counter(city, type, strength, id, location, battlepos);
+            this.moveToBattle(player_id, counter, slot);
         },
 
         /**
@@ -2668,7 +2674,7 @@ function (dojo, declare) {
                 const [city, unit, strength, _, id] = counter_name.split('_');
                 const city_military = city+"_military";
                 this.slideToObjectAndDestroy(c, city_military, 1000, 500);
-                this.stacks.addToStack(city, unit, strength, id);
+                new perikles.counter(city, unit, strength, id).addToStack();
             });
         },
 
@@ -2698,7 +2704,7 @@ function (dojo, declare) {
             const counter = notif.args.military;
             const location = notif.args.location;
             const sparta_leader = notif.args.sparta_player;
-            const counter_id = "sparta_hoplite_"+counter.strength+"_"+counter.id;
+            const counter_id = "sparta_hoplite_"+counter.getStrength+"_"+counter.id;
             console.log("revolt " + location + " @ " + counter_id);
             // first flip the revolting Hoplite unit, if it's not mine and it's at a battle
             if (location != "sparta" && this.player_id != sparta_leader) {
