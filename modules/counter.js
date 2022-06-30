@@ -5,11 +5,14 @@
 const HOPLITE = "hoplite";
 const TRIREME = "trireme";
 
+// rows where counters are found on the sprite image
+const MILITARY_ROW = {'argos': 0, 'athens': 1, 'corinth': 2, 'megara': 3, 'sparta': 4, 'thebes': 5, 'persia': 6};
+
+// counter pixel dimensions on long and short sides
 const MIL_DIM = {
     "l": 100,
     "s": 62
 }
-
 
 // match MAIN/ALLY ATT/DEF constants in php
 const BATTLE_POS = {
@@ -77,6 +80,15 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Id used for div.
+         * @returns string
+         */
+        getCounterId: function() {
+            const counter_id = this.city+"_"+this.type+"_"+this.strength+"_"+this.id;
+            return counter_id;
+        },
+
+        /**
          * Create html div for a military counter.
          * @param {int} margin
          * @param {int} top
@@ -84,7 +96,7 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns html div for a military counter
          */
         toDiv: function(margin, top, rel=false) {
-            const counter_id = this.city+"_"+this.type+"_"+this.strength+"_"+this.id;
+            const counter_id = this.getCounterId();
             const class_id = "prk_military prk_"+this.type;
             const [xoff, yoff] = this.getOffsets();
             let style = "background-position: "+xoff+"px "+yoff+"px; margin: "+margin+"px; top: "+top+"px";
@@ -114,7 +126,7 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns html div for a military counter
          */
         toBattleDiv: function(ct) {
-            const counter_id = this.city+"_"+this.type+"_"+this.strength+"_"+this.id;
+            const counter_id = this.getCounterId();
             const class_id = "prk_military prk_"+this.type+" prk_"+this.type+"_battle prk_at_battle";
             const [xoff, yoff] = this.getOffsets();
             const style = "background-position: "+xoff+"px "+yoff+"px; margin-left: "+(8*ct)+"px; top: 0px;";

@@ -783,7 +783,7 @@ class Perikles extends Table
                 'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
-                'unit' => ($pid == $player_id) ? $counter['id'] : 0,
+                'id' => ($pid == $player_id) ? $counter['id'] : 0,
                 'type' => $counter['type'],
                 'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
                 'strength' => ($pid == $player_id) ? $counter['strength'] : 0,

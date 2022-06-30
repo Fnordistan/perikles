@@ -19,7 +19,6 @@ const BOARD_SCALE = 2;
 const INFLUENCE_SCALE = 0.5;
 
 const CITIES = ['athens', 'sparta', 'argos', 'corinth', 'thebes', 'megara'];
-const MILITARY_ROW = {'argos': 0, 'athens': 1, 'corinth': 2, 'megara': 3, 'sparta': 4, 'thebes': 5, 'persia': 6};
 
 const INFLUENCE_ROW = {'athens' : 0, 'sparta' : 1, 'argos' : 2, 'corinth' : 3, 'thebes' : 4, 'megara' : 5, 'any' : 6};
 const INFLUENCE_COL = {'influence' : 0, 'candidate' : 1, 'assassin' : 2};
@@ -627,8 +626,7 @@ function (dojo, declare) {
                 this.createStack(city);
             }
 
-            for(const i in military) {
-                const mil = military[i];
+            for(const mil of military) {
                 const city = mil['city'];
                 const unit = mil['type'];
                 const counter = this.militaryToCounter(mil);
@@ -640,7 +638,7 @@ function (dojo, declare) {
 
                 } else if (Object.keys(LOCATION_TILES).includes(counter.getLocation())) {
                     // sent to a battle
-                    this.placeCounterAtBattle(counter, i);
+                    this.placeCounterAtBattle(counter);
                 } else {
                     // it's in a player pool
                     const player_id = counter.getLocation();
@@ -687,14 +685,16 @@ function (dojo, declare) {
         /**
          * Place a military counter on the battle stacks at a location tile.
          * @param {Object} counter 
-         * @param {int} stackpos 0-indexed place in the stack
          */
-        placeCounterAtBattle: function(counter, stackpos) {
+        placeCounterAtBattle: function(counter) {
             const slotid = $(counter.getLocation()+"_tile").parentNode.id;
             const slot = slotid[slotid.length-1];
             const place = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
             const stackct = $(place).childElementCount;
-            counter.setId("counter_"+stackpos);
+            // zero ids for face-down units
+            if (counter.getStrength() == 0) {
+                counter.setId("counter_"+stackct);
+            } 
             const battlecounter = counter.toBattleDiv(stackct);
             dojo.place(battlecounter, $(place));
         },
@@ -952,13 +952,13 @@ function (dojo, declare) {
         },
 
         /**
-         * Move a military token from the city to stack to the player'sboard
+         * Move a military token from the city to the player's board
          * @param {Object} military
          */
         moveMilitary: function(military) {
             const counter = this.militaryToCounter(military);
             const player_id = military['location'];
-            const counterObj = $(counter.getId());
+            const counterObj = $(counter.getCounterId());
             if (player_id == this.player_id) {
                 this.createMilitaryArea(player_id, counter.getCity());
                 const mil_zone = counter.getCity()+"_"+counter.getType()+"_"+player_id;
@@ -973,13 +973,18 @@ function (dojo, declare) {
          * @param {*} military 
          */
         moveToBattle: function(player_id, counter, slot) {
+            // if it's my counter, remove it from my board
             if (player_id == this.player_id) {
                 $(counter.getCity()+'_'+counter.getType()+'_'+counter.getStrength()+'_'+counter.getId()).remove();
             }
             // move from city to battle
             const battlepos = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
             const stackct = $(battlepos).childElementCount;
-            counter.setId("counter_"+counter.getId());
+            let newId = counter.getId();
+            if (newId == 0) {
+                newId = stackct;
+            }
+            counter.setId("counter_"+newId);
             const counter_html = counter.toBattleDiv(stackct);
             const milzone = $(counter.getCity()+"_military");
             const counterObj = dojo.place(counter_html, milzone);
@@ -2590,7 +2595,7 @@ function (dojo, declare) {
          */
         notif_sendBattle: function(notif) {
             const player_id = notif.args.player_id;
-            const id = notif.args.unit;
+            const id = notif.args.id; // 0 if face-down
             const city = notif.args.city;
             const type = notif.args.type;
             const strength = notif.args.strength;
