@@ -33,13 +33,6 @@ define("TRIREME", "trireme");
 define("PERSIA", "persia");
 define("ALPHA", "\u{003B1}");
 define("BETA", "\u{003B2}");
-// for wars
-define("ARGOS",   0b100000);
-define("ATHENS",  0b010000);
-define("CORINTH", 0b001000);
-define("MEGARA",  0b000100);
-define("SPARTA",  0b000010);
-define("THEBES",  0b000001);
 define("ATTACKER", 0);
 define("DEFENDER", 2);
 define("MAIN", 1);
@@ -964,41 +957,29 @@ class Perikles extends Table
     }
 
     /**
-     * Set values for both cities war game state values
+     * Set values for both cities war game state values.
+     * @param {integer} $city1
+     * @param {integer} $city2
      */
     function declareWar($city1, $city2) {
         if ($city1 == $city2) {
             throw new BgaVisibleSystemException("City cannot declare war on itself!"); // NO18N
         }
-        $warbits = $this->getWarBits();
         $war1 = self::getGameStateValue($city1."_wars");
         $war2 = self::getGameStateValue($city2."_wars");
-        self::setGameStateValue($city1."_wars", $war1 + $warbits[$city2]);
-        self::setGameStateValue($city2."_wars", $war2 + $warbits[$city1]);
+        self::setGameStateValue($city1."_wars", $war1 + $this->cities[$city2]['war']);
+        self::setGameStateValue($city2."_wars", $war2 + $this->cities[$city1]['war']);
     }
 
     /**
      * Are these cities at war?
+     * @param {integer} $city1
+     * @param {integer} $city2
+     * @return true if city1 and city2 are at war
      */
     function atWar($city1, $city2) {
-        $warbits = $this->getWarBits();
         $wars1 = self::getGameStateValue($city1."_wars");
-        return $wars1 & $warbits[$city2];
-    }
-
-    /**
-     * Associative array, city to war bitmask
-     */
-    function getWarBits() {
-        $warbits = array(
-            "argos" => ARGOS,
-            "athens" => ATHENS,
-            "corinth" => CORINTH,
-            "megara" => MEGARA,
-            "sparta" => SPARTA,
-            "thebes" => THEBES
-        );
-        return $warbits;
+        return $wars1 & $this->cities[$city2]['war'];
     }
 
     /**
@@ -1699,7 +1680,7 @@ class Perikles extends Table
             if ($side == "attack" && in_array($battlecity, $mycities)) {
                 throw new BgaUserException(sprintf(self::_("%s cannot attack a city you control!"), $unit_desc));
             } else if ($side == "defend" && !in_array($battlecity, $mycities)) {
-                // Do I own this city? If not, I need permission from defender
+                // Do I control this city? If not, I need permission from defender
                 if (!$this->hasDefendPermission($player_id, $location)) {
                     throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->cities[$battlecity]['name'], $battlename));
                 }
@@ -2578,7 +2559,7 @@ class Perikles extends Table
                     $this->chooseNextPlayer($firstplayer);
                     break;
                 case 'commitForces':
-                    $this->assignUnits("", "");
+                    $this->sendRandomUnits($active_player);
                     break;
                 case 'specialTile':
                     $this->useSpecialTile($active_player, false);
@@ -2692,6 +2673,56 @@ class Perikles extends Table
                 break;
             }
         }
+    }
+
+    /**
+     * Send a random military unit. Don't use cubes.
+     * Prioritize defense, then attack.
+     */
+    function sendRandomUnits($player_id) {
+        $unitstr = "";
+        $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=$player_id");
+        if (!empty($military)) {
+            shuffle($military);
+            while (!empty($military) && $unitstr === "") {
+                $unit = array_pop($military);
+                $city = $unit['city'];
+                // does this unit have any cities to defend?
+                $mycitybattles = self::ObjectListFromDB("SELECT card_type_arg battle FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
+                if (empty($mycitybattles)) {
+                    // is there a city we can attack?
+                    $allbattles = self::ObjectListFromDB("SELECT card_type city, card_type_arg battle, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
+                    shuffle($allbattles);
+                    $location = array_pop($allbattles);
+                    // does it belong to me?
+                    $defcity = $location['city'];
+                    $battle = $location['battle'];
+                    if (!$this->isLeader($player_id, $defcity)) {
+                        // is anyone else already attacking this city?
+                        $attackers = self::getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND city!=\"$city\" AND (battlepos=".(ATTACKER+MAIN)." OR battlepos=".(ATTACKER+ALLY).")", true);
+                        // make sure not at war with any of them
+                        $war = false;
+                        foreach ($attackers as $att) {
+                            if ($this->atWar($city, $att)) {
+                                $war = true;
+                                break;
+                            }
+                        }
+                        if (!$war) {
+                            // we can attack this city
+                            $unitstr = $unit['id']."_att_".$battle;
+                        }
+                    }
+                } else {
+                    // go defend that place
+                    shuffle($mycitybattles);
+                    $defender = array_pop($mycitybattles);
+                    $unitstr = $unit['id']."_def_".$defender;
+                }
+            }
+        }
+
+        $this->assignUnits($unitstr, "");
     }
     
 ///////////////////////////////////////////////////////////////////////////////////:
