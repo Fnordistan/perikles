@@ -1918,8 +1918,9 @@ function (dojo, declare) {
          */
         removeInfluenceCubes: function(player_id, city, num) {
             const from_div = $(city+'_cubes_'+player_id);
+            const cubes = from_div.children;
             for (let i = 0; i < num; i++) {
-                const toremove = from_div.lastChild;
+                const toremove = cubes[i];
                 this.fadeOutAndDestroy(toremove, 500);
             }
         },
