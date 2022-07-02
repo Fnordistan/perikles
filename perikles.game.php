@@ -627,7 +627,7 @@ class Perikles extends Table
     }
 
     /**
-     * Only does the DB adjustment for influence in city
+     * Only does the DB adjustment for influence in city. Does not send notification.
      * @param {string} city
      * @param {string} player_id
      * @param {int} cubes may be negative
@@ -728,7 +728,8 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         self::DbQuery("UPDATE MILITARY SET location = $player_id WHERE location=\"$city\"");
         $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE city=\"$city\" AND location=$player_id");
-        self::notifyAllPlayers("takeMilitary", clienttranslate('${player_name} takes military units from ${city_name}'), array(
+        // 
+        self::notifyAllPlayers("takeMilitary", '', array(
             'i18n' => ['city_name'],
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
@@ -760,10 +761,13 @@ class Perikles extends Table
      * Assumes all checks have been done. Send a military unit to a battle location.
      */
     function sendToBattle($player_id, $mil, $battlepos) {
+
         $id = $mil['id'];
         $battle = $mil['battle'];
         $players = self::loadPlayersBasicInfos();
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
+
+        $this->logDebug("$player_id sending to $battle");
 
         self::DbQuery("UPDATE MILITARY SET location=\"$battle\", battlepos=$battlepos WHERE id=$id");
 
@@ -1603,7 +1607,7 @@ class Perikles extends Table
             ));
         }
         $state = $this->canPlaySpecial($player_id, "influence") ? "useSpecial" : "nextPlayer";
-        self::debug("assassinate: $state");
+
         $this->gamestate->nextState($state);
     }
 
@@ -1619,6 +1623,8 @@ class Perikles extends Table
     function assignUnits($unitstr, $cube) {
         self::checkAction('assignUnits');
         $player_id = self::getActivePlayerId();
+
+        $this->logDebug("$player_id assigns $unitstr");
 
         if ($unitstr == "") {
             $this->noCommitUnits($player_id);
@@ -1654,6 +1660,7 @@ class Perikles extends Table
                 throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->cities[$cube]['name']));
             }
         }
+        $this->logDebug("$player_id validates $unitstr");
 
         $units = explode(" ", trim($unitstr));
         // get main attackers/defenders location => player
@@ -1666,6 +1673,7 @@ class Perikles extends Table
         );
         // MAKE NO CHANGES IN DB until this loop is completed!
         foreach($units as $unit) {
+            $this->logDebug("$player_id validating $unit");
             [$id, $side, $location] = explode("_", $unit);
             $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
             $counter['battle'] = $location;
@@ -1748,6 +1756,7 @@ class Perikles extends Table
                 $myforces['defend'][] = $counter;
             }
         }
+        $this->logDebug("$player_id passed all validation");
         // all units passed all tests for valid assignment
         // did we spend an influence cube?
         if ($cube != "" && count($units) > 2) {
@@ -1763,6 +1772,7 @@ class Perikles extends Table
             ));
         }
         // now ship 'em off
+        $this->logDebug("$player_id shipping forces");
         foreach($myforces as $attdef => $forces) {
             foreach($forces as $f) {
                 $battle = $f['battle'];
@@ -1775,6 +1785,7 @@ class Perikles extends Table
                 } else {
                     $battlepos = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
                 }
+                $this->logDebug("$player_id sending to battle $battle");
                 $this->sendToBattle($player_id, $f, $battlepos);
             }
         }
@@ -2282,7 +2293,7 @@ class Perikles extends Table
             if ($a == 0) {
                 if ($b == 0) {
                     // no candidates!
-                    self::notifyAllPlayers("noElection", clienttranslate('${city_name} has no Candidates; no Leader assigned'), array(
+                    self::notifyAllPlayers("noElection", clienttranslate('${city_name} has no candidates; no Leader assigned'), array(
                         'i18n' => ['city_name'],
                         'city_name' => $city_name,
                     ));
@@ -2318,11 +2329,9 @@ class Perikles extends Table
                 // default
                 $winner = $a;
                 $loser_inf = $b_inf;
-                if ($a_inf != $b_inf) {
-                    if ($a_inf < $b_inf) {
-                        $winner = $b;
-                        $loser_inf = $a_inf;
-                    }
+                if ($a_inf < $b_inf) {
+                    $winner = $b;
+                    $loser_inf = $a_inf;
                 }
                 $this->changeInfluenceInCity($cn, $winner, -$loser_inf);
                 self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name}'), array(
@@ -2514,6 +2523,10 @@ class Perikles extends Table
         throw new BgaVisibleSystemException("$player in stDebug");
     }
 
+    function logDebug($msg) {
+        self::notifyAllPlayers("debug", $msg, []);
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
 ////////////
@@ -2688,16 +2701,17 @@ class Perikles extends Table
                 $unit = array_pop($military);
                 $city = $unit['city'];
                 // does this unit have any cities to defend?
-                $mycitybattles = self::ObjectListFromDB("SELECT card_type_arg battle FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
+                $mycitybattles = self::getObjectListFromDB("SELECT card_type_arg battle FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
+
                 if (empty($mycitybattles)) {
                     // is there a city we can attack?
-                    $allbattles = self::ObjectListFromDB("SELECT card_type city, card_type_arg battle, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
+                    $allbattles = self::getObjectListFromDB("SELECT card_type city, card_type_arg battle, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
                     shuffle($allbattles);
                     $location = array_pop($allbattles);
                     // does it belong to me?
                     $defcity = $location['city'];
-                    $battle = $location['battle'];
                     if (!$this->isLeader($player_id, $defcity)) {
+                        $battle = $location['battle'];
                         // is anyone else already attacking this city?
                         $attackers = self::getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND city!=\"$city\" AND (battlepos=".(ATTACKER+MAIN)." OR battlepos=".(ATTACKER+ALLY).")", true);
                         // make sure not at war with any of them
@@ -2710,17 +2724,25 @@ class Perikles extends Table
                         }
                         if (!$war) {
                             // we can attack this city
-                            $unitstr = $unit['id']."_att_".$battle;
+                            // make sure not sending trireme to a land battle
+                            if ($unit['type'] == HOPLITE || $this->locations[$battle]['rounds'] != "H") {
+                                $unitstr = $unit['id']."_attack_".$battle;
+                            }
                         }
                     }
                 } else {
                     // go defend that place
                     shuffle($mycitybattles);
-                    $defender = array_pop($mycitybattles);
-                    $unitstr = $unit['id']."_def_".$defender;
+                    $defbattle = array_pop($mycitybattles);
+                    // make sure not sending trireme to a land battle
+                    if ($unit['type'] == HOPLITE || $this->locations[$defbattle]['rounds'] != "H") {
+                        $unitstr = $unit['id']."_defend_".$defbattle;
+                    }
                 }
             }
         }
+        $this->logDebug("$player_id sends $unitstr");
+
 
         $this->assignUnits($unitstr, "");
     }
