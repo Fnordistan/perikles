@@ -767,8 +767,6 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
 
-        $this->logDebug("$player_id sending to $battle");
-
         self::DbQuery("UPDATE MILITARY SET location=\"$battle\", battlepos=$battlepos WHERE id=$id");
 
         $role = $this->getRoleName($battlepos);
@@ -1624,7 +1622,7 @@ class Perikles extends Table
         self::checkAction('assignUnits');
         $player_id = self::getActivePlayerId();
 
-        $this->logDebug("$player_id assigns $unitstr");
+        // $this->logDebug("$player_id assigns $unitstr");
 
         if ($unitstr == "") {
             $this->noCommitUnits($player_id);
@@ -1660,7 +1658,7 @@ class Perikles extends Table
                 throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->cities[$cube]['name']));
             }
         }
-        $this->logDebug("$player_id validates $unitstr");
+        // $this->logDebug("$player_id validates $unitstr");
 
         $units = explode(" ", trim($unitstr));
         // get main attackers/defenders location => player
@@ -1673,7 +1671,7 @@ class Perikles extends Table
         );
         // MAKE NO CHANGES IN DB until this loop is completed!
         foreach($units as $unit) {
-            $this->logDebug("$player_id validating $unit");
+            // $this->logDebug("$player_id validating $unit");
             [$id, $side, $location] = explode("_", $unit);
             $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
             $counter['battle'] = $location;
@@ -1756,7 +1754,7 @@ class Perikles extends Table
                 $myforces['defend'][] = $counter;
             }
         }
-        $this->logDebug("$player_id passed all validation");
+        // $this->logDebug("$player_id passed all validation");
         // all units passed all tests for valid assignment
         // did we spend an influence cube?
         if ($cube != "" && count($units) > 2) {
@@ -1772,7 +1770,7 @@ class Perikles extends Table
             ));
         }
         // now ship 'em off
-        $this->logDebug("$player_id shipping forces");
+        // $this->logDebug("$player_id shipping forces");
         foreach($myforces as $attdef => $forces) {
             foreach($forces as $f) {
                 $battle = $f['battle'];
@@ -1785,7 +1783,7 @@ class Perikles extends Table
                 } else {
                     $battlepos = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
                 }
-                $this->logDebug("$player_id sending to battle $battle");
+                // $this->logDebug("$player_id sending to battle $battle");
                 $this->sendToBattle($player_id, $f, $battlepos);
             }
         }
@@ -2572,7 +2570,9 @@ class Perikles extends Table
                     $this->chooseNextPlayer($firstplayer);
                     break;
                 case 'commitForces':
-                    $this->sendRandomUnits($active_player);
+                    for ($i = 0; $i < 2; $i++) {
+                        $this->sendRandomUnit($active_player);
+                    }
                     break;
                 case 'specialTile':
                     $this->useSpecialTile($active_player, false);
@@ -2692,7 +2692,7 @@ class Perikles extends Table
      * Send a random military unit. Don't use cubes.
      * Prioritize defense, then attack.
      */
-    function sendRandomUnits($player_id) {
+    function sendRandomUnit($player_id) {
         $unitstr = "";
         $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=$player_id");
         if (!empty($military)) {
@@ -2741,8 +2741,7 @@ class Perikles extends Table
                 }
             }
         }
-        $this->logDebug("$player_id sends $unitstr");
-
+        // $this->logDebug("$player_id sends $unitstr");
 
         $this->assignUnits($unitstr, "");
     }

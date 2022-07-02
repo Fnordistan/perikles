@@ -555,12 +555,7 @@ function (dojo, declare) {
          */
         setupLeaders: function(leaders) {
             for (const [city, player_id] of Object.entries(leaders)) {
-                const leaderhtml = this.createLeaderCounter(player_id, city, "leader", 1);
-                const leader = dojo.place(leaderhtml, $(city+"_leader"));
-                let tt = _("${player_name} is Leader of ${city_name}");
-                tt = tt.replace('${player_name}', this.decorator.spanPlayerName(player_id));
-                tt = tt.replace('${city_name}', this.getCityNameTr(city));
-                this.addTooltip(leader.id, tt, '');
+                this.createLeaderCounter(player_id, city, "leader", 1);
             }
         },
 
@@ -595,8 +590,12 @@ function (dojo, declare) {
          * @returns statue or leader div
          */
         createLeaderCounter: function(player_id, city, type, n) {
-            const counter = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: this.decorator.playerColor(player_id)});
-            return counter;
+            const leaderhtml = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: this.decorator.playerColor(player_id)});
+            const leader = dojo.place(leaderhtml, $(city+"_leader"));
+            let tt = _("${player_name} is Leader of ${city_name}");
+            tt = tt.replace('${player_name}', this.decorator.spanPlayerName(player_id));
+            tt = tt.replace('${city_name}', this.getCityNameTr(city));
+            this.addTooltip(leader.id, tt, '');
         },
 
         /**
@@ -648,6 +647,7 @@ function (dojo, declare) {
                         const mil_zone = city+"_"+unit+"_"+player_id;
                         const counterObj = dojo.place(counter_div, $(mil_zone));
                         Object.assign(counterObj.style, {position: "relative"});
+                        counterObj.setAttribute("title", this.counterText(counter));
                     }
                 }
             }
@@ -955,7 +955,7 @@ function (dojo, declare) {
          * Move a military token from the city to the player's board
          * @param {Object} military
          */
-        moveMilitary: function(military) {
+        counterToPlayerBoard: function(military) {
             const counter = this.militaryToCounter(military);
             const player_id = military['location'];
             const counterObj = $(counter.getCounterId());
@@ -966,6 +966,7 @@ function (dojo, declare) {
             } else {
                 this.slideToObjectAndDestroy(counterObj, $('player_board_'+player_id), 500, 500);
             }
+            counterObj.setAttribute("title", this.counterText(counter));
         },
 
         /**
@@ -1971,13 +1972,10 @@ function (dojo, declare) {
             this.commitDlg = new ebg.popindialog();
             this.commitDlg.create( 'commitDlg' );
             const [city,unit,strength,id] = selectedUnit.id.split('_');
-            const unitc = new perikles.counter(city,unit,strength,id).copy();
+            const counter = new perikles.counter(city,unit,strength,id);
 
-            let unit_str = _("${city_name} ${unit}-${strength}");
-            unit_str = unit_str.replace('${city_name}', '<span style="color: var(--color_'+city+');")>'+this.getCityNameTr(city)+'</span>');
-            unit_str = unit_str.replace('${unit}', '<b>${unit}</b>');
-            unit_str = unit_str.replace('${unit}', unit == HOPLITE ? _("Hoplite") : _("Trireme"));
-            unit_str = unit_str.replace('${strength}', strength);
+            const unit_str = this.counterSpan(counter);
+            const unitc = counter.copy();
 
             this.commitDlg.setTitle( _("Commit Forces") );
             this.commitDlg.setMaxWidth( 720 );
@@ -2184,6 +2182,33 @@ function (dojo, declare) {
             }
             html += '</div>';
             return html;
+        },
+
+        /**
+         * Get the "city unit-strength" label for a counter.
+         * @param {Object} counter 
+         * @returns span html
+         */
+         counterSpan: function(counter) {
+            let unit_str = _("${city_name} ${unit}-${strength}");
+            unit_str = unit_str.replace('${city_name}', '<span style="color: var(--color_'+counter.getCity()+');")>'+this.getCityNameTr(counter.getCity())+'</span>');
+            unit_str = unit_str.replace('${unit}', '<b>${unit}</b>');
+            unit_str = unit_str.replace('${unit}', counter.getType() == HOPLITE ? _("Hoplite") : _("Trireme"));
+            unit_str = unit_str.replace('${strength}', counter.getStrength());
+            return unit_str;
+        },
+
+        /**
+         * Get the "city unit-strength" label for a counter.
+         * @param {Object} counter 
+         * @returns plain text for title
+         */
+        counterText: function(counter) {
+            let unit_str = _("${city_name} ${unit}-${strength}");
+            unit_str = unit_str.replace('${city_name}', this.getCityNameTr(counter.getCity()));
+            unit_str = unit_str.replace('${unit}', counter.getType() == HOPLITE ? _("Hoplite") : _("Trireme"));
+            unit_str = unit_str.replace('${strength}', counter.getStrength());
+            return unit_str;
         },
 
         ///////////////////////////////////////////////////
@@ -2575,8 +2600,7 @@ function (dojo, declare) {
             // subtract loser's cubes from winner's
             this.removeInfluenceCubes(player_id, city, cubes);
             // place Leader
-            const leader = this.createLeaderCounter(player_id, city, "leader", 1);
-            dojo.place(leader, $(city+"_leader"));
+            this.createLeaderCounter(player_id, city, "leader", 1);
         },
 
         /**
@@ -2586,7 +2610,7 @@ function (dojo, declare) {
         notif_takeMilitary: function(notif) {
             const military = notif.args.military;
             for (const mil of military) {
-                this.moveMilitary(mil);
+                this.counterToPlayerBoard(mil);
             }
         },
 
