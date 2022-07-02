@@ -1624,7 +1624,7 @@ class Perikles extends Table
 
         // $this->logDebug("$player_id assigns $unitstr");
 
-        if ($unitstr == "") {
+        if (trim($unitstr) == "") {
             $this->noCommitUnits($player_id);
         } else {
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
@@ -2570,9 +2570,7 @@ class Perikles extends Table
                     $this->chooseNextPlayer($firstplayer);
                     break;
                 case 'commitForces':
-                    for ($i = 0; $i < 2; $i++) {
-                        $this->sendRandomUnit($active_player);
-                    }
+                    $this->sendRandomUnits($active_player);
                     break;
                 case 'specialTile':
                     $this->useSpecialTile($active_player, false);
@@ -2689,61 +2687,64 @@ class Perikles extends Table
     }
 
     /**
-     * Send a random military unit. Don't use cubes.
+     * Send two random military units. Don't use cubes.
      * Prioritize defense, then attack.
      */
-    function sendRandomUnit($player_id) {
-        $unitstr = "";
-        $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=$player_id");
-        if (!empty($military)) {
-            shuffle($military);
-            while (!empty($military) && $unitstr === "") {
-                $unit = array_pop($military);
-                $city = $unit['city'];
-                // does this unit have any cities to defend?
-                $mycitybattles = self::getObjectListFromDB("SELECT card_type_arg battle FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
-
-                if (empty($mycitybattles)) {
-                    // is there a city we can attack?
-                    $allbattles = self::getObjectListFromDB("SELECT card_type city, card_type_arg battle, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
-                    shuffle($allbattles);
-                    $location = array_pop($allbattles);
-                    // does it belong to me?
-                    $defcity = $location['city'];
-                    if (!$this->isLeader($player_id, $defcity)) {
-                        $battle = $location['battle'];
-                        // is anyone else already attacking this city?
-                        $attackers = self::getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND city!=\"$city\" AND (battlepos=".(ATTACKER+MAIN)." OR battlepos=".(ATTACKER+ALLY).")", true);
-                        // make sure not at war with any of them
-                        $war = false;
-                        foreach ($attackers as $att) {
-                            if ($this->atWar($city, $att)) {
-                                $war = true;
-                                break;
+    function sendRandomUnits($player_id) {
+        $assignment = "";
+        for ($i = 0; $i < 2; $i++) {
+            $unitstr = "";
+            $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=$player_id");
+            if (!empty($military)) {
+                shuffle($military);
+                while (!empty($military) && $unitstr === "") {
+                    $unit = array_pop($military);
+                    $city = $unit['city'];
+                    // does this unit have any cities to defend?
+                    $mycitybattles = self::getObjectListFromDB("SELECT card_type_arg battle FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
+    
+                    if (empty($mycitybattles)) {
+                        // is there a city we can attack?
+                        $allbattles = self::getObjectListFromDB("SELECT card_type city, card_type_arg battle, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
+                        shuffle($allbattles);
+                        $location = array_pop($allbattles);
+                        // does it belong to me?
+                        $defcity = $location['city'];
+                        if (!$this->isLeader($player_id, $defcity)) {
+                            $battle = $location['battle'];
+                            // is anyone else already attacking this city?
+                            $attackers = self::getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND city!=\"$city\" AND (battlepos=".(ATTACKER+MAIN)." OR battlepos=".(ATTACKER+ALLY).")", true);
+                            // make sure not at war with any of them
+                            $war = false;
+                            foreach ($attackers as $att) {
+                                if ($this->atWar($city, $att)) {
+                                    $war = true;
+                                    break;
+                                }
+                            }
+                            if (!$war) {
+                                // we can attack this city
+                                // make sure not sending trireme to a land battle
+                                if ($unit['type'] == HOPLITE || $this->locations[$battle]['rounds'] != "H") {
+                                    $unitstr = $unit['id']."_attack_".$battle;
+                                }
                             }
                         }
-                        if (!$war) {
-                            // we can attack this city
-                            // make sure not sending trireme to a land battle
-                            if ($unit['type'] == HOPLITE || $this->locations[$battle]['rounds'] != "H") {
-                                $unitstr = $unit['id']."_attack_".$battle;
-                            }
+                    } else {
+                        // go defend that place
+                        shuffle($mycitybattles);
+                        $defbattle = array_pop($mycitybattles);
+                        // make sure not sending trireme to a land battle
+                        if ($unit['type'] == HOPLITE || $this->locations[$defbattle]['rounds'] != "H") {
+                            $unitstr = $unit['id']."_defend_".$defbattle;
                         }
-                    }
-                } else {
-                    // go defend that place
-                    shuffle($mycitybattles);
-                    $defbattle = array_pop($mycitybattles);
-                    // make sure not sending trireme to a land battle
-                    if ($unit['type'] == HOPLITE || $this->locations[$defbattle]['rounds'] != "H") {
-                        $unitstr = $unit['id']."_defend_".$defbattle;
                     }
                 }
             }
+            $assignment .= $unitstr." ";
         }
-        // $this->logDebug("$player_id sends $unitstr");
 
-        $this->assignUnits($unitstr, "");
+        $this->assignUnits($assignment, "");
     }
     
 ///////////////////////////////////////////////////////////////////////////////////:
