@@ -1160,9 +1160,20 @@ class Perikles extends Table
         if ($use) {
             $this->playSpecialTile($player_id);
         }
-        $is_battle = self::getGameStateValue('active_battle') != 0;
+        // after playing tile, or if passed
         if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
-            $this->gamestate->nextState($is_battle ? "doBattle" : "nextPlayer");
+            // We might be in the middle of battle (with Trireme or Hoplite Specials)
+            $nextstate = "";
+            if (self::getGameStateValue('active_battle') != 0) {
+                $nextstate = "doBattle";
+            } elseif (self::getGameStateValue('influence_phase') == 0) {
+                // if it was Slave Revolt, next Commit
+                $nextstate = "nextCommit";
+            } else {
+                // otherwise we're going to next player
+                $nextstate = "nextPlayer";
+            }
+            $this->gamestate->nextState($nextstate);
         }
     }
 
@@ -1343,7 +1354,7 @@ class Perikles extends Table
         self::DbQuery("UPDATE MILITARY SET location=\"sparta\", battlepos=0 WHERE id=$id");
 
         // 
-        self::notifyAllPlayers("slaveRevolt", '', array(
+        self::notifyAllPlayers("slaveRevolt", clienttranslate('Hoplite counter returned to Sparta from ${location_name}'), array(
             'military' => $counter,
             'location' => $revoltlocation, // may be sparta or a battle name
             'sparta_player' => self::getGameStateValue("sparta_leader"),

@@ -107,7 +107,7 @@ $machinestates = array(
         "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "useSpecialTile" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "doBattle" => NEXT_BATTLE )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT, "doBattle" => NEXT_BATTLE )
     ),
 
     ELECTIONS => array(

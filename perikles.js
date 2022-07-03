@@ -1831,6 +1831,20 @@ function (dojo, declare) {
         //// Utility methods
 
         /**
+         * For a city, get the current player who's leader.
+         * @param {string} city 
+         * @return player_id (null if no one controls that city)
+         */
+        getLeader: function(city) {
+            for (const player_id in this.gamedatas.players) {
+                if (this.isLeader(player_id, city)) {
+                    return player_id;
+                }
+            }
+            return null;
+        },
+
+        /**
          * Is this player leader of this city?
          * @param {string} player_id 
          * @param {string} city 
@@ -2160,25 +2174,31 @@ function (dojo, declare) {
 
         /**
          * Create buttons for choosing Slave Revolt location.
-         * @returns
+         * Controlling player+Battle location tiles
+         * @returns html
          */
         createSlaveRevoltButtons: function() {
             let html = '<div id="slaverevolt_div">';
-            const spartabtn = this.format_block('jstpl_slaverevolt_btn', {loc: "sparta", city: "sparta", location_name: this.getCityNameTr("sparta")});
-            html += spartabtn;
-            const spartans = this.slaverevolt.getSpartanHoplites();
-            for (const spartan of spartans) {
-                const city = LOCATION_TILES[spartan.location].city;
-                const battle = this.getBattleNameTr(spartan.location);
-                // const slot = spartan.slot;
-                // const segs = slot.split("_");
-                // const role = segs[3];
-                // let roletr = (role == "att") ? _("Attacker") : _("Defender");
-                // let lbl = _("${location} (${side})");
-                // lbl = lbl.replace('${location}', battle);
-                // lbl = lbl.replace('${side}', roletr);
-                const locbtn = this.format_block('jstpl_slaverevolt_btn', {loc: spartan.location, city: city, location_name: battle});
-                html += locbtn;
+            const sparta_leader = this.getLeader("sparta");
+            if (sparta_leader) {
+                const spartabtn = this.slaverevolt.createSpartaLeaderButton(this.decorator.spanPlayerName(sparta_leader));
+                html += spartabtn;
+                const locations = this.slaverevolt.getSpartanHopliteLocations();
+                for (const stack of locations) {
+                    const city = LOCATION_TILES[stack.tile].city;
+                    const battle = this.getBattleNameTr(stack.tile);
+                    // const slot = spartan.slot;
+                    // const segs = slot.split("_");
+                    // const role = segs[3];
+                    // let roletr = (role == "att") ? _("Attacker") : _("Defender");
+                    // let lbl = _("${location} (${side})");
+                    // lbl = lbl.replace('${location}', battle);
+                    // lbl = lbl.replace('${side}', roletr);
+                    const locbtn = this.slaverevolt.createButton(stack.tile, battle);
+                    html += locbtn;
+                }
+            } else {
+                html += '<span>'+_("Sparta has no leader; no revolt possible")+'</span>';
             }
             html += '</div>';
             return html;
