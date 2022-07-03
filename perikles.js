@@ -1867,7 +1867,7 @@ function (dojo, declare) {
          * @param {string} city 
          */
         hasAvailableUnits: function(player_id, city) {
-            for (let u of [HOPLITE, TRIREME]) {
+            for (const u of [HOPLITE, TRIREME]) {
                 if ($(city+'_'+u+'_'+player_id).childElementCount > 0) {
                     return true;
                 }
@@ -2185,15 +2185,7 @@ function (dojo, declare) {
                 html += spartabtn;
                 const locations = this.slaverevolt.getSpartanHopliteLocations();
                 for (const stack of locations) {
-                    const city = LOCATION_TILES[stack.tile].city;
                     const battle = this.getBattleNameTr(stack.tile);
-                    // const slot = spartan.slot;
-                    // const segs = slot.split("_");
-                    // const role = segs[3];
-                    // let roletr = (role == "att") ? _("Attacker") : _("Defender");
-                    // let lbl = _("${location} (${side})");
-                    // lbl = lbl.replace('${location}', battle);
-                    // lbl = lbl.replace('${side}', roletr);
                     const locbtn = this.slaverevolt.createButton(stack.tile, battle);
                     html += locbtn;
                 }
@@ -2753,13 +2745,23 @@ function (dojo, declare) {
        notif_slaveRevolt: function(notif) {
             const counter = notif.args.military;
             const location = notif.args.location;
-            const sparta_leader = notif.args.sparta_player;
-            const counter_id = "sparta_hoplite_"+counter.getStrength+"_"+counter.id;
-            console.log("revolt " + location + " @ " + counter_id);
-            // first flip the revolting Hoplite unit, if it's not mine and it's at a battle
-            if (location != "sparta" && this.player_id != sparta_leader) {
-                // pick one of the 
-                let flipped_counter = "sparta_hoplite_0_"+counter.id;
+            const sparta_player = notif.args.sparta_player;
+            const counter_id = "sparta_hoplite_"+counter.getStrength()+"_"+counter.id;
+            debugger;
+            
+            if (location == "sparta") {
+                // comes from player's pool
+                if (this.player_id == sparta_leader) {
+                } else {
+                    
+                }
+            } else {
+                // comes from a battle tile
+                if (this.player_id == sparta_leader) {
+                } else {
+                    // flip a counter
+
+                }
             }
             // now move it back to Sparta
 

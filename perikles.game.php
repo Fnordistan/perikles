@@ -1324,16 +1324,25 @@ class Perikles extends Table
      * Player selected Slave Revolt
      */
     function playSlaveRevolt($revoltlocation) {
+        // sanity check - there is a Sparta leader
+        $sparta_leader = self::getGameStateValue("sparta_leader");
+        if ($sparta_leader == 0) {
+            throw new BgaVisibleSystemException("No Sparta Leader!"); // NOI18N
+        }
+
         $player_id = self::getCurrentPlayerId();
         $this->checkSpecialTile($player_id, "commit_phase", 3);
 
         $location = "";
         $location_name = "";
+        // if it's "sparta" then take it from the player's pool
         if ($revoltlocation == "sparta") {
-            $location = self::getGameStateValue("sparta_leader");
             $players = self::loadPlayersBasicInfos();
-            $location_name = $players[$location]['player_name'];
+            $player_name = $players[$sparta_leader]['player_name'];
+            $location = $sparta_leader;
+            $location_name = sprintf(self::_("%s's unit pool"), $player_name);
         } else {
+            // it's a battle tile
             $location = $revoltlocation;
             $location_name = $this->locations[$location]['name'];
         }
@@ -1353,11 +1362,13 @@ class Perikles extends Table
         // relocate it to Sparta
         self::DbQuery("UPDATE MILITARY SET location=\"sparta\", battlepos=0 WHERE id=$id");
 
-        // 
+        // this will flip the counter, and move it to Sparta
         self::notifyAllPlayers("slaveRevolt", clienttranslate('Hoplite counter returned to Sparta from ${location_name}'), array(
+            'i18n' => ['location_name'],
             'military' => $counter,
             'location' => $revoltlocation, // may be sparta or a battle name
-            'sparta_player' => self::getGameStateValue("sparta_leader"),
+            'location_name' => $location_name,
+            'sparta_player' => $sparta_leader,
         ));
 
 
