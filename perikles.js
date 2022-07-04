@@ -693,8 +693,9 @@ function (dojo, declare) {
             const stackct = $(place).childElementCount;
             // zero ids for face-down units
             if (counter.getStrength() == 0) {
-                counter.setId("counter_"+stackct);
-            } 
+                counter.setId(stackct);
+            }
+            counter.setId(counter.getId()+"_"+counter.getLocation());
             const battlecounter = counter.toBattleDiv(stackct);
             dojo.place(battlecounter, $(place));
         },
@@ -985,7 +986,7 @@ function (dojo, declare) {
             if (newId == 0) {
                 newId = stackct;
             }
-            counter.setId("counter_"+newId);
+            counter.setId(newId+"_"+counter.getLocation());
             const counter_html = counter.toBattleDiv(stackct);
             const milzone = $(counter.getCity()+"_military");
             const counterObj = dojo.place(counter_html, milzone);
@@ -2746,25 +2747,33 @@ function (dojo, declare) {
             const counter = notif.args.military;
             const location = notif.args.location;
             const sparta_player = notif.args.sparta_player;
-            const counter_id = "sparta_hoplite_"+counter.getStrength()+"_"+counter.id;
-            debugger;
+            const counter_id = "sparta_hoplite_"+counter['strength']+"_"+counter.id;
             
+            let hoplite = null;
             if (location == "sparta") {
                 // comes from player's pool
-                if (this.player_id == sparta_leader) {
+                if (this.player_id == sparta_player) {
+                    // get the counter
+                    hoplite = $(counter_id);
                 } else {
-                    
-                }
+                    // create counter on player's board
+                    const tempcounter = new perikles.counter('sparta', HOPLITE, counter["strength"], counter["id"]);
+                    const counter_div = tempcounter.toDiv(0, 0);
+                    hoplite = dojo.place(counter_div, $('overall_player_board_'+sparta_player));
+            }
             } else {
                 // comes from a battle tile
-                if (this.player_id == sparta_leader) {
+                if (this.player_id == sparta_player) {
+                    // get correct counter
+                    hoplite = $(counter_id+'_'+location);
                 } else {
-                    // flip a counter
-
+                    // "flip" the top Hoplite counter
+                    hoplite = $('sparta_hoplite_0_0_'+location);
                 }
             }
             // now move it back to Sparta
-
+            this.slideToObjectAndDestroy(hoplite, 'sparta_military', 1000, 500);
+            new perikles.counter('sparta', HOPLITE, counter['strength'], counter['id']).addToStack();
         },
 
         notif_crtOdds: function(notif) {

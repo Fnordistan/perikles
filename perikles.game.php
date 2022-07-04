@@ -1352,6 +1352,9 @@ class Perikles extends Table
         if (empty($hoplites)) {
             throw new BgaVisibleSystemException("No Spartan Hoplites at $location"); // NOI18N
         }
+
+        $this->flipSpecialTile($player_id, $this->specialcards[3]['name']);
+
         // randomize and pick one
         shuffle($hoplites);
         $revolted = array_pop($hoplites);
@@ -1370,25 +1373,6 @@ class Perikles extends Table
             'location_name' => $location_name,
             'sparta_player' => $sparta_leader,
         ));
-
-
-        // self::notifyAllPlayers("revoltHoplites", clienttranslate('Hoplite counter returned to Sparta from ${location_name}'), array(
-        //     'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
-        //     'player_id' => $player_id,
-        //     'player_name' => $players[$player_id]['player_name'],
-        //     'unit' => ($pid == $player_id) ? $counter['id'] : 0,
-        //     'type' => $counter['type'],
-        //     'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
-        //     'strength' => ($pid == $player_id) ? $counter['strength'] : 0,
-        //     'battlepos' => $battlepos,
-        //     'battlerole' => $role,
-        //     'location' => $battle,
-        //     'slot' => $slot,
-        //     'location_name' => $location_name,
-        //     'preserve' => ['city', 'location'],
-        // ));
-
-
     }
 
     /**
