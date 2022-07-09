@@ -554,7 +554,6 @@ function (dojo, declare) {
          * @param {Object} leaders 
          */
         setupLeaders: function(leaders) {
-            debugger;
             for (const [city, player_id] of Object.entries(leaders)) {
                 this.createLeaderCounter(player_id, city, "leader", 1);
             }
@@ -2062,6 +2061,13 @@ function (dojo, declare) {
          * @param {bool} enable turn it on or off
          */
         toggleAssignmentCancelButton: function(enable) {
+            const commit_cancel = $('commit_cancel_btn');
+            if (!commit_cancel) {
+                this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
+                    this.onResetForces();
+                }, null, null, 'red');
+            }
+
             if (enable) {
                 $('commit_cancel_btn').classList.remove('disabled');
                 $('commit_cancel_btn').style['display'] = 'inline';
