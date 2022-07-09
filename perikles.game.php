@@ -19,6 +19,8 @@
 
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
+require_once( 'modules/PeriklesCities.class.php' );
+
 //  MARTIN WALLACE'S ERRATA ON BGG: https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
 
 define("INFLUENCE", "influence");
@@ -92,6 +94,8 @@ class Perikles extends Table
             DEFENDER_TOKENS => 51, // battle tokens won by defender so far in current battle
         ) );
 
+        $this->Cities = new PeriklesCities($this);
+
         $this->influence_tiles = self::getNew("module.common.deck");
         $this->influence_tiles->init("INFLUENCE");
         $this->location_tiles = self::getNew("module.common.deck");
@@ -119,7 +123,7 @@ class Perikles extends Table
         {
             $color = array_shift( $default_colors );
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
-            foreach(array_keys($this->cities) as $cn) {
+            foreach($this->Cities->cities() as $cn) {
                 $statues = $cn."_statues";
                 self::initStat( 'player', $statues, 0, $player_id);
             }
@@ -133,9 +137,11 @@ class Perikles extends Table
 
         /************ Start the game initialization *****/
 
+        $this->Cities->setupNewGame();
+
         // Init global values with their initial values
         $city_states = ["leader", "a", "b", "defeats", "wars"];
-        foreach(array_keys($this->cities) as $cn) {
+        foreach($this->Cities->cities() as $cn) {
             foreach ($city_states as $lbl) {
                 self::setGameStateInitialValue( $cn."_".$lbl, 0 );
             }
@@ -199,9 +205,9 @@ class Perikles extends Table
     protected function createInfluenceTiles() {
         $influence_tiles = array();
 
-        foreach( $this->cities as $cn => $city) {
-            $influence_tiles[] = array('type' => $cn, 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $city['influence']);
-            $influence_tiles[] = array('type' => $cn, 'type_arg' => CANDIDATE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $city['candidate']);
+        foreach( $this->Cities->cities() as $cn) {
+            $influence_tiles[] = array('type' => $cn, 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $this->cities[$cn]['influence']);
+            $influence_tiles[] = array('type' => $cn, 'type_arg' => CANDIDATE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $this->cities[$cn]['candidate']);
             $influence_tiles[] = array('type' => $cn, 'type_arg' => ASSASSIN, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
         }
         $influence_tiles[] = array('type' => 'any', 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => 5);
@@ -213,7 +219,7 @@ class Perikles extends Table
      */
     protected function setupInfluenceCubes() {
         $players = self::loadPlayersBasicInfos();
-        foreach($this->cities as $cn => $city) {
+        foreach($this->Cities->cities() as $cn) {
             foreach($players as $player_id => $player) {
                 self::DbQuery("UPDATE player SET ".$cn." = 2 WHERE player_id=$player_id");
             }
@@ -308,7 +314,7 @@ class Perikles extends Table
         $result['specialtiles'] = $this->getSpecialTiles($current_player_id);
         $result['influencecubes'] = $this->getInfluenceCubes();
         $result['defeats'] = $this->getDefeats();
-        $result['leaders'] = $this->getLeaders();
+        $result['leaders'] = $this->Cities->getLeaders();
         $result['candidates'] = $this->getCandidates();
         $result['statues'] = $this->getStatues();
         $result['military'] = $this->getMilitary();
@@ -352,7 +358,7 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         foreach ($players as $player_id => $player) {
             $influencecubes[$player_id] = array();
-            foreach($this->cities as $cn => $city) {
+            foreach($this->Cities->cities() as $cn) {
                 $influencecubes[$player_id][$cn] = self::getUniqueValueFromDB("SELECT $cn FROM player WHERE player_id=$player_id");
             }
         }
@@ -364,52 +370,52 @@ class Perikles extends Table
      */
     function getDefeats() {
         $defeats = array();
-        foreach ($this->cities as $cn => $city) {
+        foreach ($this->Cities->cities() as $cn) {
             $defeats[$cn] = self::getGameStateValue($cn."_defeats");
         }
         return $defeats;
     }
 
-    /**
-     * Return associative array: city => player_id
-     */
-    function getLeaders() {
-        $leaders = array();
-        foreach (array_keys($this->cities) as $cn) {
-            $leader = self::getGameStateValue($cn."_leader");
-            if ($leader != 0) {
-                $leaders[$cn] = $leader;
-            }
-        }
-        return $leaders;
-    }
+    // /**
+    //  * Return associative array: city => player_id
+    //  */
+    // function getLeaders() {
+    //     $leaders = array();
+    //     foreach ($this->Cities->cities() as $cn) {
+    //         $leader = self::getGameStateValue($cn."_leader");
+    //         if ($leader != 0) {
+    //             $leaders[$cn] = $leader;
+    //         }
+    //     }
+    //     return $leaders;
+    // }
 
-    /**
-     * Is this player leader of a city?
-     */
-    function isLeader($player_id, $city) {
-        return self::getGameStateValue($city."_leader") == $player_id;
-    }
+    // /**
+    //  * Is this player leader of a city?
+    //  */
+    // function isLeader($player_id, $city) {
+    //     return self::getGameStateValue($city."_leader") == $player_id;
+    // }
 
-    /**
-     * Get an array of cities led by this player.
-     */
-    function getControlledCities($player_id) {
-        $cities = array();
-        foreach (array_keys($this->cities) as $cn) {
-            if ($this->isLeader($player_id, $cn)) {
-                $cities[] = $cn;
-            }
-        }
-        return $cities;
-    }
+    // /**
+    //  * Get an array of cities led by this player.
+    //  */
+    // function getControlledCities($player_id) {
+    //     $cities = array();
+    //     foreach ($this->Cities->cities() as $cn) {
+    //         if ($this->isLeader($player_id, $cn)) {
+    //             $cities[] = $cn;
+    //         }
+    //     }
+    //     return $cities;
+    // }
 
     /**
      * Return associative array: "city_a" and "city_b" => player_id
      */
     function getCandidates() {
         $candidates = array();
-        foreach ($this->cities as $cn => $city) {
+        foreach ($this->Cities->cities() as $cn) {
             foreach(["a", "b"] as $c) {
                 $cv = $cn."_".$c;
                 $candidate = self::getGameStateValue($cv);
@@ -427,7 +433,7 @@ class Perikles extends Table
     function getStatues() {
         $statues = array();
         $players = self::loadPlayersBasicInfos();
-        foreach($this->cities as $cn => $city) {
+        foreach($this->Cities->cities() as $cn) {
             $statues[$cn] = array();
             foreach ($players as $player_id => $player) {
                 $s = self::getStat($cn."_statues", $player_id);
@@ -452,7 +458,7 @@ class Perikles extends Table
             if ($military[$id]['battlepos'] != 0) {
                 // if it's not mine, zero the id and strength unless the counters have been flipped
                 // because it's an active battle
-                if (!($this->isLeader($player_id, $military[$id]['city']) || $this->isActiveBattleLocation($military[$id]['location']))) {
+                if (!($this->Cities->isLeader($player_id, $military[$id]['city']) || $this->isActiveBattleLocation($military[$id]['location']))) {
                     $military[$id]['id'] = 0;
                     $military[$id]['strength'] = 0;
                 }
@@ -554,8 +560,8 @@ class Perikles extends Table
      * Is there any city this player can nominate in?
      */
     function canNominateAny($player_id) {
-        foreach (array_keys($this->cities) as $city) {
-            if ($this->canNominate($player_id, $city)) {
+        foreach ($this->Cities->cities() as $cn) {
+            if ($this->canNominate($player_id, $cn)) {
                 return true;
             }
         }
@@ -589,7 +595,7 @@ class Perikles extends Table
      */
     function allCubesOnBoard($player_id) {
         $cubes = 0;
-        foreach($this->cities as $cn => $city) {
+        foreach( $this->Cities->cities() as $cn ) {
             $cubes += $this->influenceInCity($player_id, $cn);
             foreach(["a", "b"] as $c) {
                 $cv = $cn."_".$c;
@@ -613,7 +619,7 @@ class Perikles extends Table
             $name = self::_("Any");
             $shards = 1;
         } else {
-            $name = $this->cities[$name]['name'];
+            $name = $this->Cities->getNameTr($name);
 
             if ($tile['type'] == "assassin") {
                 $desc = self::_("Assassin");
@@ -645,7 +651,7 @@ class Perikles extends Table
      * Create translateable description string of a unit
      */
     function unitDescription($city, $strength, $type, $location) {
-        $home_city = $this->cities[$city]['name'];
+        $home_city = $this->Cities->getNameTr($city);
         $unit_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
         $unit_desc = sprintf(self::_("%s %s-%s at %s", ), $home_city, $unit_type, $strength, $location);
         return $unit_desc;
@@ -664,7 +670,7 @@ class Perikles extends Table
         }
 
         $this->changeInfluenceInCity($city, $player_id, $cubes);
-        $city_name = $this->cities[$city]['name'];
+        $city_name = $this->Cities->getNameTr($city);
 
         self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} adds ${cubes} Influence to ${city_name}'), array(
             'i18n' => ['city_name'],
@@ -734,7 +740,7 @@ class Perikles extends Table
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
             'city' => $city,
-            'city_name' => $this->cities[$city]['name'],
+            'city_name' => $this->Cities->getNameTr($city),
             'military' => $units,
             'preserve' => ['player_id', 'city'],
         ));
@@ -783,7 +789,7 @@ class Perikles extends Table
                 'unit_type' => $counter['type'] == HOPLITE ? clienttranslate("Hoplite") : clienttranslate("Trireme"),
                 'strength' => ($pid == $player_id) ? $counter['strength'] : 0,
                 'city' => $counter['city'],
-                'city_name' => $this->cities[$counter['city']]['name'],
+                'city_name' => $this->Cities->getNameTr($counter['city']),
                 'battlepos' => $battlepos,
                 'battlerole' => $role,
                 'location' => $battle,
@@ -817,8 +823,8 @@ class Perikles extends Table
      * Faster check, just return true if at least one unit in deadpool to be retrieved by this player.
      */
     function hasDeadPool($player_id) {
-        foreach(array_keys($this->cities) as $cn) {
-            if ($player_id == self::getGameStateValue($cn."_leader")) {
+        foreach($this->Cities->cities() as $cn) {
+            if ($this->Cities->isLeader($player_id, $cn)) {
                 $dead = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"$cn\" AND location='deadpool'", true);
                 if (!empty($dead)) {
                     return true;
@@ -915,7 +921,7 @@ class Perikles extends Table
      * Must have influence cube in the city, and be leader.
      */
     function canSpendInfluence($player_id, $city) {
-        return ($this->influenceInCity($player_id, $city) > 0) && ($player_id == self::getGameStateValue($city."_leader"));
+        return ($this->influenceInCity($player_id, $city) > 0) && $this->Cities->isLeader($player_id, $city);
     }
 
     /**
@@ -924,8 +930,8 @@ class Perikles extends Table
      */
     function deadPoolUnits($player_id) {
         $deadpool = array();
-        foreach(array_keys($this->cities) as $cn) {
-            if ($player_id == self::getGameStateValue($cn."_leader")) {
+        foreach($this->Cities->cities() as $cn) {
+            if ($player_id == $this->Cities->isLeader($player_id, $cn)) {
                 $dead = self::getObjectListFromDB("SELECT id, city, type, strength FROM MILITARY WHERE city=\"$cn\" AND location='deadpool'");
                 if (!empty($dead)) {
                     $deadpool[$cn] = array();
@@ -1004,7 +1010,7 @@ class Perikles extends Table
         // make sure assigner owns it
         $assigner = self::getActivePlayerId();
         $location = self::getNonEmptyObjectFromDB("SELECT card_type city, permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
-        if (!$this->isLeader($assigner, $location['city'])) {
+        if (!$this->Cities->isLeader($assigner, $location['city'])) {
             throw new BgaUserException(self::_("You do not own this location's city"));
         }
         $permissions = $location['permissions'] == null ? [] : explode(",", $location['permissions']);
@@ -1269,8 +1275,8 @@ class Perikles extends Table
             'player_name' => $players[$player_id]['player_name'],
             'city' => $city,
             'city2' => $city2,
-            'city_name' => $this->cities[$city]['name'],
-            'city_name2' => $this->cities[$city2]['name'],
+            'city_name' => $this->Cities->getNameTr($city),
+            'city_name2' => $this->Cities->getNameTr($city2),
             'preserve' => ['player_id', 'city', 'city2'],
         ));
     }
@@ -1301,7 +1307,7 @@ class Perikles extends Table
                     'player_id' => $p,
                     'player_name' => $player['player_name'],
                     'city' => $city,
-                    'city_name' => $this->cities[$city]['name'],
+                    'city_name' => $this->Cities->getNameTr($city),
                     'nbr' => $to_reduce,
                     'preserve' => ['city'],
                 ));
@@ -1325,8 +1331,8 @@ class Perikles extends Table
      */
     function playSlaveRevolt($revoltlocation) {
         // sanity check - there is a Sparta leader
-        $sparta_leader = self::getGameStateValue("sparta_leader");
-        if ($sparta_leader == 0) {
+        $sparta_leader = $this->Cities->getLeader("sparta");
+        if (empty($sparta_leader)) {
             throw new BgaVisibleSystemException("No Sparta Leader!"); // NOI18N
         }
 
@@ -1487,7 +1493,7 @@ class Perikles extends Table
     function proposeCandidate($city, $candidate_id) {
         self::checkAction('proposeCandidate');
         $actingplayer = self::getActivePlayerId();
-        $city_name = $this->cities[$city]['name'];
+        $city_name = $this->Cities->getNameTr($city);
         // player must have a cube in the city
         if (!$this->hasInfluenceInCity($actingplayer, $city)) {
             throw new BgaUserException(sprintf(self::_("You cannot propose a Candidate in %s: you have no Influence cubes in this city"), $city_name));
@@ -1542,7 +1548,7 @@ class Perikles extends Table
         self::checkAction('chooseRemoveCube');
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
-        $city_name = $this->cities[$city]['name'];
+        $city_name = $this->Cities->getNameTr($city);
         if ($cube == 'a') {
             $alpha = self::getGameStateValue($city.'_a');
             if ($alpha != $target_id) {
@@ -1661,7 +1667,7 @@ class Perikles extends Table
         // can I commit extra forces from the chosen city?
         if ($cube != "") {
             if (!$this->canSpendInfluence($player_id, $cube)) {
-                throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->cities[$cube]['name']));
+                throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->Cities->getNameTr($cube)));
             }
         }
         // $this->logDebug("$player_id validates $unitstr");
@@ -1670,7 +1676,7 @@ class Perikles extends Table
         // get main attackers/defenders location => player
         $main_attacker = [];
         $main_defender = [];
-        $mycities = $this->getControlledCities($player_id);
+        $mycities = $this->Cities->getCities($player_id);
         $myforces = array(
             'attack' => [],
             'defend' => [],
@@ -1694,7 +1700,7 @@ class Perikles extends Table
             } else if ($side == "defend" && !in_array($battlecity, $mycities)) {
                 // Do I control this city? If not, I need permission from defender
                 if (!$this->hasDefendPermission($player_id, $location)) {
-                    throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->cities[$battlecity]['name'], $battlename));
+                    throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($battlecity), $battlename));
                 }
             }
             // is this unit at war with the destination location?
@@ -1771,7 +1777,7 @@ class Perikles extends Table
                 'player_id' => $player_id,
                 'player_name' => self::getActivePlayerName(),
                 'city' => $cube,
-                'city_name' => $this->cities[$cube]['name'],
+                'city_name' => $this->Cities->getNameTr($cube),
                 'preserve' => ['candidate_id', 'city'],
             ));
         }
@@ -2204,7 +2210,7 @@ class Perikles extends Table
         // stayed commit if the current player has a playable tile
         if ($state == "commit") {
             $city = reset($shards);
-            $city_name = ($city == "any") ? self::_("Any") : $this->cities[$city]['name'];
+            $city_name = ($city == "any") ? self::_("Any") : $this->Cities->getNameTr($city);
             $id = key($shards);
             $this->influence_tiles->moveCard($id, DISCARD);
             self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard tile (${city_name})'), array(
@@ -2288,8 +2294,8 @@ class Perikles extends Table
         // end influence phase
         self::setGameStateValue("influence_phase", 0);
 
-        foreach ($this->cities as $cn => $city) {
-            $city_name = $city['name'];
+        foreach ($this->Cities->cities() as $cn) {
+            $city_name = $this->Cities->getNameTr($cn);
 
             $a = self::getGameStateValue($cn."_a");
             $b = self::getGameStateValue($cn."_b");
@@ -2351,13 +2357,13 @@ class Perikles extends Table
             foreach(["a", "b"] as $c) {
                 self::setGameStateValue($cn."_".$c, 0);
             }
-            self::setGameStateValue($cn."_leader", $winner);
+            $this->Cities->setLeader($winner, $cn);
 
-            if ($winner != 0) {
+            if (!empty($winner)) {
                 $this->moveMilitaryUnits($winner, $cn);
             }
         }
-        $sparta = self::getGameStateValue("sparta_leader");
+        $sparta = $this->Cities->getLeader("sparta");
         $this->gamestate->changeActivePlayer($sparta);
         $this->gamestate->nextState();
     }
@@ -2492,15 +2498,15 @@ class Perikles extends Table
 
         $players = self::loadPlayersBasicInfos();
         // add statues
-        foreach (array_keys($this->cities) as $cn) {
-            $leader = self::getGameStateValue($cn."_leader");
-            if ($leader != 0) {
-                self::setGameStateValue($cn."_leader", 0);
+        foreach ($this->Cities->cities() as $cn) {
+            $leader = $this->Cities->getLeader($cn);
+            if (!empty($leader)) {
+                $this->Cities->setLeader(0, $cn);
                 self::incStat(1, $cn."_statues", $leader);
                 self::notifyAllPlayers("addStatue", clienttranslate('${player_name} adds statue in ${city_name}'), array(
                     'i18n' => ['city_name'],
                     'city' => $cn,
-                    'city_name' => $this->cities[$cn]['name'],
+                    'city_name' => $this->Cities->getNameTr($cn),
                     'player_id' => $leader,
                     'player_name' => $players[$leader]['player_name'],
                     'preserve' => ['player_id', 'city'],
@@ -2559,7 +2565,7 @@ class Perikles extends Table
                     $this->takeInfluence($tile['id']);
                     break;
                 case 'choosePlaceInfluence':
-                    $cities = array_keys($this->cities);
+                    $cities = $this->Cities->cities();
                     shuffle($cities);
                     $city = $cities[0];
                     $this->placeAnyCube($city);
@@ -2632,7 +2638,7 @@ class Perikles extends Table
      */
     function chooseRandomCandidate($player_id) {
         $players = self::loadPlayersBasicInfos();
-        $cities = array_keys($this->cities);
+        $cities = $this->Cities->cities();
         shuffle($cities);
         foreach($cities as $cn) {
             if ($this->canNominate($player_id, $cn)) {
@@ -2664,7 +2670,7 @@ class Perikles extends Table
      * Zombie player pick a random cube to kill, not self.
      */
     function removeRandomCube($player_id) {
-        $cities = array_keys($this->cities);
+        $cities = $this->Cities->cities();
         shuffle($cities);
         foreach ($cities as $cn) {
             $players = self::loadPlayersBasicInfos();
@@ -2716,7 +2722,7 @@ class Perikles extends Table
                         $location = array_pop($allbattles);
                         // does it belong to me?
                         $defcity = $location['city'];
-                        if (!$this->isLeader($player_id, $defcity)) {
+                        if (!$this->Cities->isLeader($player_id, $defcity)) {
                             $battle = $location['battle'];
                             // is anyone else already attacking this city?
                             $attackers = self::getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND city!=\"$city\" AND (battlepos=".(ATTACKER+MAIN)." OR battlepos=".(ATTACKER+ALLY).")", true);

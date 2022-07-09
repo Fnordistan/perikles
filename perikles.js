@@ -554,6 +554,7 @@ function (dojo, declare) {
          * @param {Object} leaders 
          */
         setupLeaders: function(leaders) {
+            debugger;
             for (const [city, player_id] of Object.entries(leaders)) {
                 this.createLeaderCounter(player_id, city, "leader", 1);
             }
