@@ -39,6 +39,15 @@ define("ATTACKER", 0);
 define("DEFENDER", 2);
 define("MAIN", 1);
 define("ALLY", 2);
+// Special tiles
+define("PERIKLES", 1);
+define("PERSIANFLEET", 2);
+define("SLAVEREVOLT", 3);
+define("BRASIDAS", 4);
+define("THESSALIANALLIES", 5);
+define("ALKIBIADES", 6);
+define("PHORMIO", 7);
+define("PLAGUE", 8);
 
 define("ATTACKER_TOKENS", "attacker_tokens");
 define("DEFENDER_TOKENS", "defender_tokens");
@@ -978,7 +987,7 @@ class Perikles extends Table
      * Play Perikles Special tile.
      */
     function playPerikles($player_id) {
-        $this->flipSpecialTile($player_id, $this->specialcards[1]['name']);
+        $this->flipSpecialTile($player_id, PERIKLES);
         $this->addInfluenceToCity('athens', $player_id, 2);
     }
 
@@ -1005,7 +1014,7 @@ class Perikles extends Table
             }
         }
         // passed all checks.
-        $this->flipSpecialTile($player_id, $this->specialcards[6]['name']);
+        $this->flipSpecialTile($player_id, ALKIBIADES);
         $this->Cities->changeInfluence($from_city1, $owner1, -1);
         $this->Cities->changeInfluence($from_city2, $owner2, -1);
         $this->Cities->changeInfluence($to_city1, $owner1, 1);
@@ -1041,7 +1050,7 @@ class Perikles extends Table
         $player_id = self::getCurrentPlayerId();
         $this->checkSpecialTile($player_id, "influence_phase", 8);
 
-        $this->flipSpecialTile($player_id, $this->specialcards[8]['name']);
+        $this->flipSpecialTile($player_id, PLAGUE);
         $players = self::loadPlayersBasicInfos();
         // how many cubes does each player have? Count candidates
         foreach ($players as $p => $player) {
@@ -1106,7 +1115,7 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("No Spartan Hoplites at $location"); // NOI18N
         }
 
-        $this->flipSpecialTile($player_id, $this->specialcards[3]['name']);
+        $this->flipSpecialTile($player_id, SLAVEREVOLT);
 
         // randomize and pick one
         shuffle($hoplites);
@@ -1131,13 +1140,14 @@ class Perikles extends Table
     /**
      * Player played their Special Tile. Flip it and mark it used.
      */
-    function flipSpecialTile($player_id, $tile_name) {
-
+    function flipSpecialTile($player_id, $tile) {
+        $tile_name = $this->specialcards[$tile]['name'];
         $players = self::loadPlayersBasicInfos();
         self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
             'i18n' => ['special_tile'],
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
+            'tile' => $tile,
             'special_tile' => $tile_name,
         ));
         self::DbQuery("UPDATE player SET special_tile_used=1 WHERE player_id=$player_id");

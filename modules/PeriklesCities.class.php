@@ -72,7 +72,10 @@ class PeriklesCities extends APP_GameClass
     $id = $this->createMilitaryUnits($cn, $this->persia[$cn], $id);
   }
 
-
+  /**
+   * Convenience function to load player_ids
+   * @return {array} player ids
+   */
   private function getPlayerIds() {
     $players = $this->game->loadPlayersBasicInfos();
     return array_keys($players);

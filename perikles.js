@@ -29,8 +29,6 @@ const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 
 const PLAYER_INF_MARGIN = "2px";
 
-const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
-
 const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles'];
 
 const CANDIDATES = {
@@ -72,6 +70,7 @@ define([
     "ebg/core/gamegui",
     "ebg/counter",
     "ebg/zone",
+    g_gamethemeurl + "modules/specialtile.js",
     g_gamethemeurl + "modules/alkibiades.js",
     g_gamethemeurl + "modules/slaverevolt.js",
     g_gamethemeurl + "modules/stack.js",
@@ -137,61 +136,23 @@ function (dojo, declare) {
                 const player_cards = this.format_block('jstpl_influence_cards', {id: player_id, scale: special_scale});
                 const player_cards_div = dojo.place(player_cards, $('player_board_'+player_id));
 
-                let used = false;
-                if (spec == 0) {
-                    var specialtile = this.format_block('jstpl_special_back', {id: player_id, scale: special_scale});
+                const used = (spec < 0 || (spec > 0 && player_id != this.player_id));
+                const specialtile = new perikles.specialtile(player_id, spec, used);
+
+                const specialhtml = specialtile.getDiv();
+
+                const tile = dojo.place(specialhtml, player_cards_div);
+
+                let ttext = "";
+                if (specialtile.isFaceup()) {
+                    ttext = specialtile.createSpecialTileTooltip();
                 } else {
-                    const spec_i = SPECIAL_TILES[Math.abs(spec)-1];
-                    specialtile = this.format_block('jstpl_special_tile', {special: spec_i, scale: special_scale, margin: PLAYER_INF_MARGIN});
-                    used = (spec < 0 || player_id != this.player_id);
-                }
-                const tile = dojo.place(specialtile, player_cards_div);
-                if (used) {
-                    tile.classList.add("prk_special_tile_used");
-                }
-                if (spec == 0) {
-                    let ttext = _("${player_name}'s Special tile");
+                    ttext = _("${player_name}'s Special tile");
                     const player_name = this.decorator.spanPlayerName(player_id);
                     ttext = ttext.replace('${player_name}', player_name);
-                    this.addTooltip(tile.id, ttext, '');
-                } else {
-                    const thtml = this.createSpecialTileTooltip(SPECIAL_TILES[Math.abs(spec)-1]);
-                    this.addTooltipHtml(tile.id, thtml, '');
                 }
+                this.addTooltip(tile.id, ttext, '');
             }
-        },
-
-        /**
-         * HTML for Special tile tooltip.
-         * @param {string} tilenum 
-         * @returns 
-         */
-        createSpecialTileTooltip: function(special) {
-            const TITLES = {
-                'perikles': _("PERIKLES"),
-                'persianfleet': _("PERSIAN FLEET"),
-                'slaverevolt': _("SLAVE REVOLT"),
-                'brasidas': _("BRASIDAS"),
-                'thessalanianallies': _("THESSALANIAN ALLIES"),
-                'alkibiades': _("ALKIBIADES"),
-                'phormio': _("PHORMIO"),
-                'plague': _("PLAGUE")
-            };
-            const DESC = {
-                'perikles': _("Place two Influence cubes in Athens. This tile can be played when it is your turn to select an Influence tile, either just before or just after taking the tile."),
-                'persianfleet': _("This tile can be played just before a trireme battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
-                'slaverevolt': _("This tile can be played when it is your turn to commit forces to a location. Take one Spartan hoplite counter, either from the board or from the controlling player, and place it back in Sparta. That counter cannot be involved in combat this turn. You cannot examine the counter you remove. (It is selected randomly.) The counter will come back into play in the next turn."),
-                'brasidas': _("This tile can be played just before a hoplite battle is about to be resolved. All Spartan hoplite counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled."),
-                'thessalanianallies': _("This tile can be played just before a hoplite battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
-                'alkibiades': _("Player can take two Influence cubes of any color from any city/cities and move them to any city of their choice. These cubes may not be moved from a candidate space, nor may they be moved to one."),
-                'phormio': _("This tile can be played just before a trireme battle is about to be resolved. All Athenian trireme counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled."),
-                'plague': _("This tile can be played during the Influence Tile phase. Select one city. All players remove half (rounded down) of their Influence cubes from that city.")
-            };
-
-            const title = TITLES[special];
-            const text = DESC[special];
-            const tt = this.format_block('jstpl_special_tt', {header: title, special: special, text: text, scale: 0.5});
-            return tt;
         },
 
         /**
@@ -2668,9 +2629,11 @@ function (dojo, declare) {
             const player_id = notif.args.player_id;
             // get this player's special card
             const player_div = $(player_id+"_player_cards");
+            const tile = parseInt(notif.args.tile);
+            const special = SPECIAL_TILES[Math.abs(tile)-1];
             const spec = player_div.getElementsByClassName("prk_special_tile")[0];
             spec.classList.remove("prk_special_tile_back");
-            spec.classList.add("prk_special_tile_front", "prk_special_tile_used");
+            spec.classList.add("prk_special_tile_front", "prk_special_tile_used", special);
             if (this.player_id == player_id) {
                 this.removeActionButtons();
             }
