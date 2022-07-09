@@ -137,8 +137,6 @@ class Perikles extends Table
 
         /************ Start the game initialization *****/
 
-        $this->Cities->setupNewGame();
-
         // Init global values with their initial values
         $city_states = ["leader", "a", "b", "defeats", "wars"];
         foreach($this->Cities->cities() as $cn) {
@@ -160,9 +158,11 @@ class Perikles extends Table
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
+
+        $this->Cities->setupNewGame();
+
         $this->setupInfluenceTiles();
         $this->setupLocationTiles();
-        $this->setupMilitary();
         $this->assignSpecialTiles();
         $this->setupInfluenceCubes();
 
@@ -206,8 +206,8 @@ class Perikles extends Table
         $influence_tiles = array();
 
         foreach( $this->Cities->cities() as $cn) {
-            $influence_tiles[] = array('type' => $cn, 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $this->cities[$cn]['influence']);
-            $influence_tiles[] = array('type' => $cn, 'type_arg' => CANDIDATE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $this->cities[$cn]['candidate']);
+            $influence_tiles[] = array('type' => $cn, 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $this->Cities->getInfluenceNbr($cn));
+            $influence_tiles[] = array('type' => $cn, 'type_arg' => CANDIDATE, 'location' => DECK, 'location_arg' => 0, 'nbr' => $this->Cities->getCandidateNbr($cn));
             $influence_tiles[] = array('type' => $cn, 'type_arg' => ASSASSIN, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
         }
         $influence_tiles[] = array('type' => 'any', 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => 5);
@@ -220,8 +220,8 @@ class Perikles extends Table
     protected function setupInfluenceCubes() {
         $players = self::loadPlayersBasicInfos();
         foreach($this->Cities->cities() as $cn) {
-            foreach($players as $player_id => $player) {
-                self::DbQuery("UPDATE player SET ".$cn." = 2 WHERE player_id=$player_id");
+            foreach(array_keys($players) as $player_id) {
+                self::DbQuery("UPDATE player SET $cn=2 WHERE player_id=$player_id");
             }
         }
     }
@@ -247,43 +247,6 @@ class Perikles extends Table
             $locations[] = array('type' => $tile['city'], 'type_arg' => $location, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
         }
         return $locations;
-    }
-
-    /**
-     * Create all the military counters
-     */
-    protected function setupMilitary() {
-        $id = 1;
-        foreach($this->cities as $cn => $city) {
-            $id = $this->createMilitaryUnits($cn, $city, $id);
-        }
-        // and add the Persians
-        $cn = PERSIA;
-        $id = $this->createMilitaryUnits($cn, $this->persia[$cn], $id);
-    }
-
-    /**
-     * Insert units into database
-     */
-    protected function createMilitaryUnits($cn, $city, $idct) {
-        $units = array(
-            HOPLITE => "h",
-            TRIREME => "t",
-        );
-        foreach ($units as $unit => $u) {
-            $strength = 1;
-            for ($i = 1; $i <= 4; $i++) {
-                $unittype = $u.$i;
-                if (isset($city[$unittype])) {
-                    for ($t = 0; $t < $city[$unittype]; $t++) {
-                        self::DbQuery( "INSERT INTO MILITARY VALUES($idct,\"$cn\",\"$unit\",$strength,\"$cn\",0)" );
-                        $idct++;
-                    }
-                }
-                $strength++;
-            }
-        }
-        return $idct;
     }
 
     /*
@@ -375,40 +338,6 @@ class Perikles extends Table
         }
         return $defeats;
     }
-
-    // /**
-    //  * Return associative array: city => player_id
-    //  */
-    // function getLeaders() {
-    //     $leaders = array();
-    //     foreach ($this->Cities->cities() as $cn) {
-    //         $leader = self::getGameStateValue($cn."_leader");
-    //         if ($leader != 0) {
-    //             $leaders[$cn] = $leader;
-    //         }
-    //     }
-    //     return $leaders;
-    // }
-
-    // /**
-    //  * Is this player leader of a city?
-    //  */
-    // function isLeader($player_id, $city) {
-    //     return self::getGameStateValue($city."_leader") == $player_id;
-    // }
-
-    // /**
-    //  * Get an array of cities led by this player.
-    //  */
-    // function getControlledCities($player_id) {
-    //     $cities = array();
-    //     foreach ($this->Cities->cities() as $cn) {
-    //         if ($this->isLeader($player_id, $cn)) {
-    //             $cities[] = $cn;
-    //         }
-    //     }
-    //     return $cities;
-    // }
 
     /**
      * Return associative array: "city_a" and "city_b" => player_id
@@ -975,8 +904,8 @@ class Perikles extends Table
         }
         $war1 = self::getGameStateValue($city1."_wars");
         $war2 = self::getGameStateValue($city2."_wars");
-        self::setGameStateValue($city1."_wars", $war1 + $this->cities[$city2]['war']);
-        self::setGameStateValue($city2."_wars", $war2 + $this->cities[$city1]['war']);
+        self::setGameStateValue($city1."_wars", $war1 + $this->Cities->getWar($city2));
+        self::setGameStateValue($city2."_wars", $war2 + $this->Cities->getWar($city1));
     }
 
     /**
@@ -987,7 +916,7 @@ class Perikles extends Table
      */
     function atWar($city1, $city2) {
         $wars1 = self::getGameStateValue($city1."_wars");
-        return $wars1 & $this->cities[$city2]['war'];
+        return $wars1 & $this->Cities->getWar($city2);
     }
 
     /**
@@ -1035,7 +964,6 @@ class Perikles extends Table
         }
         return false;
     }
-
 
     /**
      * Move all the influence cards to deck, shuffle, and deal new ones.
@@ -1676,7 +1604,7 @@ class Perikles extends Table
         // get main attackers/defenders location => player
         $main_attacker = [];
         $main_defender = [];
-        $mycities = $this->Cities->getCities($player_id);
+        $mycities = $this->Cities->controlledCities($player_id);
         $myforces = array(
             'attack' => [],
             'defend' => [],
@@ -2501,7 +2429,6 @@ class Perikles extends Table
         foreach ($this->Cities->cities() as $cn) {
             $leader = $this->Cities->getLeader($cn);
             if (!empty($leader)) {
-                $this->Cities->setLeader(0, $cn);
                 self::incStat(1, $cn."_statues", $leader);
                 self::notifyAllPlayers("addStatue", clienttranslate('${player_name} adds statue in ${city_name}'), array(
                     'i18n' => ['city_name'],
@@ -2513,6 +2440,7 @@ class Perikles extends Table
                 ));
             }
         }
+        $this->Cities->clearLeaders();
         if ($state == "nextTurn") {
             // reshuffle Influence deck and deal new cards
             $this->dealNewInfluence();

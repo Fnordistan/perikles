@@ -172,7 +172,7 @@ class view_perikles_perikles extends game_view
         $this->page->begin_block($template, 'DEFEAT_BLOCK');
         $this->page->begin_block($template, 'CUBES_BLOCK');
         $this->page->begin_block($template, 'CITY_BLOCK');
-        foreach ($this->game->cities as $city => $cityname) {
+        foreach ($this->game->Cities->cities() as $city) {
           $this->page->reset_subblocks('DEFEAT_BLOCK');
           $this->page->reset_subblocks('CUBES_BLOCK');
  
