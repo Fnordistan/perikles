@@ -5,7 +5,7 @@
  */
 class PeriklesCities extends APP_GameClass
 {
-  public $game;
+  private $game;
   private $cities = [];
   private $persia = array("persia" => array("h2" => 2, "h3" => 4, "t2" => 2, "t3" => 2));
 
@@ -14,23 +14,54 @@ class PeriklesCities extends APP_GameClass
     $this->game = $game;
 
     // "influence" is number of 2-shard tiles
+    // candidate is number of Candidate tiles
     // h and t is number of hoplite/trireme counters of that class
     // war is a bitmask to check for war status
-    $this->cities["athens"] = array("name" => clienttranslate("Athens"), "influence" => 3, "candidate" => 2, "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 2, "t2" => 2, "t3" => 2, "t4" => 2, "war" => 0b100000);
-    $this->cities["sparta"] = array("name" => clienttranslate("Sparta"), "influence" => 3, "candidate" => 2, "h1" => 2, "h2" => 3, "h3" => 3, "h4" => 2, "t1" => 1, "t2" => 2, "t3" => 1, "war" => 0b010000);
-    $this->cities["argos"] = array("name" => clienttranslate("Argos"), "influence" => 2, "candidate" => 2, "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 1, "t2" => 1, "t3" => 1, "war" => 0b001000);
-    $this->cities["corinth"] = array("name" => clienttranslate("Corinth"), "influence" => 2, "candidate" => 2, "h1" => 1, "h2" => 3, "h3" => 1, "t1" => 2, "t2" => 2, "t3" => 1, "war" => 0b000100);
-    $this->cities["thebes"] = array("name" => clienttranslate("Thebes"), "influence" => 2, "candidate" => 2, "h1" => 2, "h2" => 3, "h3" => 2, "t1" => 1, "t2" => 1, "war" => 0b000010);
-    $this->cities["megara"] = array("name" => clienttranslate("Megara"), "influence" => 2, "candidate" => 1, "h1" => 1, "h2" => 1, "t1" => 1, "t2" => 1, "t3" => 1, "war" => 0b000001);
+    $this->cities["athens"] = array(
+      "name" => clienttranslate("Athens"),
+       "influence" => 3,
+       "candidate" => 2,
+       "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 2, "t2" => 2, "t3" => 2, "t4" => 2,
+       "war" => 0b100000);
+    $this->cities["sparta"] = array(
+      "name" => clienttranslate("Sparta"),
+      "influence" => 3,
+      "candidate" => 2,
+      "h1" => 2, "h2" => 3, "h3" => 3, "h4" => 2, "t1" => 1, "t2" => 2, "t3" => 1,
+      "war" => 0b010000);
+    $this->cities["argos"] = array(
+      "name" => clienttranslate("Argos"),
+      "influence" => 2,
+      "candidate" => 2,
+      "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 1, "t2" => 1, "t3" => 1,
+      "war" => 0b001000);
+    $this->cities["corinth"] = array(
+      "name" => clienttranslate("Corinth"),
+      "influence" => 2,
+      "candidate" => 2,
+      "h1" => 1, "h2" => 3, "h3" => 1, "t1" => 2, "t2" => 2, "t3" => 1,
+      "war" => 0b000100);
+    $this->cities["thebes"] = array(
+      "name" => clienttranslate("Thebes"),
+      "influence" => 2,
+      "candidate" => 2,
+      "h1" => 2, "h2" => 3, "h3" => 2, "t1" => 1, "t2" => 1,
+      "war" => 0b000010);
+    $this->cities["megara"] = array(
+      "name" => clienttranslate("Megara"),
+      "influence" => 2,
+      "candidate" => 1,
+      "h1" => 1, "h2" => 1, "t1" => 1, "t2" => 1, "t3" => 1,
+      "war" => 0b000001);
   }
 
   /**
    * Puts starting influence cubes and military in place.
    * @params players
    */
-  public function setupNewGame($players)
+  public function setupNewGame()
   {
-    $this->setupInfluenceCubes($players);
+    $this->setupInfluenceCubes();
 
     $id = 1;
     foreach($this->cities as $cn => $city) {
@@ -41,21 +72,27 @@ class PeriklesCities extends APP_GameClass
     $id = $this->createMilitaryUnits($cn, $this->persia[$cn], $id);
   }
 
-    /**
-     * Initial assignment of 2 cubes per city per player.
-     */
-    protected function setupInfluenceCubes($players) {
-      foreach($this->cities() as $cn) {
-          foreach(array_keys($players) as $player_id) {
-              self::DbQuery("UPDATE player SET $cn=2 WHERE player_id=$player_id");
-          }
-      }
+
+  private function getPlayerIds() {
+    $players = $this->game->loadPlayersBasicInfos();
+    return array_keys($players);
   }
+
+  /**
+   * Initial assignment of 2 cubes per city per player.
+   */
+  private function setupInfluenceCubes() {
+    foreach($this->cities() as $cn) {
+        foreach($this->getPlayerIds() as $player_id) {
+            self::DbQuery("UPDATE player SET $cn=2 WHERE player_id=$player_id");
+        }
+    }
+}
 
   /**
    * Insert units into database
    */
-  protected function createMilitaryUnits($cn, $city, $idct) {
+  private function createMilitaryUnits($cn, $city, $idct) {
       $units = array(
           "hoplite" => "h",
           "trireme" => "t",
@@ -90,6 +127,71 @@ class PeriklesCities extends APP_GameClass
    */
   public function getWar($city) {
     return $this->cities[$city]["war"];
+  }
+
+  /**
+   * Get number of defeats for a city.
+   * @param {string} city
+   * @return {integer} defeats (0 or more)
+   */
+  public function getDefeats($city) {
+    $def = $city."_defeats";
+    $defeats = $this->game->getGameStateValue($def);
+    return $defeats;
+  }
+
+    /**
+     * Return associative array (city => #defeats)
+     * @return array
+     */
+    public function getAllDefeats() {
+      $defeats = array();
+      foreach ($this->cities() as $cn) {
+          $defeats[$cn] = $this->getDefeats($cn);
+      }
+      return $defeats;
+  }
+
+  /**
+   * Add one to a player's statue count for a city,
+   * @param {string} player_id
+   * @param {string} city
+   */
+  public function addStatue($player_id, $city) {
+    $this->game->incStat(1, $city."_statues", $player_id);
+  }
+
+  /**
+   * Get all statues for this player as an associative array.
+   * Don't include cities with no statues.
+   * @param {string} player_id
+   * @return {array} (city => statues)
+   */
+  public function getStatues($player_id) {
+    $statues = [];
+    foreach($this->cities() as $cn) {
+      $s = $this->game->getStat($cn."_statues", $player_id);
+      if ($s > 0) {
+        $statues[$cn] = $s;
+      }
+    }
+    return $statues;
+  }
+
+  /**
+   * Get a double-associative array of all statues.
+   * @param {array} players
+   * @return {array} (player_id => {city => statues})
+   */
+  public function getAllStatues() {
+    $statues = array();
+    foreach($this->getPlayerIds() as $player_id) {
+      $s = $this->getStatues($player_id);
+      if (!empty($s)) {
+        $statues[$player_id] = $s;
+      }
+    }
+    return $statues;
   }
 
   /**
@@ -269,6 +371,24 @@ class PeriklesCities extends APP_GameClass
       return $this->game->getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
   }
 
+    /**
+     * Get all influence in all cities by player, not including Candidates.
+     * @return {array} double associative array of player_id => {city => influence}
+     */
+    public function getAllInfluence() {
+      $influencecubes = array();
+
+      foreach ($this->getPlayerIds() as $player_id) {
+        $cubes = [];
+        foreach($this->cities() as $city) {
+          $influence = $this->influence($player_id, $city);
+          $cubes[$city] = $influence;
+        }
+        $influencecubes[$player_id] = $cubes;
+      }
+      return $influencecubes;
+  }
+
   /**
    * Get all cubes a player has in a city, including candidate cube (if any).
    * @param {string} player_id
@@ -349,6 +469,8 @@ class PeriklesCities extends APP_GameClass
 
     /**
      * Is there any city this player can nominate in?
+     * @param {string} player_id
+     * @return true if player is able to propose a candidate somewhere
      */
     function canNominateAny($player_id) {
       foreach ($this->cities() as $cn) {
@@ -364,8 +486,7 @@ class PeriklesCities extends APP_GameClass
      * @return true if someone is able to nominate in at least one city, otherwise false
      */
     function canAnyoneNominate() {
-      $players = $this->game->loadPlayersBasicInfos();
-      foreach (array_keys($players) as $player_id) {
+      foreach ($this->getPlayerIds() as $player_id) {
           if ($this->canNominateAny($player_id)) {
               return true;
           }
@@ -386,6 +507,5 @@ class PeriklesCities extends APP_GameClass
       }
       return $cubes;
   }
-
 
 }

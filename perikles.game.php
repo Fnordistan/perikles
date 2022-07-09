@@ -156,10 +156,7 @@ class Perikles extends Table
         // when we are in the committing phase. Start with first commit, end with battle phase.
         self::setGameStateInitialValue("commit_phase", 0);
 
-        // Init game statistics
-        // (note: statistics used in this file must be defined in your stats.inc.php file)
-
-        $this->Cities->setupNewGame($players);
+        $this->Cities->setupNewGame();
 
         $this->setupInfluenceTiles();
         $this->setupLocationTiles();
@@ -262,11 +259,11 @@ class Perikles extends Table
         $result['locationtiles'] = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg battle, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location !='".DECK."'");
         
         $result['specialtiles'] = $this->getSpecialTiles($current_player_id);
-        $result['influencecubes'] = $this->getInfluenceCubes();
-        $result['defeats'] = $this->getDefeats();
-        $result['leaders'] = $this->Cities->getLeaders();
+        $result['influencecubes'] = $this->Cities->getAllInfluence();
         $result['candidates'] = $this->Cities->getAllCandidates();
-        $result['statues'] = $this->getStatues();
+        $result['leaders'] = $this->Cities->getLeaders();
+        $result['statues'] = $this->Cities->getAllStatues();
+        $result['defeats'] = $this->Cities->getAllDefeats();
         $result['military'] = $this->getMilitary();
 
         return $result;
@@ -297,51 +294,6 @@ class Perikles extends Table
             $specialtiles[$player_id] = $tile;
         }
         return $specialtiles;
-    }
-
-    /**
-     * Return double associative array of player_id => city => influence
-     */
-    protected function getInfluenceCubes() {
-        $influencecubes = array();
-
-        $players = self::loadPlayersBasicInfos();
-        foreach ($players as $player_id => $player) {
-            $influencecubes[$player_id] = array();
-            foreach($this->Cities->cities() as $cn) {
-                $influencecubes[$player_id][$cn] = self::getUniqueValueFromDB("SELECT $cn FROM player WHERE player_id=$player_id");
-            }
-        }
-        return $influencecubes;
-    }
-
-    /**
-     * Return associative array (city => #defeats)
-     */
-    function getDefeats() {
-        $defeats = array();
-        foreach ($this->Cities->cities() as $cn) {
-            $defeats[$cn] = self::getGameStateValue($cn."_defeats");
-        }
-        return $defeats;
-    }
-
-    /**
-     * Return double associative array: "city" => $player_id => statues
-     */
-    function getStatues() {
-        $statues = array();
-        $players = self::loadPlayersBasicInfos();
-        foreach($this->Cities->cities() as $cn) {
-            $statues[$cn] = array();
-            foreach ($players as $player_id => $player) {
-                $s = self::getStat($cn."_statues", $player_id);
-                if ($s != 0) {
-                    $statues[$cn][$player_id] = $s;
-                }
-            }
-        }
-        return $statues;
     }
 
     /**
@@ -830,8 +782,8 @@ class Perikles extends Table
         if (self::getStat('turns_number') == 3) {
             return true;
         }
-        foreach(["sparta_defeats", "athens_defeats"] as $defeat) {
-            if (self::getGameStateValue($defeat) >= 4) {
+        foreach(["sparta", "athens"] as $civ) {
+            if ($this->Cities->getDefeats($civ) >= 4) {
                 return true;
             }
         }
@@ -2296,7 +2248,7 @@ class Perikles extends Table
         foreach ($this->Cities->cities() as $cn) {
             $leader = $this->Cities->getLeader($cn);
             if (!empty($leader)) {
-                self::incStat(1, $cn."_statues", $leader);
+                $this->Cities->addStatue($leader, $cn);
                 self::notifyAllPlayers("addStatue", clienttranslate('${player_name} adds statue in ${city_name}'), array(
                     'i18n' => ['city_name'],
                     'city' => $cn,

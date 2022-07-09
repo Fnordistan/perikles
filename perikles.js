@@ -106,7 +106,6 @@ function (dojo, declare) {
         
         setup: function( gamedatas ) {
             this.decorator = new perikles.decorator(gamedatas.players);
-
             this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCubes(gamedatas.influencecubes);
