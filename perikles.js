@@ -586,8 +586,6 @@ function (dojo, declare) {
             }
 
             for(const mil of military) {
-                const city = mil['city'];
-                const unit = mil['type'];
                 const counter = this.militaryToCounter(mil);
                 if (counter.getLocation() == counter.getCity() && counter.getPosition() == 0) {
                     // in a city stack
@@ -601,7 +599,9 @@ function (dojo, declare) {
                 } else {
                     // it's in a player pool
                     const player_id = counter.getLocation();
-                    if (player_id == this.player_id) {
+                    if (player_id == this.player_id || (player_id == "persians" && persianleaders.includes(this.player_id))) {
+                        const city = counter.getCity();
+                        const unit = counter.getType();
                         this.createMilitaryArea(player_id, city);
                         const counter_div = counter.toDiv(1, 0);
                         const mil_zone = city+"_"+unit+"_"+player_id;

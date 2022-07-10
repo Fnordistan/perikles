@@ -51,6 +51,21 @@ CREATE TABLE IF NOT EXISTS `MILITARY` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
+-- 0 = neutral, 1 = allies, -1 = enemies
+-- redundant but we track both binary relationships city1<->city2
+CREATE TABLE IF NOT EXISTS `WARS` (
+  `id` TINYINT unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(8) NOT NULL COMMENT 'city',
+  `argos` TINYINT NOT NULL DEFAULT 0,
+  `athens` TINYINT NOT NULL DEFAULT 0,
+  `corinth` TINYINT NOT NULL DEFAULT 0,
+  `megara` TINYINT NOT NULL DEFAULT 0,
+  `sparta` TINYINT NOT NULL DEFAULT 0,
+  `thebes` TINYINT NOT NULL DEFAULT 0,
+  `persia` TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+
 -- custom entries to player table
 ALTER TABLE `player` ADD `special_tile` TINYINT UNSIGNED NOT NULL;
 ALTER TABLE `player` ADD `special_tile_used` BOOLEAN NOT NULL DEFAULT '0';

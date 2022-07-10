@@ -84,13 +84,6 @@ class Perikles extends Table
             "megara_defeats" => 34,
             "sparta_defeats" => 35,
             "thebes_defeats" => 36,
-            // wars
-            "argos_wars" => 40,
-            "athens_wars" => 41,
-            "corinth_wars" => 42,
-            "megara_wars" => 43,
-            "sparta_wars" => 44,
-            "thebes_wars" => 45,
             "active_battle" => 46,
             "battle_round" => 47, // 0,1
             "influence_phase" => 48,
@@ -147,7 +140,7 @@ class Perikles extends Table
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        $city_states = ["leader", "a", "b", "defeats", "wars"];
+        $city_states = ["leader", "a", "b", "defeats"];
         foreach($this->Cities->cities() as $cn) {
             foreach ($city_states as $lbl) {
                 self::setGameStateInitialValue( $cn."_".$lbl, 0 );
@@ -510,6 +503,14 @@ class Perikles extends Table
         ));
     }
 
+    function movePersianUnits() {
+        $persians = $this->Cities->getPersianLeaders();
+        if (!empty($persians)) {
+            self::DbQuery("UPDATE MILITARY SET location = \"persians\" WHERE location=\"".PERSIA."\"");
+
+        }
+    }
+
     /**
      * Move all military units from a battle location back to the city where it belongs
      */
@@ -681,14 +682,6 @@ class Perikles extends Table
     }
 
     /**
-     * Check whether this player can spend an influence cube to commit extra units.
-     * Must have influence cube in the city, and be leader.
-     */
-    function canSpendInfluence($player_id, $city) {
-        return ($this->Cities->influence($player_id, $city) > 0) && $this->Cities->isLeader($player_id, $city);
-    }
-
-    /**
      * Return double associative array,
      * all cities this player is leader of, with lowest strength Hoplite and/or Trireme from the deadpool for each
      */
@@ -726,32 +719,6 @@ class Perikles extends Table
             }
         }
         return $deadpool;
-    }
-
-    /**
-     * Set values for both cities war game state values.
-     * @param {integer} $city1
-     * @param {integer} $city2
-     */
-    function declareWar($city1, $city2) {
-        if ($city1 == $city2) {
-            throw new BgaVisibleSystemException("City cannot declare war on itself!"); // NO18N
-        }
-        $war1 = self::getGameStateValue($city1."_wars");
-        $war2 = self::getGameStateValue($city2."_wars");
-        self::setGameStateValue($city1."_wars", $war1 + $this->Cities->getWar($city2));
-        self::setGameStateValue($city2."_wars", $war2 + $this->Cities->getWar($city1));
-    }
-
-    /**
-     * Are these cities at war?
-     * @param {integer} $city1
-     * @param {integer} $city2
-     * @return true if city1 and city2 are at war
-     */
-    function atWar($city1, $city2) {
-        $wars1 = self::getGameStateValue($city1."_wars");
-        return $wars1 & $this->Cities->getWar($city2);
     }
 
     /**
@@ -1426,7 +1393,7 @@ class Perikles extends Table
         // do all the checks for whether this is a valid action
         // can I commit extra forces from the chosen city?
         if ($cube != "") {
-            if (!$this->canSpendInfluence($player_id, $cube)) {
+            if (!$this->Cities->canSpendInfluence($player_id, $cube)) {
                 throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->Cities->getNameTr($cube)));
             }
         }
@@ -1436,46 +1403,19 @@ class Perikles extends Table
         // get main attackers/defenders location => player
         $main_attacker = [];
         $main_defender = [];
-        $mycities = $this->Cities->controlledCities($player_id);
         $myforces = array(
             'attack' => [],
             'defend' => [],
         );
         // MAKE NO CHANGES IN DB until this loop is completed!
         foreach($units as $unit) {
-            // $this->logDebug("$player_id validating $unit");
             [$id, $side, $location] = explode("_", $unit);
             $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
             $counter['battle'] = $location;
             $battlename = $this->locations[$location]['name'];
             // Is this unit in my pool?
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battlename);
-            if ($counter['location'] != $player_id) {
-                throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
-            }
-            $battlecity = $this->locations[$location]['city'];
-            // am I attacking my own city?
-            if ($side == "attack" && in_array($battlecity, $mycities)) {
-                throw new BgaUserException(sprintf(self::_("%s cannot attack a city you control!"), $unit_desc));
-            } else if ($side == "defend" && !in_array($battlecity, $mycities)) {
-                // Do I control this city? If not, I need permission from defender
-                if (!$this->hasDefendPermission($player_id, $location)) {
-                    throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($battlecity), $battlename));
-                }
-            }
-            // is this unit at war with the destination location?
-            if ($side == "defend" && $this->atWar($counter['city'], $battlecity)) {
-                throw new BgaUserException(sprintf(self::_("%s cannot defend a location belonging to a city it is at war with!"), $unit_desc));
-            }
-            // are we sending a trireme to a land battle?
-            if ($this->locations[$location]['rounds'] == "H" && $counter['type'] == TRIREME) {
-                throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
-            }
 
-            $maindef = MAIN+DEFENDER;
-            $allydef = ALLY+DEFENDER;
-            $mainatt = MAIN+ATTACKER;
-            $allyatt = ALLY+ATTACKER;
             $attacker = self::getUniqueValueFromDB("SELECT attacker FROM LOCATION WHERE card_type_arg=\"$location\"");
             $defender = self::getUniqueValueFromDB("SELECT defender FROM LOCATION WHERE card_type_arg=\"$location\"");
             if ($attacker != null) {
@@ -1484,44 +1424,22 @@ class Perikles extends Table
             if ($defender != null) {
                 $main_defender[$location] = $defender;
             }
-            $defenders = self::getCollectionFromDB("SELECT city, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos=$maindef OR battlepos=$allydef)", true);
-            $attackers = self::getCollectionFromDB("SELECT city, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos=$mainatt OR battlepos=$allyatt)", true);
             if ($side == "attack") {
-                foreach(array_keys($defenders) as $def) {
-                    if (in_array($def, $mycities)) {
-                        throw new BgaUserException(sprintf(self::_("%s cannot attack a city which you are also defending!"), $unit_desc));
-                    }
-                }
+                $this->validateAttacker($player_id, $counter, $unit_desc);
+
                 // Is there already a main attacker who is not me?
                 if ($attacker == null) {
                     // I am now the main attacker
                     $main_attacker[$location] = $player_id;
-                } else if ($attacker != $player_id) {
-                    // is this unit at war with any of the other attackers?
-                    foreach (array_keys($attackers) as $otheratt) {
-                        if ($this->atWar($counter['city'], $otheratt)) {
-                            throw new BgaUserException(sprintf(self::_("%s cannot ally with units from a city it is at war with!"), $unit_desc));
-                        }
-                    }
                 }
                 $myforces['attack'][] = $counter;
             } else if ($side == "defend") {
+                $this->validateDefender($player_id, $counter, $unit_desc);
+
                 // is there already a main defender?
                 if ($defender == null) {
                     // I am now the main defender
                     $main_defender[$location] = $player_id;
-                } else if ($defender != $player_id) {
-                    // is this unit at war with any of the other defenders?
-                    foreach (array_keys($defenders) as $otherdef) {
-                        if ($this->atWar($counter['city'], $otherdef)) {
-                            throw new BgaUserException(sprintf(self::_("%s cannot ally with units from a city it is at war with!"), $unit_desc));
-                        }
-                    }
-                }
-                foreach(array_keys($attackers) as $att) {
-                    if (in_array($att, $mycities)) {
-                        throw new BgaUserException(sprintf(self::_("%s cannot attack a city which you are also defending!"), $unit_desc));
-                    }
                 }
                 $myforces['defend'][] = $counter;
             }
@@ -1558,6 +1476,90 @@ class Perikles extends Table
                 // $this->logDebug("$player_id sending to battle $battle");
                 $this->sendToBattle($player_id, $f, $battlepos);
             }
+        }
+    }
+
+    /**
+     * Checks whether a unit can attack a city, throws an Exception if it fails.
+     * Also marks unit as Allies with all attackers and At War with all Defenders.
+     */
+    private function validateAttacker($player_id, $counter, $unit_desc) {
+        if ($counter['location'] != $player_id) {
+            throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
+        }
+        $battle = $counter['battle'];
+        $city = $this->locations[$battle]['city'];
+
+        // does this location belong to my own city?
+        if ($this->Cities->isLeader($player_id, $city)) {
+            throw new BgaUserException(sprintf(self::_("%s cannot attack a city you control!"), $unit_desc));
+        }
+        // is this unit allied with the defender (including because a unit was already played as a defender)?
+        if ($this->Cities->isAlly($counter['city'], $city)) {
+            throw new BgaUserException(sprintf(self::_("%s cannot attack a city it is allied with"), $unit_desc));
+        }
+
+        // is counter at war with any of the other attackers?
+        $attackers = $this->Cities->getAllAttackers($battle);
+        foreach($attackers as $att) {
+            if ($this->Cities->atWar($counter['city'], $att)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot join battle with hostile units"), $unit_desc));
+            }
+        }
+
+        // are we sending a trireme to a land battle?
+        if ($this->locations[$battle]['rounds'] == "H" && $counter['type'] == TRIREME) {
+            throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
+        }
+        // passed all checks. Declare war with all defenders.
+        $defenders = $this->Cities->getAllDefenders($battle);
+        foreach($defenders as $def) {
+            $this->Cities->setWar($counter['city'], $def);
+        }
+        // and declare allies with all attackers
+        foreach($attackers as $att) {
+            $this->Cities->setAlly($counter['city'], $att);
+        }
+    }
+
+    /**
+     * Checks whether a unit can defend a city, throws an Exception if it fails.
+     */
+    private function validateDefender($player_id, $counter, $unit_desc) {
+        if ($counter['location'] != $player_id) {
+            throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
+        }
+
+        $battle = $counter['battle'];
+
+        // am I at war with any of the defenders?
+        $defenders = $this->Cities->getAllDefenders($battle);
+        foreach($defenders as $def) {
+            if ($this->Cities->atWar($counter['city'], $def)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot join battle with hostile units"), $unit_desc));
+            }
+        }
+        $city = $this->locations[$battle]['city'];
+        // Do I control this city? If not, I need permission from defender
+        if (!$this->Cities->isLeader($player_id, $city)) {
+            if (!$this->hasDefendPermission($player_id, $battle)) {
+                throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($city), $this->locations[$battle]['name']));
+            }
+        }
+
+        // are we sending a trireme to a land battle?
+        if ($this->locations[$battle]['rounds'] == "H" && $counter['type'] == TRIREME) {
+            throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
+        }
+
+        // passed all checks. Declare war with all attackers
+        $attackers = $this->Cities->getAllAttackers($battle);
+        foreach($attackers as $att) {
+            $this->Cities->setWar($counter['city'], $att);
+        }
+        // and declare allies with all attackers
+        foreach($defenders as $def) {
+            $this->Cities->setAlly($counter['city'], $def);
         }
     }
 
@@ -2123,6 +2125,9 @@ class Perikles extends Table
         }
         // anyone who is not a leader of any city is a Persian leader
         $this->Cities->assignPersianLeaders();
+        $this->movePersianUnits();
+
+        // sparta leader chooses
         $sparta = $this->Cities->getLeader("sparta");
         $this->gamestate->changeActivePlayer($sparta);
         $this->gamestate->nextState();
@@ -2134,6 +2139,8 @@ class Perikles extends Table
     function stStartBattles() {
         $state = "resolve";
         self::setGameStateValue("commit_phase", 0);
+
+        throw new BgaVisibleSystemException("Start Battles");
 
         $battle = $this->nextBattle();
         if ($battle == null) {
@@ -2476,31 +2483,19 @@ class Perikles extends Table
                     // does this unit have any cities to defend?
                     $mycitybattles = self::getObjectListFromDB("SELECT card_type_arg battle FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
     
+                    // is there a city we can attack?
                     if (empty($mycitybattles)) {
-                        // is there a city we can attack?
                         $allbattles = self::getObjectListFromDB("SELECT card_type city, card_type_arg battle, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
                         shuffle($allbattles);
                         $location = array_pop($allbattles);
-                        // does it belong to me?
                         $defcity = $location['city'];
-                        if (!$this->Cities->isLeader($player_id, $defcity)) {
-                            $battle = $location['battle'];
-                            // is anyone else already attacking this city?
-                            $attackers = self::getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND city!=\"$city\" AND (battlepos=".(ATTACKER+MAIN)." OR battlepos=".(ATTACKER+ALLY).")", true);
-                            // make sure not at war with any of them
-                            $war = false;
-                            foreach ($attackers as $att) {
-                                if ($this->atWar($city, $att)) {
-                                    $war = true;
-                                    break;
-                                }
-                            }
-                            if (!$war) {
-                                // we can attack this city
-                                // make sure not sending trireme to a land battle
-                                if ($unit['type'] == HOPLITE || $this->locations[$battle]['rounds'] != "H") {
-                                    $unitstr = $unit['id']."_attack_".$battle;
-                                }
+                        $battle = $location['battle'];
+                        
+                        if ($this->Cities->canAttack($player_id, $city, $defcity, $battle)) {
+                            // we can attack this city
+                            // make sure not sending trireme to a land battle
+                            if ($unit['type'] == HOPLITE || $this->locations[$battle]['rounds'] != "H") {
+                                $unitstr = $unit['id']."_attack_".$battle;
                             }
                         }
                     } else {

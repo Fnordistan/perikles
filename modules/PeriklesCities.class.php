@@ -1,5 +1,8 @@
 <?php
 
+DEFINE("WAR", -1);
+DEFINE("ALLIED", 1);
+
 /*
  * Manage city status and influence cubes, as well as war status.
  */
@@ -7,7 +10,7 @@ class PeriklesCities extends APP_GameClass
 {
   private $game;
   private $cities = [];
-  private $persia = array("persia" => array("h2" => 2, "h3" => 4, "t2" => 2, "t3" => 2));
+  private $persia = array(PERSIA => array("h2" => 2, "h3" => 4, "t2" => 2, "t3" => 2));
 
   public function __construct($game)
   {
@@ -21,38 +24,32 @@ class PeriklesCities extends APP_GameClass
       "name" => clienttranslate("Athens"),
        "influence" => 3,
        "candidate" => 2,
-       "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 2, "t2" => 2, "t3" => 2, "t4" => 2,
-       "war" => 0b100000);
+       "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 2, "t2" => 2, "t3" => 2, "t4" => 2);
     $this->cities["sparta"] = array(
       "name" => clienttranslate("Sparta"),
       "influence" => 3,
       "candidate" => 2,
-      "h1" => 2, "h2" => 3, "h3" => 3, "h4" => 2, "t1" => 1, "t2" => 2, "t3" => 1,
-      "war" => 0b010000);
+      "h1" => 2, "h2" => 3, "h3" => 3, "h4" => 2, "t1" => 1, "t2" => 2, "t3" => 1);
     $this->cities["argos"] = array(
       "name" => clienttranslate("Argos"),
       "influence" => 2,
       "candidate" => 2,
-      "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 1, "t2" => 1, "t3" => 1,
-      "war" => 0b001000);
+      "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 1, "t2" => 1, "t3" => 1);
     $this->cities["corinth"] = array(
       "name" => clienttranslate("Corinth"),
       "influence" => 2,
       "candidate" => 2,
-      "h1" => 1, "h2" => 3, "h3" => 1, "t1" => 2, "t2" => 2, "t3" => 1,
-      "war" => 0b000100);
+      "h1" => 1, "h2" => 3, "h3" => 1, "t1" => 2, "t2" => 2, "t3" => 1);
     $this->cities["thebes"] = array(
       "name" => clienttranslate("Thebes"),
       "influence" => 2,
       "candidate" => 2,
-      "h1" => 2, "h2" => 3, "h3" => 2, "t1" => 1, "t2" => 1,
-      "war" => 0b000010);
+      "h1" => 2, "h2" => 3, "h3" => 2, "t1" => 1, "t2" => 1);
     $this->cities["megara"] = array(
       "name" => clienttranslate("Megara"),
       "influence" => 2,
       "candidate" => 1,
-      "h1" => 1, "h2" => 1, "t1" => 1, "t2" => 1, "t3" => 1,
-      "war" => 0b000001);
+      "h1" => 1, "h2" => 1, "t1" => 1, "t2" => 1, "t3" => 1);
   }
 
   /**
@@ -62,13 +59,14 @@ class PeriklesCities extends APP_GameClass
   public function setupNewGame()
   {
     $this->setupInfluenceCubes();
+    $this->initializeWars();
 
     $id = 1;
     foreach($this->cities as $cn => $city) {
         $id = $this->createMilitaryUnits($cn, $city, $id);
     }
     // and add the Persians
-    $cn = "persia";
+    $cn = PERSIA;
     $id = $this->createMilitaryUnits($cn, $this->persia[$cn], $id);
   }
 
@@ -90,7 +88,158 @@ class PeriklesCities extends APP_GameClass
             self::DbQuery("UPDATE player SET $cn=2 WHERE player_id=$player_id");
         }
     }
-}
+  }
+
+  /**
+   * Set up all the war flags.
+   */
+  private function initializeWars() {
+    $citystates = $this->cities();
+    $citystates[] = PERSIA;
+    $i = 1;
+    foreach($citystates as $c) {
+        self::DbQuery( "INSERT INTO WARS VALUES($i,\"$c\",0,0,0,0,0,0,0)" );
+        $this->setAlly($c, $c);
+        $i++;
+    }
+  }
+
+  /**
+   * At end of battle phase, reset all relationships.
+   */
+  public function clearWars() {
+    $citystates = $this->cities();
+    $citystates[] = PERSIA;
+    foreach($citystates as $city1) {
+      foreach($citystates as $city2) {
+        if ($city1 != $city2) {
+          $this->setRelationship($city1, $city2, 0);
+        }
+      }
+    }
+  }
+
+  /**
+   * Set two cities to WAR.
+   * @param {string} city1
+   * @param {string} city2
+   */
+  public function setWar($city1, $city2) {
+    $this->setRelationship($city1, $city2, WAR);
+  }
+
+  /**
+   * Set two cities to ALLIED.
+   * @param {string} city1
+   * @param {string} city2
+   */
+  public function setAlly($city1, $city2) {
+    $this->setRelationship($city1, $city2, ALLIED);
+  }
+
+  /**
+   * Are two cities at war?
+   * @param {string} city1
+   * @param {string} city2
+   * @return {boolean} true if city1 is at war with city2
+   */
+  public function atWar($city1, $city2) {
+    return ($this->getRelationship($city1, $city2) == WAR);
+  }
+
+  /**
+   * Are two cities allies?
+   * @param {string} city1
+   * @param {string} city2
+   * @return {boolean} true if city1 is allied with city2
+   */
+  public function isAlly($city1, $city2) {
+    return ($this->getRelationship($city1, $city2) == ALLIED);
+  }
+
+  /**
+   * Check whether a player can send a unit of a city to attack another.
+   * Checks leadership and alliance status.
+   * @param {string} player_id
+   * @param {string} attacker
+   * @param {string} defender
+   * @param {string} battle location
+   * @return boolean true if attacker passes checks to attack defender
+   */
+  public function canAttack($player_id, $attacker, $defender, $battle) {
+      if ($attacker == $defender) {
+        return false;
+      }
+      if ($this->isLeader($player_id, $defender)) {
+        return false;
+      }
+      if ($this->isAlly($attacker, $defender)) {
+        return false;
+      }
+      // is anyone else attacking this city?
+      $attackers = $this->getAllAttackers($battle);
+      // make sure we aren't already at war with one of the other attackers
+      foreach ($attackers as $att) {
+        if ($this->atWar($attacker, $att)) {
+          return false;
+        }
+    }
+
+    return true;
+  }
+
+  /**
+   * Get a list of all cities attacking at a battle tile.
+   * @param {string} battle
+   */
+  public function getAllAttackers($battle) {
+    return $this->getCitiesOnSide($battle, ATTACKER);
+  }
+
+  /**
+   * Get a list of all cities defending at a battle tile.
+   * @param {string} battle
+   */
+  public function getAllDefenders($battle) {
+    $defenders = $this->getCitiesOnSide($battle, DEFENDER);
+    // automatically include the owner
+    $owner = $this->game->locations[$battle]['city'];
+    $defenders[] = $owner;
+    return $defenders;
+  }
+
+  /**
+   * Get list of all cities on attacking or defending side of a battle.
+   * @param {string} battle
+   * @param {integer} ATTACKER or DEFENDER
+   */
+  private function getCitiesOnSide($battle, $side) {
+    $forces = $this->game->getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND (battlepos=".($side+MAIN)." OR battlepos=".($side+ALLIED).")", true);
+    return $forces;
+  }
+
+  /**
+   * Sets relationship between two cities to WAR, ALLIED, or 0
+   */
+  private function setRelationship($city1, $city2, $r) {
+    if (!in_array($r, [WAR, ALLIED, 0])) {
+      throw new BgaVisibleSystemException("Invalid relationship ($r): $city1, $city2"); // NOI18N
+    }
+    if ($city1 == $city2 && $r != ALLIED) {
+      throw new BgaVisibleSystemException("City ($city1) cannot set relationship with itself: $r"); // NOI18N
+    }
+    self::DbQuery( "UPDATE WARS SET $city2=$r WHERE name=\"$city1\"");
+    self::DbQuery( "UPDATE WARS SET $city1=$r WHERE name=\"$city2\"");
+  }
+
+  /**
+   * Get relationship status (WAR, ALLIED, NEUTRAL) between two cities
+   * @param {string} city1
+   * @param {string} city2
+   */
+  private function getRelationship($city1, $city2) {
+    return $this->game->getObjectListFromDB("SELECT $city2 FROM WARS WHERE name=$city1")[0];
+  }
 
   /**
    * Insert units into database
@@ -229,7 +378,7 @@ class PeriklesCities extends APP_GameClass
    * @param city to be leader of
    */
   public function setLeader($player_id, $city) {
-    if ($city == "persia") {
+    if ($city == PERSIA) {
         self::DbQuery("UPDATE player SET persia=TRUE where player_id=$player_id");
     } else {
         $this->game->setGameStateValue($city."_leader", $player_id);
@@ -267,7 +416,7 @@ class PeriklesCities extends APP_GameClass
    */
   public function isLeader($player_id, $city) {
     $isleader = false;
-    if ($city == "persia") {
+    if ($city == PERSIA) {
         $isleader = $this->game->getUniqueValueFromDB("SELECT persia FROM player where player_id=$player_id");
     } else {
       $isleader = ($this->getLeader($city) == $player_id);
@@ -482,6 +631,17 @@ class PeriklesCities extends APP_GameClass
       // not a candidate so check for influence cubes
       return ($this->influence($player_id, $city) > 0);
   }
+
+    /**
+     * Check whether this player can spend an influence cube to commit extra units.
+     * Must have influence cube in the city, and be leader.
+     * @param {string} player_id
+     * @param {string} city
+     * @return boolean true if player_id is able to spend a cube from this city
+     */
+    function canSpendInfluence($player_id, $city) {
+      return ($this->influence($player_id, $city) > 0) && $this->isLeader($player_id, $city);
+    }
 
     /**
      * Can player nominate in this city?
