@@ -112,7 +112,7 @@ function (dojo, declare) {
             this.setupCandidates(gamedatas.candidates);
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
-            this.setupMilitary(gamedatas.military);
+            this.setupMilitary(gamedatas.military, gamedatas.persianleaders);
             this.setupDefeats(gamedatas.defeats);
             this.setupCities();
 
@@ -577,7 +577,7 @@ function (dojo, declare) {
          * Place all military counters
          * @param {Object} military 
          */
-        setupMilitary: function(military) {
+        setupMilitary: function(military, persianleaders) {
             // first add Persia
             this.createStack("persia");
             // stack for each city

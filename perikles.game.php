@@ -271,6 +271,7 @@ class Perikles extends Table
         $result['influencecubes'] = $this->Cities->getAllInfluence();
         $result['candidates'] = $this->Cities->getAllCandidates();
         $result['leaders'] = $this->Cities->getLeaders();
+        $result['persianleaders'] = $this->Cities->getPersianLeaders();
         $result['statues'] = $this->Cities->getAllStatues();
         $result['defeats'] = $this->Cities->getAllDefeats();
         $result['military'] = $this->getMilitary();
@@ -2120,6 +2121,8 @@ class Perikles extends Table
                 $this->moveMilitaryUnits($winner, $cn);
             }
         }
+        // anyone who is not a leader of any city is a Persian leader
+        $this->Cities->assignPersianLeaders();
         $sparta = $this->Cities->getLeader("sparta");
         $this->gamestate->changeActivePlayer($sparta);
         $this->gamestate->nextState();

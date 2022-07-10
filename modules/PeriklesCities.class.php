@@ -224,12 +224,16 @@ class PeriklesCities extends APP_GameClass
   }
 
   /**
-   * Assign a leader to a city
+   * Assign a leader to a city, or add to Persian leaders.
    * @param player_id player id
    * @param city to be leader of
    */
   public function setLeader($player_id, $city) {
-    $this->game->setGameStateValue($city."_leader", $player_id);
+    if ($city == "persia") {
+        self::DbQuery("UPDATE player SET persia=TRUE where player_id=$player_id");
+    } else {
+        $this->game->setGameStateValue($city."_leader", $player_id);
+    }
   }
 
   /**
@@ -258,20 +262,28 @@ class PeriklesCities extends APP_GameClass
   /**
    * Is this player the leader of this city?
    * @param player_id
-   * @param city
+   * @param city or persia
    * @returns true if player_id is leader of city
    */
   public function isLeader($player_id, $city) {
-    return ($this->getLeader($city) == $player_id);
+    $isleader = false;
+    if ($city == "persia") {
+        $isleader = $this->game->getUniqueValueFromDB("SELECT persia FROM player where player_id=$player_id");
+    } else {
+      $isleader = ($this->getLeader($city) == $player_id);
+    }
+    return $isleader;
   }
 
   /**
    * Set all city leaders back to 0.
+   * Zero out all Persian leaders.
    */
   public function clearLeaders() {
     foreach ($this->cities() as $cn) {
       $this->setLeader(0, $cn);
     }
+    self::DbQuery("UPDATE player SET persian=FALSE");
   }
 
   /**
@@ -287,6 +299,29 @@ class PeriklesCities extends APP_GameClass
         }
       }
       return $leaders;
+  }
+
+  /**
+   * Get all players who are leaders of Persia.
+   * Checks by collecting every player_id that does not control any cities.
+   * @return {array} may be empty
+   */
+  public function getPersianLeaders() {
+    $persianleaders = $this->game->getObjectListFromDB("SELECT player_id FROM player WHERE persia IS TRUE", true);
+    return $persianleaders;
+  }
+
+  /**
+   * Assumes leaders of cities have been set.
+   * Flags all players without a city as a Persian leader.
+   */
+  public function assignPersianLeaders() {
+    foreach ($this->getPlayerIds() as $player_id) {
+      $cities = $this->controlledCities($player_id);
+      if (empty($cities)) {
+        $this->setLeader($player_id, PERSIA);
+      }
+    }
   }
 
   /**
