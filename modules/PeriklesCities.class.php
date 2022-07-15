@@ -238,7 +238,7 @@ class PeriklesCities extends APP_GameClass
    * @param {string} city2
    */
   private function getRelationship($city1, $city2) {
-    return $this->game->getObjectListFromDB("SELECT $city2 FROM WARS WHERE name=$city1")[0];
+    return $this->game->getObjectListFromDB("SELECT $city2 FROM WARS WHERE name=\"$city1\"", true)[0];
   }
 
   /**
@@ -365,11 +365,17 @@ class PeriklesCities extends APP_GameClass
   }
 
   /**
-   * Return the clienttranslation string for the city name
+   * Return the clienttranslation string for the city name (may be PERSIA).
    * @return translate string
    */
   public function getNameTr($city) {
-    return $this->cities[$city]['name'];
+    $name = "";
+    if ($city == PERSIA) {
+      $name = clienttranslate("Persia");
+    } else {
+      $name = $this->cities[$city]['name'];
+    }
+    return $name;
   }
 
   /**
@@ -432,7 +438,7 @@ class PeriklesCities extends APP_GameClass
     foreach ($this->cities() as $cn) {
       $this->setLeader(0, $cn);
     }
-    self::DbQuery("UPDATE player SET persian=FALSE");
+    self::DbQuery("UPDATE player SET persia=FALSE");
   }
 
   /**

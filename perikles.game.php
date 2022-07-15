@@ -51,6 +51,7 @@ define("PLAGUE", 8);
 
 define("ATTACKER_TOKENS", "attacker_tokens");
 define("DEFENDER_TOKENS", "defender_tokens");
+define("CONTROLLED_PERSIANS", "_persia_"); // used to flag Persian units that will go to a player board
 
 class Perikles extends Table
 {
@@ -488,26 +489,29 @@ class Perikles extends Table
      * As Leader of a city, player takes all military units.
      */
     function moveMilitaryUnits($player_id, $city) {
-        $players = self::loadPlayersBasicInfos();
         self::DbQuery("UPDATE MILITARY SET location = $player_id WHERE location=\"$city\"");
         $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE city=\"$city\" AND location=$player_id");
-        // 
+        // send notification that moves units from city stack to player's military zone
         self::notifyAllPlayers("takeMilitary", '', array(
-            'i18n' => ['city_name'],
-            'player_id' => $player_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'city' => $city,
-            'city_name' => $this->Cities->getNameTr($city),
             'military' => $units,
-            'preserve' => ['player_id', 'city'],
         ));
     }
 
-    function movePersianUnits() {
-        $persians = $this->Cities->getPersianLeaders();
-        if (!empty($persians)) {
-            self::DbQuery("UPDATE MILITARY SET location = \"persians\" WHERE location=\"".PERSIA."\"");
+    /**
+     * Assign Persian units to "persians" location which js interprets as put in persian leader(s) military area.
+     * @param {array} persianleaders should already have been verified non-empty
+     */
+    function movePersianUnits($persianleaders) {
+        // flag Persians as controlled
+        self::DbQuery("UPDATE MILITARY SET location = \"".CONTROLLED_PERSIANS."\" WHERE location=\"".PERSIA."\"");
+        $persianunits = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE city=\"".PERSIA."\" AND location=\"".CONTROLLED_PERSIANS."\"");
 
+        foreach($persianleaders as $persian) {
+            // send notification that moves units from city stack to player's military zone
+            self::notifyAllPlayers("takePersians", '', array(
+                'player_id' => $persian,
+                'military' => $persianunits,
+            ));
         }
     }
 
@@ -1485,7 +1489,10 @@ class Perikles extends Table
      */
     private function validateAttacker($player_id, $counter, $unit_desc) {
         if ($counter['location'] != $player_id) {
-            throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
+            // is this a Persiam?
+            if (!($counter['location'] == CONTROLLED_PERSIANS && $this->Cities->isLeader($player_id, PERSIA))) {
+                throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
+            }
         }
         $battle = $counter['battle'];
         $city = $this->locations[$battle]['city'];
@@ -1496,7 +1503,7 @@ class Perikles extends Table
         }
         // is this unit allied with the defender (including because a unit was already played as a defender)?
         if ($this->Cities->isAlly($counter['city'], $city)) {
-            throw new BgaUserException(sprintf(self::_("%s cannot attack a city it is allied with"), $unit_desc));
+            throw new BgaUserException(sprintf(self::_("%s cannot attack a city it is allied with!"), $unit_desc));
         }
 
         // is counter at war with any of the other attackers?
@@ -1986,7 +1993,13 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'city']
             ));
             // does this player actually still have forces to send?
-            $counters = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE location=$player_id");
+            $counter_loc = $player_id;
+            // are we a Persian leader?
+            if ($this->Cities->isLeader($player_id, PERSIA)) {
+                $counter_loc = CONTROLLED_PERSIANS;
+            }
+            $counters = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE location=\"$counter_loc\"");
+
             if (empty($counters)) {
                 $this->noCommitUnits($player_id);
                 $state = "nextPlayer";
@@ -2125,7 +2138,18 @@ class Perikles extends Table
         }
         // anyone who is not a leader of any city is a Persian leader
         $this->Cities->assignPersianLeaders();
-        $this->movePersianUnits();
+        $persianleaders = $this->Cities->getPersianLeaders();
+        if (!empty($persianleaders)) {
+            foreach($persianleaders as $persian) {
+                $msg = (count($persianleaders) > 1) ? clienttranslate('${player_name} won no elections and shares leadership of the Persians') : clienttranslate('${player_name} won no elections and takes control of the Persians');
+                self::notifyAllPlayers("persianLeader", $msg, array(
+                    'player_id' => $persian,
+                    'player_name' => $players[$persian]['player_name'],
+                    'preserve' => ['player_id']
+                ));
+            }
+            $this->movePersianUnits($persianleaders);
+        }
 
         // sparta leader chooses
         $sparta = $this->Cities->getLeader("sparta");

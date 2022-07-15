@@ -599,7 +599,8 @@ function (dojo, declare) {
                 } else {
                     // it's in a player pool
                     const player_id = counter.getLocation();
-                    if (player_id == this.player_id || (player_id == "persians" && persianleaders.includes(this.player_id))) {
+                    // "_persia_" is special flag for controlled persian units
+                    if (player_id == this.player_id || (player_id == "_persia_" && persianleaders.includes(String(this.player_id)))) {
                         const city = counter.getCity();
                         const unit = counter.getType();
                         this.createMilitaryArea(player_id, city);
@@ -2393,7 +2394,9 @@ function (dojo, declare) {
             dojo.subscribe( 'election', this, "notif_election");
             this.notifqueue.setSynchronous( 'election', 1000 );
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
-            this.notifqueue.setSynchronous( 'election', 500 );
+            this.notifqueue.setSynchronous( 'takeMilitary', 500 );
+            dojo.subscribe( 'takePersians', this, "notif_takePersians");
+            this.notifqueue.setSynchronous( 'takePersians', 500 );
             dojo.subscribe( 'useTile', this, "notif_useTile");
             this.notifqueue.setSynchronous( 'useTile', 500 );
             dojo.subscribe( 'spentInfluence', this, "notif_cubeRemoved");
@@ -2590,6 +2593,19 @@ function (dojo, declare) {
         notif_takeMilitary: function(notif) {
             const military = notif.args.military;
             for (const mil of military) {
+                this.counterToPlayerBoard(mil);
+            }
+        },
+
+        /**
+         * Move Persian military tokens to leader. This may happen for more than one player.
+         * @param {Object} notif 
+         */
+         notif_takePersians: function(notif) {
+            const military = notif.args.military;
+            const player_id = notif.args.player_id;
+            for (const mil of military) {
+                mil['location'] = player_id;
                 this.counterToPlayerBoard(mil);
             }
         },
