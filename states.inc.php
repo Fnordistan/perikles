@@ -33,9 +33,9 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("BRING_OUT_YOUR_DEAD", 23);
     define("COMMIT_FORCES", 24);
     define("NEXT_COMMIT", 25);
-    define("START_BATTLES", 26);
-    define("RESOLVE_BATTLE", 27);
-    define("NEXT_BATTLE", 30);
+    define("NEXT_BATTLE_TILE", 26);
+    define("RESOLVE_TILE", 27);
+    define("ROLL_BATTLE", 30);
     define("END_TURN", 28);
     define("SCORING", 90);
     define("ENDGAME", 99);
@@ -107,7 +107,7 @@ $machinestates = array(
         "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "useSpecialTile" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT, "doBattle" => NEXT_BATTLE )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT, "doBattle" => ROLL_BATTLE )
     ),
 
     ELECTIONS => array(
@@ -149,7 +149,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNextCommit",
-        "transitions" => array( "commit" => COMMIT_FORCES, "nextPlayer" => NEXT_COMMIT, "resolve" => START_BATTLES )
+        "transitions" => array( "commit" => COMMIT_FORCES, "nextPlayer" => NEXT_COMMIT, "resolve" => NEXT_BATTLE_TILE )
     ),
 
     COMMIT_FORCES => array(
@@ -162,28 +162,30 @@ $machinestates = array(
     	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE)
     ),
 
-    START_BATTLES => array(
-        "name" => "startBattles",
+    // rotate to the next location tile
+    NEXT_BATTLE_TILE => array(
+        "name" => "nextTile",
         "description" => "",
         "type" => "game",
-        "action" => "stStartBattles",
-        "transitions" => array( "resolve" => RESOLVE_BATTLE, "endTurn" => END_TURN )
+        "action" => "stNextLocationTile",
+        "transitions" => array( "resolve" => RESOLVE_TILE, "endTurn" => END_TURN )
     ),
 
-    RESOLVE_BATTLE => array(
+    RESOLVE_TILE => array(
         "name" => "resolveLocation",
         "description" => "",
         "type" => "game",
-        "action" => "stResolveLocation",
-        "transitions" => array( "special" => SPECIAL_TILE, "doBattle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
+        "action" => "stResolveTile",
+        "transitions" => array( "special" => SPECIAL_TILE, "nextBattle" => ROLL_BATTLE, "endBattle" => NEXT_BATTLE_TILE )
     ),
 
-    NEXT_BATTLE => array(
+    // handle one battle (may be 1-2 per tile)
+    ROLL_BATTLE => array(
         "name" => "battle",
         "description" => "",
         "type" => "game",
         "action" => "stBattle",
-        "transitions" => array( "battle" => NEXT_BATTLE, "endBattle" => START_BATTLES )
+        "transitions" => array( "nextBattle" => ROLL_BATTLE, "endBattle" => NEXT_BATTLE_TILE )
     ),
 
     77 => array(

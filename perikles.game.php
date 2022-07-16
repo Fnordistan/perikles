@@ -20,6 +20,8 @@
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 require_once( 'modules/PeriklesCities.class.php' );
+require_once( 'modules/PeriklesLocations.class.php' );
+require_once( 'modules/PeriklesBattles.class.php' );
 
 //  MARTIN WALLACE'S ERRATA ON BGG: https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
 
@@ -98,11 +100,13 @@ class Perikles extends Table
         ) );
 
         $this->Cities = new PeriklesCities($this);
+        $this->Locations = new PeriklesLocations($this);
 
         $this->influence_tiles = self::getNew("module.common.deck");
         $this->influence_tiles->init("INFLUENCE");
         $this->location_tiles = self::getNew("module.common.deck");
         $this->location_tiles->init("LOCATION");
+
     }
 	
     protected function getGameName( )
@@ -162,7 +166,9 @@ class Perikles extends Table
         $this->Cities->setupNewGame();
 
         $this->setupInfluenceTiles();
-        $this->setupLocationTiles();
+
+        $this->Locations->setupNewGame();
+
         $this->assignSpecialTiles();
 
         // Activate first player (which is in general a good idea :) )
@@ -211,29 +217,6 @@ class Perikles extends Table
         }
         $influence_tiles[] = array('type' => 'any', 'type_arg' => INFLUENCE, 'location' => DECK, 'location_arg' => 0, 'nbr' => 5);
         return $influence_tiles;
-    }
-
-    /**
-     * Create the Location deck
-     */
-    protected function setupLocationTiles() {
-        $locations = $this->createLocationTiles();
-        $this->location_tiles->createCards($locations, DECK);
-        $this->location_tiles->shuffle(DECK);
-        for ($i = 1; $i <= 7; $i++) {
-            $this->location_tiles->pickCardForLocation(DECK, BOARD, $i);
-        }
-    }
-
-    /**
-     * Fill location card database.
-     */
-    protected function createLocationTiles() {
-        $locations = array();
-        foreach($this->locations as $location => $tile) {
-            $locations[] = array('type' => $tile['city'], 'type_arg' => $location, 'location' => DECK, 'location_arg' => 0, 'nbr' => 1);
-        }
-        return $locations;
     }
 
     /*
@@ -563,7 +546,7 @@ class Perikles extends Table
                 'battlerole' => $role,
                 'location' => $battle,
                 'slot' => $slot,
-                'location_name' => $this->locations[$battle]['name'],
+                'location_name' => $this->Locations->getName($battle),
                 'preserve' => ['city', 'location'],
             ));
         }
@@ -812,6 +795,9 @@ class Perikles extends Table
 
     /**
      * Return next battle tile, or null if there are no more.
+     * Retrieves next in queue, popping it from the queue.
+     * Returns : id,city,location,slot,attack,defender
+     * @return tile, or null
      */
     function nextBattle() {
         $battle = null;
@@ -1078,7 +1064,7 @@ class Perikles extends Table
         } else {
             // it's a battle tile
             $location = $revoltlocation;
-            $location_name = $this->locations[$location]['name'];
+            $location_name = $this->Locations->getName($location);
         }
         // locaion is now either location tile name or Sparta player id
         // get all Hoplite counters
@@ -1416,7 +1402,7 @@ class Perikles extends Table
             [$id, $side, $location] = explode("_", $unit);
             $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
             $counter['battle'] = $location;
-            $battlename = $this->locations[$location]['name'];
+            $battlename = $this->Locations->getName($location);
             // Is this unit in my pool?
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battlename);
 
@@ -1495,7 +1481,7 @@ class Perikles extends Table
             }
         }
         $battle = $counter['battle'];
-        $city = $this->locations[$battle]['city'];
+        $city = $this->Locations->getCity($battle);
 
         // does this location belong to my own city?
         if ($this->Cities->isLeader($player_id, $city)) {
@@ -1515,7 +1501,7 @@ class Perikles extends Table
         }
 
         // are we sending a trireme to a land battle?
-        if ($this->locations[$battle]['rounds'] == "H" && $counter['type'] == TRIREME) {
+        if ($this->Locations->isLandBattle($battle) && $counter['type'] == TRIREME) {
             throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
         }
         // passed all checks. Declare war with all defenders.
@@ -1546,16 +1532,16 @@ class Perikles extends Table
                 throw new BgaUserException(sprintf(self::_("%s cannot join battle with hostile units"), $unit_desc));
             }
         }
-        $city = $this->locations[$battle]['city'];
+        $city = $this->Locations->getCity($battle);
         // Do I control this city? If not, I need permission from defender
         if (!$this->Cities->isLeader($player_id, $city)) {
             if (!$this->hasDefendPermission($player_id, $battle)) {
-                throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($city), $this->locations[$battle]['name']));
+                throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($city), $this->Locations->getName($battle)));
             }
         }
 
         // are we sending a trireme to a land battle?
-        if ($this->locations[$battle]['rounds'] == "H" && $counter['type'] == TRIREME) {
+        if ($this->Locations->isLandBattle($battle) && $counter['type'] == TRIREME) {
             throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
         }
 
@@ -1582,7 +1568,7 @@ class Perikles extends Table
         self::notifyAllPlayers('unclaimedTile', clienttranslate('No battle at ${location_name}; no one claims the tile'), array(
             'i18n' => ['location_name'],
             'location' => $location,
-            'location_name' => $this->locations[$location]['name'],
+            'location_name' => $this->Locations->getName($location),
         ));
         $this->unclaimedTile($battle['id']);
     }
@@ -1618,7 +1604,7 @@ class Perikles extends Table
             self::notifyAllPlayers('unclaimedTile', clienttranslate('No battle at ${location_name}; no one claims the tile'), array(
                 'i18n' => ['location_name'],
                 'location' => $location,
-                'location_name' => $this->locations[$location]['name'],
+                'location_name' => $this->Locations->getName($location),
             ));
             $this->addInfluenceToCity($city, $player_id, 2);
             $this->unclaimedTile($id);
@@ -1631,7 +1617,7 @@ class Perikles extends Table
                 'role' => $role,
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
-                'location_name' => $this->locations[$location]['name'],
+                'location_name' => $this->Locations->getName($location),
                 'preserve' => ['player_id', 'city'],
             ));
         }
@@ -1706,7 +1692,7 @@ class Perikles extends Table
                 'unit_type' => $battle_type,
                 'location' => $location,
                 'slot' => $slot,
-                'location_name' => $this->locations[$location]['name'],
+                'location_name' => $this->Locations->getName($location),
                 'att' => $attstrength,
                 'def' => $defstrength,
                 'crt' => $crt,
@@ -1822,7 +1808,7 @@ class Perikles extends Table
             'i18n' => ['role', 'location_name'],
             'player_id' => $winner_id,
             'player_name' => $players[$winner_id]['player_name'],
-            'location_name' => $this->locations[$location]['name'],
+            'location_name' => $this->Locations->getName($location),
             'role' => $role,
         ));
 
@@ -1834,7 +1820,7 @@ class Perikles extends Table
      * Returns HOPLITE or TRIREME.
      */
     function getCurrentBattleType($location) {
-        $rounds = $this->locations[$location]['rounds'];
+        $rounds = $this->Locations->getBattles($location);
         $r = self::getGameStateValue("battle_round");
         $ti = $rounds[$r];
         $type = null;
@@ -2159,8 +2145,9 @@ class Perikles extends Table
 
     /**
      * Do the battles.
+     * Either go to next battle, or if none left, to end turn.
      */
-    function stStartBattles() {
+    function stNextLocationTile() {
         $state = "resolve";
         // commit phase is over
         self::setGameStateValue("commit_phase", 0);
@@ -2178,11 +2165,11 @@ class Perikles extends Table
      * Resolve all the battles for the next location in the queue.
      * Assumes we have already checked that there is another location tile to be fought for.
      */
-    function stResolveLocation() {
+    function stResolveTile() {
         $battle = $this->nextBattle();
         // shouldn't happen!
         if ($battle == null) {
-            throw new BgaVisibleSystemException("No battle tiles for stResolveLocation");
+            throw new BgaVisibleSystemException("No battle tile to resolve"); // NOI18N
         }
         // default next state
         $state = "doBattle";
@@ -2190,7 +2177,7 @@ class Perikles extends Table
         $attacker = $battle['attacker'];
         $defender = $battle['defender'];
         $location = $battle['location'];
-        $rounds = $this->locations[$location]['rounds'];
+        $rounds = $this->Locations->getBattles($location);
 
         self::setGameStateValue("active_battle", $battle['slot']);
         // is this the first or second round?
@@ -2269,13 +2256,13 @@ class Perikles extends Table
             'city' => $city,
             'attacker_name' => $players[$attacker]['player_name'],
             'defender_name' => $players[$defender]['player_name'],
-            'location_name' => $this->locations[$location]['name'],
+            'location_name' => $this->Locations->getName($location),
             'preserve' => ['attacker', 'defender', 'city'],
         ));
         
         $type = $this->getCurrentBattleType($location);
 
-        $intrinsic = $this->locations[$location]['intrinsic'];
+        $intrinsic = $this->Locations->getMilitia($location);
 
         $this->doBattle($type, $location, $intrinsic, $slot);
         self::incGameStateValue("battle_round", 1);
@@ -2519,7 +2506,7 @@ class Perikles extends Table
                         if ($this->Cities->canAttack($player_id, $city, $defcity, $battle)) {
                             // we can attack this city
                             // make sure not sending trireme to a land battle
-                            if ($unit['type'] == HOPLITE || $this->locations[$battle]['rounds'] != "H") {
+                            if (!($unit['type'] == TRIREME && $this->Locations->isLandBattle($battle))) {
                                 $unitstr = $unit['id']."_attack_".$battle;
                             }
                         }
@@ -2528,7 +2515,7 @@ class Perikles extends Table
                         shuffle($mycitybattles);
                         $defbattle = array_pop($mycitybattles);
                         // make sure not sending trireme to a land battle
-                        if ($unit['type'] == HOPLITE || $this->locations[$defbattle]['rounds'] != "H") {
+                        if (!($unit['type'] == TRIREME && $this->Locations->isLandBattle($defbattle))) {
                             $unitstr = $unit['id']."_defend_".$defbattle;
                         }
                     }
