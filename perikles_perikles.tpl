@@ -91,8 +91,6 @@ const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_counter prk_st
 
 const jstpl_cube = '<div id="${id}"" class="prk_cube" style="background-color: #${color};"></div>';
 
-const jstpl_location_tile = '<div id="${id}_tile" class="prk_location_tile" style="background-position: ${x}px ${y}px; margin: ${m}px;"></div>';
-
 var jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
 var jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_city_btn prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
@@ -121,15 +119,6 @@ const jstpl_influence_tt = '<div style="display: flex; flex-direction: row;">\
                             </div>';
 
 const jstpl_influence_cards = '<div id="${id}_player_cards" class="prk_player_infl" style="--scale: ${scale};"></div>';
-
-const jstpl_location_tt = '<div style="display: flex; flex-direction: row;">\
-                                <div class="prk_location_tile" style="background-position: ${x}px ${y}px; margin: 5px;"></div>\
-                                <div style="flex: 1;">\
-                                    <h1 style="font-family: Bodoni Moda;">${battle}</h1>\
-                                    <h2>${defender}</h2>\
-                                    <span style="font-size: 22px;">${text}</span>\
-                                </div>\
-                            </div>';
 
 const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;"></div>';
 

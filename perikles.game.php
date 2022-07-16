@@ -2162,6 +2162,7 @@ class Perikles extends Table
      */
     function stStartBattles() {
         $state = "resolve";
+        // commit phase is over
         self::setGameStateValue("commit_phase", 0);
 
         throw new BgaVisibleSystemException("Start Battles");
