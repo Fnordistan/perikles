@@ -21,13 +21,40 @@ class PeriklesBattles extends APP_GameClass
   }
 
   /**
+   * Get all counters belonging to a player.
+   * Includes check for Persian counters.
+   * @param {string} player_id
+   */
+  public function getPlayerCounters($player_id) {
+    $counters = [];
+    // is this player leading the Persians?
+    if ($this->game->Cities->isLeader($player_id, PERSIA)) {
+      $counters = $this->getCounters(CONTROLLED_PERSIANS);
+    } else {
+      $counters = $this->getCounters($player_id);
+    }
+    return $counters;
+  }
+
+  /**
    * Get counters currently at a battle location.
    * As an array of [id,city,type,strength,location,battlepos] counters.
    * @param {string} location name of tile
    * @param {int} position (optional, if not set then returns all units)
    * @return array (may be empty)
    */
-  public function getCounters($location, $pos=0) {
+  public function getLocationCounters($location, $pos=0) {
+    return $this->getCounters($location, $pos);
+  }
+
+  /**
+   * Get counters currently at a battle location or in a player's pool.
+   * As an array of [id,city,type,strength,location,battlepos] counters.
+   * @param {string} location name of tile or player_id
+   * @param {int} position (optional, if not set then returns all units)
+   * @return array (may be empty)
+   */
+  private function getCounters($location, $pos=0) {
     $counters = [];
     if ($pos == 0) {
       $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\"");

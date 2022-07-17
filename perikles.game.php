@@ -2200,7 +2200,7 @@ class Perikles extends Table
             if ($round == 0) {
                 // first battle
                 // flip all the counters
-                $counters = $this->Battles->getCounters($location);
+                $counters = $this->Battles->getLocationCounters($location);
                 self::notifyAllPlayers("revealCounters", '', array(
                     'slot' => $slot,
                     'military' => $counters
@@ -2501,28 +2501,28 @@ class Perikles extends Table
         $assignment = "";
         for ($i = 0; $i < 2; $i++) {
             $unitstr = "";
-            $military = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=$player_id");
+            $military = $this->Battles->getPlayerCounters($player_id);
             if (!empty($military)) {
                 shuffle($military);
                 while (!empty($military) && $unitstr === "") {
                     $unit = array_pop($military);
                     $city = $unit['city'];
                     // does this unit have any cities to defend?
-                    $mycitybattles = self::getObjectListFromDB("SELECT card_type_arg battle FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
+                    $mycitybattles = self::getObjectListFromDB("SELECT card_type_arg location FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
     
                     // is there a city we can attack?
                     if (empty($mycitybattles)) {
-                        $allbattles = self::getObjectListFromDB("SELECT card_type city, card_type_arg battle, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
+                        $allbattles = self::getObjectListFromDB("SELECT card_type city, card_type_arg location, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
                         shuffle($allbattles);
                         $location = array_pop($allbattles);
                         $defcity = $location['city'];
-                        $battle = $location['battle'];
+                        $location = $location['location'];
                         
-                        if ($this->Cities->canAttack($player_id, $city, $defcity, $battle)) {
+                        if ($this->Cities->canAttack($player_id, $city, $defcity, $location)) {
                             // we can attack this city
                             // make sure not sending trireme to a land battle
-                            if (!($unit['type'] == TRIREME && $this->Locations->isLandBattle($battle))) {
-                                $unitstr = $unit['id']."_attack_".$battle;
+                            if (!($unit['type'] == TRIREME && $this->Locations->isLandBattle($location))) {
+                                $unitstr = $unit['id']."_attack_".$location;
                             }
                         }
                     } else {

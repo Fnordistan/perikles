@@ -1638,7 +1638,7 @@ function (dojo, declare) {
          * Player clicked "Use Slave Revolt" button
          */
         addSlaveRevoltButtons: function() {
-            this.setDescriptionOnMyTurn(_("Choose location for Slave Revolt (one Spartan Hoplite counter will be removed)"), {'slaverevolt': true});
+            this.setDescriptionOnMyTurn(_("Choose location for Slave Revolt (one Spartan Hoplite counter will be placed back in Sparta)"), {'slaverevolt': true});
             this.removeActionButtons();
             const srbtns = $('slaverevolt_div').getElementsByClassName("prk_slaverevolt_btn");
             [...srbtns].forEach(b => this.addSlaveRevoltListeners(b));
@@ -1830,7 +1830,7 @@ function (dojo, declare) {
                             '</div>\
                             <div id="commit_text" style="margin: 2px; padding: 2px; text-align: center; color: #fff; background-color: #4992D2; display: none;"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
-                                <div id="send_button" class="prk_btn prk_send_btn">'+_("Assign Unit")+'</div>\
+                                <div id="send_button" class="prk_btn prk_send_btn">'+_("Send")+'</div>\
                                 <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
                             </div>\
                         </div>';

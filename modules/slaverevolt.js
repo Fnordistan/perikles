@@ -16,7 +16,7 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns button html
          */
         createSpartaLeaderButton: function(player_name) {
-            let lbl = _("Sparta (${player_name}'s pool)");
+            let lbl = _("${player_name}'s pool");
             lbl = lbl.replace('${player_name}', player_name);
             const button = '<div id="sparta_slaverevolt" class="prk_slaverevolt_btn">'+lbl+'</div>';
             return button;
