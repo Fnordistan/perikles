@@ -1284,9 +1284,7 @@ function (dojo, declare) {
                         }
                         break;
                     case 'commitForces':
-                        this.addActionButton( "commit_send_btn", _('Commit Forces'), () => {
-                            this.onCommitForces();
-                        });
+                        this.addCommitForcesButton();
                         // add Cancel button if some units have already been assigned
                         this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
                             this.onResetForces();
@@ -1366,12 +1364,17 @@ function (dojo, declare) {
         /**
          * When Special tile is canceled, re-add it.
          * Also add the Pass button if it's the Special Tile phase.
+         * Readd Commit Forces in commit forces phase
          * @param {string} special
          */
          addSpecialTileCancel: function(special) {
             this.addActionButton( special+"_cancel_btn", _("Cancel"), () => {
                 this.restoreDescriptionOnMyTurn();
                 this.removeActionButtons();
+                if (this.gamedatas.gamestate.name == "commitForces") {
+                    this.addCommitForcesButton();
+                }
+
                 this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
                     this.specialTileWrapper();
                 }, null, false, 'blue' );
@@ -1379,6 +1382,15 @@ function (dojo, declare) {
                     this.addSpecialPassButton();
                 }
             }, null, null, 'red');
+        },
+
+        /**
+         * Add the "Commit Forces" action button.
+         */
+        addCommitForcesButton: function() {
+            this.addActionButton( "commit_send_btn", _('Commit Forces'), () => {
+                this.onCommitForces();
+            });
         },
 
         /**
@@ -1626,7 +1638,7 @@ function (dojo, declare) {
          * Player clicked "Use Slave Revolt" button
          */
         addSlaveRevoltButtons: function() {
-            this.setDescriptionOnMyTurn(_("Choose location for Slave Revolt (one Spartan Hoplite counter will be removed"), {'slaverevolt': true});
+            this.setDescriptionOnMyTurn(_("Choose location for Slave Revolt (one Spartan Hoplite counter will be removed)"), {'slaverevolt': true});
             this.removeActionButtons();
             const srbtns = $('slaverevolt_div').getElementsByClassName("prk_slaverevolt_btn");
             [...srbtns].forEach(b => this.addSlaveRevoltListeners(b));
@@ -2645,7 +2657,7 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_diceRoll: function(notif) {
-
+            debugger;
         },
 
         notif_resetBattleTokens: function(notif) {

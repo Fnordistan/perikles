@@ -45,13 +45,7 @@ class PeriklesBattles extends APP_GameClass
    * @return array (may be empty)
    */
   public function getAttackingCounters($location, $type=null) {
-    $counters = [];
-    if ($type == null) {
-      $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos="(ATTACKER+MAIN)." OR battlepos="(ATTACKER+ALLY).")");
-    } else {
-      $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos="(ATTACKER+MAIN)." OR battlepos="(ATTACKER+ALLY).") AND type=\"".$type."\"");
-    }
-    return $counters;
+    return $this->queryForCounters($location, ATTACKER, $type);
   }
 
   /**
@@ -62,12 +56,18 @@ class PeriklesBattles extends APP_GameClass
    * @return array (may be empty)
    */
   public function getDefendingCounters($location, $type=null) {
-    $counters = [];
-    if ($type == null) {
-      $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos="(DEFENDER+MAIN)." OR battlepos="(DEFENDER+ALLY).")");
-    } else {
-      $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos="(DEFENDER+MAIN)." OR battlepos="(DEFENDER+ALLY).") AND type=\"".$type."\"");
+    return $this->queryForCounters($location, DEFENDER, $type);
+  }
+
+  /**
+   * Actual db query for counters by ATTACKER/DEFENDER (+type)
+   */
+  private function queryForCounters($location, $side, $type=null) {
+    $sql = "SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\" AND (battlepos=".($side+MAIN)." OR battlepos=".($side+ALLY).")";
+    if ($type != null) {
+      $sql .= " AND type=\"".$type."\"";
     }
+    $counters = $this->game->getObjectListFromDB($sql);
     return $counters;
   }
 

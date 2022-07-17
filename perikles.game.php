@@ -1442,8 +1442,8 @@ class Perikles extends Table
                 throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
             }
         }
-        $battle = $counter['battle'];
-        $city = $this->Locations->getCity($battle);
+        $location = $counter['battle'];
+        $city = $this->Locations->getCity($location);
 
         // does this location belong to my own city?
         if ($this->Cities->isLeader($player_id, $city)) {
@@ -1455,7 +1455,7 @@ class Perikles extends Table
         }
 
         // is counter at war with any of the other attackers?
-        $attackers = $this->Cities->getAllAttackers($battle);
+        $attackers = $this->Cities->getAllAttackers($location);
         foreach($attackers as $att) {
             if ($this->Cities->atWar($counter['city'], $att)) {
                 throw new BgaUserException(sprintf(self::_("%s cannot join battle with hostile units"), $unit_desc));
@@ -1463,11 +1463,11 @@ class Perikles extends Table
         }
 
         // are we sending a trireme to a land battle?
-        if ($this->Locations->isLandBattle($battle) && $counter['type'] == TRIREME) {
+        if ($this->Locations->isLandBattle($location) && $counter['type'] == TRIREME) {
             throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
         }
         // passed all checks. Declare war with all defenders.
-        $defenders = $this->Cities->getAllDefenders($battle);
+        $defenders = $this->Cities->getAllDefenders($location, $city);
         foreach($defenders as $def) {
             $this->Cities->setWar($counter['city'], $def);
         }
@@ -1485,30 +1485,31 @@ class Perikles extends Table
             throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
         }
 
-        $battle = $counter['battle'];
+        $location = $counter['battle'];
 
         // am I at war with any of the defenders?
-        $defenders = $this->Cities->getAllDefenders($battle);
+        $city = $this->Locations->getCity($location);
+        $defenders = $this->Cities->getAllDefenders($location, $city);
         foreach($defenders as $def) {
             if ($this->Cities->atWar($counter['city'], $def)) {
                 throw new BgaUserException(sprintf(self::_("%s cannot join battle with hostile units"), $unit_desc));
             }
         }
-        $city = $this->Locations->getCity($battle);
+        $city = $this->Locations->getCity($location);
         // Do I control this city? If not, I need permission from defender
         if (!$this->Cities->isLeader($player_id, $city)) {
-            if (!$this->hasDefendPermission($player_id, $battle)) {
-                throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($city), $this->Locations->getName($battle)));
+            if (!$this->hasDefendPermission($player_id, location)) {
+                throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($city), $this->Locations->getName($location)));
             }
         }
 
         // are we sending a trireme to a land battle?
-        if ($this->Locations->isLandBattle($battle) && $counter['type'] == TRIREME) {
+        if ($this->Locations->isLandBattle($location) && $counter['type'] == TRIREME) {
             throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
         }
 
         // passed all checks. Declare war with all attackers
-        $attackers = $this->Cities->getAllAttackers($battle);
+        $attackers = $this->Cities->getAllAttackers($location);
         foreach($attackers as $att) {
             $this->Cities->setWar($counter['city'], $att);
         }
@@ -1791,16 +1792,13 @@ class Perikles extends Table
      */
     function battleVictory($id, $location) {
         $winner = null;
-        $loser = null;
         $attacker = $this->Battles->getAttacker($location);
         $defender = $this->Battles->getDefender($location);
         if (self::getGameStateValue(ATTACKER_TOKENS) == 2) {
             $winner = $attacker;
-            $loser = $defender;
             $role = clienttranslate("Attacker");
         } elseif (self::getGameStateValue(DEFENDER_TOKENS) == 2) {
             $winner = $defender;
-            $loser = $attacker;
             $role = clienttranslate("Defender");
         } else {
             throw new BgaVisibleSystemException("No winner found at end of battle for tile $location"); // NOI18N
@@ -1816,8 +1814,14 @@ class Perikles extends Table
             'location_name' => $this->Locations->getName($location),
             'role' => $role,
         ));
+    }
 
-        // loser must lose a unit
+    /**
+     * Loser of a battle must lose one counter.
+     * @param {string} loser player_id of main who picks casualty
+     * @param {string} location tile where casualty happens
+     */
+    function assignCasualty($loser, $location) {
 
     }
 
@@ -2274,8 +2278,8 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("Invalid winner at end of battle: $winner"); // NOI18N
         }
         // loser must lose a unit
-        $this->assignCasualty()
-        
+        $this->assignCasualty($loser, $location);
+
         $this->gamestate->nextState("");
     }
 

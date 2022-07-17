@@ -16,7 +16,9 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns button html
          */
         createSpartaLeaderButton: function(player_name) {
-            const button = '<div id="sparta_slaverevolt" class="prk_slaverevolt_btn" style="background-color: var(--color_sparta); min-width: fit-content; padding: 0 4px;">'+player_name+'</div>';
+            let lbl = _("Sparta (${player_name}'s pool)");
+            lbl = lbl.replace('${player_name}', player_name);
+            const button = '<div id="sparta_slaverevolt" class="prk_slaverevolt_btn">'+lbl+'</div>';
             return button;
         },
 
@@ -27,7 +29,7 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns button html
          */
         createButton: function(id, location) {
-            const button = '<div id="'+id+'"_slaverevolt" class="prk_slaverevolt_btn" style="background-color: var(--color_sparta);">'+location+'</div>';
+            const button = '<div id="'+id+'"_slaverevolt" class="prk_slaverevolt_btn">'+location+'</div>';
             return button;
         },
 

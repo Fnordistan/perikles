@@ -190,31 +190,31 @@ class PeriklesCities extends APP_GameClass
 
   /**
    * Get a list of all cities attacking at a battle tile.
-   * @param {string} battle
+   * @param {string} location
    */
-  public function getAllAttackers($battle) {
-    return $this->getCitiesOnSide($battle, ATTACKER);
+  public function getAllAttackers($location) {
+    return $this->getCitiesOnSide($location, ATTACKER);
   }
 
   /**
    * Get a list of all cities defending at a battle tile.
-   * @param {string} battle
+   * @param {string} location
+   * @param {string} city owner of location
    */
-  public function getAllDefenders($battle) {
-    $defenders = $this->getCitiesOnSide($battle, DEFENDER);
+  public function getAllDefenders($location, $city) {
+    $defenders = $this->getCitiesOnSide($location, DEFENDER);
     // automatically include the owner
-    $owner = $this->game->locations[$battle]['city'];
-    $defenders[] = $owner;
+    $defenders[] = $city;
     return $defenders;
   }
 
   /**
    * Get list of all cities on attacking or defending side of a battle.
-   * @param {string} battle
+   * @param {string} location
    * @param {integer} ATTACKER or DEFENDER
    */
-  private function getCitiesOnSide($battle, $side) {
-    $forces = $this->game->getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$battle\" AND (battlepos=".($side+MAIN)." OR battlepos=".($side+ALLIED).")", true);
+  private function getCitiesOnSide($location, $side) {
+    $forces = $this->game->getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$location\" AND (battlepos=".($side+MAIN)." OR battlepos=".($side+ALLIED).")", true);
     return $forces;
   }
 
