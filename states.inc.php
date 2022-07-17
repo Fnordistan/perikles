@@ -185,7 +185,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stBattle",
-        "transitions" => array( "nextBattle" => ROLL_BATTLE, "endBattle" => NEXT_BATTLE_TILE )
+        "transitions" => array( "" => RESOLVE_TILE )
     ),
 
     77 => array(

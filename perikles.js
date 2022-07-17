@@ -556,13 +556,19 @@ function (dojo, declare) {
                     if (args.actplayer) {
                         args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF;'+WHITE_OUTLINE);
                     }
-                    if (args.candidate_name) {
+                    if (args.candidate_name && args.candidate_id) {
                         args.candidate_name  = this.decorator.spanPlayerName(args.candidate_id);
                     }
-                    if (args.city_name) {
+                    if (args.attacker_name && args.attacker) {
+                        args.attacker_name = this.decorator.spanPlayerName(args.attacker);
+                    }
+                    if (args.defender_name && args.defender) {
+                        args.defender_name = this.decorator.spanPlayerName(args.defender);
+                    }
+                    if (args.city_name && args.city) {
                         args.city_name = this.spanCityName(args.city);
                     }
-                    if (args.city_name2) {
+                    if (args.city_name2 && args.city2) {
                         args.city_name2 = this.spanCityName(args.city2);
                     }
                     if (args.special_tile) {
@@ -2272,6 +2278,8 @@ function (dojo, declare) {
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
             this.notifqueue.setSynchronous( 'crtOdds', 500 );
             dojo.subscribe( 'diceRoll', this, "notif_diceRoll");
+            dojo.subscribe( 'takeToken', this, "notif_takeToken");
+            this.notifqueue.setSynchronous( 'takeToken', 500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
             
         },
@@ -2620,6 +2628,16 @@ function (dojo, declare) {
             const crt_col = $('crt_'+crt);
             debugger;
             crt_col.classList.add("prk_crt_active");
+        },
+
+        /**
+         * attacker or defender takes a Battle Token.
+         * @param {Object} notif 
+         */
+        notif_takeToken: function(notif) {
+            // "attacker" or "defender"
+            const side = notif.args.side;
+            debugger;
         },
 
         /**

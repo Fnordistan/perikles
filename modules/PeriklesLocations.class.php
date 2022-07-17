@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Manage city status and influence cubes, as well as war status.
+ * Manage Location Tiles.
  */
 class PeriklesLocations extends APP_GameClass
 {
@@ -96,8 +96,38 @@ class PeriklesLocations extends APP_GameClass
    * @param location
    * @return string code for battle rounds
    */
-  public function getBattles($location) {
+  private function getBattles($location) {
     return $this->locations[$location]['rounds'];    
+  }
+
+  /**
+   * Get first or second battle for this location.
+   * @param location
+   * @param round 0 or 1 for first or second
+   * @return HOPLITE or TRIREME or null if asked for second round and there isn't one (land battle)
+   */
+  public function getBattle($location, $round) {
+    $battle = null;
+    if ($round < 0 || $round > 1) {
+        throw new BgaVisibleSystemException("invalid battle round: $round"); // NOI18N
+    }
+    $battles = $this->getBattles($location);
+    if ($round == 0) {
+        $battle = $battles[0];
+    } elseif (strlen($battles) == 2) {
+        $battle = $battles[1];
+    }
+    if ($battle != null) {
+        if ($battle == "H") {
+            $battle = HOPLITE;
+        } elseif ($battle == "T") {
+            $battle = TRIREME;
+        } else {
+            // should not happen!
+            throw new BgaVisibleSystemException("Invalid battle type: $battle"); // NOI18N
+        }
+    }
+    return $battle;
   }
 
   /**
@@ -117,5 +147,15 @@ class PeriklesLocations extends APP_GameClass
   public function getMilitia($location) {
     return $this->locations[$location]["intrinsic"];
   }
+
+  /**
+   * Get all the Location Tiles not currently in the deck (i.e. either on the board, in a player's hand, or unclaimed)
+   * [id,city,battle,loc,slot]
+   * @return array
+   */
+  public function getLocationTiles() {
+    return $this->game->getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg battle, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location !='".DECK."'");
+  }
+
 
 }
