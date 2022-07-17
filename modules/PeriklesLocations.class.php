@@ -149,6 +149,15 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Get a tile by the active battle slot
+   * @param {int} slot
+   * @return {string} location name of tile in slot
+   */
+  public function getBattleTile($slot) {
+        return $this->game->getUniqueValueFromDB("SELECT card_type_arg location FROM LOCATION WHERE card_location_arg=$slot AND card_location=\"".BOARD."\"");
+  }
+
+  /**
    * Get all the Location Tiles not currently in the deck (i.e. either on the board, in a player's hand, or unclaimed)
    * [id,city,battle,loc,slot]
    * @return array

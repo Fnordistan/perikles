@@ -505,9 +505,7 @@ class Perikles extends Table
     /**
      * Move all military units from a battle location back to the city where it belongs
      */
-    function returnMilitaryUnits($tile) {
-        $location = $tile['location'];
-        $slot = $tile['slot'];
+    function returnMilitaryUnits($location) {
         $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE location=\"$location\"");
         foreach($units as $unit) {
             $id = $unit['id'];
@@ -515,7 +513,7 @@ class Perikles extends Table
             self::DbQuery("UPDATE MILITARY SET location=\"$city\", battlepos=0 WHERE id=$id");
         }
         self::notifyAllPlayers("returnMilitary", '', array(
-            'slot' => $slot
+            'location' => $location
         ));
     }
 
@@ -1578,7 +1576,7 @@ class Perikles extends Table
         } else {
             // attacker with no defenders
             // you must send units to the last round to win the tile
-            $battletype = $this->Locations->getBattle($location, 2) ?? HOPLITE;
+            $battletype = $this->Locations->getBattle($location, 1) ?? HOPLITE;
 
             // did we send units of that type?
             $attackingcounters = $this->Battles->getAttackingCounters($location, $battletype);
@@ -1610,7 +1608,6 @@ class Perikles extends Table
      * Rolls until battle is done and there is a winner.
      * @param $type HOPLITE or TRIREME
      * @param $location name of tile
-     * @param $slot where the battle is on the board
      * @return {int} ATTACKER or DEFENDER who won
      */
     function resolveBattle($type, $location) {
@@ -1683,7 +1680,6 @@ class Perikles extends Table
             'i18n' => ['unit_type', 'location_name'],
             'unit_type' => $unit,
             'location' => $location,
-            'slot' => $slot,
             'location_name' => $this->Locations->getName($location),
             'att' => $attstr,
             'def' => $defstr,
@@ -1829,9 +1825,9 @@ class Perikles extends Table
      * End of battle cleanup.
      * Send military back, reset battle state valies.
      */
-    function endBattle($tile) {
+    function endBattle($location) {
         // battle for this location is over
-        $this->returnMilitaryUnits($tile);
+        $this->returnMilitaryUnits($location);
         // reinitialize battle tokens after every battle
         self::setGameStateValue(ATTACKER_TOKENS, 0);
         self::setGameStateValue(DEFENDER_TOKENS, 0);
@@ -2157,7 +2153,12 @@ class Perikles extends Table
         // commit phase is over
         self::setGameStateValue("commit_phase", 0);
 
-        throw new BgaVisibleSystemException("Start Battles");
+        // if there was previously a battle, cleanup
+        $slot = self::getGameStateValue("active_battle");
+        if ($slot != 0) {
+            $previousbattle = $this->Locations->getBattleTile($slot);
+            $this->endBattle($previousbattle);
+        }
 
         $battle = $this->Battles->nextBattle();
         if ($battle == null) {
@@ -2186,14 +2187,17 @@ class Perikles extends Table
 
         self::setGameStateValue("active_battle", $slot);
         // is this the first or second round?
+        $battletype = null;
         $round = self::getGameStateValue("battle_round");
-        // HOPLITE or TRIREME or null if asking for 2nd round of a land battle
-        $battletype = $this->Locations->getBattle($location, $round);
+        // if we finished the second round, the round counter was incremented to 2, stop
+        if ($round != 2) {
+            // HOPLITE or TRIREME or null if asking for 2nd round of a land battle
+            $battletype = $this->Locations->getBattle($location, $round);
+        }
         // no second round, or we finished the second round
         if ($battletype == null) {
             // there should be a winner
             $this->battleVictory($tile['id'], $location);
-            $this->endBattle($tile);
             $state = "endBattle";
         } else {
             $is_battle = true;
@@ -2213,7 +2217,6 @@ class Perikles extends Table
                         $this->uncontestedBattle($tile);
                     }
                     $is_battle = false;
-                    $this->endBattle($tile);
                     $state = "endBattle";
                 }
             }
@@ -2227,6 +2230,7 @@ class Perikles extends Table
                 }
             }
         }
+        self::incGameStateValue("battle_round", 1);
         $this->gamestate->nextState($state);
     }
 
@@ -2260,11 +2264,13 @@ class Perikles extends Table
             'preserve' => ['attacker', 'defender', 'city'],
         ));
         $round = self::getGameStateValue("battle_round");
+        if ($round == 2){
+            throw new BgaVisibleSystemException("invalid battle round $round at $location"); // NOI18N
+        }
         $type = $this->Locations->getBattle($location, $round);
 
         $winner = $this->resolveBattle($type, $location, $slot);
         $loser = null;
-        self::incGameStateValue("battle_round", 1);
         // for second round, if there is one, one side reset to 0 Battle tokens, the other starts with one
         if ($winner == ATTACKER) {
             self::setGameStateValue(ATTACKER_TOKENS, 1);

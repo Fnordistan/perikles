@@ -2635,7 +2635,6 @@ function (dojo, declare) {
         },
 
         notif_crtOdds: function(notif) {
-            const slot = notif.args.slot;
             const crt = notif.args.crt;
             const crt_col = $('crt_'+crt);
             debugger;
