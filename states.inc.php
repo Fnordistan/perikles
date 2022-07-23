@@ -35,7 +35,7 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("NEXT_COMMIT", 25);
     define("NEXT_BATTLE_TILE", 26);
     define("RESOLVE_TILE", 27);
-    define("ROLL_BATTLE", 30);
+    define("NEXT_COMBAT", 30);
     define("END_TURN", 28);
     define("SCORING", 90);
     define("ENDGAME", 99);
@@ -168,23 +168,23 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNextLocationTile",
-        "transitions" => array( "resolve" => RESOLVE_TILE, "endTurn" => END_TURN )
+        "transitions" => array( "resolve" => RESOLVE_TILE, "nextBattle" => NEXT_BATTLE_TILE, "endTurn" => END_TURN )
     ),
 
     RESOLVE_TILE => array(
-        "name" => "resolveLocation",
+        "name" => "resolveTile",
         "description" => "",
         "type" => "game",
         "action" => "stResolveTile",
-        "transitions" => array( "special" => SPECIAL_TILE, "nextBattle" => ROLL_BATTLE, "endBattle" => NEXT_BATTLE_TILE )
+        "transitions" => array( "nextCombat" => NEXT_COMBAT, "endBattle" => NEXT_BATTLE_TILE )
     ),
 
     // handle one battle (may be 1-2 per tile)
-    ROLL_BATTLE => array(
+    NEXT_COMBAT => array(
         "name" => "battle",
         "description" => "",
         "type" => "game",
-        "action" => "stBattle",
+        "action" => "stCombat",
         "transitions" => array( "" => RESOLVE_TILE )
     ),
 

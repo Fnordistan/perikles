@@ -22,6 +22,7 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 require_once( 'modules/PeriklesCities.class.php' );
 require_once( 'modules/PeriklesLocations.class.php' );
 require_once( 'modules/PeriklesBattles.class.php' );
+require_once( 'modules/PeriklesSpecial.class.php' );
 
 //  MARTIN WALLACE'S ERRATA ON BGG: https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
 
@@ -42,14 +43,14 @@ define("DEFENDER", 2);
 define("MAIN", 1);
 define("ALLY", 2);
 // Special tiles
-define("PERIKLES", 1);
-define("PERSIANFLEET", 2);
-define("SLAVEREVOLT", 3);
-define("BRASIDAS", 4);
-define("THESSALIANALLIES", 5);
-define("ALKIBIADES", 6);
-define("PHORMIO", 7);
-define("PLAGUE", 8);
+define("PERIKLES", "perikles");
+define("PERSIANFLEET", "persianfleet");
+define("SLAVEREVOLT", "slaverevolt");
+define("BRASIDAS", "brasidas");
+define("THESSALANIANALLIES", "thessalanianallies");
+define("ALKIBIADES", "alkibiades");
+define("PHORMIO", "phormio");
+define("PLAGUE", "plague");
 
 define("ATTACKER_TOKENS", "attacker_tokens");
 define("DEFENDER_TOKENS", "defender_tokens");
@@ -102,6 +103,7 @@ class Perikles extends Table
         $this->Cities = new PeriklesCities($this);
         $this->Locations = new PeriklesLocations($this);
         $this->Battles = new PeriklesBattles($this);
+        $this->SpecialTiles = new PeriklesSpecial($this);
 
         $this->influence_tiles = self::getNew("module.common.deck");
         $this->influence_tiles->init("INFLUENCE");
@@ -170,7 +172,7 @@ class Perikles extends Table
 
         $this->Locations->setupNewGame();
 
-        $this->assignSpecialTiles();
+        $this->SpecialTiles->setupNewGame();
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -178,20 +180,20 @@ class Perikles extends Table
         /************ End of the game initialization *****/
     }
 
-    /**
-     * Assign Special tile to each player at start of game.
-     */
-    protected function assignSpecialTiles() {
-        $spec = range(1,8);
-        // for testing
-        $spec = [2,4,5,7,1,6,8,3];
-        // shuffle($spec);
-        $players = self::loadPlayersBasicInfos();
-        foreach ($players as $player_id => $player) {
-            $tile = array_pop($spec);
-            self::DbQuery("UPDATE player SET special_tile = $tile WHERE player_id=$player_id");
-        }
-    }
+    // /**
+    //  * Assign Special tile to each player at start of game.
+    //  */
+    // protected function assignSpecialTiles() {
+    //     $spec = range(1,8);
+    //     // for testing
+    //     $spec = [2,4,5,7,1,6,8,3];
+    //     // shuffle($spec);
+    //     $players = self::loadPlayersBasicInfos();
+    //     foreach ($players as $player_id => $player) {
+    //         $tile = array_pop($spec);
+    //         self::DbQuery("UPDATE player SET special_tile = $tile WHERE player_id=$player_id");
+    //     }
+    // }
 
     /**
      * Lay out the first 10 influence tiles
@@ -258,28 +260,23 @@ class Perikles extends Table
     }
 
     /**
-     * Return associative array of player_id => tile number.
-     * For unused opponent tiles, value is 0
-     * For used own tile, return negative value.
+     * Return associative array of player_id => tile
+     * For unused opponent tiles, name is null
      */
     protected function getSpecialTiles($current_player_id) {
         $specialtiles = array();
-        $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile, special_tile_used FROM player");
+        $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile special, special_tile_used used FROM player");
 
-        foreach ($playertiles as $player_id => $tiles) {
-            $tile = 0;
-            if ($player_id == $current_player_id) {
-                // tile number if not used, negative tile number if used
-                $tile = $tiles['special_tile'];
-                if ($tiles['special_tile_used']) {
-                    // mark my tile was used
-                    $tile *= -1;
-                }
-            } elseif ($tiles['special_tile_used']) {
+        foreach ($playertiles as $player_id => $tile) {
+            $t = [];
+            $t['used'] = ($tile['used'] == 0) ? false : true;
+            if ($player_id == $current_player_id || $t['used']) {
+                $t['name'] = $tile['special'];
+            } else {
                 // only reveal tile if it's been used
-                $tile = $tiles['special_tile'];
+                $t['name'] = null;
             }
-            $specialtiles[$player_id] = $tile;
+            $specialtiles[$player_id] = $t;
         }
         return $specialtiles;
     }
@@ -446,7 +443,8 @@ class Perikles extends Table
 
 
     /**
-     * Move a tile to the unclaimed pile
+     * Move a tile to the unclaimed pile.
+     * Only does the movement, not notifications.
      * @param {string} id
      */
     function unclaimedTile($id) {
@@ -455,10 +453,22 @@ class Perikles extends Table
 
     /**
      * A player claims a tile. Add it to player's board. Send notification to move tile.
-     * @param {string} id
      * @param {string} player_id
+     * @param {Object} tile
      */
-    function claimTile($id, $player_id) {
+    function claimTile($player_id, $tile) {
+        $id = $tile['id'];
+        $city = $tile['city'];
+        $location = $tile['location'];
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers('winBattle', clienttranslate('${player_name} claims ${location_name} tile'), array(
+            'i18n' => ['location_name'],
+            'city' => $city,
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'location_name' => $this->Locations->getName($location),
+            'preserve' => ['player_id', 'city'],
+        ));
         $this->moveTile($id, $player_id);
     }
 
@@ -469,7 +479,6 @@ class Perikles extends Table
     function moveTile($id, $destination) {
         $this->location_tiles->insertCardOnExtremePosition($id, $destination, true);
         self::DbQuery("UPDATE LOCATION SET attacker=NULL,defender=NULL,permissions=NULL WHERE card_id=$id");
-        // TODO:notification
     }
 
     /**
@@ -506,12 +515,7 @@ class Perikles extends Table
      * Move all military units from a battle location back to the city where it belongs
      */
     function returnMilitaryUnits($location) {
-        $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE location=\"$location\"");
-        foreach($units as $unit) {
-            $id = $unit['id'];
-            $city = $unit['city'];
-            self::DbQuery("UPDATE MILITARY SET location=\"$city\", battlepos=0 WHERE id=$id");
-        }
+        $this->Battles->returnCounters($location);
         self::notifyAllPlayers("returnMilitary", '', array(
             'location' => $location
         ));
@@ -638,37 +642,37 @@ class Perikles extends Table
         return $this->isTileLeft(1);
     }
 
-    /**
-     * Return a list of players who are eligible to play a special tile now.
-     * May be empty
-     */
-    function playersWithSpecial($phase) {
-        $canplay = [];
-        $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile FROM player WHERE special_tile_used IS NOT TRUE", true);
-        foreach ($playertiles as $player_id => $tileid) {
-            $playable = true;
-            if ($phase == $this->specialcards[$tileid]["phase"]) {
-                // slaverevolt, only "commit" Special tile, can only be played on player's turn
-                if ($phase == "commit") {
-                    $playable = ($player_id == self::getActivePlayerId());
-                }
-                if ($playable) {
-                    $canplay[] = $player_id;
-                }
-            }
-        }
-        return $canplay;
-    }
+    // /**
+    //  * Return a list of players who are eligible to play a special tile now.
+    //  * May be empty
+    //  */
+    // function playersWithSpecial($phase) {
+    //     $canplay = [];
+    //     $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile FROM player WHERE special_tile_used IS NOT TRUE", true);
+    //     foreach ($playertiles as $player_id => $tileid) {
+    //         $playable = true;
+    //         if ($phase == $this->specialcards[$tileid]["phase"]) {
+    //             // slaverevolt, only "commit" Special tile, can only be played on player's turn
+    //             if ($phase == "commit") {
+    //                 $playable = ($player_id == self::getActivePlayerId());
+    //             }
+    //             if ($playable) {
+    //                 $canplay[] = $player_id;
+    //             }
+    //         }
+    //     }
+    //     return $canplay;
+    // }
 
-    /**
-     * Can a player play a Special Tile now?
-     * @return true if player_id can play a Special now
-     */
-    function canPlaySpecial($player_id, $phase) {
-        $players = $this->playersWithSpecial($phase);
-        $canplay = in_array($player_id, $players);
-        return $canplay;
-    }
+    // /**
+    //  * Can a player play a Special Tile now?
+    //  * @return true if player_id can play a Special now
+    //  */
+    // function canPlaySpecial($player_id, $phase) {
+    //     $players = $this->SpecialTiles->playersWithSpecial($phase);
+    //     $canplay = in_array($player_id, $players);
+    //     return $canplay;
+    // }
 
     /**
      * Return double associative array,
@@ -794,31 +798,31 @@ class Perikles extends Table
         return $influence;
     }
 
-    /**
-     * Do a validity check and if it passes, return the Special tile belonging to this player.
-     * Checks that player's Special tile has not been used, and it's the current game state.
-     * 
-     * @param player_id player_id player playing the tile
-     * @param phase matched against commit, influence, or commit
-     * @param tile expected tile number (optional)
-     */
-    function checkSpecialTile($player_id, $phase, $tile = 0) {
-        $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
-        // sanity check
-        if ($special == null) {
-            throw new BgaVisibleSystemException("No special tile found"); // NOI18N
-        } else if ($special['used']) {
-            throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
-        }
-        if (self::getGameStateValue($phase) == 0) {
-            throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
-        }
-        if ($tile != 0 && $special['tile'] != $tile) {
-            throw new BgaVisibleSystemException(sprintf("You cannot play %s", $this->specialcards[$tile]['name'])); // NOI18N
-        }
+    // /**
+    //  * Do a validity check and if it passes, return the Special tile belonging to this player.
+    //  * Checks that player's Special tile has not been used, and it's the current game state.
+    //  * 
+    //  * @param player_id player_id player playing the tile
+    //  * @param phase matched against commit, influence, or commit
+    //  * @param tile expected tile number (optional)
+    //  */
+    // function checkSpecialTile($player_id, $phase, $tile = 0) {
+    //     $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
+    //     // sanity check
+    //     if ($special == null) {
+    //         throw new BgaVisibleSystemException("No special tile found"); // NOI18N
+    //     } else if ($special['used']) {
+    //         throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
+    //     }
+    //     if (self::getGameStateValue($phase) == 0) {
+    //         throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
+    //     }
+    //     if ($tile != 0 && $special['tile'] != $tile) {
+    //         throw new BgaVisibleSystemException(sprintf("You cannot play %s", $this->specialcards[$tile]['name'])); // NOI18N
+    //     }
 
-        return $special;
-    }
+    //     return $special;
+    // }
 
     /**
      * @param {string} unit HOPLITE or TRIREME
@@ -868,7 +872,7 @@ class Perikles extends Table
      * @param player_id
      */
     function playSpecialTile($player_id) {
-        $special = $this->checkSpecialTile($player_id, "influence_phase");
+        $special = $this->SpecialTiles->checkSpecialTile($player_id);
         // sanity check
         $t = $special['tile'];
         switch ($t) {
@@ -905,7 +909,7 @@ class Perikles extends Table
      * Play Perikles Special tile.
      */
     function playPerikles($player_id) {
-        $this->flipSpecialTile($player_id, PERIKLES);
+        $this->flipSpecialTile($player_id);
         $this->addInfluenceToCity('athens', $player_id, 2);
     }
 
@@ -914,7 +918,7 @@ class Perikles extends Table
      */
     function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
         $player_id = self::getCurrentPlayerId();
-        $this->checkSpecialTile($player_id, "influence_phase", 6);
+        $this->SpecialTiles->checkSpecialTile($player_id, ALKIBIADES);
 
         // check players have influence
         $influence1 = $this->Cities->influence($owner1, $from_city1);
@@ -932,7 +936,7 @@ class Perikles extends Table
             }
         }
         // passed all checks.
-        $this->flipSpecialTile($player_id, ALKIBIADES);
+        $this->flipSpecialTile($player_id);
         $this->Cities->changeInfluence($from_city1, $owner1, -1);
         $this->Cities->changeInfluence($from_city2, $owner2, -1);
         $this->Cities->changeInfluence($to_city1, $owner1, 1);
@@ -966,9 +970,9 @@ class Perikles extends Table
      */
     function playPlague($city) {
         $player_id = self::getCurrentPlayerId();
-        $this->checkSpecialTile($player_id, "influence_phase", 8);
+        $this->SpecialTiles->checkSpecialTile($player_id, PLAGUE);
 
-        $this->flipSpecialTile($player_id, PLAGUE);
+        $this->flipSpecialTile($player_id);
         $players = self::loadPlayersBasicInfos();
         // how many cubes does each player have? Count candidates
         foreach ($players as $p => $player) {
@@ -1011,7 +1015,7 @@ class Perikles extends Table
         }
 
         $player_id = self::getCurrentPlayerId();
-        $this->checkSpecialTile($player_id, "commit_phase", 3);
+        $this->SpecialTiles->checkSpecialTile($player_id, SLAVEREVOLT);
 
         $location = "";
         $location_name = "";
@@ -1033,7 +1037,7 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("No Spartan Hoplites at $location"); // NOI18N
         }
 
-        $this->flipSpecialTile($player_id, SLAVEREVOLT);
+        $this->flipSpecialTile($player_id);
 
         // randomize and pick one
         shuffle($hoplites);
@@ -1058,8 +1062,9 @@ class Perikles extends Table
     /**
      * Player played their Special Tile. Flip it and mark it used.
      */
-    function flipSpecialTile($player_id, $tile) {
-        $tile_name = $this->specialcards[$tile]['name'];
+    function flipSpecialTile($player_id) {
+        $tile_name = $this->SpecialTiles->getSpecialTileName($player_id);
+        $tile = $this->getSpecialTiles->getSpecialTile($player_id);
         $players = self::loadPlayersBasicInfos();
         self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
             'i18n' => ['special_tile'],
@@ -1068,7 +1073,7 @@ class Perikles extends Table
             'tile' => $tile,
             'special_tile' => $tile_name,
         ));
-        self::DbQuery("UPDATE player SET special_tile_used=1 WHERE player_id=$player_id");
+        $this->SpecialTiles->markUsed($player_id);
     }
 
     /**
@@ -1156,7 +1161,7 @@ class Perikles extends Table
         $player_id = self::getActivePlayerId();
         $this->addInfluenceToCity($city, $player_id, 1);
         $state = "nextPlayer";
-        if ($this->canPlaySpecial($player_id, "influence")) {
+        if ($this->SpecialTiles->canPlaySpecial($player_id, "influence")) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -1210,7 +1215,7 @@ class Perikles extends Table
             'candidate' => $c,
             'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
-        $state = $this->canPlaySpecial($actingplayer, "influence") ? "useSpecial" : "nextPlayer";
+        $state = $this->SpecialTiles->canPlaySpecial($actingplayer, "influence") ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
     }
@@ -1293,7 +1298,7 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'candidate_id', 'city']
             ));
         }
-        $state = $this->canPlaySpecial($player_id, "influence") ? "useSpecial" : "nextPlayer";
+        $state = $this->SpecialTiles->canPlaySpecial($player_id, "influence") ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
     }
@@ -1319,7 +1324,7 @@ class Perikles extends Table
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
         $state = "nextPlayer";
-        if ($this->canPlaySpecial($player_id, "commit")) {
+        if ($this->SpecialTiles->canPlaySpecial($player_id, "commit")) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -1559,9 +1564,7 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("uncontested battle state reached with 0 or 2 participants"); // NOI18N
         }
 
-        $role = $noattacker ? clienttranslate("Defender") : clienttranslate("Attacker");
         $player_id = $noattacker ? $defender : $attacker;
-        $players = self::loadPlayersBasicInfos();
 
         // am I the defender?
         if ($player_id ==$defender) {
@@ -1576,29 +1579,27 @@ class Perikles extends Table
         } else {
             // attacker with no defenders
             // you must send units to the last round to win the tile
-            $battletype = $this->Locations->getBattle($location, 1) ?? HOPLITE;
+            $battletype = $this->Locations->getCombat($location, 2) ?? HOPLITE;
 
             // did we send units of that type?
             $attackingcounters = $this->Battles->getAttackingCounters($location, $battletype);
             if (empty($attackingcounters)) {
                 // sent attackers to first round but not second
-                self::notifyAllPlayers('unclaimedTile', clienttranslate('Attacker wins uncontested battle at ${location_name}; no one claims the tile'), array(
+                self::notifyAllPlayers('unclaimedTile', clienttranslate('Attacker wins uncontested battle at ${location_name} but did not send forces to the second battle; no one claims the tile'), array(
                     'i18n' => ['location_name'],
                     'location' => $location,
                     'location_name' => $this->Locations->getName($location),
+                    'preserve' => ['location']
                 ));
                 $this->unclaimedTile($id);
             } else {
-                self::notifyAllPlayers('winBattle', clienttranslate('${player_name} (${role}) wins ${location_name} and claims the tile without a battle'), array(
-                    'i18n' => ['location_name', 'role'],
-                    'city' => $city,
-                    'role' => $role,
-                    'player_id' => $player_id,
-                    'player_name' => $players[$player_id]['player_name'],
+                self::notifyAllPlayers('uncontestedVictory', clienttranslate('Attacker wins uncontested battle at ${location_name}'), array(
+                    'i18n' => ['location_name'],
+                    'location' => $location,
                     'location_name' => $this->Locations->getName($location),
-                    'preserve' => ['player_id', 'city'],
+                    'preserve' => ['location']
                 ));
-                $this->claimTile($id, $player_id);
+                $this->claimTile($player_id, $tile);
             }
         }
     }
@@ -1771,10 +1772,10 @@ class Perikles extends Table
         } else {
             throw new BgaVisibleSystemException("Invalid side to take Token: $sideval"); // NOI18N
         }
-        self::notifyAllPlayers("takeToken", clienttranslate('${side_name} rolls a hit'), array(
+        self::notifyAllPlayers("takeToken", clienttranslate('${attordef} wins a Battle Token'), array(
             'i18n' => ['side_name'],
             'side' => $side,
-            'side_name' => $role,
+            'attordef' => $role,
         ));
         if (self::getGameStateValue($token) < 2) {
             self::incGameStateValue($token, 1);
@@ -1783,33 +1784,21 @@ class Perikles extends Table
 
     /**
      * One side has won a battle and gets to claim the tile.
-     * @param {id} for tile
-     * @param {string} location
+     * @param tile
      */
-    function battleVictory($id, $location) {
+    function battleVictory($tile) {
         $winner = null;
+        $location = $tile['location'];
         $attacker = $this->Battles->getAttacker($location);
         $defender = $this->Battles->getDefender($location);
         if (self::getGameStateValue(ATTACKER_TOKENS) == 2) {
             $winner = $attacker;
-            $role = clienttranslate("Attacker");
         } elseif (self::getGameStateValue(DEFENDER_TOKENS) == 2) {
             $winner = $defender;
-            $role = clienttranslate("Defender");
         } else {
             throw new BgaVisibleSystemException("No winner found at end of battle for tile $location"); // NOI18N
         }
-        $this->claimTile($id, $winner);
-
-        $players = self::loadPlayersBasicInfos();
-
-        self::notifyAllPlayers('battleVictory', clienttranslate('${player_name} (${role}) claims ${location_name} tile'), array(
-            'i18n' => ['role', 'location_name'],
-            'player_id' => $winner,
-            'player_name' => $players[$winner]['player_name'],
-            'location_name' => $this->Locations->getName($location),
-            'role' => $role,
-        ));
+        $this->claimTile($winner, $tile);
     }
 
     /**
@@ -1822,18 +1811,28 @@ class Perikles extends Table
     }
 
     /**
-     * End of battle cleanup.
-     * Send military back, reset battle state valies.
+     * Reset for next battle
      */
-    function endBattle($location) {
-        // battle for this location is over
-        $this->returnMilitaryUnits($location);
-        // reinitialize battle tokens after every battle
+    function battleReset() {
+        // reinitialize battle tokens before every battle
         self::setGameStateValue(ATTACKER_TOKENS, 0);
         self::setGameStateValue(DEFENDER_TOKENS, 0);
+        self::setGameStateValue("commit_phase", 0);
         self::setGameStateValue("active_battle", 0);
         self::setGameStateValue("battle_round", 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
+    }
+    
+    /**
+     * When a battle starts, flip all counters face up.
+     * @param {object} battle tile
+     */
+    function revealCounters($tile) {
+        $counters = $this->Battles->getLocationCounters($tile['location']);
+        self::notifyAllPlayers("revealCounters", '', array(
+            'slot' => $tile['slot'],
+            'military' => $counters
+        ));
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1854,7 +1853,7 @@ class Perikles extends Table
         $private = array();
         $phase = $this->checkPhase();
         foreach (array_keys($players) as $player_id) {
-            $private[$player_id] = array('special' => $this->canPlaySpecial($player_id, $phase));
+            $private[$player_id] = array('special' => $this->SpecialTiles->canPlaySpecial($player_id, $phase));
         }
         return array(
             '_private' => $private
@@ -2042,7 +2041,7 @@ class Perikles extends Table
             $state = "assassinate";
         } else if ($type == 'candidate') {
             $state = "candidate";
-        } else if ($this->canPlaySpecial($player_id, "influence")) {
+        } else if ($this->SpecialTiles->canPlaySpecial($player_id, "influence")) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState( $state );
@@ -2149,27 +2148,56 @@ class Perikles extends Table
      * Either go to next battle, or if none left, to end turn.
      */
     function stNextLocationTile() {
-        $state = "resolve";
+        $state = "";
         // commit phase is over
-        self::setGameStateValue("commit_phase", 0);
+        $this->battleReset();
 
         // if there was previously a battle, cleanup
         $slot = self::getGameStateValue("active_battle");
         if ($slot != 0) {
             $previousbattle = $this->Locations->getBattleTile($slot);
-            $this->endBattle($previousbattle);
+            $this->returnMilitaryUnits($previousbattle['location']);
         }
 
-        $battle = $this->Battles->nextBattle();
-        if ($battle == null) {
+        // is there another tile?
+        $tile = $this->Battles->nextBattle();
+        if ($tile == null) {
             $state = "endTurn";
+        } else {
+            $location = $tile['location'];
+            // are there combatants?
+            $attacker = $this->Battles->getAttacker($location);
+            $defender = $this->Battles->getDefender($location);
+            if ($attacker && $defender) {
+                // battle!
+                $state = "resolve";
+            } elseif ($attacker) {
+                // if attacker, still needs to beat militia
+                if ($this->Locations->hasDefendingMilitia($location)) {
+                    $state = "resolve";
+                } else {
+                    // only attacker sent forces, no defending militia
+                    $this->uncontestedBattle($tile);
+                    $state = "nextBattle";
+                }
+            }elseif ($defender) {
+                // only defender sent forces
+                $this->uncontestedBattle($tile);
+                $state = "nextBattle";
+            } else {
+                // nobody sent forces
+                $this->noBattle($tile);
+                $state = "nextBattle";
+            }
         }
+
         $this->gamestate->nextState($state);
     }
 
     /**
      * Resolve all the battles for the next location in the queue.
-     * Assumes we have already checked that there is another location tile to be fought for.
+     * Assumes we have already checked that there is another location tile to be fought for,
+     * and we know there are combatants on both sides.
      */
     function stResolveTile() {
         $tile = $this->Battles->nextBattle();
@@ -2177,115 +2205,89 @@ class Perikles extends Table
             // shouldn't happen!
             throw new BgaVisibleSystemException("No battle tile to resolve"); // NOI18N
         }
-        // default next state - we will roll the actual battle if we pass all checks below
-        $state = "nextBattle";
+        // next state
+        $state = "";
 
         $location = $tile['location'];
-        $attacker = $tile['attacker'];
-        $defender = $tile['defender'];
         $slot = $tile['slot'];
 
         self::setGameStateValue("active_battle", $slot);
-        // is this the first or second round?
-        $battletype = null;
+        // initialized to 0 in stNextLocationTile, so this makes it either 1 or 2
+        self::incGameStateValue("battle_round", 1);
         $round = self::getGameStateValue("battle_round");
-        // if we finished the second round, the round counter was incremented to 2, stop
-        if ($round != 2) {
-            // HOPLITE or TRIREME or null if asking for 2nd round of a land battle
-            $battletype = $this->Locations->getBattle($location, $round);
-        }
-        // no second round, or we finished the second round
-        if ($battletype == null) {
+
+        $combat = $this->Locations->getCombat($location, $round);
+        if ($combat == null) {
             // there should be a winner
-            $this->battleVictory($tile['id'], $location);
+            $this->battleVictory($tile);
             $state = "endBattle";
         } else {
-            $is_battle = true;
-            if ($round == 0) {
-                // first battle
-                // flip all the counters
-                $counters = $this->Battles->getLocationCounters($location);
-                self::notifyAllPlayers("revealCounters", '', array(
-                    'slot' => $slot,
-                    'military' => $counters
-                ));
-                // one side has no forces?
-                if ($attacker == null || $defender == null) {
-                    if ($attacker == null && $defender == null) {
-                        $this->noBattle($tile);
-                    } else {
-                        $this->uncontestedBattle($tile);
-                    }
-                    $is_battle = false;
-                    $state = "endBattle";
-                }
+            if ($round == 1) {
+                $this->revealCounters($tile);
             }
-            // there forces on both sides, so there is a battle
-            // this may be round 1 or 2
-            if ($is_battle) {
-                // can anyone play a special card now?
-                $hascard = $this->playersWithSpecial($battletype);
-                if (!empty($hascard)) {
-                    $state = "special";
-                }
-            }
+            $state = "nextCombat";
         }
-        self::incGameStateValue("battle_round", 1);
         $this->gamestate->nextState($state);
     }
 
     /**
-     * There are forces on both sides.
+     * There are forces on both sides (at least in one battle).
      * We know there is a battle to be fought.
      */
-    function stBattle() {
+    function stCombat() {
         $tile = $this->Battles->nextBattle();
         // should not happen!
         if ($tile == null) {
             throw new BgaVisibleSystemException("no battle!");
         }
 
+        $location = $tile['location'];
         $attacker = $tile['attacker'];
         $defender = $tile['defender'];
-        // per Martin Wallace: if both sides fight the first round, but no one sent units to the second round of battle,
-        // then resolve the battle to see who loses a unit, but no one gets the tile, but the defender gets 2 cubes.
-        $location = $tile['location'];
-        $slot = $tile['slot'];
-        $city = $tile['city'];
+        // do we have combatants on both sides for this round?
+        $round = self::getGameStateValue('battle_round');
+        $combat = $this->Locations->getCombat($location, $round);
+        $attackers = $this->Battles->getAttackingCounters($location, $combat);
+        $defenders = $this->Battles->getDefendingCounters($location, $combat);
         $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers('battle', clienttranslate('${attacker_name} attacks ${location_name} defended by ${defender_name}'), array(
-            'i18n' => ['location_name'],
-            'attacker' => $attacker,
-            'defender' => $defender,
-            'city' => $city,
-            'attacker_name' => $players[$attacker]['player_name'],
-            'defender_name' => $players[$defender]['player_name'],
-            'location_name' => $this->Locations->getName($location),
-            'preserve' => ['attacker', 'defender', 'city'],
-        ));
-        $round = self::getGameStateValue("battle_round");
-        if ($round == 2){
-            throw new BgaVisibleSystemException("invalid battle round $round at $location"); // NOI18N
+        // is this round a one-sided battle?
+        $unopposed = null;
+        if (empty($attackers) || empty($defenders)) {
+            if (empty($attackers)) {
+                // attacker brought nothing to this round
+                $unopposed = DEFENDER;
+            } elseif (empty($defenders)) {
+                // defender brought nothing to this round
+                // attackers might still need to defeat militia
+                if (!$this->Locations->hasDefendingMilitia($location, $combat)) {
+                    $unopposed = ATTACKER;
+                }
+            }
         }
-        $type = $this->Locations->getBattle($location, $round);
+        if ($unopposed != null) {
+            $unopposed_id = ($unopposed == ATTACKER) ? $attacker : $defender;
+            $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate("Attacker") : clienttranslate("Defender");
+            self::notifyAllPlayers("freeToken", clienttranslate('${player_name} (${side}) wins ${combat_type} battle unopposed'), array(
+                'i18n' => ['combat_type', 'side'],
+                'player_id' => $unopposed_id,
+                'player_name' => $players[$unopposed_id]['player_name'],
+                'type' => $combat,
+                'side' => $unopposed_role,
+                'combat_type' => $this->getUnitName($combat),
+                'preserve' => ['player_id']
+            ));
 
-        $winner = $this->resolveBattle($type, $location, $slot);
-        $loser = null;
-        // for second round, if there is one, one side reset to 0 Battle tokens, the other starts with one
-        if ($winner == ATTACKER) {
-            self::setGameStateValue(ATTACKER_TOKENS, 1);
-            self::setGameStateValue(DEFENDER_TOKENS, 0);
-            $loser = $this->Battles->getDefender($location);
-        } elseif ($winner == DEFENDER) {
-            self::setGameStateValue(ATTACKER_TOKENS, 0);
-            self::setGameStateValue(DEFENDER_TOKENS, 1);
-            $loser = $this->Battles->getAttacker($location);
+            if ($round == 1) {
+                // unopposed side gets a free battle token for the next round
+                $this->takeToken($unopposed);
+            } else {
+                $this->claimTile($unopposed_id, $tile);
+            }
         } else {
-            throw new BgaVisibleSystemException("Invalid winner at end of battle: $winner"); // NOI18N
+            // there are combatants on both sides
+            // before battle Special Tiles can come into play
+            
         }
-        // loser must lose a unit
-        $this->assignCasualty($loser, $location);
-
         $this->gamestate->nextState("");
     }
 

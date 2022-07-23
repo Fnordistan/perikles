@@ -101,33 +101,32 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
-   * Get first or second battle for this location.
+   * Get first or second combat for this location.
    * @param location
-   * @param round 0 or 1 for first or second
+   * @param round 1 or 2 for first or second, or 3+ meaning battle is over
    * @return HOPLITE or TRIREME or null if asked for second round and there isn't one (land battle)
    */
-  public function getBattle($location, $round) {
-    $battle = null;
-    if ($round < 0 || $round > 1) {
-        throw new BgaVisibleSystemException("invalid battle round: $round"); // NOI18N
+  public function getCombat($location, $round) {
+    $combat = null;
+    if ($round == 1 || $round == 2) {
+      $battles = $this->getBattles($location);
+      if ($round == 1) {
+          $combat = $battles[0];
+      } elseif (strlen($battles) == 2) {
+          $combat = $battles[1];
+      }
+      if ($combat != null) {
+          if ($combat == "H") {
+              $combat = HOPLITE;
+          } elseif ($combat == "T") {
+              $combat = TRIREME;
+          } else {
+              // should not happen!
+              throw new BgaVisibleSystemException("Invalid combat type: $combat"); // NOI18N
+          }
+      }
     }
-    $battles = $this->getBattles($location);
-    if ($round == 0) {
-        $battle = $battles[0];
-    } elseif (strlen($battles) == 2) {
-        $battle = $battles[1];
-    }
-    if ($battle != null) {
-        if ($battle == "H") {
-            $battle = HOPLITE;
-        } elseif ($battle == "T") {
-            $battle = TRIREME;
-        } else {
-            // should not happen!
-            throw new BgaVisibleSystemException("Invalid battle type: $battle"); // NOI18N
-        }
-    }
-    return $battle;
+    return $combat;
   }
 
   /**
@@ -146,6 +145,30 @@ class PeriklesLocations extends APP_GameClass
    */
   public function getMilitia($location) {
     return $this->locations[$location]["intrinsic"];
+  }
+
+  /**
+   * Does this location have intrinsic defenders?
+   * @param {string} location
+   * @param {string} (optional) HOPLITE, TRIREME, if null then true if either is present
+   * @return true if there are intrinsic defenders of the combat type
+   */
+  public function hasDefendingMilitia($location, $type=null) {
+    $hasDef = false;
+    $militia = $this->getMilitia($location);
+    if ($militia != null && $militia[0] == "d") {
+        if ($type == null) {
+          $hasDef = true;
+        } elseif ($type == HOPLITE) {
+          // all defenders include Hoplites
+          $hasDef = true;
+        } elseif ($type == TRIREME) {
+          $hasDef = ($militia == "dht");
+        } else {
+          throw new BgaVisibleSystemException("Invalid unit type: $type"); // NOI18N
+        }
+    }
+    return $hasDef;
   }
 
   /**

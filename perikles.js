@@ -103,14 +103,15 @@ function (dojo, declare) {
             const special_scale = 0.2;
 
             for (const player_id in players) {
-                const spec = parseInt(specialtiles[player_id]);
+                const spec = specialtiles[player_id];
 
                 // add flex row for cards
                 const player_cards = this.format_block('jstpl_influence_cards', {id: player_id, scale: special_scale});
                 const player_cards_div = dojo.place(player_cards, $('player_board_'+player_id));
 
-                const used = (spec < 0 || (spec > 0 && player_id != this.player_id));
-                const specialtile = new perikles.specialtile(player_id, spec, used);
+                const specname = spec['name']; // null for other players' unused tiles
+                const used = !!spec['used'];
+                const specialtile = new perikles.specialtile(player_id, specname, used);
 
                 const specialhtml = specialtile.getDiv();
 
@@ -1332,17 +1333,13 @@ function (dojo, declare) {
         /**
          * Get the translated a player's Special Tile label.
          * @param {string} player_id 
-         * @returns label.
+         * @returns label or null
          */
         getPlayerSpecial: function(player_id) {
             const mycards = $(player_id+"_player_cards");
             const myspecial = mycards.getElementsByClassName("prk_special_tile")[0];
-            for (const s of SPECIAL_TILES) {
-                if (myspecial.classList.contains(s)) {
-                    return s;
-                }
-            }
-            return null;
+            const label = myspecial.id.split("_")[0];
+            return label;
         },
 
         /**
@@ -2518,8 +2515,7 @@ function (dojo, declare) {
             const player_id = notif.args.player_id;
             // get this player's special card
             const player_div = $(player_id+"_player_cards");
-            const tile = parseInt(notif.args.tile);
-            const special = SPECIAL_TILES[Math.abs(tile)-1];
+            const special = notif.args.tile;
             const spec = player_div.getElementsByClassName("prk_special_tile")[0];
             spec.classList.remove("prk_special_tile_back");
             spec.classList.add("prk_special_tile_front", "prk_special_tile_used", special);

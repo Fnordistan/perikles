@@ -153,6 +153,20 @@ class PeriklesBattles extends APP_GameClass
     return $strength;
   }
 
+  /**
+   * Return all counters from a locaton to their respective cities.
+   * Only does db changes, not clientside notifications.
+   * @param {string} location
+   */
+  public function returnCounters($location) {
+    $counters = $this->getCounters($location);
+    foreach($counters as $counter) {
+      $id = $counter['id'];
+      $city = $counter['city'];
+      self::DbQuery("UPDATE MILITARY SET location=\"$city\", battlepos=0 WHERE id=$id");
+    }
+  }
+
     /**
      * Return Location tile where the next battleis, or null if there are no more.
      * Retrieves next in queue.

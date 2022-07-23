@@ -29,12 +29,3 @@ $this->specialcards = array(
   7 => array('name' => clienttranslate("Phormio"), "description" => clienttranslate("Double value of all Athenian triremes in one battle."), "phase" => TRIREME),//TRIREME
   8 => array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes."), "phase" => "influence"),//INFLUENCE
 );
-
-$this->combat_results_table = array(
-  1 => array("odds" => "1:2", "attacker" => 10, "defender" => 5),
-  2 => array("odds" => "-2", "attacker" => 9, "defender" => 6),
-  3 => array("odds" => "1:1", "attacker" => 8, "defender" => 7),
-  4 => array("odds" => "+2", "attacker" => 7, "defender" => 8),
-  5 => array("odds" => "2:1", "attacker" => 6, "defender" => 9),
-  6 => array("odds" => "3:1", "attacker" => 5, "defender" => 10),
-);
