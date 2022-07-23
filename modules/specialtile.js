@@ -4,8 +4,6 @@
  */
 
 const SPECIAL_TILE_SCALE = 0.2;
-// correspond to materials array
-// const SPECIAL_TILES = ['perikles', 'persianfleet', 'slaverevolt', 'brasidas', 'thessalanianallies', 'alkibiades', 'phormio', 'plague'];
 const SPECIAL_MARGIN = "2px";
 
 define(["dojo/_base/declare"], function (declare) {

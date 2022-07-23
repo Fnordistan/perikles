@@ -39,7 +39,7 @@ class PeriklesSpecial extends APP_GameClass
    * @param {string} player_id
    * @return {string} label
    */
-  private function getSpecialTile($player_id) {
+  public function getSpecialTile($player_id) {
       $label = $this->game->getUniqueValueFromDB("SELECT special_tile FROM player WHERE player_id=$player_id");
       return $label;
   }
@@ -51,7 +51,7 @@ class PeriklesSpecial extends APP_GameClass
    */
   public function getSpecialTileName($player_id) {
     $special = $this->getSpecialTile($player_id);
-    return $special['name'];
+    return $this->specialcards[$special]['name'];
   }
 
 
@@ -66,8 +66,8 @@ class PeriklesSpecial extends APP_GameClass
           $playable = true;
           if ($phase == $this->specialcards[$tileid]["phase"]) {
               // slaverevolt, only "commit" Special tile, can only be played on player's turn
-              if ($phase == "commit") {
-                  $playable = ($player_id == self::getActivePlayerId());
+              if ($phase == "commit_phase") {
+                  $playable = ($player_id == $this->game->getActivePlayerId());
               }
               if ($playable) {
                   $canplay[] = $player_id;
@@ -125,7 +125,5 @@ class PeriklesSpecial extends APP_GameClass
 
       return $special;
   }
-
-
 
 }

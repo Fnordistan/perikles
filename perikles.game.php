@@ -180,21 +180,6 @@ class Perikles extends Table
         /************ End of the game initialization *****/
     }
 
-    // /**
-    //  * Assign Special tile to each player at start of game.
-    //  */
-    // protected function assignSpecialTiles() {
-    //     $spec = range(1,8);
-    //     // for testing
-    //     $spec = [2,4,5,7,1,6,8,3];
-    //     // shuffle($spec);
-    //     $players = self::loadPlayersBasicInfos();
-    //     foreach ($players as $player_id => $player) {
-    //         $tile = array_pop($spec);
-    //         self::DbQuery("UPDATE player SET special_tile = $tile WHERE player_id=$player_id");
-    //     }
-    // }
-
     /**
      * Lay out the first 10 influence tiles
      */
@@ -642,38 +627,6 @@ class Perikles extends Table
         return $this->isTileLeft(1);
     }
 
-    // /**
-    //  * Return a list of players who are eligible to play a special tile now.
-    //  * May be empty
-    //  */
-    // function playersWithSpecial($phase) {
-    //     $canplay = [];
-    //     $playertiles = self::getCollectionFromDB("SELECT player_id, special_tile FROM player WHERE special_tile_used IS NOT TRUE", true);
-    //     foreach ($playertiles as $player_id => $tileid) {
-    //         $playable = true;
-    //         if ($phase == $this->specialcards[$tileid]["phase"]) {
-    //             // slaverevolt, only "commit" Special tile, can only be played on player's turn
-    //             if ($phase == "commit") {
-    //                 $playable = ($player_id == self::getActivePlayerId());
-    //             }
-    //             if ($playable) {
-    //                 $canplay[] = $player_id;
-    //             }
-    //         }
-    //     }
-    //     return $canplay;
-    // }
-
-    // /**
-    //  * Can a player play a Special Tile now?
-    //  * @return true if player_id can play a Special now
-    //  */
-    // function canPlaySpecial($player_id, $phase) {
-    //     $players = $this->SpecialTiles->playersWithSpecial($phase);
-    //     $canplay = in_array($player_id, $players);
-    //     return $canplay;
-    // }
-
     /**
      * Return double associative array,
      * all cities this player is leader of, with lowest strength Hoplite and/or Trireme from the deadpool for each
@@ -798,32 +751,6 @@ class Perikles extends Table
         return $influence;
     }
 
-    // /**
-    //  * Do a validity check and if it passes, return the Special tile belonging to this player.
-    //  * Checks that player's Special tile has not been used, and it's the current game state.
-    //  * 
-    //  * @param player_id player_id player playing the tile
-    //  * @param phase matched against commit, influence, or commit
-    //  * @param tile expected tile number (optional)
-    //  */
-    // function checkSpecialTile($player_id, $phase, $tile = 0) {
-    //     $special = self::getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
-    //     // sanity check
-    //     if ($special == null) {
-    //         throw new BgaVisibleSystemException("No special tile found"); // NOI18N
-    //     } else if ($special['used']) {
-    //         throw new BgaVisibleSystemException("You have already used your special tile"); // NOI18N
-    //     }
-    //     if (self::getGameStateValue($phase) == 0) {
-    //         throw new BgaVisibleSystemException("This Special Tile cannot be used during the current phase"); // NOI18N
-    //     }
-    //     if ($tile != 0 && $special['tile'] != $tile) {
-    //         throw new BgaVisibleSystemException(sprintf("You cannot play %s", $this->specialcards[$tile]['name'])); // NOI18N
-    //     }
-
-    //     return $special;
-    // }
-
     /**
      * @param {string} unit HOPLITE or TRIREME
      * @return translatation marked string
@@ -835,7 +762,6 @@ class Perikles extends Table
         );
         return $units[$unit];
     }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -876,28 +802,28 @@ class Perikles extends Table
         // sanity check
         $t = $special['tile'];
         switch ($t) {
-            case 1: // Perikles
+            case PERIKLES: // Perikles
                 $this->playPerikles($player_id);
                 break;
-            case 2; // Persian Fleet
+            case PERSIANFLEET; // Persian Fleet
                 throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
-            case 3; // Slave Revolt
+            case SLAVEREVOLT; // Slave Revolt
                 throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
-            case 4; // Brasidas
+            case BRASIDAS; // Brasidas
                 throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
-            case 5; // Thessalanian Allies
+            case THESSALANIANALLIES; // Thessalanian Allies
                 throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
-            case 6; // Alkibiades
+            case ALKIBIADES; // Alkibiades
                 throw new BgaVisibleSystemException("Invalid Special card played: $t"); // NOI18N
                 break;
-            case 7; // Phormio
+            case PHORMIO; // Phormio
                 throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
                 break;
-            case 8; // Plague
+            case PLAGUE; // Plague
                 throw new BgaVisibleSystemException("Invalid Special card played: $t"); // NOI18N
                 break;
             default:
@@ -1063,8 +989,8 @@ class Perikles extends Table
      * Player played their Special Tile. Flip it and mark it used.
      */
     function flipSpecialTile($player_id) {
+        $tile = $this->SpecialTiles->getSpecialTile($player_id);
         $tile_name = $this->SpecialTiles->getSpecialTileName($player_id);
-        $tile = $this->getSpecialTiles->getSpecialTile($player_id);
         $players = self::loadPlayersBasicInfos();
         self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
             'i18n' => ['special_tile'],
@@ -1867,15 +1793,15 @@ class Perikles extends Table
     function checkPhase() {
         $state = $this->getStateName();
         if ($state == "takeInfluence") {
-            return "influence";
+            return "influence_phase";
         } elseif ($state == "commitForces") {
-            return "commit";
+            return "commit_phase";
         } elseif ($state == "specialTile") {
             // this may be 0, 1, or 2 (2 = candidate phase, no special tiles)
             if (self::getGameStateValue("influence_phase") == 1) {
-                return "influence";
+                return "influence_phase";
             } elseif (self::getGameStateValue("commit_phase") == 1) {
-                return "commit";
+                return "commit_phase";
             }
         }
         return null;

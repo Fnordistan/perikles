@@ -1297,6 +1297,7 @@ function (dojo, declare) {
                         break;
                 }
             }
+
             // buttons that can be added even for non-current player
             switch( stateName ) {
                 case 'takeInfluence':
