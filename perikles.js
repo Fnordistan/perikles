@@ -29,7 +29,7 @@ const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 
 const PLAYER_INF_MARGIN = "2px";
 
-const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles'];
+const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles', 'specialBattleTile'];
 
 const CANDIDATES = {
     "\u{003B1}" : "a",
@@ -738,7 +738,8 @@ function (dojo, declare) {
         restoreDescriptionOnMyTurn: function() {
             const text = this.gamedatas.gamestate.olddescriptionmyturn;
             if (text) {
-                const acting = this.decorator.spanPlayerName(this.getActivePlayerId());
+                const player_id = (this.gamedatas.gamestate.name == "specialBattleTile") ? this.getCurrentPlayerId() :this. getActivePlayerId();
+                const acting = this.decorator.spanPlayerName(player_id);
                 this.setDescriptionOnMyTurn(text, {actplayer: acting});
             }
         },
@@ -1295,6 +1296,16 @@ function (dojo, declare) {
                     case 'specialTile':
                         this.addSpecialPassButton();
                         break;
+                    case 'specialBattleTile':
+                        if (args._private.special) {
+                            const location = args._private.location;
+                            const buttonlbl = this.getSpecialButtonLabel(this.player_id);
+                            this.addActionButton( 'play_special_btn', buttonlbl, () => {
+                                this.specialTileWrapper(location);
+                            }, null, false, 'blue' );
+                        }
+                        this.addSpecialPassButton();
+                        break;
                 }
             }
 
@@ -1303,15 +1314,14 @@ function (dojo, declare) {
                 case 'takeInfluence':
                 case 'specialTile':
                 case 'commitForces':
-                        if (args._private.special) {
+                    if (args._private.special) {
                         const buttonlbl = this.getSpecialButtonLabel(this.player_id);
                         this.addActionButton( 'play_special_btn', buttonlbl, () => {
                             this.specialTileWrapper();
                         }, null, false, 'blue' );
                     }
                     break;
-        }
-
+            }
         },
 
         ///////////////////////////////////////////////////
@@ -1345,15 +1355,18 @@ function (dojo, declare) {
 
         /**
          * Check cards before submitting to the specialTile function.
+         * @param {string} location only supplied for battle tiles
          */
-         specialTileWrapper: function() {
+         specialTileWrapper: function(location=null) {
             const special = this.getPlayerSpecial(this.player_id);
-            if (special == "plague") {
+            if (special == PLAGUE) {
                 this.addPlagueButtons();
             } else if(special == ALKIBIADES) {
                 this.addAlkibiadesButtons();
             } else if(special == SLAVEREVOLT) {
                 this.addSlaveRevoltButtons();
+            } else if(special == PERSIANFLEET) {
+                this.addPersianFleetButtons(location);
             } else {
                 this.specialTile(true);
             }
@@ -1364,19 +1377,21 @@ function (dojo, declare) {
          * Also add the Pass button if it's the Special Tile phase.
          * Readd Commit Forces in commit forces phase
          * @param {string} special
+         * @param {string} location for battle tile buttons
          */
-         addSpecialTileCancel: function(special) {
+         addSpecialTileCancel: function(special, location=null) {
             this.addActionButton( special+"_cancel_btn", _("Cancel"), () => {
+                const state = this.gamedatas.gamestate.name;
                 this.restoreDescriptionOnMyTurn();
                 this.removeActionButtons();
-                if (this.gamedatas.gamestate.name == "commitForces") {
+                if (state == "commitForces") {
                     this.addCommitForcesButton();
                 }
 
                 this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
-                    this.specialTileWrapper();
+                    this.specialTileWrapper(location);
                 }, null, false, 'blue' );
-                if (this.gamedatas.gamestate.name == "specialTile") {
+                if (state == "specialTile" || state == "specialBattleTile") {
                     this.addSpecialPassButton();
                 }
             }, null, null, 'red');
@@ -1414,7 +1429,7 @@ function (dojo, declare) {
                 this.onPlagueCity(city);
             }));
 
-            this.addSpecialTileCancel("plague");
+            this.addSpecialTileCancel(PLAGUE);
         },
 
         /////////////////////// ALKIBIADES ///////////////////////
@@ -1654,6 +1669,26 @@ function (dojo, declare) {
                 const id = button.id.split("_")[0];
                 this.onSlaveRevolt(id);
             });
+        },
+
+        /////////////////////// PERSIAN FLEET ///////////////////////
+
+        addPersianFleetButtons: function(location) {
+            let msg = _("Choose side to begin ${type} battle at ${location} with 1 Battle Token");
+            const unit = this.getUnitTr(TRIREME);
+            const locname = new perikles.locationtile(location).getNameTr();
+            msg = msg.replace('${type}', unit);
+            msg = msg.replace('${location}', locname);
+            this.setDescriptionOnMyTurn(msg, {'persianfleet': true});
+            this.removeActionButtons();
+            this.addActionButton( "attacker_btn", _('Attackers'), () => {
+                console.log("Attackers");
+            }, null, null, 'blue');
+            this.addActionButton( "defender_btn", _('Defenders'), () => {
+                console.log("Defenders");
+            }, null, null, 'blue');
+
+            this.addSpecialTileCancel(PERSIANFLEET, location);
         },
 
         ///////////////////////////////////////////////////
@@ -2043,7 +2078,7 @@ function (dojo, declare) {
             let unit_str = _("${city_name} ${unit}-${strength}");
             unit_str = unit_str.replace('${city_name}', '<span style="color: var(--color_'+counter.getCity()+');")>'+this.getCityNameTr(counter.getCity())+'</span>');
             unit_str = unit_str.replace('${unit}', '<b>${unit}</b>');
-            unit_str = unit_str.replace('${unit}', counter.getType() == HOPLITE ? _("Hoplite") : _("Trireme"));
+            unit_str = unit_str.replace('${unit}', this.getUnitTr(counter.getType()));
             unit_str = unit_str.replace('${strength}', counter.getStrength());
             return unit_str;
         },
@@ -2056,9 +2091,24 @@ function (dojo, declare) {
         counterText: function(counter) {
             let unit_str = _("${city_name} ${unit}-${strength}");
             unit_str = unit_str.replace('${city_name}', this.getCityNameTr(counter.getCity()));
-            unit_str = unit_str.replace('${unit}', counter.getType() == HOPLITE ? _("Hoplite") : _("Trireme"));
+            unit_str = unit_str.replace('${unit}', this.getUnitTr(counter.getType()));
             unit_str = unit_str.replace('${strength}', counter.getStrength());
             return unit_str;
+        },
+
+        /**
+         * Get translateable string for Hoplite or Trireme.
+         * @param {string} type 
+         * @returns {string} translateable
+         */
+        getUnitTr: function(type) {
+            let unit = "";
+            if (type == HOPLITE) {
+                unit = _("Hoplite");
+            } else if (type == TRIREME) {
+                unit = _("Trireme");
+            }
+            return unit;
         },
 
         ///////////////////////////////////////////////////
@@ -2583,6 +2633,7 @@ function (dojo, declare) {
         notif_revealCounters: function(notif) {
             const slot = notif.args.slot;
             const military = notif.args.military;
+            debugger;
             // clear the old ones. TODO: animate flipping
             const oldcounters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...oldcounters].forEach(c => {

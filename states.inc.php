@@ -38,6 +38,7 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("NEXT_COMBAT", 30);
     define("ROLL_BATTLE", 31);
     define("TAKE_LOSS", 32);
+    define("SPECIAL_BATTLE_TILE", 33);
     define("END_TURN", 28);
     define("SCORING", 90);
     define("ENDGAME", 99);
@@ -109,7 +110,20 @@ $machinestates = array(
         "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "useSpecialTile" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT, "doBattle" => RESOLVE_TILE )
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT )
+    ),
+
+    /**
+     * For battle Special Tiles.
+     */
+    SPECIAL_BATTLE_TILE => array(
+    	"name" => "specialBattleTile",
+    	"description" => clienttranslate('Special Tile phase'),
+    	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
+        "args" => "argsSpecialBattle",
+    	"type" => "multipleactiveplayer",
+    	"possibleactions" => array( "useSpecialTile" ),
+    	"transitions" => array( "" => ROLL_BATTLE )
     ),
 
     ELECTIONS => array(
@@ -187,7 +201,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stCombat",
-        "transitions" => array( "nextBattle" => NEXT_BATTLE_TILE, "continueBattle" => RESOLVE_TILE, "combat" => ROLL_BATTLE, "useSpecial" => SPECIAL_TILE )
+        "transitions" => array( "nextBattle" => NEXT_BATTLE_TILE, "continueBattle" => RESOLVE_TILE, "combat" => ROLL_BATTLE, "useSpecial" => SPECIAL_BATTLE_TILE )
     ),
 
     ROLL_BATTLE => array(

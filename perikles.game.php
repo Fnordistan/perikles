@@ -780,9 +780,7 @@ class Perikles extends Table
         if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
             // We might be in the middle of battle (with Trireme or Hoplite Specials)
             $nextstate = "";
-            if (self::getGameStateValue('active_battle') != 0) {
-                $nextstate = "doBattle";
-            } elseif (self::getGameStateValue('influence_phase') == 0) {
+            if (self::getGameStateValue('influence_phase') == 0) {
                 // if it was Slave Revolt, next Commit
                 $nextstate = "nextCommit";
             } else {
@@ -790,6 +788,8 @@ class Perikles extends Table
                 $nextstate = "nextPlayer";
             }
             $this->gamestate->nextState($nextstate);
+        } elseif ($this->getStateName() == "specialBattleTile") {
+            $this->gamestate->setPlayerNonMultiactive( $player_id, "" );
         }
     }
 
@@ -1807,6 +1807,24 @@ class Perikles extends Table
     }
 
     /**
+     * Same as args special but for battle tiles.
+     */
+    function argsSpecialBattle() {
+        $tile = $this->Battles->nextBattle();
+        $location = $tile['location'];
+        $round = self::getGameStateValue('battle_round');
+        $combat = $this->Locations->getCombat($location, $round);
+        $players = $this->specialBattleTilePlayers($combat);
+        $private = array();
+        foreach ($players as $player_id) {
+            $private[$player_id] = array('special' => true, 'location' => $location);
+        }
+        return array(
+            '_private' => $private
+        );
+    }
+
+    /**
      * Get the phase to check against for use of a Special tile.
      * @return "influence, commit, or
      */
@@ -2239,10 +2257,11 @@ class Perikles extends Table
             $specialplayers = $this->specialBattleTilePlayers($combat);
             if (empty($specialplayers)) {
                 $state = "combat";
+                throw new BgaVisibleSystemException("stCombat: $state");
             } else {
+                $this->gamestate->setPlayersMultiactive( $specialplayers, "combat", false );
                 $state = "useSpecial";
             }
-            throw new BgaVisibleSystemException("stCombat: $state");
         }
         $this->gamestate->nextState($state);
     }
@@ -2343,7 +2362,8 @@ class Perikles extends Table
                     $this->sendRandomUnits($active_player);
                     break;
                 case 'specialTile':
-                    $this->useSpecialTile($active_player, false);
+                case 'specialBattleTile':
+                        $this->useSpecialTile($active_player, false);
                     break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
@@ -2354,10 +2374,7 @@ class Perikles extends Table
         }
 
         if ($state['type'] === "multipleactiveplayer") {
-            // Make sure player is in a non blocking status for role turn
-            $is_battle = self::getGameStateValue('active_battle') != 0;
-            $nextState = $is_battle ? "doBattle" : "nextPlayer";
-            $this->gamestate->setPlayerNonMultiactive( $active_player, $nextState );
+            $this->gamestate->setPlayerNonMultiactive( $active_player, "" );
             return;
         }
 

@@ -116,6 +116,9 @@ class PeriklesBattles extends APP_GameClass
 
   /**
    * Given a Special tile name, check whether it can be used at the current battle.
+   * Only checks unit types, not victory tokens (for Thessalanians and Persian Fleet)
+   * @param {string} name of tile
+   * @return true if this tile is eligible to use at this combat
    */
   public function mayUseBattleSpecial($tilename) {
     $mayuse = false;
