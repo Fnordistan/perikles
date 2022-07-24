@@ -1709,6 +1709,26 @@ class Perikles extends Table
     }
 
     /**
+     * Get any players who hold a Special Tile they can use at the current battle, in the current combat round.
+     * @param {string} HOPLITE or TRIREME
+     * @return {array} player_ids (may be empty)
+     */
+    function specialBattleTilePlayers($type) {
+        $specialtileplayers = [];
+        $specialplayers = $this->SpecialTiles->playersWithSpecial($type."_battle");
+        if (!empty($specialplayers)) {
+            // have to check requirements for the combat special tiles
+            foreach ($specialplayers as $pid) {
+                $special = $this->SpecialTiles->getSpecialTile($pid);
+                if ($this->Battles->mayUseBattleSpecial($special)) {
+                    $specialtileplayers[] = $pid;
+                }
+            }
+        }
+        return $specialtileplayers;
+    }
+
+    /**
      * One side has won a battle and gets to claim the tile.
      * @param tile
      */
@@ -2166,6 +2186,7 @@ class Perikles extends Table
         if ($tile == null) {
             throw new BgaVisibleSystemException("no battle!");
         }
+        $state = "";
 
         $location = $tile['location'];
         $attacker = $tile['attacker'];
@@ -2206,15 +2227,24 @@ class Perikles extends Table
             if ($round == 1) {
                 // unopposed side gets a free battle token for the next round
                 $this->takeToken($unopposed);
+                $state = "continueBattle";
             } else {
+                // unopposed side wins tile
                 $this->claimTile($unopposed_id, $tile);
+                $state = "nextBattle";
             }
         } else {
             // there are combatants on both sides
             // before battle Special Tiles can come into play
-            
+            $specialplayers = $this->specialBattleTilePlayers($combat);
+            if (empty($specialplayers)) {
+                $state = "combat";
+            } else {
+                $state = "useSpecial";
+            }
+            throw new BgaVisibleSystemException("stCombat: $state");
         }
-        $this->gamestate->nextState("");
+        $this->gamestate->nextState($state);
     }
 
     /**

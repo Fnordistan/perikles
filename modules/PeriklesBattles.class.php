@@ -65,6 +65,84 @@ class PeriklesBattles extends APP_GameClass
   }
 
   /**
+   * Are there counters of a given type at a battle tile?
+   * @param {string} location tile to check
+   * @param {string} HOPLITE or TRIREME
+   * @param {string} city (optional)
+   */
+  private function hasCounters($location, $type, $city=null) {
+    $counters = [];
+    $sql = "SELECT id FROM MILITARY WHERE location=\"$location\" AND type=\"$type\"";
+    if ($city != null) {
+      $sql .= " AND city=\"$city\"";
+    }
+    $counters = $this->game->getObjectListFromDB($sql, true);
+    return !empty($counters);
+  }
+
+  /**
+   * Are there Hoplites at the battle tile?
+   * @param {string} location tile to check
+   * @param {string} city (optional)
+   */
+  private function hasHoplites($location, $city=null) {
+    return $this->hasCounters($location, HOPLITE, $city);
+  }
+
+  /**
+   * Are there Triremes at the battle tile?
+   * @param {string} location tile to check
+   * @param {string} city (optional)
+   */
+  private function hasTriremes($location, $city=null) {
+    return $this->hasCounters($location, TRIREME, $city);
+  }
+
+  /**
+   * Are there Spartan Hoplites at the battle tile?
+   * @param {string} location tile to check
+   */
+  private function hasSpartanHoplites($location) {
+    return $this->hasHoplites($location, "sparta");
+  }
+
+  /**
+   * Are there Athenian Triremes at the battle tile?
+   * @param {string} location tile to check
+   */
+  private function hasAthenianTriremes($location) {
+    return $this->hasTriremes($location, "athens");
+  }
+
+  /**
+   * Given a Special tile name, check whether it can be used at the current battle.
+   */
+  public function mayUseBattleSpecial($tilename) {
+    $mayuse = false;
+    $tile = $this->nextBattle();
+    $location = $tile['location'];
+
+    switch ($tilename) {
+      case BRASIDAS:
+        // are there Spartan Hoplites at this battle?
+        $mayuse = $this->hasSpartanHoplites($location);
+        break;
+      case THESSALANIANALLIES:
+        $mayuse = $this->hasHoplites($location);
+        break;
+      case PERSIANFLEET:
+        $mayuse = $this->hasTriremes($location);
+        break;
+      case PHORMIO:
+        $mayuse = $this->hasAthenianTriremes($location);
+        break;
+      default:
+        throw new BgaVisibleSystemException("not a valid Special Tile: $tilename"); // NOI18N
+    }
+    return $mayuse;
+  }
+
+  /**
    * Get all attacking counters.
    * As an array of [id,city,type,strength,location,battlepos] counters.
    * @param {string} location name of tile

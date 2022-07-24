@@ -25,7 +25,7 @@ define(["dojo/_base/declare"], function (declare) {
         /**
          * Set whether spread should be enabled.
          * @param {string} zone 
-         * @param {boolean} bSpread 
+         * @param {bool} bSpread 
          */
         enableSpread: function(zone, bSpread) {
             if (zone in this.military_zones) {

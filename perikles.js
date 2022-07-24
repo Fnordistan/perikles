@@ -1350,9 +1350,9 @@ function (dojo, declare) {
             const special = this.getPlayerSpecial(this.player_id);
             if (special == "plague") {
                 this.addPlagueButtons();
-            } else if(special == "alkibiades") {
+            } else if(special == ALKIBIADES) {
                 this.addAlkibiadesButtons();
-            } else if(special == "slaverevolt") {
+            } else if(special == SLAVEREVOLT) {
                 this.addSlaveRevoltButtons();
             } else {
                 this.specialTile(true);
@@ -1438,7 +1438,7 @@ function (dojo, declare) {
                 this.onAlkibiadesMove();
             }, null, false, 'blue' );
             $('alkibiades_move_btn').classList.add('disabled');
-            this.addSpecialTileCancel("alkibiades");
+            this.addSpecialTileCancel(ALKIBIADES);
         },
 
         /**
@@ -1641,7 +1641,7 @@ function (dojo, declare) {
             const srbtns = $('slaverevolt_div').getElementsByClassName("prk_slaverevolt_btn");
             [...srbtns].forEach(b => this.addSlaveRevoltListeners(b));
 
-            this.addSpecialTileCancel("slaverevolt");
+            this.addSpecialTileCancel(SLAVEREVOLT);
         },
 
         /**

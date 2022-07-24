@@ -141,7 +141,7 @@ class PeriklesCities extends APP_GameClass
    * Are two cities at war?
    * @param {string} city1
    * @param {string} city2
-   * @return {boolean} true if city1 is at war with city2
+   * @return {bool} true if city1 is at war with city2
    */
   public function atWar($city1, $city2) {
     return ($this->getRelationship($city1, $city2) == WAR);
@@ -151,7 +151,7 @@ class PeriklesCities extends APP_GameClass
    * Are two cities allies?
    * @param {string} city1
    * @param {string} city2
-   * @return {boolean} true if city1 is allied with city2
+   * @return {bool} true if city1 is allied with city2
    */
   public function isAlly($city1, $city2) {
     return ($this->getRelationship($city1, $city2) == ALLIED);

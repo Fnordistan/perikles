@@ -36,6 +36,8 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("NEXT_BATTLE_TILE", 26);
     define("RESOLVE_TILE", 27);
     define("NEXT_COMBAT", 30);
+    define("ROLL_BATTLE", 31);
+    define("TAKE_LOSS", 32);
     define("END_TURN", 28);
     define("SCORING", 90);
     define("ENDGAME", 99);
@@ -185,8 +187,27 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stCombat",
-        "transitions" => array( "" => RESOLVE_TILE )
+        "transitions" => array( "nextBattle" => NEXT_BATTLE_TILE, "continueBattle" => RESOLVE_TILE, "combat" => ROLL_BATTLE, "useSpecial" => SPECIAL_TILE )
     ),
+
+    ROLL_BATTLE => array(
+        "name" => "rollcombat",
+        "description" => "",
+        "type" => "game",
+        "action" => "stRollCombat",
+        "transitions" => array( "continue" => ROLL_BATTLE, "endCombat" => TAKE_LOSS )
+    ),
+
+    TAKE_LOSS => array(
+    	"name" => "takeLoss",
+    	"description" => clienttranslate('${actplayer} must lose one counter'),
+    	"descriptionmyturn" => clienttranslate('You must lose one counter'),
+        "args" => "argsLoss",
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "chooseLoss" ),
+    	"transitions" => array( "" =>  RESOLVE_TILE )
+    ),
+
 
     77 => array(
         "name" => "debugstate",

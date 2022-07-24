@@ -1,18 +1,29 @@
 /**
  * specialtile.js
- * For special tiles.
+ * For Special Tiles.
  */
 
 const SPECIAL_TILE_SCALE = 0.2;
 const SPECIAL_MARGIN = "2px";
 
+const PERIKLES = "perikles";
+const PERSIANFLEET = "persianfleet";
+const SLAVEREVOLT = "slaverevolt";
+const BRASIDAS = "brasidas";
+const THESSALANIANALLIES = "thessalanianallies";
+const ALKIBIADES = "alkibiades";
+const PHORMIO = "phormio";
+const PLAGUE = "plague";
+
+const CARDS = [PERIKLES, PERSIANFLEET, SLAVEREVOLT, BRASIDAS, THESSALANIANALLIES, ALKIBIADES, PHORMIO, PLAGUE];
+
 define(["dojo/_base/declare"], function (declare) {
     return declare("perikles.specialtile", null, {
 
         /**
-         * Create a SpecialTile Component
-         * @param {string} player_id 
-         * @param {string} spec null if facedown
+         * Create a specialtile component.
+         * @param {string} player_id owner
+         * @param {string} spec label (null if facedown)
          * @param {bool} bUsed 
          */
         constructor: function(player_id, spec, bUsed) {
@@ -22,8 +33,37 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Lazy-initialize translateable strings for card texts.
+         * @param {string} label name of card
+         * @param {string} att must be "title" or "description"
+         * @returns 
+         */
+        getCardAttribute: function(label, att) {
+            // sanity checks
+            if (label == null) {
+                throw new Error("Cannot get "+att+" for facedown card");
+            } else if (!CARDS.includes(label)) {
+                throw new Error("invalid card name: "+label);
+            }
+            if (!(att == "title" || att == "description")) {
+                throw new Error("invalid attribute: "+att);
+            }
+            const text = {
+                "perikles" : { title : _("PERIKLES"), description: _("Place two Influence cubes in Athens. This tile can be played when it is your turn to select an Influence tile, either just before or just after taking the tile.")},
+                "persianfleet" : { title : _("PERSIAN FLEET"), description: _("This tile can be played just before a trireme battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat.")},
+                "slaverevolt" : { title : _("SLAVE REVOLT"), description: _("This tile can be played when it is your turn to commit forces to a location. Take one Spartan hoplite counter, either from the board or from the controlling player, and place it back in Sparta. That counter cannot be involved in combat this turn. You cannot examine the counter you remove. (It is selected randomly.) The counter will come back into play in the next turn.")},
+                "brasidas" : { title : _("BRASIDAS"), description: _("This tile can be played just before a hoplite battle is about to be resolved. All Spartan hoplite counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled.")},
+                "thessalanianallies" : { title : _("THESSALANIAN ALLIES"), description: _("This tile can be played just before a hoplite battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat.")},
+                "alkibiades" : { title : _("ALKIBIADES"), description: _("Player can take two Influence cubes of any color from any city/cities and move them to any city of their choice. These cubes may not be moved from a candidate space, nor may they be moved to one.")},
+                "phormio" : { title : _("PHORMIO"), description: _("This tile can be played just before a trireme battle is about to be resolved. All Athenian trireme counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled.")},
+                "plague" : { title : _("PLAGUE"), description: _("This tile can be played during the Influence Tile phase. Select one city. All players remove half (rounded down) of their Influence cubes from that city.")} 
+            };
+            return text[label][att];
+        },
+
+        /**
          * Returns true if this specialtile has been used.
-         * @returns {boolean}
+         * @returns {bool}
          */
         isUsed() {
             return this.used;
@@ -31,7 +71,7 @@ define(["dojo/_base/declare"], function (declare) {
     
         /**
          * Returns true if this specialtile is to be displayed face up.
-         * @returns {boolean}
+         * @returns {bool}
          */
         isFaceup() {
             return (this.special != null);
@@ -42,12 +82,7 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns {html} div 
          */
         getDiv: function() {
-            let html = "";
-            if (this.special) {
-                html = this.frontDiv();
-            } else {
-                html = this.backDiv();
-            }
+            const html = this.isFaceup() ? this.frontDiv() : this.backDiv();
             return html;
         },
 
@@ -74,21 +109,11 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Get translateable all CAPS Titile string.
+         * Get translateable all CAPS Title string.
          * @returns {string} translated name
          */
         getTitle: function() {
-            const TITLES = {
-                "perikles" : _("PERIKLES"),
-                "persianfleet" : _("PERSIAN FLEET"),
-                "slaverevolt" : _("SLAVE REVOLT"),
-                "brasidas" : _("BRASIDAS"),
-                "thessalanianallies" : _("THESSALANIAN ALLIES"),
-                "alkibiades" : _("ALKIBIADES"),
-                "phormio" : _("PHORMIO"),
-                "plagues" : _("PLAGUE")
-            };
-            return TITLES[this.special];
+            return this.getCardAttribute(this.special, "title");
         },
 
         /**
@@ -96,17 +121,7 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns {string} translated description string
          */
         getDescription: function() {
-            const DESC = {
-                "perikles" : _("Place two Influence cubes in Athens. This tile can be played when it is your turn to select an Influence tile, either just before or just after taking the tile."),
-                "persianfleet" : _("This tile can be played just before a trireme battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
-                "slaverevolt" : _("This tile can be played when it is your turn to commit forces to a location. Take one Spartan hoplite counter, either from the board or from the controlling player, and place it back in Sparta. That counter cannot be involved in combat this turn. You cannot examine the counter you remove. (It is selected randomly.) The counter will come back into play in the next turn."),
-                "brasidas" : _("This tile can be played just before a hoplite battle is about to be resolved. All Spartan hoplite counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled."),
-                "thessalanianallies" : _("This tile can be played just before a hoplite battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat."),
-                "alkibiades" : _("Player can take two Influence cubes of any color from any city/cities and move them to any city of their choice. These cubes may not be moved from a candidate space, nor may they be moved to one."),
-                "phormio" : _("This tile can be played just before a trireme battle is about to be resolved. All Athenian trireme counters in that battle have their strengths doubled. Intrinsic attackers/defenders are not doubled."),
-                "plagues" : _("This tile can be played during the Influence Tile phase. Select one city. All players remove half (rounded down) of their Influence cubes from that city.")
-            };
-            return DESC[this.special];
+            return this.getCardAttribute(this.special, "description");
         },
 
         /**

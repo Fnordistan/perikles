@@ -92,7 +92,7 @@ define(["dojo/_base/declare"], function (declare) {
          * Create html div for a military counter.
          * @param {int} margin
          * @param {int} top
-         * @param {boolean} rel make display relative?
+         * @param {bool} rel make display relative?
          * @returns html div for a military counter
          */
         toDiv: function(margin, top, rel=false) {

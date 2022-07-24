@@ -18,7 +18,7 @@ class PeriklesSpecial extends APP_GameClass
     $this->specialcards["thessalanianallies"] = array('name' => clienttranslate("Thessalanian Allies"), "description" => clienttranslate("Start hoplite combat with one victory marker."), "phase" => HOPLITE."_battle");
     $this->specialcards["alkibiades"] = array('name' => clienttranslate("Alkibiades"), "description" => clienttranslate("Move any two cubes from any city or cities to any other city or cities."), "phase" => "influence_phase");
     $this->specialcards["phormio"] = array('name' => clienttranslate("Phormio"), "description" => clienttranslate("Double value of all Athenian triremes in one battle."), "phase" => TRIREME."_battle");
-    $this->specialcards["plagues"] = array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes."), "phase" => "influence_phase");
+    $this->specialcards["plague"] = array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes."), "phase" => "influence_phase");
   }
 
   /**
@@ -57,7 +57,8 @@ class PeriklesSpecial extends APP_GameClass
 
     /**
      * Return a list of players who are eligible to play a special tile now.
-     * May be empty
+     * Note that it only checks for correct phase, not specific battle states.
+     * @return {array} may be empty
      */
   public function playersWithSpecial($phase) {
       $canplay = [];
