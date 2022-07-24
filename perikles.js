@@ -1224,17 +1224,16 @@ function (dojo, declare) {
                         this.gamedatas.gamestate.args = {};
                         this.gamedatas.gamestate.args.committed = {};
                     }
-                    const battleslots = $('location_area').getElementsByClassName("prk_battle");
-                    [...battleslots].forEach(b => {
-                        this.makeSplayable(b);
-                    });
-
                     break;
                 case 'dummmy':
                     break;
             }
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
                 $('military_board').style['display'] = 'block';
+                const battleslots = $('location_area').getElementsByClassName("prk_battle");
+                [...battleslots].forEach(b => {
+                    this.makeSplayable(b);
+                });
             }
         },
 
