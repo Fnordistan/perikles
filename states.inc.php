@@ -38,7 +38,7 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("NEXT_COMBAT", 30);
     define("ROLL_BATTLE", 31);
     define("TAKE_LOSS", 32);
-    define("SPECIAL_BATTLE_TILE", 33);
+    define("SPECIAL_BATTLE_TILE", 40);
     define("END_TURN", 28);
     define("SCORING", 90);
     define("ENDGAME", 99);
@@ -204,14 +204,16 @@ $machinestates = array(
         "transitions" => array( "nextBattle" => NEXT_BATTLE_TILE, "continueBattle" => RESOLVE_TILE, "combat" => ROLL_BATTLE, "useSpecial" => SPECIAL_BATTLE_TILE )
     ),
 
+    // all player actions completed, roll until battle over
     ROLL_BATTLE => array(
         "name" => "rollcombat",
         "description" => "",
         "type" => "game",
         "action" => "stRollCombat",
-        "transitions" => array( "continue" => ROLL_BATTLE, "endCombat" => TAKE_LOSS )
+        "transitions" => array( "takeLoss" => TAKE_LOSS, "endCombat" => RESOLVE_TILE )
     ),
 
+    // losers must lose one counter
     TAKE_LOSS => array(
     	"name" => "takeLoss",
     	"description" => clienttranslate('${actplayer} must lose one counter'),

@@ -48,6 +48,7 @@ define(["dojo/_base/declare"], function (declare) {
             if (!(att == "title" || att == "description")) {
                 throw new Error("invalid attribute: "+att);
             }
+
             const text = {
                 "perikles" : { title : _("PERIKLES"), description: _("Place two Influence cubes in Athens. This tile can be played when it is your turn to select an Influence tile, either just before or just after taking the tile.")},
                 "persianfleet" : { title : _("PERSIAN FLEET"), description: _("This tile can be played just before a trireme battle is about to be resolved. Choose one side in that battle to start with one battle token. This cannot be played to gain an automatic victory; i.e. it cannot be played for a side that already has a token due to winning the first round of combat.")},

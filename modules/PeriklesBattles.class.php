@@ -199,37 +199,63 @@ class PeriklesBattles extends APP_GameClass
 
   /**
    * Given a location and  battle type, add strength of all attacking units of that type at the battle.
+   * (Does not add intrinsic attackers.)
    * @param {location} tile
    * @param {type} HOPLITE or TRIREME
+   * @param {bool} bonus true if PHORMIO or BRASIDAS bonus
    * @return total attack strength
    */
-  public function getAttackStrength($location, $type) {
-      $attackers = $this->getAttackingCounters($location, $type);
-      $strength = $this->getCounterStrength($attackers);
-      return $strength;
+  public function getAttackStrength($location, $type, $bonus=false) {
+      return $this->totalCounterStrength(ATTACKER, $location, $type, $bonus);
   }
 
   /**
    * Given a location and  battle type, add strength of all defending units of that type at the battle.
+   * (Does not add intrinsic defenders.)
    * @param {location} tile
    * @param {type} HOPLITE or TRIREME
+   * @param {bool} bonus true if PHORMIO or BRASIDAS bonus
    * @return total attack strength
    */
-  public function getDefenseStrength($location, $type) {
-      $defenders = $this->getDefendingCounters($location, $type);
-      $strength = $this->getCounterStrength($defenders);
-      return $strength;
+  public function getDefenseStrength($location, $type, $bonus=false) {
+    return $this->totalCounterStrength(DEFENDER, $location, $type, $bonus);
+  }
+
+  /**
+   * Get total counter strength for one side.
+   * @param {int} ATTACKER or DEFENDER
+   * @param {location} tile
+   * @param {type} HOPLITE or TRIREME
+   * @param {string} bonus true if PHORMIO or BRASIDAS bonus
+   */
+  private function totalCounterStrength($side, $location, $type, $bonus) {
+    $counters = ($side == ATTACKER) ? $this->getAttackingCounters($location, $type) : $this->getDefendingCounters($location, $type);
+    $double = null;
+    if ($bonus) {
+      if ($type == HOPLITE) {
+        $double = "sparta";
+      } elseif ($type == TRIREME) {
+        $double = "athens";
+      }
+    }
+    $strength = $this->getCounterStrength($counters, $double);
+    return $strength;
   }
 
   /**
    * Given an array of counters, add the strengths of all of them.
    * @param {array} counters
+   * @param {string} double if not null, athens or sparta bonus
    * @return {int} total strength of all counters
    */
-  private function getCounterStrength($counters) {
+  private function getCounterStrength($counters, $double=null) {
     $strength = 0;
     foreach($counters as $counter) {
-      $strength += $counter['strength'];
+      $s = $counter['strength'];
+      if ($counter['city'] == $double) {
+        $s *= 2;
+      }
+      $strength += $s;
     }
     return $strength;
   }
@@ -263,14 +289,24 @@ class PeriklesBattles extends APP_GameClass
       return $battle;
   }
 
-    /**
-     * Check whether the location slot is set to the current battle.
-     * @param location
-     * @return true if location is the current active battle
-     */
+  /**
+   * Check whether the location slot is set to the current battle.
+   * @param location
+   * @return true if location is the current active battle
+   */
   public function isActiveBattleLocation($location) {
       $slot = $this->game->getUniqueValueFromDB("SELECT card_location_arg slot FROM LOCATION WHERE card_type_arg=\"$location\" AND card_location=\"".BOARD."\"");
       return ($slot == $this->game->getGameStateValue("active_battle"));
+  }
+
+  /**
+   * Get the location of a battle by its slot.
+   * @param {int} slot
+   * @return {string} location
+   */
+  public function getBattleLocation($slot) {
+    $location = $this->game->getUniqueValueFromDB("SELECT card_type_arg location FROM LOCATION WHERE card_location_arg=$slot");
+    return $location;
   }
 
   /**

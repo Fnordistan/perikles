@@ -1358,17 +1358,29 @@ function (dojo, declare) {
          */
          specialTileWrapper: function(location=null) {
             const special = this.getPlayerSpecial(this.player_id);
-            if (special == PLAGUE) {
-                this.addPlagueButtons();
-            } else if(special == ALKIBIADES) {
-                this.addAlkibiadesButtons();
-            } else if(special == SLAVEREVOLT) {
-                this.addSlaveRevoltButtons();
-            } else if(special == PERSIANFLEET) {
-                this.addPersianFleetButtons(location);
-            } else {
-                this.specialTile(true);
-            }
+
+            switch (special) {
+                case PLAGUE:
+                    this.addPlagueButtons();
+                    break;
+                case ALKIBIADES:
+                    this.addAlkibiadesButtons();
+                    break;
+                case SLAVEREVOLT:
+                    this.addSlaveRevoltButtons();
+                    break;
+                case PERSIANFLEET:
+                    this.addSpecialBattleButtons(location, PERSIANFLEET);
+                    break;
+                case THESSALANIANALLIES:
+                    this.addSpecialBattleButtons(location, THESSALANIANALLIES);
+                    break;
+                case PHORMIO:
+                case BRASIDAS:
+                case PERIKLES:
+                    // these three just need action
+                    this.specialTile(true);
+            };
         },
 
         /**
@@ -1670,15 +1682,17 @@ function (dojo, declare) {
             });
         },
 
-        /////////////////////// PERSIAN FLEET ///////////////////////
+        /////////////////////// PERSIAN FLEET + THESSALANIAN ALLIES ///////////////////////
 
-        addPersianFleetButtons: function(location) {
-            let msg = _("Choose side to begin ${type} battle at ${location} with 1 Battle Token");
-            const unit = this.getUnitTr(TRIREME);
-            const locname = new perikles.locationtile(location).getNameTr();
-            msg = msg.replace('${type}', unit);
-            msg = msg.replace('${location}', locname);
-            this.setDescriptionOnMyTurn(msg, {'persianfleet': true});
+        /**
+         * 
+         * @param {string} location 
+         * @param {strin} special PERSIANFLEET or THESSALANIANALLIES
+         */
+        addSpecialBattleButtons: function(location, special) {
+            const type = (special == PERSIANFLEET) ? TRIREME : HOPLITE;
+            const msg = this.getChooseSidesMsg(location, type);
+            this.setDescriptionOnMyTurn(msg, {special: true});
             this.removeActionButtons();
             this.addActionButton( "attacker_btn", _('Attackers'), () => {
                 console.log("Attackers");
@@ -1687,7 +1701,22 @@ function (dojo, declare) {
                 console.log("Defenders");
             }, null, null, 'blue');
 
-            this.addSpecialTileCancel(PERSIANFLEET, location);
+            this.addSpecialTileCancel(special, location);
+        },
+
+        /**
+         * Message for Persian Fleet or Thessalanian Allies
+         * @param {string} location 
+         * @param {string} type HOPLITE or TRIREME
+         * @returns 
+         */
+         getChooseSidesMsg: function(location, type) {
+            let msg = _("Choose side to begin ${type} battle at ${location} with 1 Battle Token");
+            const unit = this.getUnitTr(type);
+            const locname = new perikles.locationtile(location).getNameTr();
+            msg = msg.replace('${type}', unit);
+            msg = msg.replace('${location}', locname);
+            return msg;
         },
 
         ///////////////////////////////////////////////////
@@ -2632,7 +2661,7 @@ function (dojo, declare) {
         notif_revealCounters: function(notif) {
             const slot = notif.args.slot;
             const military = notif.args.military;
-            debugger;
+
             // clear the old ones. TODO: animate flipping
             const oldcounters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...oldcounters].forEach(c => {
@@ -2640,7 +2669,8 @@ function (dojo, declare) {
             });
             let i = 0;
             military.forEach(m => {
-                this.placeCounterAtBattle(m, i++);
+                counter = this.militaryToCounter(m);
+                this.placeCounterAtBattle(counter, i++);
             });
        },
 
@@ -2681,15 +2711,18 @@ function (dojo, declare) {
             new perikles.counter('sparta', HOPLITE, counter['strength'], counter['id']).addToStack();
         },
 
+        /**
+         * Highlight the odds column for this battle.
+         * @param {Object} notif 
+         */
         notif_crtOdds: function(notif) {
             const crt = notif.args.crt;
             const crt_col = $('crt_'+crt);
-            debugger;
             crt_col.classList.add("prk_crt_active");
         },
 
         /**
-         * attacker or defender takes a Battle Token.
+         * Attacker or defender takes a Battle Token.
          * @param {Object} notif 
          */
         notif_takeToken: function(notif) {
@@ -2706,11 +2739,17 @@ function (dojo, declare) {
             debugger;
         },
 
+        /**
+         * 
+         * @param {Object} notif 
+         */
         notif_resetBattleTokens: function(notif) {
             const tokens = document.getElementsByClassName("prk_battle_token");
             [...tokens].forEach(t => {
                 t.remove();
             });
+            // remove highlighting from CRT
+
         },
 
         notif_battle: function(notif) {
@@ -2718,6 +2757,10 @@ function (dojo, declare) {
             for (i = 0; i < 4; i++) {
                 const token = '<div class="prk_battle_token"></div>';
                 dojo.place(token, $('battle_tokens'));
+            }
+            for (c = 1; c <= 6; c++) {
+                const crt_col = $('crt_'+c);
+                crt_col.classList.remove("prk_crt_active");
             }
         },
    });

@@ -98,6 +98,8 @@ class Perikles extends Table
             "spartan_choice" => 39, // who Sparta picked to go first in military phase
             ATTACKER_TOKENS => 50, // battle tokens won by attacker so far in current battle
             DEFENDER_TOKENS => 51, // battle tokens won by defender so far in current battle
+            BRASIDAS => 60, // Brasides activated for next battle
+            PHORMIO => 61, // Phormio activated for next battle
         ) );
 
         $this->Cities = new PeriklesCities($this);
@@ -161,6 +163,8 @@ class Perikles extends Table
         self::setGameStateInitialValue(DEFENDER_TOKENS, 0);
         self::setGameStateInitialValue("active_battle", 0);
         self::setGameStateInitialValue("battle_round", 0);
+        self::setGameStateInitialValue(BRASIDAS, 0);
+        self::setGameStateInitialValue(PHORMIO, 0);
         // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with candidate nominations.
         self::setGameStateInitialValue("influence_phase", 1);
         // when we are in the committing phase. Start with first commit, end with battle phase.
@@ -795,6 +799,7 @@ class Perikles extends Table
 
     /**
      * Player either Played or Passed on special tile button.
+     * Applies only to special tiles that are yes/no
      * @param player_id
      */
     function playSpecialTile($player_id) {
@@ -802,32 +807,17 @@ class Perikles extends Table
         // sanity check
         $t = $special['tile'];
         switch ($t) {
-            case PERIKLES: // Perikles
+            case PERIKLES:
                 $this->playPerikles($player_id);
                 break;
-            case PERSIANFLEET; // Persian Fleet
-                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
+            case BRASIDAS:
+                self::setGameStateValue(BRASIDAS, 1);
                 break;
-            case SLAVEREVOLT; // Slave Revolt
-                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
-                break;
-            case BRASIDAS; // Brasidas
-                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
-                break;
-            case THESSALANIANALLIES; // Thessalanian Allies
-                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
-                break;
-            case ALKIBIADES; // Alkibiades
-                throw new BgaVisibleSystemException("Invalid Special card played: $t"); // NOI18N
-                break;
-            case PHORMIO; // Phormio
-                throw new BgaVisibleSystemException("You haven't implemented Special Tile $t yet");
-                break;
-            case PLAGUE; // Plague
-                throw new BgaVisibleSystemException("Invalid Special card played: $t"); // NOI18N
+            case PHORMIO:
+                self::setGameStateValue(PHORMIO, 1);
                 break;
             default:
-                throw new BgaVisibleSystemException("Unknown special tile: $t"); // NOI18N
+                throw new BgaVisibleSystemException("Invalid special tile: $t"); // NOI18N
         }
     }
 
@@ -1360,6 +1350,10 @@ class Perikles extends Table
         }
     }
 
+    function chooseLoss() {
+        
+    }
+
     /**
      * Checks whether a unit can attack a city, throws an Exception if it fails.
      * Also marks unit as Allies with all attackers and At War with all Defenders.
@@ -1531,67 +1525,6 @@ class Perikles extends Table
     }
 
     /**
-     * Assumes that we already know attacks and defenders are both present. Handles one entire battle (HOPLITE or TRIREME).
-     * Rolls until battle is done and there is a winner.
-     * @param $type HOPLITE or TRIREME
-     * @param $location name of tile
-     * @return {int} ATTACKER or DEFENDER who won
-     */
-    function resolveBattle($type, $location) {
-        $unopposed = null;
-        // get all attacking units
-        $attstrength = $this->Battles->getAttackStrength($location, $type);
-        if (empty($attstrength)) {
-            // defenders automatically win this round
-            $unopposed = DEFENDER;
-        }
-        // get all defending units
-        $defstrength = $this->Battles->getDefenseStrength($location, $type);
-        if (empty($defstrength)) {
-            // attackers automatically win this round
-            $unopposed = ATTACKER;
-        }
-        if ($unopposed == null) {
-            $militia = $this->Locations->getMilitia($location);
-            if ($militia != null) {
-                switch ($militia) {
-                    case "dht":
-                        $defstrength++;
-                        break;
-                    case "dh":
-                        if ($type == HOPLITE) {
-                            $defstrength++;
-                        }
-                        break;
-                    case "aht":
-                        $attstrength++;
-                        break;
-                    case "ah":
-                        if ($type == HOPLITE) {
-                            $attstrength++;
-                        }
-                        break;
-                    default:
-                    // should not happen!
-                        throw new BgaVisibleSystemException("Invalid location militia value: $intrinsic"); // NOI18N
-                }
-            }
-        }
-        // unopposed defenders win even if there are militia attackers
-        // unopposed attackers still need to beat any defending militias
-        $winner = null;
-        if ($unopposed == DEFENDER) {
-            $winner = DEFENDER;
-        } elseif ($unopposed == ATTACKER && $defstrength == 0) {
-            $winner = ATTACKER;
-        } else {
-            // we have a battle!
-            $winner = $this->rollBattle($location, $type, $attstrength, $defstrength);
-        }
-        return $winner;
-    }
-
-    /**
      * Resolve a single round - Hoplite or Trireme battle. Roll until one side wins.
      * @param {string} location
      * @param {string} type HOPLITE or TRIREME
@@ -1615,14 +1548,14 @@ class Perikles extends Table
         ));
         $winner = null;
         while (self::getGameStateValue(ATTACKER_TOKENS) < 2 && self::getGameStateValue(DEFENDER_TOKENS) < 2) {
-            $this->rollCombat($crt);
+            $this->rollDice($crt);
         }
         // one side has two tokens, but do they both?
         if (self::getGameStateValue(ATTACKER_TOKENS) == 2 && self::getGameStateValue(DEFENDER_TOKENS) == 2) {
             // they need to roll off until one side hits and the other doesn't
-            $winner = $this->rollCombat($crt);
+            $winner = $this->rollDice($crt);
             while ($winner == null) {
-                $winner = $this->rollCombat($crt);
+                $winner = $this->rollDice($crt);
             }
         } elseif (self::getGameStateValue(ATTACKER_TOKENS) == 2) {
             $winner = ATTACKER;
@@ -1640,7 +1573,7 @@ class Perikles extends Table
      * Returns side that scored a hit when the other didn't, or null if both or neither hit.
      * @return ATTACKER, DEFENDER, or null
      */
-    function rollCombat($crt) {
+    function rollDice($crt) {
         $winner = null;
         $attacker_tn = $this->Battles->getTargetNumber(ATTACKER, $crt);
         $defender_tn = $this->Battles->getTargetNumber(DEFENDER, $crt);
@@ -1662,12 +1595,18 @@ class Perikles extends Table
         ));
         // did either one hit?
         if ($atthit) {
-            $this->takeToken(ATTACKER);
+            self::notifyAllPlayers("hit", clienttranslate('Attacker hits'), []);
+            if (self::getGameStateValue(ATTACKER_TOKENS) < 2) {
+                $this->takeToken(ATTACKER);
+            }
         } else {
             self::notifyAllPlayers("miss", clienttranslate('Attacker misses'), []);
         }
         if ($defhit) {
-            $this->takeToken(DEFENDER);
+            self::notifyAllPlayers("hit", clienttranslate('Defender hits'), []);
+            if (self::getGameStateValue(DEFENDER_TOKENS) < 2) {
+                $this->takeToken(DEFENDER);
+            }
         } else {
             self::notifyAllPlayers("miss", clienttranslate('Defender misses'), []);
         }
@@ -1681,6 +1620,7 @@ class Perikles extends Table
 
     /**
      * One side scores a hit, send notification for token.
+     * Assumes check has already been done for neither side having 2 tokens.
      * @param {int} ATTACKER or DEFENDER
      */
     function takeToken($sideval) {
@@ -1703,7 +1643,9 @@ class Perikles extends Table
             'side' => $side,
             'attordef' => $role,
         ));
-        if (self::getGameStateValue($token) < 2) {
+        if (self::getGameStateValue($token) > 1) {
+            throw new BgaVisibleSystemException("$role already has 2 Battle Tokens"); // NOI18N
+        } else {
             self::incGameStateValue($token, 1);
         }
     }
@@ -1748,11 +1690,61 @@ class Perikles extends Table
     }
 
     /**
-     * Loser of a battle must lose one counter.
-     * @param {string} loser player_id of main who picks casualty
-     * @param {string} location tile where casualty happens
+     * Get a list of the lowest value counters at a losing location.
+     * Tries to get from main, if that is empty, then allied.
+     * @param {string} loser ATTACKER or DEFENDER
+     * @param {string} location
+     * @param {string} type HOPLITE or TRIREME
+     * @return {array} counters with the lowest strength
      */
-    function assignCasualty($loser, $location) {
+    function getCasualties($loser, $location, $type) {
+        $counters = ($loser == ATTACKER) ? $this->Battles->getAttackingCounters($location, $type) : $this->Battles->getDefendingCounters($location, $type);
+        // are there any in main?
+        $main = [];
+        $ally = [];
+        $mainpos = ($loser == ATTACKER) ? ATTACKER+MAIN : DEFENDER+MAIN;
+        $allypos = ($loser == ATTACKER) ? ATTACKER+ALLY : DEFENDER+ALLY;
+        foreach($counters as $counter) {
+            $pos = $counter['battlepos'];
+            if ($pos == $mainpos) {
+                $main[] = $counter;
+            } elseif ($pos == $allypos) {
+                $ally[] = $counter;
+            } else {
+                throw new BgaVisibleSystemException("invalid position value: $pos"); //
+            }
+        }
+        // must come from main if possible
+        $lowest = empty($main) ? $this->getLowestCounters($ally) : $this->getLowestCounters($main);
+        return $lowest;
+    }
+
+    /**
+     * Return the counters with the lowest strength.
+     * @param {array} counters
+     * @param {return} array all with lowest values
+     */
+    function getLowestCounters($counters) {
+        $min = 99;
+        $buckets = [];
+        foreach ($counters as $counter) {
+            $s = $counter['strength'];
+            if (!array_key_exists($s, $buckets)) {
+                $buckets[$s] = array();
+            }
+            $buckets[$s][] = $counter;
+            if ($s < $min) {
+                $min = $s;
+            }
+        }
+        return $buckets[$min];
+    }
+
+    /**
+     * Loser of a battle must lose one counter.
+     * @param {Object} counter to lose
+     */
+    function assignCasualty($counter) {
 
     }
 
@@ -1766,6 +1758,8 @@ class Perikles extends Table
         self::setGameStateValue("commit_phase", 0);
         self::setGameStateValue("active_battle", 0);
         self::setGameStateValue("battle_round", 0);
+        self::setGameStateValue(BRASIDAS, 0);
+        self::setGameStateValue(PHORMIO, 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
     }
     
@@ -1822,6 +1816,13 @@ class Perikles extends Table
         return array(
             '_private' => $private
         );
+    }
+
+    /**
+     * Present player with choice of cities to take casualties from
+     */
+    function argsLoss() {
+        return array();
     }
 
     /**
@@ -2257,12 +2258,75 @@ class Perikles extends Table
             $specialplayers = $this->specialBattleTilePlayers($combat);
             if (empty($specialplayers)) {
                 $state = "combat";
-                throw new BgaVisibleSystemException("stCombat: $state");
             } else {
                 $this->gamestate->setPlayersMultiactive( $specialplayers, "combat", false );
                 $state = "useSpecial";
             }
         }
+        $this->gamestate->nextState($state);
+    }
+
+    /**
+     * All checks have been done, there are forces on each side, and all player actions completed.
+     * At this point, roll dice until one side wins.
+     */
+    function stRollCombat() {
+        $tile = $this->Battles->nextBattle();
+        $location = $tile['location'];
+        $round = self::getGameStateValue("battle_round");
+        $type = $this->Locations->getCombat($location, $round);
+        $bonus = ((self::getGameStateValue(BRASIDAS) == 1) || (self::getGameStateValue(PHORMIO) == 1));
+        // get all attacking units
+        $attstrength = $this->Battles->getAttackStrength($location, $type, $bonus);
+        // get all defending units
+        $defstrength = $this->Battles->getDefenseStrength($location, $type, $bonus);
+        $militia = $this->Locations->getMilitia($location);
+        if (!empty($militia)) {
+            switch ($militia) {
+                case "dht":
+                    $defstrength++;
+                    break;
+                case "dh":
+                    if ($type == HOPLITE) {
+                        $defstrength++;
+                    }
+                    break;
+                case "aht":
+                    $attstrength++;
+                    break;
+                case "ah":
+                    if ($type == HOPLITE) {
+                        $attstrength++;
+                    }
+                    break;
+                default:
+                // should not happen!
+                    throw new BgaVisibleSystemException("Invalid intrinsic defender code"); // NOI18N
+            }
+        }
+        if ($attstrength == 0 || $defstrength == 0) {
+            // shouldn't happen!
+            throw new BgaVisibleSystemException("no combat strength found on one side!"); // NOI18N
+        }
+        $winner = $this->rollBattle($location, $type, $attstrength, $defstrength);
+
+        $loser = ($winner == ATTACKER) ? DEFENDER : ATTACKER;
+        $casualties = $this->getCasualties($loser, $location, $type);
+        $cities = [];
+        foreach ($casualties as $cas) {
+            $from = $cas['city'];
+            if (!in_array($from, $cities)) {
+                $cities[] = $from;
+            }
+        }
+        $state = "endCombat";
+        if (count($cities) > 1) {
+            $state = "takeLoss";
+        } else {
+            $this->assignCasualty(array_pop($casualties));
+        }
+
+        // claiming the tile is done in stResolveTile
         $this->gamestate->nextState($state);
     }
 
