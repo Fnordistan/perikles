@@ -184,7 +184,7 @@ class PeriklesCities extends APP_GameClass
       $attackers = $this->getAllAttackers($location);
       // make sure we aren't already at war with one of the other attackers
       foreach ($attackers as $attacker) {
-        if ($this->atWar($attcity, $attcker)) {
+        if ($this->atWar($attcity, $attacker)) {
           return false;
         }
       }
