@@ -160,30 +160,34 @@ class PeriklesCities extends APP_GameClass
   /**
    * Check whether a player can send a unit of a city to attack another.
    * Checks leadership and alliance status.
-   * @param {string} player_id
-   * @param {string} attacker
-   * @param {string} defender
-   * @param {string} battle location
+   * @param {string} player_id unit owner
+   * @param {string} attcity city of the attacking unit
+   * @param {string} defcity city of the defending location
+   * @param {string} location
    * @return boolean true if attacker passes checks to attack defender
    */
-  public function canAttack($player_id, $attacker, $defender, $battle) {
-      if ($attacker == $defender) {
+  public function canAttack($player_id, $attcity, $defcity, $location) {
+      if ($attcity == $defcity) {
         return false;
       }
-      if ($this->isLeader($player_id, $defender)) {
+      if ($this->isLeader($player_id, $defcity)) {
         return false;
       }
-      if ($this->isAlly($attacker, $defender)) {
-        return false;
-      }
-      // is anyone else attacking this city?
-      $attackers = $this->getAllAttackers($battle);
-      // make sure we aren't already at war with one of the other attackers
-      foreach ($attackers as $att) {
-        if ($this->atWar($attacker, $att)) {
+      // make sure we aren't already allied with any of the defenders
+      $defenders = $this->getAllDefenders($location, $defcity);
+      foreach($defenders as $defender) {
+        if ($this->isAlly($attcity, $defender)) {
           return false;
         }
-    }
+      }
+      // is anyone else attacking this city?
+      $attackers = $this->getAllAttackers($location);
+      // make sure we aren't already at war with one of the other attackers
+      foreach ($attackers as $attacker) {
+        if ($this->atWar($attcity, $attcker)) {
+          return false;
+        }
+      }
 
     return true;
   }

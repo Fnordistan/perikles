@@ -798,7 +798,7 @@ class Perikles extends Table
     }
 
     /**
-     * Player either Played or Passed on special tile button.
+     * Active a Special Tile.
      * Applies only to special tiles that are yes/no
      * @param player_id
      */
@@ -1351,7 +1351,7 @@ class Perikles extends Table
     }
 
     function chooseLoss() {
-        
+
     }
 
     /**
@@ -1585,30 +1585,26 @@ class Perikles extends Table
         $defd1 = bga_rand(1,6);
         $defd2 = bga_rand(1,6);
         $defhit = ($defd1 + $defd2) >= $defender_tn;
-        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal}, Defender rolls ${defd1} ${defd2} ${deftotal}'), array(
+        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal} ({$atthit}), Defender rolls ${defd1} ${defd2} ${deftotal} ({$defhit})'), array(
             'attd1' => $attd1,
             'attd2' => $attd2,
             'defd1' => $defd1,
             'defd2' => $defd2,
+            'atthit' => $atthit ? clienttranslate("Hit") : clienttranslate("Miss"),
             'atttotal' => $attd1+$attd2,
             'deftotal' => $defd1+$defd2,
+            'defhit' => $defhit ? clienttranslate("Hit") : clienttranslate("Miss"),
         ));
         // did either one hit?
         if ($atthit) {
-            self::notifyAllPlayers("hit", clienttranslate('Attacker hits'), []);
             if (self::getGameStateValue(ATTACKER_TOKENS) < 2) {
                 $this->takeToken(ATTACKER);
             }
-        } else {
-            self::notifyAllPlayers("miss", clienttranslate('Attacker misses'), []);
         }
         if ($defhit) {
-            self::notifyAllPlayers("hit", clienttranslate('Defender hits'), []);
             if (self::getGameStateValue(DEFENDER_TOKENS) < 2) {
                 $this->takeToken(DEFENDER);
             }
-        } else {
-            self::notifyAllPlayers("miss", clienttranslate('Defender misses'), []);
         }
         if ($atthit && !$defhit) {
             $winner = ATTACKER;
@@ -1764,7 +1760,7 @@ class Perikles extends Table
     }
     
     /**
-     * When a battle starts, flip all counters face up.
+     * When a battle starts, flip all counters face up and place Victory tokens.
      * @param {object} battle tile
      */
     function revealCounters($tile) {
@@ -2121,6 +2117,7 @@ class Perikles extends Table
         $slot = self::getGameStateValue("active_battle");
         if ($slot != 0) {
             $previousbattle = $this->Locations->getBattleTile($slot);
+            // TODO this needs to happen BEFORE tile is moved
             $this->returnMilitaryUnits($previousbattle['location']);
         }
 
@@ -2562,7 +2559,7 @@ class Perikles extends Table
                         $location = array_pop($allbattles);
                         $defcity = $location['city'];
                         $location = $location['location'];
-                        
+                       
                         if ($this->Cities->canAttack($player_id, $city, $defcity, $location)) {
                             // we can attack this city
                             // make sure not sending trireme to a land battle
