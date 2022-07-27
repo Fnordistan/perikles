@@ -25,9 +25,9 @@
             <div id="influence_slot_{i}" class="prk_influence_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END INFLUENCE_TILES_BLOCK -->
         </div>
-        <div id="attacker_battle_tokens" class="prk_token_box" style="width: 188px; height: 65px; left: 802px; top: 586px;"></div>
-        <div id="battle_tokens" class="prk_token_box" style="width: 70px; height: 65px; left: 1001px; top: 586px;"></div>
-        <div id="defender_battle_tokens" class="prk_token_box" style="width: 188px; height: 65px; left: 1080px; top: 586px;"></div>
+        <div id="attacker_battle_tokens" class="prk_token_box" style="width: 188px; left: 802px; top: 586px;"></div>
+        <div id="battle_tokens" class="prk_token_box" style="width: 70px; left: 1001px; top: 586px;"></div>
+        <div id="defender_battle_tokens" class="prk_token_box" style="width: 188px; left: 1080px; top: 586px;"></div>
         <div id="location_area">
             <!-- BEGIN LOCATION_BLOCK -->
             <div id="battle_zone_{LOC}">
@@ -91,15 +91,15 @@ const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_counter prk_st
 
 const jstpl_cube = '<div id="${id}"" class="prk_cube" style="background-color: #${color};"></div>';
 
-var jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
+const jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
-var jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_city_btn prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
+const jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_city_btn prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
-var jstpl_alkibiades_from_btn = '<div id="${city}_alkibiades_from_btn" class="prk_alkibiades_btn" style="background-color: var(--color_${city});">${city_name}</div>';
+const jstpl_alkibiades_from_btn = '<div id="${city}_alkibiades_from_btn" class="prk_alkibiades_btn" style="background-color: var(--color_${city});">${city_name}</div>';
 
-var jstpl_alkibiades_to_btn = '<div id="${city}_alkibiades_to_btn" class="prk_alkibiades_btn" style="background-color: white;">${city_name}</div>';
+const jstpl_alkibiades_to_btn = '<div id="${city}_alkibiades_to_btn" class="prk_alkibiades_btn" style="background-color: white;">${city_name}</div>';
 
-var jstpl_city_banner = '<button id="${city}_commit_btn" type="button" class="prk_city_banner" style="background-color: var(--color_${city});">${city_name}</button>';
+const jstpl_city_banner = '<button id="${city}_commit_btn" type="button" class="prk_city_banner" style="background-color: var(--color_${city});">${city_name}</button>';
 
 const jstpl_military_area = '<div id="${city}_military_${id}" class="prk_mil_board">\
                                 <h2 class="prk_hdr">${cityname}</h2>\

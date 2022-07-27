@@ -2362,10 +2362,8 @@ function (dojo, declare) {
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'slaveRevolt', this, "notif_slaveRevolt");
 
-            dojo.subscribe( 'battle', this, "notif_battle");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
             this.notifqueue.setSynchronous( 'crtOdds', 500 );
-            dojo.subscribe( 'diceRoll', this, "notif_diceRoll");
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
@@ -2659,6 +2657,7 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_revealCounters: function(notif) {
+            debugger;
             const slot = notif.args.slot;
             const military = notif.args.military;
 
@@ -2672,7 +2671,22 @@ function (dojo, declare) {
                 counter = this.militaryToCounter(m);
                 this.placeCounterAtBattle(counter, i++);
             });
+            this.startBattle();
        },
+
+       /**
+        * Initialize a new battle
+        */
+       startBattle: function() {
+            for (i = 0; i < 4; i++) {
+                const token = '<div class="prk_battle_token"></div>';
+                dojo.place(token, $('battle_tokens'));
+            }
+            for (c = 1; c <= 6; c++) {
+                const crt_col = $('crt_'+c);
+                crt_col.classList.remove("prk_crt_active");
+            }
+        },
 
        /**
         * A single Hoplite counter needs to be flipped and moved back to Sparta
@@ -2719,6 +2733,7 @@ function (dojo, declare) {
             const crt = notif.args.crt;
             const crt_col = $('crt_'+crt);
             crt_col.classList.add("prk_crt_active");
+            debugger;
         },
 
         /**
@@ -2729,14 +2744,7 @@ function (dojo, declare) {
             // "attacker" or "defender"
             const side = notif.args.side;
             debugger;
-        },
-
-        /**
-         * 
-         * @param {Object} notif 
-         */
-        notif_diceRoll: function(notif) {
-            debugger;
+            
         },
 
         /**
@@ -2752,16 +2760,5 @@ function (dojo, declare) {
 
         },
 
-        notif_battle: function(notif) {
-            debugger;
-            for (i = 0; i < 4; i++) {
-                const token = '<div class="prk_battle_token"></div>';
-                dojo.place(token, $('battle_tokens'));
-            }
-            for (c = 1; c <= 6; c++) {
-                const crt_col = $('crt_'+c);
-                crt_col.classList.remove("prk_crt_active");
-            }
-        },
    });
 });

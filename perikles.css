@@ -703,8 +703,7 @@
 }
 
 .prk_crt_active {
-    background-color: red;
-    opacity: 0.3;
+    border: dashed 3px red;
 }
 
 .prk_battle_token {
@@ -718,10 +717,11 @@
 }
 
 .prk_token_box {
-    display: grid;
+    height: 65px;
+    /* display: grid;
     justify-content: center;
     position: absolute;
-    grid-template-columns: repeat(auto-fit,  minmax(10px, max-content));
+    grid-template-columns: repeat(auto-fit,  minmax(10px, max-content)); */
 }
 
 .prk_dice {
