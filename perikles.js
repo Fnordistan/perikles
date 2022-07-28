@@ -88,6 +88,7 @@ function (dojo, declare) {
             this.setupMilitary(gamedatas.military, gamedatas.persianleaders);
             this.setupDefeats(gamedatas.defeats);
             this.setupCities();
+            this.setupBattleTokens();
 
 
             // Setup game notifications to handle (see "setupNotifications" method below)
@@ -541,6 +542,22 @@ function (dojo, declare) {
                     this.onCityClick(city);
                 });
             }
+        },
+
+        /**
+         * Just create the zones, they are empty except during battles.
+         */
+        setupBattleTokens: function() {
+            const TOKEN_HEIGHT = 60;
+            const TOKEN_WIDTH = 36;
+
+            this.attacker_tokens = new ebg.zone();
+            this.defender_tokens = new ebg.zone();
+            this.battle_tokens = new ebg.zone();
+
+            this.attacker_tokens.create( this, 'attacker_battle_tokens', TOKEN_WIDTH, TOKEN_HEIGHT );
+            this.defender_tokens.create( this, 'defender_battle_tokens', TOKEN_WIDTH, TOKEN_HEIGHT );
+            this.battle_tokens.create( this, 'battle_tokens', TOKEN_WIDTH, TOKEN_HEIGHT );
         },
 
         ///////////////////////////////////////////////////
@@ -2678,9 +2695,10 @@ function (dojo, declare) {
         * Initialize a new battle
         */
        startBattle: function() {
+        debugger;
             for (i = 0; i < 4; i++) {
-                const token = '<div class="prk_battle_token"></div>';
-                dojo.place(token, $('battle_tokens'));
+                const token = dojo.place('<div class="prk_battle_token"></div>', $('battle_tokens'));
+                this.battle_tokens.placeInZone(token);
             }
             for (c = 1; c <= 6; c++) {
                 const crt_col = $('crt_'+c);
@@ -2743,8 +2761,9 @@ function (dojo, declare) {
         notif_takeToken: function(notif) {
             // "attacker" or "defender"
             const side = notif.args.side;
+            const token = $('battle_tokens').lastElementChild;
+            this.battle_tokens.removeFromZone( token.id, false, side+'_battle_tokens' );
             debugger;
-            
         },
 
         /**

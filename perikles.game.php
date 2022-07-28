@@ -1585,7 +1585,7 @@ class Perikles extends Table
         $defd1 = bga_rand(1,6);
         $defd2 = bga_rand(1,6);
         $defhit = ($defd1 + $defd2) >= $defender_tn;
-        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal} ({$atthit}), Defender rolls ${defd1} ${defd2} ${deftotal} ({$defhit})'), array(
+        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal} (${atthit}), Defender rolls ${defd1} ${defd2} ${deftotal} (${defhit})'), array(
             'attd1' => $attd1,
             'attd2' => $attd2,
             'defd1' => $defd1,
@@ -1733,7 +1733,7 @@ class Perikles extends Table
                 $min = $s;
             }
         }
-        return $buckets[$min];
+        return empty($buckets) ? [] : $buckets[$min];
     }
 
     /**
