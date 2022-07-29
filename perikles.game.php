@@ -1360,8 +1360,15 @@ class Perikles extends Table
         }
     }
 
-    function chooseLoss() {
+    /**
+     * Player chose a counter to die.
+     */
+    function chooseLoss($city) {
+        self::checkAction('chooseLoss');
+        // where is the current battle?
 
+        // $counter = $this->Battles->getCounter($id);
+        // $this->assignCasualty($counter);
     }
 
     /**

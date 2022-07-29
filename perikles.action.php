@@ -106,6 +106,16 @@ class action_perikles extends APP_GameAction
     }
 
     /**
+     * Player selected unit to lose in battle
+     */
+    public function selectcasualty() {
+      self::setAjaxMode();     
+      $city = self::getArg( "city", AT_alphanum, true );
+      $this->game->chooseLoss($city);
+      self::ajaxResponse( );
+    }
+
+    /**
      * Player plays Special Tile or declines
      */
     public function specialTile() {

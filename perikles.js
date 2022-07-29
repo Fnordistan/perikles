@@ -2257,6 +2257,18 @@ function (dojo, declare) {
         },
 
         /**
+         * Player chose a unit to lose as casualty.
+         * @param {string} city from which casualty comes
+         */
+        selectCasualty: function(city) {
+            if (this.checkPossibleActions("chooseLoss", true)) {
+                this.ajaxcall( "/perikles/perikles/selectcasualty.html", {
+                    city: city,
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        /**
          * Player plays or declines to play Special Tile.
          * @param {bool} use
          */
@@ -2337,6 +2349,7 @@ function (dojo, declare) {
             }
             return argstr;
         },
+
 
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications

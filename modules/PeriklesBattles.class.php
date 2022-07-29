@@ -48,6 +48,16 @@ class PeriklesBattles extends APP_GameClass
   }
 
   /**
+   * Returns a single counter by id.
+   * @param {string} id
+   * @return a counter
+   */
+  public function getCounter($id) {
+    $counter = $this->game->getObjectFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE id=$id");
+    return $counter;
+  }
+
+  /**
    * Get counters currently at a battle location or in a player's pool.
    * As an array of [id,city,type,strength,location,battlepos] counters.
    * @param {string} location name of tile or player_id
