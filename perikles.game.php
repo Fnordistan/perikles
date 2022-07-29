@@ -56,6 +56,8 @@ define("ATTACKER_TOKENS", "attacker_tokens");
 define("DEFENDER_TOKENS", "defender_tokens");
 define("CONTROLLED_PERSIANS", "_persia_"); // used to flag Persian units that will go to a player board
 
+define("DEADPOOL", "deadpool");
+
 class Perikles extends Table
 {
 	function __construct( )
@@ -436,36 +438,42 @@ class Perikles extends Table
      * Only does the movement, not notifications.
      * @param {string} id
      */
-    function unclaimedTile($id) {
-        $this->moveTile($id, UNCLAIMED);
+    function unclaimedTile($tile) {
+        $this->moveTile($tile, UNCLAIMED);
     }
 
     /**
-     * A player claims a tile. Add it to player's board. Send notification to move tile.
+     * A player claims a tile. Return military units.
+     * Add tile to player's board. Send notification to move tile.
+     * 
      * @param {string} player_id
      * @param {Object} tile
      */
     function claimTile($player_id, $tile) {
-        $id = $tile['id'];
         $city = $tile['city'];
         $location = $tile['location'];
         $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers('winBattle', clienttranslate('${player_name} claims ${location_name} tile'), array(
+        self::notifyAllPlayers('claimTile', clienttranslate('${player_name} claims ${location_name} tile'), array(
             'i18n' => ['location_name'],
             'city' => $city,
+            'location' => $location,
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
             'location_name' => $this->Locations->getName($location),
-            'preserve' => ['player_id', 'city'],
+            'preserve' => ['player_id', 'city', 'location'],
         ));
-        $this->moveTile($id, $player_id);
+        $this->moveTile($tile, $player_id);
     }
 
     /**
-     * Move a tile either to a player board or unclaimed pile.
+     * First return all military.
+     * Then move a tile either to a player board or unclaimed pile.
+     * Does not send notification.
      * Send notification.
      */
-    function moveTile($id, $destination) {
+    function moveTile($tile, $destination) {
+        $id = $tile['id'];
+        $this->returnMilitaryUnits($tile);
         $this->location_tiles->insertCardOnExtremePosition($id, $destination, true);
         self::DbQuery("UPDATE LOCATION SET attacker=NULL,defender=NULL,permissions=NULL WHERE card_id=$id");
     }
@@ -503,10 +511,12 @@ class Perikles extends Table
     /**
      * Move all military units from a battle location back to the city where it belongs
      */
-    function returnMilitaryUnits($location) {
+    function returnMilitaryUnits($tile) {
+        $location = $tile['location'];
         $this->Battles->returnCounters($location);
         self::notifyAllPlayers("returnMilitary", '', array(
-            'location' => $location
+            'location' => $location,
+            'slot' => $tile['slot']
         ));
     }
 
@@ -1456,7 +1466,7 @@ class Perikles extends Table
             'location' => $location,
             'location_name' => $this->Locations->getName($location),
         ));
-        $this->unclaimedTile($tile['id']);
+        $this->unclaimedTile($tile);
     }
 
     /**
@@ -1471,7 +1481,6 @@ class Perikles extends Table
      *      then no one gets the tile, and the defender gets 2 cubes.
      */
     function uncontestedBattle($tile) {
-        $id = $tile['id'];
         $location = $tile['location'];
         $city = $tile['city'];
         $attacker = $tile['attacker'];
@@ -1495,7 +1504,7 @@ class Perikles extends Table
                 'location_name' => $this->Locations->getName($location),
             ));
             $this->addInfluenceToCity($city, $player_id, 2);
-            $this->unclaimedTile($id);
+            $this->unclaimedTile($tile);
         } else {
             // attacker with no defenders
             // you must send units to the last round to win the tile
@@ -1511,7 +1520,7 @@ class Perikles extends Table
                     'location_name' => $this->Locations->getName($location),
                     'preserve' => ['location']
                 ));
-                $this->unclaimedTile($id);
+                $this->unclaimedTile($tile);
             } else {
                 self::notifyAllPlayers('uncontestedVictory', clienttranslate('Attacker wins uncontested battle at ${location_name}'), array(
                     'i18n' => ['location_name'],
@@ -1741,6 +1750,8 @@ class Perikles extends Table
      * @param {Object} counter to lose
      */
     function assignCasualty($counter) {
+        $id = $counter['id'];
+        self::DbQuery("UPDATE MILITARY SET location=\"".DEADPOOL."\", battlepos=0 WHERE id=$id");
 
     }
 
@@ -2113,14 +2124,6 @@ class Perikles extends Table
         // commit phase is over
         $this->battleReset();
 
-        // if there was previously a battle, cleanup
-        $slot = self::getGameStateValue("active_battle");
-        if ($slot != 0) {
-            $previousbattle = $this->Locations->getBattleTile($slot);
-            // TODO this needs to happen BEFORE tile is moved
-            $this->returnMilitaryUnits($previousbattle['location']);
-        }
-
         // is there another tile?
         $tile = $this->Battles->nextBattle();
         if ($tile == null) {
@@ -2180,7 +2183,7 @@ class Perikles extends Table
 
         $combat = $this->Locations->getCombat($location, $round);
         if ($combat == null) {
-            // there should be a winner
+            // there should be a winner and we have already done losses
             $this->battleVictory($tile);
             $state = "endBattle";
         } else {
@@ -2303,7 +2306,7 @@ class Perikles extends Table
         }
         if ($attstrength == 0 || $defstrength == 0) {
             // shouldn't happen!
-            throw new BgaVisibleSystemException("no combat strength found on one side!"); // NOI18N
+            throw new BgaVisibleSystemException("no combat strength found at $location!"); // NOI18N
         }
         $winner = $this->rollBattle($location, $type, $attstrength, $defstrength);
 

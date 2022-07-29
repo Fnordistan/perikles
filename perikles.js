@@ -81,7 +81,7 @@ function (dojo, declare) {
             this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCubes(gamedatas.influencecubes);
-            this.setupLocationTiles(gamedatas.locationtiles);
+            this.setupLocationTiles(gamedatas.players, gamedatas.locationtiles);
             this.setupCandidates(gamedatas.candidates);
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
@@ -325,9 +325,16 @@ function (dojo, declare) {
 
         /**
          * Put all the Location tiles in their slots.
-         * @param {Array} locationtiles 
+         * @param {array} players
+         * @param {rray} locationtiles 
          */
-        setupLocationTiles: function(locationtiles) {
+        setupLocationTiles: function(players, locationtiles) {
+            const tile_scale = 0.2;
+            // create player area for victory tiles
+            for (const player_id in players) {
+                const player_tiles = this.format_block('jstpl_victory_tiles', {id: player_id, scale: tile_scale});
+                dojo.place(player_tiles, $('player_board_'+player_id));
+            }
             for (const loc of locationtiles) {
                 const slot = loc['slot'];
                 const battle = loc['battle'];
@@ -343,6 +350,7 @@ function (dojo, declare) {
                     tileObj.style.margin = null;
                 } else {
                     // player claimed
+                    dojo.place(loc_html, $(location+'_player_tiles'));
                 }
             }
         },
@@ -2370,7 +2378,11 @@ function (dojo, declare) {
             dojo.subscribe( 'newInfluence', this, "notif_newInfluence");
             dojo.subscribe( 'newLocations', this, "notif_newLocations");
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
+            this.notifqueue.setSynchronous( 'unclaimedTile', 500 );
+            dojo.subscribe( 'claimTile', this, "notif_claimTile");
+            this.notifqueue.setSynchronous( 'claimTile', 500 );
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
+            this.notifqueue.setSynchronous( 'returnMilitary', 1000 );
             dojo.subscribe( 'playSpecial', this, "notif_playSpecial");
             this.notifqueue.setSynchronous( 'notif_playSpecial', 500 );
             dojo.subscribe( 'alkibiadesMove', this, "notif_alkibiadesMove");
@@ -2654,10 +2666,23 @@ function (dojo, declare) {
         },
 
         /**
+         * Claim a tile after a battle.
+         * @param {Object} notif 
+         */
+        notif_claimTile: function(notif) {
+            const loc = notif.args.location;
+            const tile = $(loc+'_tile');
+            const player_id = notif.args.player_id;
+            tile.style.margin = null;
+            this.slideToObjectRelative(tile.id, player_id+'__player_tiles', 500, 0);
+        },
+
+        /**
          * Return military from a battle to cities
          * @param {Object} notif 
          */
         notif_returnMilitary: function(notif) {
+            debugger;
             slot = notif.args.slot;
             const counters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...counters].forEach(c => {
@@ -2695,7 +2720,7 @@ function (dojo, declare) {
         * Initialize a new battle
         */
        startBattle: function() {
-        debugger;
+            debugger;
             for (i = 0; i < 4; i++) {
                 const token = dojo.place('<div class="prk_battle_token"></div>', $('battle_tokens'));
                 this.battle_tokens.placeInZone(token);
@@ -2759,6 +2784,7 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_takeToken: function(notif) {
+            debugger;
             // "attacker" or "defender"
             const side = notif.args.side;
             const token = $('battle_tokens').lastElementChild;
