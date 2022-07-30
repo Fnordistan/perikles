@@ -2395,18 +2395,18 @@ function (dojo, declare) {
             dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
             this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
-            this.notifqueue.setSynchronous( 'unclaimedTile', 500 );
+            this.notifqueue.setSynchronous( 'unclaimedTile', 1500 );
             dojo.subscribe( 'claimTile', this, "notif_claimTile");
-            this.notifqueue.setSynchronous( 'claimTile', 500 );
+            this.notifqueue.setSynchronous( 'claimTile', 1500 );
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
-            this.notifqueue.setSynchronous( 'returnMilitary', 1000 );
+            this.notifqueue.setSynchronous( 'returnMilitary', 2000 );
             dojo.subscribe( 'toDeadpool', this, "notif_toDeadpool");
-            this.notifqueue.setSynchronous( 'toDeadpool', 500 );
+            this.notifqueue.setSynchronous( 'toDeadpool', 2500 );
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
-            this.notifqueue.setSynchronous( 'crtOdds', 500 );
+            this.notifqueue.setSynchronous( 'crtOdds', 1500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
-            this.notifqueue.setSynchronous( 'takeToken', 500 );
+            this.notifqueue.setSynchronous( 'takeToken', 2500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
 
             // special tiles
