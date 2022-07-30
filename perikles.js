@@ -1330,6 +1330,10 @@ function (dojo, declare) {
                         }
                         this.addSpecialPassButton();
                         break;
+                    case 'takeLoss':
+                        const type = args.type;
+                        const cities = args.cities;
+                        debugger;
                 }
             }
 
@@ -2378,38 +2382,41 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'influenceCardDrawn', 1000 );
             dojo.subscribe( 'election', this, "notif_election");
             this.notifqueue.setSynchronous( 'election', 1000 );
+            dojo.subscribe( 'spentInfluence', this, "notif_cubeRemoved");
+            this.notifqueue.setSynchronous( 'spentInfluence', 500 );
+            dojo.subscribe( 'newInfluence', this, "notif_newInfluence");
+            dojo.subscribe( 'newLocations', this, "notif_newLocations");
+
+            // battle notifications
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
             this.notifqueue.setSynchronous( 'takeMilitary', 500 );
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
             this.notifqueue.setSynchronous( 'takePersians', 500 );
-            dojo.subscribe( 'useTile', this, "notif_useTile");
-            this.notifqueue.setSynchronous( 'useTile', 500 );
-            dojo.subscribe( 'spentInfluence', this, "notif_cubeRemoved");
-            this.notifqueue.setSynchronous( 'spentInfluence', 500 );
             dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
             this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
-            dojo.subscribe( 'newInfluence', this, "notif_newInfluence");
-            dojo.subscribe( 'newLocations', this, "notif_newLocations");
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
             this.notifqueue.setSynchronous( 'unclaimedTile', 500 );
             dojo.subscribe( 'claimTile', this, "notif_claimTile");
             this.notifqueue.setSynchronous( 'claimTile', 500 );
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
             this.notifqueue.setSynchronous( 'returnMilitary', 1000 );
-            dojo.subscribe( 'playSpecial', this, "notif_playSpecial");
-            this.notifqueue.setSynchronous( 'notif_playSpecial', 500 );
-            dojo.subscribe( 'alkibiadesMove', this, "notif_alkibiadesMove");
-            this.notifqueue.setSynchronous( 'notif_alkibiadesMove', 500 );
-
+            dojo.subscribe( 'toDeadpool', this, "notif_toDeadpool");
+            this.notifqueue.setSynchronous( 'toDeadpool', 500 );
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
-            dojo.subscribe( 'slaveRevolt', this, "notif_slaveRevolt");
-
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
             this.notifqueue.setSynchronous( 'crtOdds', 500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
-            
+
+            // special tiles
+            dojo.subscribe( 'useTile', this, "notif_useTile");
+            this.notifqueue.setSynchronous( 'useTile', 500 );
+            dojo.subscribe( 'playSpecial', this, "notif_playSpecial");
+            this.notifqueue.setSynchronous( 'notif_playSpecial', 500 );
+            dojo.subscribe( 'alkibiadesMove', this, "notif_alkibiadesMove");
+            this.notifqueue.setSynchronous( 'notif_alkibiadesMove', 500 );
+            dojo.subscribe( 'slaveRevolt', this, "notif_slaveRevolt");
         },
 
         // Notification handlers
@@ -2742,6 +2749,15 @@ function (dojo, declare) {
                 const crt_col = $('crt_'+c);
                 crt_col.classList.remove("prk_crt_active");
             }
+        },
+
+        /**
+         * Counter moved to Deadpool.
+         * @param {Object} notif 
+         */
+        notif_toDeadpool: function(notif) {
+            const id = notif.args.id;
+
         },
 
        /**

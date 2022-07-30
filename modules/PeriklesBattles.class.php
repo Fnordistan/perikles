@@ -285,6 +285,75 @@ class PeriklesBattles extends APP_GameClass
   }
 
     /**
+     * Get a list of the lowest value counters at a losing location.
+     * Tries to get from main, if that is empty, then allied.
+     * @param {string} loser ATTACKER or DEFENDER
+     * @param {string} location
+     * @param {string} type HOPLITE or TRIREME
+     * @return {array} counters with the lowest strength, may be empty for militia only
+     */
+    public function getCasualties($loser, $location, $type) {
+      $counters = ($loser == ATTACKER) ? $this->getAttackingCounters($location, $type) : $this->getDefendingCounters($location, $type);
+      // are there any in main?
+      $main = [];
+      $ally = [];
+      $mainpos = ($loser == ATTACKER) ? ATTACKER+MAIN : DEFENDER+MAIN;
+      $allypos = ($loser == ATTACKER) ? ATTACKER+ALLY : DEFENDER+ALLY;
+      foreach($counters as $counter) {
+          $pos = $counter['battlepos'];
+          if ($pos == $mainpos) {
+              $main[] = $counter;
+          } elseif ($pos == $allypos) {
+              $ally[] = $counter;
+          } else {
+              throw new BgaVisibleSystemException("invalid position value: $pos"); //
+          }
+      }
+      // must come from main if possible
+      $lowest = empty($main) ? $this->getLowestCounters($ally) : $this->getLowestCounters($main);
+      return $lowest;
+  }
+
+  /**
+   * Get list of cities represented in a list of counters.
+   * @param {array} counters
+   * @return {array} city names (may be empty)
+   */
+  public function getCounterCities($counters) {
+    $cities = [];
+    foreach ($counters as $counter) {
+        $from = $counter['city'];
+        if (!in_array($from, $cities)) {
+            $cities[] = $from;
+        }
+    }
+    return $cities;
+  }
+
+
+    /**
+     * Return the counters with the lowest strength.
+     * @param {array} counters
+     * @param {return} array all with lowest values
+     */
+  public function getLowestCounters($counters) {
+      $min = 99;
+      $buckets = [];
+      foreach ($counters as $counter) {
+          $s = $counter['strength'];
+          if (!array_key_exists($s, $buckets)) {
+              $buckets[$s] = array();
+          }
+          $buckets[$s][] = $counter;
+          if ($s < $min) {
+              $min = $s;
+          }
+      }
+      return empty($buckets) ? [] : $buckets[$min];
+  }
+
+
+    /**
      * Return Location tile where the next battleis, or null if there are no more.
      * Retrieves next in queue.
      * associative array: [id,city,location,slot,attack,defender]

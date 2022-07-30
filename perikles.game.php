@@ -84,22 +84,25 @@ class Perikles extends Table
             "thebes_leader" => 25,
             "thebes_a" => 26,
             "thebes_b" => 27,
-            "argos_defeats" => 31,
-            "athens_defeats" => 32,
-            "corinth_defeats" => 33,
-            "megara_defeats" => 34,
-            "sparta_defeats" => 35,
-            "thebes_defeats" => 36,
-            "active_battle" => 46,
-            "battle_round" => 47, // 0,1
-            "influence_phase" => 48,
-            "commit_phase" => 49,
+            "argos_defeats" => 30,
+            "athens_defeats" => 31,
+            "corinth_defeats" => 32,
+            "megara_defeats" => 33,
+            "sparta_defeats" => 34,
+            "thebes_defeats" => 35,
 
-            "last_influence_slot" => 37, // keep track of where to put next Influence tile
-            "deadpool_picked" => 38, // how many players have been checked for deadpool?
-            "spartan_choice" => 39, // who Sparta picked to go first in military phase
-            ATTACKER_TOKENS => 50, // battle tokens won by attacker so far in current battle
-            DEFENDER_TOKENS => 51, // battle tokens won by defender so far in current battle
+            "active_battle" => 40,
+            "battle_round" => 41, // 0,1
+            "battle_loser" => 42,
+            ATTACKER_TOKENS => 43, // battle tokens won by attacker so far in current battle
+            DEFENDER_TOKENS => 44, // battle tokens won by defender so far in current battle
+
+            "influence_phase" => 50,
+            "last_influence_slot" => 51, // keep track of where to put next Influence tile
+            "commit_phase" => 52,
+            "spartan_choice" => 53, // who Sparta picked to go first in military phase
+            "deadpool_picked" => 54, // how many players have been checked for deadpool?
+
             BRASIDAS => 60, // Brasides activated for next battle
             PHORMIO => 61, // Phormio activated for next battle
         ) );
@@ -165,6 +168,7 @@ class Perikles extends Table
         self::setGameStateInitialValue(DEFENDER_TOKENS, 0);
         self::setGameStateInitialValue("active_battle", 0);
         self::setGameStateInitialValue("battle_round", 0);
+        self::setGameStateInitialValue("battle_loser", -1);
         self::setGameStateInitialValue(BRASIDAS, 0);
         self::setGameStateInitialValue(PHORMIO, 0);
         // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with candidate nominations.
@@ -528,12 +532,10 @@ class Perikles extends Table
         $id = $mil['id'];
         $battle = $mil['battle'];
         $players = self::loadPlayersBasicInfos();
-        $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
+        $counter = $this->Battles->getCounter($id);
 
         self::DbQuery("UPDATE MILITARY SET location=\"$battle\", battlepos=$battlepos WHERE id=$id");
-
         $role = $this->getRoleName($battlepos);
-
         $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$battle\"");
 
         foreach (array_keys($players) as $pid) {
@@ -775,6 +777,19 @@ class Perikles extends Table
             TRIREME => clienttranslate("Trireme"),
         );
         return $units[$unit];
+    }
+
+    /**
+     * Get translated description of a counter
+     * @param {Object} counter
+     * @return translateable string
+     */
+    function getCounterDescription($counter) {
+        $city_name = $counter['city'];
+        $unit_type = $counter['type'];
+        $strength = $counter['strength'];
+        $desc = clienttranslate("$city_name $unit_type-$strength");
+        return $desc;
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1368,7 +1383,7 @@ class Perikles extends Table
         // where is the current battle?
 
         // $counter = $this->Battles->getCounter($id);
-        // $this->assignCasualty($counter);
+        // $this->moveToDeadpool($counter);
     }
 
     /**
@@ -1702,64 +1717,35 @@ class Perikles extends Table
     }
 
     /**
-     * Get a list of the lowest value counters at a losing location.
-     * Tries to get from main, if that is empty, then allied.
-     * @param {string} loser ATTACKER or DEFENDER
-     * @param {string} location
-     * @param {string} type HOPLITE or TRIREME
-     * @return {array} counters with the lowest strength
-     */
-    function getCasualties($loser, $location, $type) {
-        $counters = ($loser == ATTACKER) ? $this->Battles->getAttackingCounters($location, $type) : $this->Battles->getDefendingCounters($location, $type);
-        // are there any in main?
-        $main = [];
-        $ally = [];
-        $mainpos = ($loser == ATTACKER) ? ATTACKER+MAIN : DEFENDER+MAIN;
-        $allypos = ($loser == ATTACKER) ? ATTACKER+ALLY : DEFENDER+ALLY;
-        foreach($counters as $counter) {
-            $pos = $counter['battlepos'];
-            if ($pos == $mainpos) {
-                $main[] = $counter;
-            } elseif ($pos == $allypos) {
-                $ally[] = $counter;
-            } else {
-                throw new BgaVisibleSystemException("invalid position value: $pos"); //
-            }
-        }
-        // must come from main if possible
-        $lowest = empty($main) ? $this->getLowestCounters($ally) : $this->getLowestCounters($main);
-        return $lowest;
-    }
-
-    /**
-     * Return the counters with the lowest strength.
-     * @param {array} counters
-     * @param {return} array all with lowest values
-     */
-    function getLowestCounters($counters) {
-        $min = 99;
-        $buckets = [];
-        foreach ($counters as $counter) {
-            $s = $counter['strength'];
-            if (!array_key_exists($s, $buckets)) {
-                $buckets[$s] = array();
-            }
-            $buckets[$s][] = $counter;
-            if ($s < $min) {
-                $min = $s;
-            }
-        }
-        return empty($buckets) ? [] : $buckets[$min];
-    }
-
-    /**
-     * Loser of a battle must lose one counter.
+     * Move a counter to the Deadpool.
+     * Send notification.
      * @param {Object} counter to lose
      */
-    function assignCasualty($counter) {
-        $id = $counter['id'];
-        self::DbQuery("UPDATE MILITARY SET location=\"".DEADPOOL."\", battlepos=0 WHERE id=$id");
+    function moveToDeadpool($counter) {
+        if ($counter != null) {
+            $id = $counter['id'];
+            self::DbQuery("UPDATE MILITARY SET location=\"".DEADPOOL."\", battlepos=0 WHERE id=$id");
+    
+            $unit_desc = $this->getCounterDescription($counter);
+            self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to deadpool'), array(
+                'i18n' => ['unit_desc'],
+                'id' => $id,
+                'unit' => $unit_desc,
+            ));
+        }
+    }
 
+    /**
+     * Get all eligibile casualties for the current battle.
+     */
+    function getPossibleCasualties() {
+        $battle = self::getGameStateValue("active_battle");
+        $location = $this->Locations->getBattleTile($battle);
+        $loser = self::getGameStateValue("battle_loser");
+        $round = self::getGameStateValue("battle_round");
+        $type = $this->Locations->getCombat($location, $round);
+        $casualties = $this->Battles->getCasualties($loser, $location, $type);
+        return $casualties;
     }
 
     /**
@@ -1772,6 +1758,7 @@ class Perikles extends Table
         self::setGameStateValue("commit_phase", 0);
         self::setGameStateValue("active_battle", 0);
         self::setGameStateValue("battle_round", 0);
+        self::setGameStateValue("battle_loser", -1);
         self::setGameStateValue(BRASIDAS, 0);
         self::setGameStateValue(PHORMIO, 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
@@ -1836,7 +1823,17 @@ class Perikles extends Table
      * Present player with choice of cities to take casualties from
      */
     function argsLoss() {
-        return array();
+        $battle = self::getGameStateValue("active_battle");
+        $location = $this->Locations->getBattleTile($battle);
+        $round = self::getGameStateValue("battle_round");
+        $type = $this->Locations->getCombat($location, $round);
+
+        $casualties = $this->getPossibleCasualties();
+        $cities = $this->Battles->getCounterCities($casualties);
+        return array(
+            "type" => $type,
+            "cities" => $cities
+        );
     }
 
     /**
@@ -2317,24 +2314,32 @@ class Perikles extends Table
         }
         $winner = $this->rollBattle($location, $type, $attstrength, $defstrength);
 
-        $loser = ($winner == ATTACKER) ? DEFENDER : ATTACKER;
-        $casualties = $this->getCasualties($loser, $location, $type);
-        $cities = [];
-        foreach ($casualties as $cas) {
-            $from = $cas['city'];
-            if (!in_array($from, $cities)) {
-                $cities[] = $from;
-            }
-        }
-        $state = "endCombat";
-        if (count($cities) > 1) {
-            $state = "takeLoss";
+        if ($winner == ATTACKER) {
+            $loser = DEFENDER;
+            $loser_id = $this->Battles->getDefender($location);
         } else {
-            $this->assignCasualty(array_pop($casualties));
+            $loser = ATTACKER;
+            $loser_id = $this->Battles->getAttacker($location);
+        }
+
+        self::setGameStateValue("battle_loser", $loser);
+        $casualties = $this->Battles->getCasualties($loser, $location, $type);
+        $cities = $this->Battles->getCounterCities($casualties);
+        $state = "endCombat";
+        // more than one city, player must choose
+        if (count($cities) > 1) {
+            $this->gamestate->changeActivePlayer($loser_id);
+        } else {
+            // just pop the first one
+            $casualty = null;
+            if (!empty($casualties)) {
+                $casualty = array_pop($casualties);
+            }
+            $this->moveToDeadpool($casualty);
         }
 
         // claiming the tile is done in stResolveTile
-        $this->gamestate->nextState($state);
+        $this->gamestate->nextState();
     }
 
     /**
@@ -2436,6 +2441,15 @@ class Perikles extends Table
                 case 'specialBattleTile':
                         $this->useSpecialTile($active_player, false);
                     break;
+                case "takeLoss":
+                        $casualty = null;
+                        $casualties = $this->getPossibleCasualties();
+                        if (!empty($casualties)) {
+                            shuffle($casualties);
+                            $casualty = array_pop($casualties);
+                        }
+                        $this->moveToDeadpool($casualty);
+                        break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
                 	break;
