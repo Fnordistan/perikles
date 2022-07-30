@@ -730,10 +730,10 @@
 
 .prk_token_box {
     height: 65px;
-    /* display: grid;
+    display: grid;
     justify-content: center;
     position: absolute;
-    grid-template-columns: repeat(auto-fit,  minmax(10px, max-content)); */
+    grid-template-columns: repeat(auto-fit,  minmax(10px, max-content));
 }
 
 .prk_dice {

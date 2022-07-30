@@ -29,7 +29,7 @@ const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 
 const PLAYER_INF_MARGIN = "2px";
 
-const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles', 'specialBattleTile'];
+const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveBattles', 'specialBattleTile', 'takeLoss'];
 
 const CANDIDATES = {
     "\u{003B1}" : "a",

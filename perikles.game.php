@@ -2325,10 +2325,12 @@ class Perikles extends Table
         self::setGameStateValue("battle_loser", $loser);
         $casualties = $this->Battles->getCasualties($loser, $location, $type);
         $cities = $this->Battles->getCounterCities($casualties);
-        $state = "endCombat";
+
+        $state = "endBattle";
         // more than one city, player must choose
         if (count($cities) > 1) {
             $this->gamestate->changeActivePlayer($loser_id);
+            $state = "takeLoss";
         } else {
             // just pop the first one
             $casualty = null;
@@ -2339,7 +2341,7 @@ class Perikles extends Table
         }
 
         // claiming the tile is done in stResolveTile
-        $this->gamestate->nextState();
+        $this->gamestate->nextState($state);
     }
 
     /**
@@ -2449,6 +2451,7 @@ class Perikles extends Table
                             $casualty = array_pop($casualties);
                         }
                         $this->moveToDeadpool($casualty);
+                        $this->gamestate->nextState( "endBattle" );
                         break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );

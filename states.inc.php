@@ -210,7 +210,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stRollCombat",
-        "transitions" => array( "" => TAKE_LOSS )
+        "transitions" => array( "takeLoss" => TAKE_LOSS, "endBattle" => RESOLVE_TILE )
     ),
 
     // losers must lose one counter
