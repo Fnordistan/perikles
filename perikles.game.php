@@ -779,19 +779,6 @@ class Perikles extends Table
         return $units[$unit];
     }
 
-    /**
-     * Get translated description of a counter
-     * @param {Object} counter
-     * @return translateable string
-     */
-    function getCounterDescription($counter) {
-        $city_name = $counter['city'];
-        $unit_type = $counter['type'];
-        $strength = $counter['strength'];
-        $desc = clienttranslate("$city_name $unit_type-$strength");
-        return $desc;
-    }
-
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -1724,9 +1711,8 @@ class Perikles extends Table
     function moveToDeadpool($counter) {
         if ($counter != null) {
             $id = $counter['id'];
+            $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $counter['location']);
             self::DbQuery("UPDATE MILITARY SET location=\"".DEADPOOL."\", battlepos=0 WHERE id=$id");
-    
-            $unit_desc = $this->getCounterDescription($counter);
             self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to deadpool'), array(
                 'i18n' => ['unit_desc'],
                 'id' => $id,
