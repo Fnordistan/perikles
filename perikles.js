@@ -44,7 +44,6 @@ define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
     "ebg/counter",
-    "ebg/zone",
     g_gamethemeurl + "modules/specialtile.js",
     g_gamethemeurl + "modules/alkibiades.js",
     g_gamethemeurl + "modules/slaverevolt.js",
@@ -88,8 +87,6 @@ function (dojo, declare) {
             this.setupMilitary(gamedatas.military, gamedatas.persianleaders);
             this.setupDefeats(gamedatas.defeats);
             this.setupCities();
-            this.setupBattleTokens();
-
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -340,7 +337,7 @@ function (dojo, declare) {
                 const battle = loc['battle'];
                 const tile = new perikles.locationtile(battle);
                 const location = loc['loc'];
-                const loc_html = tile.createTile(0);
+                const loc_html = tile.createTile();
                 if (location == "board") {
                     const tileObj = dojo.place(loc_html, $("location_"+slot));
                     const lochtml = tile.createTooltip(this.getCityNameTr(tile.getCity()));
@@ -452,10 +449,11 @@ function (dojo, declare) {
                     counter.addToStack();
                 } else if (counter.getLocation() == DEAD_POOL) {
                     // in the dead pool
+                    
 
                 } else if (Object.keys(LOCATION_TILES).includes(counter.getLocation())) {
                     // sent to a battle
-                    this.placeCounterAtBattle(counter);
+                    counter.placeBattle();
                 } else {
                     // it's in a player pool
                     const player_id = counter.getLocation();
@@ -503,23 +501,23 @@ function (dojo, declare) {
             this.addTooltip(stack, tt, '');
         },
 
-        /**
-         * Place a military counter on the battle stacks at a location tile.
-         * @param {Object} counter 
-         */
-        placeCounterAtBattle: function(counter) {
-            const slotid = $(counter.getLocation()+"_tile").parentNode.id;
-            const slot = slotid[slotid.length-1];
-            const place = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
-            const stackct = $(place).childElementCount;
-            // zero ids for face-down units
-            if (counter.getStrength() == 0) {
-                counter.setId(stackct);
-            }
-            counter.setId(counter.getId()+"_"+counter.getLocation());
-            const battlecounter = counter.toBattleDiv(stackct);
-            dojo.place(battlecounter, $(place));
-        },
+        // /**
+        //  * Place a military counter on the battle stacks at a location tile.
+        //  * @param {Object} counter 
+        //  */
+        // placeCounterAtBattle: function(counter) {
+        //     const slotid = $(counter.getLocation()+"_tile").parentNode.id;
+        //     const slot = slotid[slotid.length-1];
+        //     const place = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
+        //     const stackct = $(place).childElementCount;
+        //     // zero ids for face-down units
+        //     if (counter.getStrength() == 0) {
+        //         counter.setId(stackct);
+        //     }
+        //     counter.setId(counter.getId()+"_"+counter.getLocation());
+        //     const battlecounter = counter.toBattleDiv(stackct);
+        //     dojo.place(battlecounter, $(place));
+        // },
 
         /**
          * Place Defeat counters on cities.
@@ -550,22 +548,6 @@ function (dojo, declare) {
                     this.onCityClick(city);
                 });
             }
-        },
-
-        /**
-         * Just create the zones, they are empty except during battles.
-         */
-        setupBattleTokens: function() {
-            const TOKEN_HEIGHT = 60;
-            const TOKEN_WIDTH = 36;
-
-            this.attacker_tokens = new ebg.zone();
-            this.defender_tokens = new ebg.zone();
-            this.battle_tokens = new ebg.zone();
-
-            this.attacker_tokens.create( this, 'attacker_battle_tokens', TOKEN_WIDTH, TOKEN_HEIGHT );
-            this.defender_tokens.create( this, 'defender_battle_tokens', TOKEN_WIDTH, TOKEN_HEIGHT );
-            this.battle_tokens.create( this, 'battle_tokens', TOKEN_WIDTH, TOKEN_HEIGHT );
         },
 
         ///////////////////////////////////////////////////
@@ -600,7 +582,15 @@ function (dojo, declare) {
                     if (args.special_tile) {
                         args.special_tile = '<span class="prk_special_log">'+args.special_tile+'</span>';
                     }
+                    if (args.location) {
+                        const tile = new perikles.locationtile(args.location);
+                        const tileicon = tile.createIcon();
+                        log += tileicon;
+                    }
+                    // a battle
                     if (args.attd1) {
+                        const hit = '<span style="color:red">'+_("Hit")+'</span>';
+                        const miss = '<span style="color:yellow">'+_("Miss")+'</span>';
                         args.attd1 = this.diceIcon(args.attd1);
                         args.attd2 = this.diceIcon(args.attd2);
                         args.defd1 = this.diceIcon(args.defd1, true);
@@ -608,6 +598,8 @@ function (dojo, declare) {
                         args.atttotal = '<span class="prk_dicetotal">['+args.atttotal+']</span>';
                         args.deftotal = '<span class="prk_dicetotal">['+args.deftotal+']</span>';
                         args.atttotal = '<span>'+args.atttotal+'</span>';
+                        args.atthit = args.atthit ? hit : miss;
+                        args.defhit = args.defhit ? hit : miss;
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.decorator.spanYou(this.player_id));
@@ -656,7 +648,7 @@ function (dojo, declare) {
                     mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
                     commit_str = commit_str.replace('${unit}', mil_html);
                     const tile = new perikles.locationtile(selected.location);
-                    let loc_html = tile.createTile(0);
+                    let loc_html = tile.createTile();
                     loc_html = this.decorator.prependStyle(loc_html, 'display: inline-block');
                     commit_str = commit_str.replace('${location}', loc_html);
 
@@ -934,7 +926,6 @@ function (dojo, declare) {
          * all its connectors (onClick, etc)
          */
          attachToNewParentNoDestroy: function (mobile_in, new_parent_in, relation, place_position) {
-            //console.log("attaching ",mobile,new_parent,relation);
             const mobile = $(mobile_in);
             const new_parent = $(new_parent_in);
 
@@ -2389,22 +2380,22 @@ function (dojo, declare) {
 
             // battle notifications
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
-            this.notifqueue.setSynchronous( 'takeMilitary', 500 );
+            this.notifqueue.setSynchronous( 'takeMilitary', 2500 );
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
-            this.notifqueue.setSynchronous( 'takePersians', 500 );
+            this.notifqueue.setSynchronous( 'takePersians', 2500 );
             dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
-            this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
+            this.notifqueue.setSynchronous( 'sendMilitary', 2500 );
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
-            this.notifqueue.setSynchronous( 'unclaimedTile', 1500 );
+            this.notifqueue.setSynchronous( 'unclaimedTile', 2500 );
             dojo.subscribe( 'claimTile', this, "notif_claimTile");
-            this.notifqueue.setSynchronous( 'claimTile', 1500 );
+            this.notifqueue.setSynchronous( 'claimTile', 2500 );
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
-            this.notifqueue.setSynchronous( 'returnMilitary', 2000 );
+            this.notifqueue.setSynchronous( 'returnMilitary', 2500 );
             dojo.subscribe( 'toDeadpool', this, "notif_toDeadpool");
             this.notifqueue.setSynchronous( 'toDeadpool', 2500 );
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
-            this.notifqueue.setSynchronous( 'crtOdds', 1500 );
+            this.notifqueue.setSynchronous( 'crtOdds', 2500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 2500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
@@ -2683,6 +2674,7 @@ function (dojo, declare) {
             // clear margin before putting in box
             tile.style.margin = null;
             this.slideToObjectRelative(tile.id, 'unclaimed_tiles', 500, 0);
+            this.removeTooltip(tile.id);
         },
 
         /**
@@ -2693,8 +2685,12 @@ function (dojo, declare) {
             const loc = notif.args.location;
             const tile = $(loc+'_tile');
             const player_id = notif.args.player_id;
+            const vp = int(notif.args.vp);
+
             tile.style.margin = null;
             this.slideToObjectRelative(tile.id, player_id+'__player_tiles', 500, 0);
+            this.removeTooltip(tile.id);
+            this.scoreCtrl[ player_id ].incValue( vp );
         },
 
         /**
@@ -2702,14 +2698,13 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_returnMilitary: function(notif) {
-            debugger;
             slot = notif.args.slot;
             const counters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...counters].forEach(c => {
                 const counter_name = c.id;
                 const [city, unit, strength, _, id] = counter_name.split('_');
                 const city_military = city+"_military";
-                this.slideToObjectAndDestroy(c, city_military, 1000, 500);
+                this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
                 new perikles.counter(city, unit, strength, id).addToStack();
             });
         },
@@ -2719,7 +2714,6 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_revealCounters: function(notif) {
-            debugger;
             const slot = notif.args.slot;
             const military = notif.args.military;
 
@@ -2728,10 +2722,9 @@ function (dojo, declare) {
             [...oldcounters].forEach(c => {
                 c.remove();
             });
-            let i = 0;
             military.forEach(m => {
                 counter = this.militaryToCounter(m);
-                this.placeCounterAtBattle(counter, i++);
+                counter.placeBattle();
             });
             this.startBattle();
        },
@@ -2740,15 +2733,6 @@ function (dojo, declare) {
         * Initialize a new battle
         */
        startBattle: function() {
-            debugger;
-            for (i = 0; i < 4; i++) {
-                const token = dojo.place('<div class="prk_battle_token"></div>', $('battle_tokens'));
-                this.battle_tokens.placeInZone(token);
-            }
-            for (c = 1; c <= 6; c++) {
-                const crt_col = $('crt_'+c);
-                crt_col.classList.remove("prk_crt_active");
-            }
         },
 
         /**
@@ -2757,6 +2741,7 @@ function (dojo, declare) {
          */
         notif_toDeadpool: function(notif) {
             const id = notif.args.id;
+            debugger;
 
         },
 
@@ -2805,7 +2790,6 @@ function (dojo, declare) {
             const crt = notif.args.crt;
             const crt_col = $('crt_'+crt);
             crt_col.classList.add("prk_crt_active");
-            debugger;
         },
 
         /**
@@ -2813,12 +2797,10 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_takeToken: function(notif) {
-            debugger;
             // "attacker" or "defender"
             const side = notif.args.side;
-            const token = $('battle_tokens').lastElementChild;
-            this.battle_tokens.removeFromZone( token.id, false, side+'_battle_tokens' );
-            debugger;
+            const token = $('battle_tokens').lastChild;
+            this.slideToObjectRelative(token.id, $(side+'_battle_tokens'), 1500, 1500, null, "last");
         },
 
         /**
@@ -2826,12 +2808,21 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_resetBattleTokens: function(notif) {
-            const tokens = document.getElementsByClassName("prk_battle_token");
-            [...tokens].forEach(t => {
-                t.remove();
+            debugger;
+            // remove Attacker/Defender Battle Tokens, put them back in the middle
+            [$('attacker_battle_tokens'), $('defender_battle_tokens')].forEach(box => {
+                const tokens = box.getElementsByClassName('prk_battle_token');
+                [...tokens].forEach(t => {
+                    t.remove();
+                });
             });
-            // remove highlighting from CRT
-
+            for (i = 0; i < 4; i++) {
+                dojo.place('<div id="battle_token_'+i+'" class="prk_battle_token"></div>', $('battle_tokens'));
+            }
+            const crtcols = $('crt_table').getElementsByClassName("prk_crt");
+            [...crtcols].forEach(c => {
+                c.classList.remove("prk_crt_active");
+            });
         },
 
    });

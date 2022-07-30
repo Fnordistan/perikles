@@ -357,16 +357,16 @@ class Perikles extends Table
         $shards = 2;
         $desc = "";
         if ($name == 'any') {
-            $name = self::_("Any");
+            $name = clienttranslate("Any");
             $shards = 1;
         } else {
             $name = $this->Cities->getNameTr($name);
 
             if ($tile['type'] == "assassin") {
-                $desc = self::_("Assassin");
+                $desc = clienttranslate("Assassin");
                 $shards = 1;
             } else if ($tile['type'] == "candidate") {
-                $desc = self::_("Candidate");
+                $desc = clienttranslate("Candidate");
                 $shards = 1;
             }
         }
@@ -378,8 +378,9 @@ class Perikles extends Table
      */
     function unitDescription($city, $strength, $type, $location) {
         $home_city = $this->Cities->getNameTr($city);
-        $unit_type = ($type == HOPLITE) ? self::_("Hoplite") : self::_("Trireme");
-        $unit_desc = sprintf(self::_("%s %s-%s at %s", ), $home_city, $unit_type, $strength, $location);
+        $unit_type = ($type == HOPLITE) ? clienttranslate("Hoplite") : clienttranslate("Trireme");
+        $location_name = $this->Locations->getName($location);
+        $unit_desc = sprintf(clienttranslate("%s %s-%s at %s", ), $home_city, $unit_type, $strength, $location_name);
         return $unit_desc;
     }
 
@@ -413,10 +414,10 @@ class Perikles extends Table
      * Draw a new Influence card from deck and place.
      */
     function drawInfluenceTile() {
-        $slot = self::getGameStateValue("last_influence_slot");
+        $slot = $this->getGameStateValue("last_influence_slot");
         $this->influence_tiles->pickCardForLocation(DECK, BOARD, $slot);
         $newtile = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_location = \"".BOARD."\" AND card_location_arg =$slot");
-        self::setGameStateValue("last_influence_slot", 0);
+        $this->setGameStateValue("last_influence_slot", 0);
 
         $descriptors = $this->influenceTileDescriptors($newtile);
         $city_name = $descriptors[0];
@@ -457,11 +458,14 @@ class Perikles extends Table
         $city = $tile['city'];
         $location = $tile['location'];
         $players = self::loadPlayersBasicInfos();
+        $vp = $this->Locations->getVictoryPoints($location);
+        self::DbQuery( "UPDATE player SET player_score=player_score+$vp WHERE player_id=$player_id" );
         self::notifyAllPlayers('claimTile', clienttranslate('${player_name} claims ${location_name} tile'), array(
             'i18n' => ['location_name'],
             'city' => $city,
             'location' => $location,
             'player_id' => $player_id,
+            'vp' => $vp,
             'player_name' => $players[$player_id]['player_name'],
             'location_name' => $this->Locations->getName($location),
             'preserve' => ['player_id', 'city', 'location'],
@@ -530,13 +534,13 @@ class Perikles extends Table
     function sendToBattle($player_id, $mil, $battlepos) {
 
         $id = $mil['id'];
-        $battle = $mil['battle'];
+        $location = $mil['battle'];
         $players = self::loadPlayersBasicInfos();
         $counter = $this->Battles->getCounter($id);
 
-        self::DbQuery("UPDATE MILITARY SET location=\"$battle\", battlepos=$battlepos WHERE id=$id");
+        self::DbQuery("UPDATE MILITARY SET location=\"$location\", battlepos=$battlepos WHERE id=$id");
         $role = $this->getRoleName($battlepos);
-        $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$battle\"");
+        $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
 
         foreach (array_keys($players) as $pid) {
             self::notifyPlayer($pid, "sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
@@ -551,9 +555,9 @@ class Perikles extends Table
                 'city_name' => $this->Cities->getNameTr($counter['city']),
                 'battlepos' => $battlepos,
                 'battlerole' => $role,
-                'location' => $battle,
+                'location' => $location,
                 'slot' => $slot,
-                'location_name' => $this->Locations->getName($battle),
+                'location_name' => $this->Locations->getName($location),
                 'preserve' => ['city', 'location'],
             ));
         }
@@ -796,7 +800,7 @@ class Perikles extends Table
         if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
             // We might be in the middle of battle (with Trireme or Hoplite Specials)
             $nextstate = "";
-            if (self::getGameStateValue('influence_phase') == 0) {
+            if ($this->getGameStateValue('influence_phase') == 0) {
                 // if it was Slave Revolt, next Commit
                 $nextstate = "nextCommit";
             } else {
@@ -823,10 +827,10 @@ class Perikles extends Table
                 $this->playPerikles($player_id);
                 break;
             case BRASIDAS:
-                self::setGameStateValue(BRASIDAS, 1);
+                $this->setGameStateValue(BRASIDAS, 1);
                 break;
             case PHORMIO:
-                self::setGameStateValue(PHORMIO, 1);
+                $this->setGameStateValue(PHORMIO, 1);
                 break;
             default:
                 throw new BgaVisibleSystemException("Invalid special tile: $t"); // NOI18N
@@ -952,7 +956,7 @@ class Perikles extends Table
             $players = self::loadPlayersBasicInfos();
             $player_name = $players[$sparta_leader]['player_name'];
             $location = $sparta_leader;
-            $location_name = sprintf(self::_("%s's unit pool"), $player_name);
+            $location_name = sprintf(clienttranslate("%s's unit pool"), $player_name);
         } else {
             // it's a battle tile
             $location = $revoltlocation;
@@ -1019,7 +1023,7 @@ class Perikles extends Table
             'candidate_name' => $players[$first_player]['player_name'],
             'preserve' => ['player_id', 'candidate_id'],
         ));
-        self::setGameStateValue("spartan_choice", $first_player);
+        $this->setGameStateValue("spartan_choice", $first_player);
         $this->gamestate->nextState();
     }
 
@@ -1061,7 +1065,7 @@ class Perikles extends Table
         }
 
         $slot = $influence_card['slot'];
-        self::setGameStateValue("last_influence_slot", $slot);
+        $this->setGameStateValue("last_influence_slot", $slot);
 
         self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${shards}-Shard ${city_name} tile ${inf_type}'), array(
             'i18n' => ['city_name', 'inf_type'],
@@ -1295,9 +1299,8 @@ class Perikles extends Table
             [$id, $side, $location] = explode("_", $unit);
             $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
             $counter['battle'] = $location;
-            $battlename = $this->Locations->getName($location);
             // Is this unit in my pool?
-            $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battlename);
+            $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $location);
 
             $attacker = $this->Battles->getAttacker($location);
             $defender = $this->Battles->getDefender($location);
@@ -1440,8 +1443,10 @@ class Perikles extends Table
         $city = $this->Locations->getCity($location);
         // Do I control this city? If not, I need permission from defender
         if (!$this->Cities->isLeader($player_id, $city)) {
-            if (!$this->hasDefendPermission($player_id, location)) {
-                throw new BgaUserException(sprintf(self::_('You need permission from the leader of %s to defend %s'), $this->Cities->getNameTr($city), $this->Locations->getName($location)));
+            if (!$this->hasDefendPermission($player_id, $location)) {
+                $city_name = $this->Cities->getNameTr($city);
+                $location_name = $this->Locations->getName($location);
+                throw new BgaUserException(self::_("You need permission from the leader of $city_name to defend $location_name"));
             }
         }
 
@@ -1511,6 +1516,7 @@ class Perikles extends Table
                 'i18n' => ['location_name'],
                 'location' => $location,
                 'location_name' => $this->Locations->getName($location),
+                'preserve' => ['location']
             ));
             $this->addInfluenceToCity($city, $player_id, 2);
             $this->unclaimedTile($tile);
@@ -1562,22 +1568,23 @@ class Perikles extends Table
             'att' => $attstr,
             'def' => $defstr,
             'crt' => $crt,
-            'odds' => $this->Battles->getOdds($crt)
+            'odds' => $this->Battles->getOdds($crt),
+            'preserve' => ['location']
         ));
         $winner = null;
-        while (self::getGameStateValue(ATTACKER_TOKENS) < 2 && self::getGameStateValue(DEFENDER_TOKENS) < 2) {
+        while ($this->getGameStateValue(ATTACKER_TOKENS) < 2 && $this->getGameStateValue(DEFENDER_TOKENS) < 2) {
             $this->rollDice($crt);
         }
         // one side has two tokens, but do they both?
-        if (self::getGameStateValue(ATTACKER_TOKENS) == 2 && self::getGameStateValue(DEFENDER_TOKENS) == 2) {
+        if ($this->getGameStateValue(ATTACKER_TOKENS) == 2 && $this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             // they need to roll off until one side hits and the other doesn't
             $winner = $this->rollDice($crt);
             while ($winner == null) {
                 $winner = $this->rollDice($crt);
             }
-        } elseif (self::getGameStateValue(ATTACKER_TOKENS) == 2) {
+        } elseif ($this->getGameStateValue(ATTACKER_TOKENS) == 2) {
             $winner = ATTACKER;
-        } elseif (self::getGameStateValue(DEFENDER_TOKENS) == 2) {
+        } elseif ($this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             $winner = DEFENDER;
         } else {
             throw new BgaVisibleSystemException("Invalid condition at end of rollBattle"); // NOI18N
@@ -1608,19 +1615,19 @@ class Perikles extends Table
             'attd2' => $attd2,
             'defd1' => $defd1,
             'defd2' => $defd2,
-            'atthit' => $atthit ? clienttranslate("Hit") : clienttranslate("Miss"),
+            'atthit' => $atthit,
             'atttotal' => $attd1+$attd2,
             'deftotal' => $defd1+$defd2,
-            'defhit' => $defhit ? clienttranslate("Hit") : clienttranslate("Miss"),
+            'defhit' => $defhit,
         ));
         // did either one hit?
         if ($atthit) {
-            if (self::getGameStateValue(ATTACKER_TOKENS) < 2) {
+            if ($this->getGameStateValue(ATTACKER_TOKENS) < 2) {
                 $this->takeToken(ATTACKER);
             }
         }
         if ($defhit) {
-            if (self::getGameStateValue(DEFENDER_TOKENS) < 2) {
+            if ($this->getGameStateValue(DEFENDER_TOKENS) < 2) {
                 $this->takeToken(DEFENDER);
             }
         }
@@ -1657,10 +1664,10 @@ class Perikles extends Table
             'side' => $side,
             'attordef' => $role,
         ));
-        if (self::getGameStateValue($token) > 1) {
+        if ($this->getGameStateValue($token) > 1) {
             throw new BgaVisibleSystemException("$role already has 2 Battle Tokens"); // NOI18N
         } else {
-            self::incGameStateValue($token, 1);
+            $this->incGameStateValue($token, 1);
         }
     }
 
@@ -1693,9 +1700,9 @@ class Perikles extends Table
         $location = $tile['location'];
         $attacker = $this->Battles->getAttacker($location);
         $defender = $this->Battles->getDefender($location);
-        if (self::getGameStateValue(ATTACKER_TOKENS) == 2) {
+        if ($this->getGameStateValue(ATTACKER_TOKENS) == 2) {
             $winner = $attacker;
-        } elseif (self::getGameStateValue(DEFENDER_TOKENS) == 2) {
+        } elseif ($this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             $winner = $defender;
         } else {
             throw new BgaVisibleSystemException("No winner found at end of battle for tile $location"); // NOI18N
@@ -1706,7 +1713,7 @@ class Perikles extends Table
     /**
      * Move a counter to the Deadpool.
      * Send notification.
-     * @param {Object} counter to lose
+     * @param {Object} counter to lose; may be null
      */
     function moveToDeadpool($counter) {
         if ($counter != null) {
@@ -1714,7 +1721,7 @@ class Perikles extends Table
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $counter['location']);
             self::DbQuery("UPDATE MILITARY SET location=\"".DEADPOOL."\", battlepos=0 WHERE id=$id");
             self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to deadpool'), array(
-                'i18n' => ['unit_desc'],
+                'i18n' => ['unit'],
                 'id' => $id,
                 'unit' => $unit_desc,
             ));
@@ -1723,12 +1730,15 @@ class Perikles extends Table
 
     /**
      * Get all eligibile casualties for the current battle.
+     * Gets the lowest counters at the current active battles.
+     * May be empty (for example, when losers were militia only)
+     * @return {array} list of counters, may be empty
      */
     function getPossibleCasualties() {
-        $battle = self::getGameStateValue("active_battle");
+        $battle = $this->getGameStateValue("active_battle");
         $location = $this->Locations->getBattleTile($battle);
-        $loser = self::getGameStateValue("battle_loser");
-        $round = self::getGameStateValue("battle_round");
+        $loser = $this->getGameStateValue("battle_loser");
+        $round = $this->getGameStateValue("battle_round");
         $type = $this->Locations->getCombat($location, $round);
         $casualties = $this->Battles->getCasualties($loser, $location, $type);
         return $casualties;
@@ -1739,14 +1749,14 @@ class Perikles extends Table
      */
     function battleReset() {
         // reinitialize battle tokens before every battle
-        self::setGameStateValue(ATTACKER_TOKENS, 0);
-        self::setGameStateValue(DEFENDER_TOKENS, 0);
-        self::setGameStateValue("commit_phase", 0);
-        self::setGameStateValue("active_battle", 0);
-        self::setGameStateValue("battle_round", 0);
-        self::setGameStateValue("battle_loser", -1);
-        self::setGameStateValue(BRASIDAS, 0);
-        self::setGameStateValue(PHORMIO, 0);
+        $this->setGameStateValue(ATTACKER_TOKENS, 0);
+        $this->setGameStateValue(DEFENDER_TOKENS, 0);
+        $this->setGameStateValue("commit_phase", 0);
+        $this->setGameStateValue("active_battle", 0);
+        $this->setGameStateValue("battle_round", 0);
+        $this->setGameStateValue("battle_loser", -1);
+        $this->setGameStateValue(BRASIDAS, 0);
+        $this->setGameStateValue(PHORMIO, 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
     }
     
@@ -1793,7 +1803,7 @@ class Perikles extends Table
     function argsSpecialBattle() {
         $tile = $this->Battles->nextBattle();
         $location = $tile['location'];
-        $round = self::getGameStateValue('battle_round');
+        $round = $this->getGameStateValue('battle_round');
         $combat = $this->Locations->getCombat($location, $round);
         $players = $this->specialBattleTilePlayers($combat);
         $private = array();
@@ -1809,11 +1819,12 @@ class Perikles extends Table
      * Present player with choice of cities to take casualties from
      */
     function argsLoss() {
-        $battle = self::getGameStateValue("active_battle");
+        $battle = $this->getGameStateValue("active_battle");
         $location = $this->Locations->getBattleTile($battle);
-        $round = self::getGameStateValue("battle_round");
+        $round = $this->getGameStateValue("battle_round");
         $type = $this->Locations->getCombat($location, $round);
 
+        // may be empty
         $casualties = $this->getPossibleCasualties();
         $cities = $this->Battles->getCounterCities($casualties);
         return array(
@@ -1834,9 +1845,9 @@ class Perikles extends Table
             return "commit_phase";
         } elseif ($state == "specialTile") {
             // this may be 0, 1, or 2 (2 = candidate phase, no special tiles)
-            if (self::getGameStateValue("influence_phase") == 1) {
+            if ($this->getGameStateValue("influence_phase") == 1) {
                 return "influence_phase";
-            } elseif (self::getGameStateValue("commit_phase") == 1) {
+            } elseif ($this->getGameStateValue("commit_phase") == 1) {
                 return "commit_phase";
             }
         }
@@ -1852,10 +1863,10 @@ class Perikles extends Table
      */
     function stNextPlayer() {
         $state = "";
-        if (self::getGameStateValue("influence_phase") > 0) {
+        if ($this->getGameStateValue("influence_phase") > 0) {
             if ($this->allInfluenceTilesTaken()) {
                 // no longer taking influence, enter candidates phase
-                self::setGameStateValue("influence_phase", 2);
+                $this->setGameStateValue("influence_phase", 2);
 
                 // we're nominating candidates
                 if ($this->Cities->canAnyoneNominate()) {
@@ -1876,7 +1887,7 @@ class Perikles extends Table
                 self::giveExtraTime( $player_id );
                 $state = "takeInfluence";
             }
-        } elseif (self::getGameStateValue("commit_phase") == 1) {
+        } elseif ($this->getGameStateValue("commit_phase") == 1) {
             $state = "nextCommit";
         }
         $this->gamestate->nextState($state);
@@ -1888,11 +1899,11 @@ class Perikles extends Table
     function stNextCommit() {
         $state = "commit";
         // is this the first committer? Start with whoever Spartan player chose
-        $player_id = self::getGameStateValue("spartan_choice");
+        $player_id = $this->getGameStateValue("spartan_choice");
         if ($player_id != 0) {
             $this->gamestate->changeActivePlayer($player_id);
-            self::setGameStateValue("spartan_choice", 0);
-            self::setGameStateValue("commit_phase", 1);
+            $this->setGameStateValue("spartan_choice", 0);
+            $this->setGameStateValue("commit_phase", 1);
         } else {
             $player_id = self::activeNextPlayer();
             self::giveExtraTime( $player_id );
@@ -1927,7 +1938,7 @@ class Perikles extends Table
         // stayed commit if the current player has a playable tile
         if ($state == "commit") {
             $city = reset($shards);
-            $city_name = ($city == "any") ? self::_("Any") : $this->Cities->getNameTr($city);
+            $city_name = ($city == "any") ? clienttranslate("Any") : $this->Cities->getNameTr($city);
             $id = key($shards);
             $this->influence_tiles->moveCard($id, DISCARD);
             self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard tile (${city_name})'), array(
@@ -1960,9 +1971,9 @@ class Perikles extends Table
      * Check whether player can collect units
      */
     function stDeadPool() {
-        $picked = self::getGameStateValue("deadpool_picked");
+        $picked = $this->getGameStateValue("deadpool_picked");
         if ($picked == 0) {
-            $first_player = self::getGameStateValue("spartan_choice");
+            $first_player = $this->getGameStateValue("spartan_choice");
             $this->gamestate->changeActivePlayer($first_player);
         }
 
@@ -1970,7 +1981,7 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         $nbr = count($players);
         if ($picked == $nbr) {
-            self::setGameStateValue("deadpool_picked", 0);
+            $this->setGameStateValue("deadpool_picked", 0);
             $state = "startCommit";
         } else {
             $player_id = self::getActivePlayerId();
@@ -1981,7 +1992,7 @@ class Perikles extends Table
                 self::giveExtraTime( $player_id );
                 $state = "nextPlayer";
             }
-            self::incGameStateValue("deadpool_picked", 1);
+            $this->incGameStateValue("deadpool_picked", 1);
         }
         $this->gamestate->nextState($state);
     }
@@ -2015,7 +2026,7 @@ class Perikles extends Table
     function stElections() {
         $players = self::loadPlayersBasicInfos();
         // end influence phase
-        self::setGameStateValue("influence_phase", 0);
+        $this->setGameStateValue("influence_phase", 0);
 
         foreach ($this->Cities->cities() as $cn) {
             $city_name = $this->Cities->getNameTr($cn);
@@ -2166,10 +2177,10 @@ class Perikles extends Table
         $location = $tile['location'];
         $slot = $tile['slot'];
 
-        self::setGameStateValue("active_battle", $slot);
+        $this->setGameStateValue("active_battle", $slot);
         // initialized to 0 in stNextLocationTile, so this makes it either 1 or 2
-        self::incGameStateValue("battle_round", 1);
-        $round = self::getGameStateValue("battle_round");
+        $this->incGameStateValue("battle_round", 1);
+        $round = $this->getGameStateValue("battle_round");
 
         $combat = $this->Locations->getCombat($location, $round);
         if ($combat == null) {
@@ -2201,7 +2212,7 @@ class Perikles extends Table
         $attacker = $tile['attacker'];
         $defender = $tile['defender'];
         // do we have combatants on both sides for this round?
-        $round = self::getGameStateValue('battle_round');
+        $round = $this->getGameStateValue('battle_round');
         $combat = $this->Locations->getCombat($location, $round);
         $attackers = $this->Battles->getAttackingCounters($location, $combat);
         $defenders = $this->Battles->getDefendingCounters($location, $combat);
@@ -2263,9 +2274,9 @@ class Perikles extends Table
     function stRollCombat() {
         $tile = $this->Battles->nextBattle();
         $location = $tile['location'];
-        $round = self::getGameStateValue("battle_round");
+        $round = $this->getGameStateValue("battle_round");
         $type = $this->Locations->getCombat($location, $round);
-        $bonus = ((self::getGameStateValue(BRASIDAS) == 1) || (self::getGameStateValue(PHORMIO) == 1));
+        $bonus = (($this->getGameStateValue(BRASIDAS) == 1) || ($this->getGameStateValue(PHORMIO) == 1));
         // get all attacking units
         $attstrength = $this->Battles->getAttackStrength($location, $type, $bonus);
         // get all defending units
@@ -2308,7 +2319,7 @@ class Perikles extends Table
             $loser_id = $this->Battles->getAttacker($location);
         }
 
-        self::setGameStateValue("battle_loser", $loser);
+        $this->setGameStateValue("battle_loser", $loser);
         $casualties = $this->Battles->getCasualties($loser, $location, $type);
         $cities = $this->Battles->getCounterCities($casualties);
 

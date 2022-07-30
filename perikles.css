@@ -213,6 +213,19 @@
     height: calc(var(--location_scale) * var(--location_h));
 }
 
+.prk_location_tile_log {
+    background-image: url(img/location_tiles.jpg);
+    background-size: calc(var(--location_w)*7 *var(--location_scale)) calc(var(--location_h)*3*var(--location_scale));
+    background-repeat: no-repeat;
+    position: relative;
+    width: calc(var(--location_scale) * var(--location_w));
+    height: calc(var(--location_scale) * var(--location_h));
+    transform: scale(0.7);
+    margin-left: auto;
+    margin-right: 0;
+}
+
+
 .perikles {
     background-position: 0px 0px;
 }

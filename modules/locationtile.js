@@ -113,14 +113,26 @@ define(["dojo/_base/declare"], function (declare) {
 
         /**
          * Create location tile html.
-         * @param {int} m margin
+         * @param {int} m margin optional
          * @returns {string} html div
          */
-         createTile: function(m) {
+         createTile: function(m=0) {
             const xoff = -1 * (this.y()-1) * TILE_WIDTH * TILE_SCALE;
             const yoff = -1 * (this.x()-1) * TILE_HEIGHT * TILE_SCALE;
             const html = '<div id="'+this.location+'_tile" class="prk_location_tile" style="background-position: '+xoff+'px '+yoff+'px; margin: '+m+'px;"></div>'
             return html;
+        },
+
+        /**
+         * Create location tile HTML for log messages.
+         * @returns  {string} html div for logs
+         */
+        createIcon: function() {
+            const xoff = -1 * (this.y()-1) * TILE_WIDTH * TILE_SCALE;
+            const yoff = -1 * (this.x()-1) * TILE_HEIGHT * TILE_SCALE;
+            const html = '<div class="prk_location_tile_log" style="background-position: '+xoff+'px '+yoff+'px;"></div>'
+            return html;
+
         },
 
         /**

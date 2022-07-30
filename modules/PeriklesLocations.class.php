@@ -92,6 +92,15 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Get the Victory Points value for this tile.
+   * @param location
+   * @return VP value
+   */
+  public function getVictoryPoints($location) {
+    return $this->locations[$location]['vp'];
+  }
+
+  /**
    * Get the battle(s) to be fought at this location.
    * @param location
    * @return string code for battle rounds

@@ -176,5 +176,25 @@ define(["dojo/_base/declare"], function (declare) {
             dojo.place(counter, stack);
         },
 
+        /**
+         * Assumes this counter has been set a location at a battle tile.
+         * Place a military counter on the battle stack at the location tile.
+         */
+         placeBattle: function() {
+            const location = this.getLocation();
+            const slotid = $(location+"_tile").parentNode.id;
+            const slot = slotid[slotid.length-1];
+            const place = "battle_"+slot+"_"+this.getType()+"_"+this.getBattlePosition();
+            const stackct = $(place).childElementCount;
+            // zero ids for face-down units
+            if (this.getStrength() == 0) {
+                this.setId(stackct);
+            }
+            this.setId(this.getId()+"_"+location);
+            const battlecounter = this.toBattleDiv(stackct);
+            dojo.place(battlecounter, $(place));
+        },
+
+
     })
 });
