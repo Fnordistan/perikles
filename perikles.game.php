@@ -357,16 +357,16 @@ class Perikles extends Table
         $shards = 2;
         $desc = "";
         if ($name == 'any') {
-            $name = clienttranslate("Any");
+            $name = clienttranslate('Any');
             $shards = 1;
         } else {
             $name = $this->Cities->getNameTr($name);
 
             if ($tile['type'] == "assassin") {
-                $desc = clienttranslate("Assassin");
+                $desc = clienttranslate('Assassin');
                 $shards = 1;
             } else if ($tile['type'] == "candidate") {
-                $desc = clienttranslate("Candidate");
+                $desc = clienttranslate('Candidate');
                 $shards = 1;
             }
         }
@@ -569,13 +569,13 @@ class Perikles extends Table
     function getRoleName($role) {
         $rolename = "";
         if ($role == ATTACKER+MAIN) {
-            $rolename = clienttranslate("Main attacker");
+            $rolename = clienttranslate('Main attacker');
         } else if ($role == ATTACKER+ALLY) {
-            $rolename = clienttranslate("Allied attacker");
+            $rolename = clienttranslate('Allied attacker');
         } else if ($role == DEFENDER+MAIN) {
-            $rolename = clienttranslate("Main defender");
+            $rolename = clienttranslate('Main defender');
         } else if ($role == DEFENDER+ALLY) {
-            $rolename = clienttranslate("Allied defender");
+            $rolename = clienttranslate('Allied defender');
         } else {
             throw new BgaVisibleSystemException("Unrecognized role: $role"); // NOI18N
         }
@@ -777,8 +777,8 @@ class Perikles extends Table
      */
     function getUnitName($unit) {
         $units = array(
-            HOPLITE => clienttranslate("Hoplite"),
-            TRIREME => clienttranslate("Trireme"),
+            HOPLITE => clienttranslate('Hoplite'),
+            TRIREME => clienttranslate('Trireme'),
         );
         return $units[$unit];
     }
@@ -1665,11 +1665,11 @@ class Perikles extends Table
         if ($winner == ATTACKER) {
             $side = "attacker";
             $token = ATTACKER_TOKENS;
-            $role = clienttranslate("Attacker");
+            $role = clienttranslate('Attacker');
         } elseif ($winner == DEFENDER) {
             $side = "defender";
             $token = DEFENDER_TOKENS;
-            $role = clienttranslate("Defender");
+            $role = clienttranslate('Defender');
         } else {
             throw new BgaVisibleSystemException("Invalid side to take Token: $winner"); // NOI18N
         }
@@ -1719,7 +1719,7 @@ class Perikles extends Table
         $defender = $this->Battles->getDefender($location);
         if ($this->getGameStateValue(ATTACKER_TOKENS) == 2) {
             $winner = $attacker;
-            self::notifyAllPlayers("attackerWins", clienttranslate("Attacker defeats ${city_name} at ${location_name}"), array(
+            self::notifyAllPlayers("attackerWins", clienttranslate('Attacker defeats ${city_name} at ${location_name}'), array(
                 'i18n' => ['city_name'],
                 'city' => $city,
                 'city_name' => $city_name,
@@ -1729,7 +1729,7 @@ class Perikles extends Table
             ));
         } elseif ($this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             $winner = $defender;
-            self::notifyAllPlayers("defenderWins", clienttranslate("Defender (${city_name}) defeats attackers at ${location_name}"), array(
+            self::notifyAllPlayers("defenderWins", clienttranslate('Defender (${city_name}) defeats attackers at ${location_name}'), array(
                 'i18n' => ['city_name'],
                 'city' => $city,
                 'city_name' => $city_name,
@@ -1994,7 +1994,7 @@ class Perikles extends Table
         // stayed commit if the current player has a playable tile
         if ($state == "commit") {
             $city = reset($shards);
-            $city_name = ($city == "any") ? clienttranslate("Any") : $this->Cities->getNameTr($city);
+            $city_name = ($city == "any") ? clienttranslate('Any') : $this->Cities->getNameTr($city);
             $id = key($shards);
             $this->influence_tiles->moveCard($id, DISCARD);
             self::notifyAllPlayers('useTile', clienttranslate('${player_name} uses a ${shardct}-shard tile (${city_name})'), array(
@@ -2293,7 +2293,7 @@ class Perikles extends Table
         }
         if ($unopposed !== null) {
             $unopposed_id = ($unopposed == ATTACKER) ? $attacker : $defender;
-            $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate("Attacker") : clienttranslate("Defender");
+            $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
             self::notifyAllPlayers("freeToken", clienttranslate('${player_name} (${side}) wins ${combat_type} battle unopposed'), array(
                 'i18n' => ['combat_type', 'side'],
                 'player_id' => $unopposed_id,
@@ -2374,11 +2374,11 @@ class Perikles extends Table
 
         $winningside = null;
         if ($winner == ATTACKER) {
-            $winningside = clienttranslate("Attacker");
+            $winningside = clienttranslate('Attacker');
             $loser = DEFENDER;
             $loser_id = $this->Battles->getDefender($location);
         } else {
-            $winningside = clienttranslate("Defender");
+            $winningside = clienttranslate('Defender');
             $loser = ATTACKER;
             $loser_id = $this->Battles->getAttacker($location);
         }
