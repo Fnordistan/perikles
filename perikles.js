@@ -2308,6 +2308,7 @@ function (dojo, declare) {
             if (this.checkPossibleActions("chooseLoss", true)) {
                 this.ajaxcall( "/perikles/perikles/selectcasualty.html", {
                     city: city,
+                    lock: true,
                 }, this, function( result ) {  }, function( is_error) { } );
             }
         },
@@ -2372,7 +2373,7 @@ function (dojo, declare) {
             if (this.checkPossibleActions("useSpecialTile", true)) {
                 this.ajaxcall( "/perikles/perikles/slaverevolt.html", {
                     location: loc,
-                    loc: true
+                    lock: true
                 }, this, function( result ) {  }, function( is_error) { } );
                 this.restoreDescriptionOnMyTurn();
             }

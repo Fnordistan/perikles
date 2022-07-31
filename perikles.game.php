@@ -380,7 +380,7 @@ class Perikles extends Table
         $home_city = $this->Cities->getNameTr($city);
         $unit_type = $this->getUnitName($type);
         $location_name = $this->Locations->getName($location);
-        $unit_desc = sprintf(clienttranslate("%s %s-%s at %s", ), $home_city, $unit_type, $strength, $location_name);
+        $unit_desc = sprintf(clienttranslate("%s %s-%s at %s"), $home_city, $unit_type, $strength, $location_name);
         return $unit_desc;
     }
 
@@ -393,7 +393,7 @@ class Perikles extends Table
 
         $cubect = $this->Cities->allCubesOnBoard($player_id);
         if ($cubect >= 30) {
-            throw new BgaUserException("You already have 30 cubes on the board");
+            throw new BgaUserException(self::_("You already have 30 cubes on the board"));
         }
 
         $this->Cities->changeInfluence($city, $player_id, $cubes);
@@ -813,7 +813,7 @@ class Perikles extends Table
      * Skipped by Plague and Alkibiades.
      */
     function useSpecialTile($player_id, $use) {
-        // self::checkAction('useSpecial');
+        // $this->checkAction('useSpecial');
         if ($use) {
             $this->playSpecialTile($player_id);
         }
@@ -870,6 +870,10 @@ class Perikles extends Table
      * Play the Alkibiades Special tile
      */
     function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
+        if (!$this->checkAction("useSpecialTile", false)) {
+            $this->checkAction("takeInfluence");
+        }
+         
         $player_id = self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, ALKIBIADES);
 
@@ -922,6 +926,9 @@ class Perikles extends Table
      * Play Plague special tile.
      */
     function playPlague($city) {
+        if (!$this->checkAction("useSpecialTile", false)) {
+            $this->checkAction("takeInfluence");
+        }
         $player_id = self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, PLAGUE);
 
@@ -961,6 +968,10 @@ class Perikles extends Table
      * Player selected Slave Revolt
      */
     function playSlaveRevolt($revoltlocation) {
+        if (!$this->checkAction("useSpecialTile", false)) {
+            $this->checkAction("assignUnits");
+        }
+        
         // sanity check - there is a Sparta leader
         $sparta_leader = $this->Cities->getLeader("sparta");
         if (empty($sparta_leader)) {
@@ -1033,7 +1044,7 @@ class Perikles extends Table
      * Spartan player chose first player for influence phase.
      */
     function chooseNextPlayer($first_player) {
-        self::checkAction('chooseNextPlayer');
+        $this->checkAction('chooseNextPlayer');
         $players = self::loadPlayersBasicInfos();
 
         $player_id = self::getActivePlayerId();
@@ -1052,7 +1063,7 @@ class Perikles extends Table
      * Player chose an Influence tile
      */
     function takeInfluence($influence_id) {
-        self::checkAction( 'takeInfluence' );
+        $this->checkAction( 'takeInfluence' );
         $influence_card = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_id=$influence_id");
 
         // is it on the board?
@@ -1110,7 +1121,7 @@ class Perikles extends Table
      * Player chose a city with an Any card.
      */
     function placeAnyCube($city) {
-        self::checkAction( 'placeAnyCube' );
+        $this->checkAction( 'placeAnyCube' );
         $player_id = self::getActivePlayerId();
         $this->addInfluenceToCity($city, $player_id, 1);
         $state = "nextPlayer";
@@ -1124,7 +1135,7 @@ class Perikles extends Table
      * Player is selecting a candidate for a city.
      */
     function proposeCandidate($city, $candidate_id) {
-        self::checkAction('proposeCandidate');
+        $this->checkAction('proposeCandidate');
         $actingplayer = self::getActivePlayerId();
         $city_name = $this->Cities->getNameTr($city);
         // player must have a cube in the city
@@ -1178,7 +1189,7 @@ class Perikles extends Table
      * $cube is a, b, or a number
      */
     function chooseRemoveCube($target_id, $city, $cube) {
-        self::checkAction('chooseRemoveCube');
+        $this->checkAction('chooseRemoveCube');
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
         $city_name = $this->Cities->getNameTr($city);
@@ -1220,11 +1231,11 @@ class Perikles extends Table
             $alpha = $this->Cities->getCandidate($city, "a");
             if (empty($alpha)) {
                 // should not happen!
-                throw new BgaVisibleSystemException("Unexpected game state: Candidate B with no Candidate A"); // NO18N
+                throw new BgaVisibleSystemException("Unexpected game state: Candidate B with no Candidate A"); // NOI18N
             }
             $beta = $this->Cities->getCandidate($city, "b");
             if ($beta != $target_id) {
-                throw new BgaVisibleSystemException("Missing cube at $city $cube"); // NO18N
+                throw new BgaVisibleSystemException("Missing cube at $city $cube"); // NOI18N
             }
             $this->Cities->clearCandidate($city, "b");
             self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removed ${candidate_name}\'s Candidate ${candidate} in ${city_name}'), array(
@@ -1266,7 +1277,7 @@ class Perikles extends Table
      * @param cube empty string or cube spent for extra units
      */
     function assignUnits($unitstr, $cube) {
-        self::checkAction('assignUnits');
+        $this->checkAction('assignUnits');
         $player_id = self::getActivePlayerId();
 
         // $this->logDebug("$player_id assigns $unitstr");
@@ -1390,7 +1401,7 @@ class Perikles extends Table
      * Player chose a counter to die.
      */
     function chooseLoss($city) {
-        self::checkAction('chooseLoss');
+        $this->checkAction('chooseLoss');
         // where is the current battle?
         $casualties = $this->getPossibleCasualties();
         if (empty($casualties)) {
@@ -2287,7 +2298,7 @@ class Perikles extends Table
         $tile = $this->Battles->nextBattle();
         // should not happen!
         if ($tile == null) {
-            throw new BgaVisibleSystemException("no battle!");
+            throw new BgaVisibleSystemException("no battle!"); // NOI18N
         }
         $state = "";
 

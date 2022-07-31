@@ -224,7 +224,10 @@ class PeriklesCities extends APP_GameClass
    * @param {integer} ATTACKER or DEFENDER
    */
   private function getCitiesOnSide($location, $side) {
-    $forces = $this->game->getObjectListFromDB("SELECT city FROM MILITARY WHERE location=\"$location\" AND (battlepos=".($side+MAIN)." OR battlepos=".($side+ALLIED).")", true);
+    $main = MAIN+$side;
+    $ally = ALLY+$side;
+    $sql = "SELECT city FROM MILITARY WHERE location=\"$location\" AND (battlepos=$main OR battlepos=$ally)";
+    $forces = $this->game->getObjectListFromDB($sql, true);
     return $forces;
   }
 
@@ -657,7 +660,7 @@ class PeriklesCities extends APP_GameClass
       $influence = $this->influence($player_id, $city);
       $influence += $cubes;
       if ($influence < 0) {
-          throw new BgaVisibleSystemException("Cannot reduce influence below 0");
+          throw new BgaVisibleSystemException("Cannot reduce influence below 0"); // NOI18N
       }
       self::DbQuery("UPDATE player SET $city = $influence WHERE player_id=$player_id");
   }

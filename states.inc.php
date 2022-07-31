@@ -227,15 +227,14 @@ $machinestates = array(
     	"transitions" => array( "" =>  RESOLVE_TILE )
     ),
 
-
-    77 => array(
-        "name" => "debugstate",
-    	"description" => clienttranslate('${actplayer} is paused'),
-    	"descriptionmyturn" => clienttranslate('You are paused'),
-    	"type" => "activeplayer",
-    	"possibleactions" => array( "doSomething" ),
-        "transitions" => array( "" => END_TURN )
-    ),
+    // 77 => array(
+    //     "name" => "debugstate",
+    // 	"description" => clienttranslate('${actplayer} is paused'),
+    // 	"descriptionmyturn" => clienttranslate('You are paused'),
+    // 	"type" => "activeplayer",
+    // 	"possibleactions" => array( "doSomething" ),
+    //     "transitions" => array( "" => END_TURN )
+    // ),
 
     END_TURN => array(
         "name" => "endTurn",

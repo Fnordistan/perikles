@@ -31,7 +31,7 @@ $gameinfos = array(
 'publisher_website' => 'https://www.facebook.com/TreefrogGames/',   
 
 // Board Game Geek ID of the publisher
-'publisher_bgg_id' => 12275,
+'publisher_bgg_id' => 7,
 
 // Board game geek ID of the game
 'bgg_id' => 21954,
