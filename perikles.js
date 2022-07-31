@@ -384,13 +384,15 @@ function (dojo, declare) {
             for (const city of CITIES) {
                 const citystatues = statues[city];
                 if (citystatues) {
-                    let s = 0;
+                    let s = 0; // statue ids are numbered 1+
                     for (const [player_id, num] of Object.entries(citystatues)) {
                         for (let i = 1; i <= parseInt(num); i++) {
                             const statue_div = this.createLeaderCounter(player_id, city, "statue", s+1);
                             const statue = dojo.place(statue_div, $(city+"_statues"));
-                            statue.style.bottom = (s*22)+"px";
-                            statue.style.left = (s*6)+"px";
+                            Object.assign(statue.style, {
+                                "bottom" : (s*22)+"px",
+                                "left" : (s*6)+"px",
+                            });
                             s++;
                         }
                     }
@@ -402,7 +404,7 @@ function (dojo, declare) {
          * For creating Leader and Statue counters.
          * @param {int} player_id 
          * @param {string} city 
-         * @param {string} type 
+         * @param {string} type "leader" or "statue"
          * @param {int} n 
          * @returns statue or leader div
          */
@@ -507,11 +509,9 @@ function (dojo, declare) {
          * @param {Object} defeats 
          */
         setupDefeats: function(defeats) {
-            for (const [city, num] of Object.entries(defeats)) {
+            for (let [city, num] of Object.entries(defeats)) {
                 for (let d = 1; d <= num; d++) {
-                    const def_ctr = this.format_block('jstpl_defeat', {city: city, num: d} );
-                    const def_div = $(city+'_defeat_slot_'+d);
-                    dojo.place(def_ctr, def_div);
+                    this.addDefeatCounter(city, d);
                 }
             }
         },
@@ -596,6 +596,10 @@ function (dojo, declare) {
                             mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
                             log += mil_html;
                         }
+                    }
+                    if (args.defeats) {
+                        const def_ctr = this.format_block('jstpl_defeat', {city: 'city', num: args.defeats} );
+                        log += def_ctr;
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.decorator.spanYou(this.player_id));
@@ -827,6 +831,24 @@ function (dojo, declare) {
             const counterObj = dojo.place(counter_html, milzone);
             this.slide(counterObj, battlepos, {from: milzone});
         },
+
+        /**
+         * Add a defeat counter to a city. Checks to make sure not more than 4
+         * (should only be possible with athens and sparta).
+         * @param {string} city
+         * @param {string} num
+         */
+        addDefeatCounter: function(city, num) {
+            if (num <= 4) {
+                const def_ctr = this.format_block('jstpl_defeat', {city: city, num: num} );
+                const def_div = $(city+'_defeat_slot_'+num);
+                dojo.place(def_ctr, def_div);
+            }
+        },
+
+        //////////////////////////////////////////////////////////////////////////////
+        //// Borrowed from Tisaac
+        //////////////////////////////////////////////////////////////////////////////
 
         /**
          * Tisaac's slide method.
@@ -2405,6 +2427,12 @@ function (dojo, declare) {
             dojo.subscribe( 'newInfluence', this, "notif_newInfluence");
             dojo.subscribe( 'newLocations', this, "notif_newLocations");
 
+            // cities and statues
+            dojo.subscribe( 'addStatue', this, "notif_addStatue" );
+            dojo.subscribe( 'cityDefeat', this, "notif_cityDefeat");
+            dojo.subscribe( 'scoreCubes', this, "notif_scoreCubes" );
+            dojo.subscribe( 'scoreStatues', this, "notif_scoreStatues" );
+
             // battle notifications
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
             this.notifqueue.setSynchronous( 'takeMilitary', 2500 );
@@ -2669,7 +2697,7 @@ function (dojo, declare) {
         },
 
         /**
-         * Start of new turn, move all cards to Deck and deal new ones.
+         * Start of new turn, discard previous cards and deal new ones.
          * @param {Object} notif 
          */
         notif_newInfluence: function(notif) {
@@ -2718,6 +2746,37 @@ function (dojo, declare) {
             this.slideToObjectRelative(tile.id, player_id+'_player_tiles', 500, 0);
             this.removeTooltip(tile.id);
             this.scoreCtrl[ player_id ].incValue( vp );
+        },
+
+        /**
+         * Move Leader counter to statues.
+         * @param {Object} notif 
+         */
+        notif_addStatue: function(notif) {
+            const player_id = notif.args.player_id;
+            const city = notif.args.city;
+            const leader = $(city+'_leader_1');
+            const mystatues = notif.args.statues;
+            this.slideToObjectAndDestroy(leader, city+'_statues', 1000, 0);
+            const statue_div = this.createLeaderCounter(player_id, city, "statue", mystatues);
+            const statue_zone = $(city+"_statues");
+            const statuecount = statue_zone.childElementCount;
+            const statueObj = dojo.place(statue_div, statue_zone);
+            // how many statues were already there?
+            Object.assign(statueObj.style, {
+                "bottom" : (statuecount*22)+"px",
+                "left" : (statuecount*6)+"px"
+            });
+        },
+
+        /**
+         * A city was defeated.
+         * @param {Object} notif 
+         */
+        notif_cityDefeat: function(notif) {
+            const city = notif.args.city;
+            const num = toint(notif.args.defeats);
+            this.addDefeatCounter(city, num);
         },
 
         /**
@@ -2853,5 +2912,38 @@ function (dojo, declare) {
             });
         },
 
-   });
+        /**
+         * Display scoring of cubes at endgame.
+         * @param {Object} notif 
+         */
+        notif_scoreCubes: function(notif) {
+            const player_id = notif.args.player_id;
+            const vp = toint(notif.args.vp);
+            const city = notif.args.city;
+            const scoring_delay = 2000;
+            const player_cubes = city+'_cubes_'+player_id;
+            const player_color = this.players[player_id].color;
+            this.displayScoring( player_cubes, player_color, vp, scoring_delay, 500, 0 );
+            this.scoreCtrl[ player_id ].incValue( vp );
+        },
+
+        /**
+         * Display scoring of statues at endgame.
+         * @param {Object} notif 
+         */
+        notif_scoreStatues: function(notif) {
+            const player_id = notif.args.player_id;
+            const vp = toint(notif.args.vp);
+            const statues = toint(notif.args.statues);
+            const city = notif.args.city;
+            const scoring_delay = 2000;
+            const player_color = this.players[player_id].color;
+            for (s = 1; s <= statues; s++) {
+                const statue_id = city+'_statue_'+s;
+                this.displayScoring( statue_id, player_color, vp, scoring_delay, 250, 0 );
+                this.scoreCtrl[ player_id ].incValue( vp );
+            }
+        },
+
+    });
 });

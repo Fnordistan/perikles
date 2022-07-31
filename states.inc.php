@@ -242,7 +242,7 @@ $machinestates = array(
         "description" => "",
         "updateGameProgression" => true,   
     	"type" => "game",
-    	"action" => array( "stEndTurn" ),
+    	"action" => "stEndTurn",
         "transitions" => array( "nextTurn" => TAKE_INFLUENCE, "endGame" => SCORING )
     ),
 

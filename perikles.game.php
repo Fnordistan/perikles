@@ -474,6 +474,20 @@ class Perikles extends Table
     }
 
     /**
+     * Add a defeat to a city.
+     */
+    function defeatCity($city) {
+        $defeats = $this->Cities->addDefeat($city);
+        self::notifyAllPlayers('cityDefeat', clienttranslate('${city_name} suffers a defeat'), array(
+            'i18n' => ['city_name'],
+            'city' => $city,
+            'city_name' => $this->Cities->getNameTr($city),
+            'defeats' => $defeats,
+            'preserve' => ['city'],
+        ));
+    }
+
+    /**
      * First return all military.
      * Then move a tile either to a player board or unclaimed pile.
      * Does not send notification.
@@ -723,10 +737,17 @@ class Perikles extends Table
      */
     function isEndGame() {
         if (self::getStat('turns_number') == 3) {
+            self::notifyAllPlayers("endGame", clienttranslate('End of Turn 3: Game Over!'), []);
             return true;
         }
         foreach(["sparta", "athens"] as $civ) {
             if ($this->Cities->getDefeats($civ) >= 4) {
+                self::notifyAllPlayers("endGame", clienttranslate('${city_name} has suffered 4 defeats: Game Over!'), [
+                    'i18n' => ['city_name'],
+                    'city' => $civ,
+                    'city_name' => $this->Cities->getNameTr($civ),
+                    'preserve' => ['city'],
+                ]);
                 return true;
             }
         }
@@ -734,10 +755,10 @@ class Perikles extends Table
     }
 
     /**
-     * Move all the influence cards to deck, shuffle, and deal new ones.
+     * Discard remaining influence cards on board, shuffle, and deal new ones.
      */
     function dealNewInfluence() {
-        $this->influence_tiles->moveAllCardsInLocation(null, DECK);
+        $this->influence_tiles->moveAllCardsInLocation(BOARD, DISCARD);
         $this->influence_tiles->shuffle(DECK);
         for ($i = 1; $i <= 10; $i++) {
             $this->influence_tiles->pickCardForLocation(DECK, BOARD, $i);
@@ -1557,6 +1578,7 @@ class Perikles extends Table
                     'location_name' => $this->Locations->getName($location),
                     'preserve' => ['location']
                 ));
+                $this->defeatCity($city);
                 $this->claimTile($player_id, $tile);
             }
         }
@@ -1727,6 +1749,7 @@ class Perikles extends Table
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
             ));
+            $this->defeatCity($city);
         } elseif ($this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             $winner = $defender;
             self::notifyAllPlayers("defenderWins", clienttranslate('Defender (${city_name}) defeats attackers at ${location_name}'), array(
@@ -2291,6 +2314,7 @@ class Perikles extends Table
                 }
             }
         }
+        $this->logDebug("$attacker attacks $defender at $location unopposed=$unopposed");
         if ($unopposed !== null) {
             $unopposed_id = ($unopposed == ATTACKER) ? $attacker : $defender;
             $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
@@ -2324,6 +2348,7 @@ class Perikles extends Table
                 $state = "useSpecial";
             }
         }
+        $this->logDebug("going to state $state");
         $this->gamestate->nextState($state);
     }
 
@@ -2423,12 +2448,13 @@ class Perikles extends Table
         foreach ($this->Cities->cities() as $cn) {
             $leader = $this->Cities->getLeader($cn);
             if (!empty($leader)) {
-                $this->Cities->addStatue($leader, $cn);
-                self::notifyAllPlayers("addStatue", clienttranslate('${player_name} adds statue in ${city_name}'), array(
+                $statues = $this->Cities->addStatue($leader, $cn);
+                self::notifyAllPlayers("addStatue", clienttranslate('Statue to ${player_name} erected in ${city_name}'), array(
                     'i18n' => ['city_name'],
                     'city' => $cn,
                     'city_name' => $this->Cities->getNameTr($cn),
                     'player_id' => $leader,
+                    'statues' => $statues,
                     'player_name' => $players[$leader]['player_name'],
                     'preserve' => ['player_id', 'city'],
                 ));
@@ -2447,7 +2473,48 @@ class Perikles extends Table
      * End of game scoring
      */
     function stScoring() {
-        $this->gamestate->nextState();
+        $players = self::loadPlayersBasicInfos();
+
+        foreach($players as $player_id) {
+            $playerstatues = $this->Cities->getStatues($player_id);
+            foreach($this->Cities->cities() as $city) {
+                // 1 point per cube
+                $cubes = $this->Cities->cubesInCity($player_id, $city);
+                if ($cubes > 0) {
+                    self::notifyAllPlayers("scoreCubes", clienttranslate('${player_name} scores ${vp} cubes in ${city_name}'), array(
+                        'i18n' => ['city_name'],
+                        'player_id' => $player_id,
+                        'player_name' => $players[$player_id]['player_name'],
+                        'city' => $city,
+                        'city_name' => $this->Cities->getNameTr($city),
+                        'vp' => $cubes,
+                        'preserve' => ['player_id', 'city']
+                    ));
+                }
+                // statues
+                $statues = $playerstatues[$city];
+                if ($statues > 0) {
+                    $vp = $this->Cities->victoryPoints($city);
+                    $total = $statues*$cityvp;
+                    self::notifyAllPlayers("scoreStatues", clienttranslate('${player_name} scores ${total} points for ${statues} in ${city_name}'), array(
+                        'i18n' => ['city_name'],
+                        'player_id' => $player_id,
+                        'player_name' => $players[$player_id]['player_name'],
+                        'city' => $city,
+                        'city_name' => $this->Cities->getNameTr($city),
+                        'total' => $total,
+                        'vp' => $vp, // per statue
+                        'statues' => $statues,
+                        'preserve' => ['player_id', 'city']
+                    ));
+                }
+
+            }
+        }
+
+        // Score statues
+
+        $this->gamestate->nextState("");
     }
 
     function stDebug() {

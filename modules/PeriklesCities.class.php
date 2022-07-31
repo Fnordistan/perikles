@@ -19,36 +19,42 @@ class PeriklesCities extends APP_GameClass
     // "influence" is number of 2-shard tiles
     // candidate is number of Candidate tiles
     // h and t is number of hoplite/trireme counters of that class
-    // war is a bitmask to check for war status
+    // vp array based on how many defeats
     $this->cities["athens"] = array(
       "name" => clienttranslate("Athens"),
-       "influence" => 3,
-       "candidate" => 2,
-       "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 2, "t2" => 2, "t3" => 2, "t4" => 2);
+      "influence" => 3,
+      "candidate" => 2,
+      "vp" => [5,5,3,1],
+      "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 2, "t2" => 2, "t3" => 2, "t4" => 2);
     $this->cities["sparta"] = array(
       "name" => clienttranslate("Sparta"),
       "influence" => 3,
       "candidate" => 2,
+      "vp" => [5,4,3,2],
       "h1" => 2, "h2" => 3, "h3" => 3, "h4" => 2, "t1" => 1, "t2" => 2, "t3" => 1);
     $this->cities["argos"] = array(
       "name" => clienttranslate("Argos"),
       "influence" => 2,
       "candidate" => 2,
+      "vp" => [6,3],
       "h1" => 2, "h2" => 2, "h3" => 2, "t1" => 1, "t2" => 1, "t3" => 1);
     $this->cities["corinth"] = array(
       "name" => clienttranslate("Corinth"),
       "influence" => 2,
       "candidate" => 2,
+      "vp" => [9,7,5,3],
       "h1" => 1, "h2" => 3, "h3" => 1, "t1" => 2, "t2" => 2, "t3" => 1);
     $this->cities["thebes"] = array(
       "name" => clienttranslate("Thebes"),
       "influence" => 2,
       "candidate" => 2,
+      "vp" => [7,5,3],
       "h1" => 2, "h2" => 3, "h3" => 2, "t1" => 1, "t2" => 1);
     $this->cities["megara"] = array(
       "name" => clienttranslate("Megara"),
       "influence" => 2,
       "candidate" => 1,
+      "vp" => [6,3],
       "h1" => 1, "h2" => 1, "t1" => 1, "t2" => 1, "t3" => 1);
   }
 
@@ -300,7 +306,7 @@ class PeriklesCities extends APP_GameClass
      * Return associative array (city => #defeats)
      * @return array
      */
-    public function getAllDefeats() {
+  public function getAllDefeats() {
       $defeats = array();
       foreach ($this->cities() as $cn) {
           $defeats[$cn] = $this->getDefeats($cn);
@@ -309,12 +315,38 @@ class PeriklesCities extends APP_GameClass
   }
 
   /**
+   * Add one defeat to a city. Return how many defeats it now has.
+   * @param {string} city
+   * @param {return} new defeat number
+   */
+  public function addDefeat($city) {
+    $def = $city."_defeats";
+    $this->game->incGameStateValue($def);
+    return $this->getDefeats($city);
+  }
+
+  /**
    * Add one to a player's statue count for a city,
    * @param {string} player_id
    * @param {string} city
+   * @return {int} new statue count for this player
    */
   public function addStatue($player_id, $city) {
-    $this->game->incStat(1, $city."_statues", $player_id);
+    $statues = $city."_statues";
+    $this->game->incStat(1, $statues, $player_id);
+    return $this->game->getStat($statues, $player_id);
+  }
+
+  /**
+   * How many points is this city worth, based on how many times it has been defeated.
+   * Each player will multiply this by number of statues at end of game.
+   * @param {string} city
+   * @return {int} vp value
+   */
+  public function victoryPoints($city) {
+    $defeats = $this->getDefeats($city);
+    $vp = $this->cities["vp"][$defeats];
+    return $vp;
   }
 
   /**
