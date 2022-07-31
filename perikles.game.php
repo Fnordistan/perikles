@@ -250,6 +250,7 @@ class Perikles extends Table
         $result['statues'] = $this->Cities->getAllStatues();
         $result['defeats'] = $this->Cities->getAllDefeats();
         $result['military'] = $this->getMilitary();
+        $result['battletokens'] = $this->getBattleTokens();
 
         return $result;
     }
@@ -296,6 +297,25 @@ class Perikles extends Table
             }
         }
         return $military;
+    }
+
+    /**
+     * Return an associative array, battle_tokens, attacker_battle_tokens, defender_battle_tokens
+     * Empty if no active battle.
+     * @return {array}
+     */
+    function getBattleTokens() {
+        $tokens = array();
+        $is_battle = ($this->getGameStateValue("active_battle") != 0);
+        if ($is_battle) {
+            $att = $this->getGameStateValue(ATTACKER_TOKENS);
+            $def = $this->getGameStateValue(DEFENDER_TOKENS);
+            $center = 4 - ($att+$def);
+            $tokens["battle_tokens"] = $center;
+            $tokens["attacker_battle_tokens"] = $att;
+            $tokens["defender_battle_tokens"] = $def;
+        }
+        return $tokens;
     }
 
     /*
@@ -830,6 +850,7 @@ class Perikles extends Table
             }
             $this->gamestate->nextState($nextstate);
         } elseif ($this->getStateName() == "specialBattleTile") {
+            $this->logDebug("player $player_id being deactivated");
             $this->gamestate->setPlayerNonMultiactive( $player_id, "" );
         }
     }
@@ -843,6 +864,7 @@ class Perikles extends Table
         $special = $this->SpecialTiles->checkSpecialTile($player_id);
         // sanity check
         $t = $special['tile'];
+        $this->logDebug("player $player_id has tile $t");
         switch ($t) {
             case PERIKLES:
                 $this->playPerikles($player_id);
@@ -1690,8 +1712,9 @@ class Perikles extends Table
      * One side scores a hit, send notification for token.
      * Assumes check has already been done for neither side having 2 tokens.
      * @param {int} ATTACKER or DEFENDER
+     * @param {bool} bIsRound2 are we taking our starting token for winning previous round?
      */
-    function takeToken($winner) {
+    function takeToken($winner, $bIsRound2=false) {
         $token = "";
         $role = "";
         $side = "";
@@ -1706,7 +1729,8 @@ class Perikles extends Table
         } else {
             throw new BgaVisibleSystemException("Invalid side to take Token: $winner"); // NOI18N
         }
-        self::notifyAllPlayers("takeToken", clienttranslate('${winner} gains a Battle Token'), array(
+        $msg = $bIsRound2 ? clienttranslate('${winner} starts second round with Battle Token') : clienttranslate('${winner} gains a Battle Token');
+        self::notifyAllPlayers("takeToken", $msg, array(
             'i18n' => ['winner'],
             'side' => $side,
             'winner' => $role,
@@ -1841,7 +1865,7 @@ class Perikles extends Table
         $this->setGameStateValue(ATTACKER_TOKENS, 0);
         $this->setGameStateValue(DEFENDER_TOKENS, 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
-        $this->takeToken($winner);
+        $this->takeToken($winner, true);
     }
 
     /**
@@ -2340,8 +2364,6 @@ class Perikles extends Table
             ));
 
             if ($round == 1) {
-                // unopposed side gets a free battle token for the next round
-                $this->takeToken($unopposed);
                 $state = "continueBattle";
             } else {
                 // unopposed side wins tile

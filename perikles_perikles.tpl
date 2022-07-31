@@ -62,11 +62,9 @@
             <div id="{CITY}_military" class="prk_military_zone" style="top: {MILY}px; left: {MILX}px;"></div>
         <!-- END CITY_BLOCK -->
 
-        <div id="crt_table"></div>
         <!-- BEGIN CRT_BLOCK -->
             <div id="crt_{COL}" class="prk_crt" style="top: {CRTY}px; left: {CRTX}px;"></div>
         <!-- END CRT_BLOCK -->
-
     </div>
     <div id="deadpool">
         <h1 class="prk_hdr">{DEADPOOL}</h1>

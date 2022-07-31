@@ -85,6 +85,7 @@ function (dojo, declare) {
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
             this.setupMilitary(gamedatas.military, gamedatas.persianleaders);
+            this.setupBattleTokens(gamedatas.battletokens);
             this.setupDefeats(gamedatas.defeats);
             this.setupCities();
 
@@ -530,6 +531,20 @@ function (dojo, declare) {
                 $(city).addEventListener('click', () => {
                     this.onCityClick(city);
                 });
+            }
+        },
+
+        /**
+         * Place Battle Tokens and highlight CRT during a battle.
+         * @param {array} tokens 
+         */
+        setupBattleTokens: function(tokens) {
+            let tok = 1;
+            for (let [box, count] of Object.entries(tokens)) {
+                for (let i = 0; i < count; i++) {
+                    dojo.place('<div id="battle_token_'+tok+'" class="prk_battle_token"></div>', $(box));
+                    tok++;
+                }
             }
         },
 
@@ -2827,7 +2842,8 @@ function (dojo, declare) {
             const location = notif.args.location;
             const counter_id = city+'_'+type+'_'+strength+'_'+id+'_'+location;
             this.createMilitaryArea(DEAD_POOL, city);
-            this.slideToObjectAndDestroy($(counter_id), DEAD_POOL, 1000, 1500);
+            const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
+            this.slideToObjectAndDestroy($(counter_id), deadpoolloc, 1000, 1500);
             new perikles.counter(city, type, strength, DEAD_POOL).placeDeadpool();
         },
 
@@ -2886,9 +2902,6 @@ function (dojo, declare) {
             // "attacker" or "defender"
             const side = notif.args.side;
             const token = $('battle_tokens').lastChild;
-            if (token == null) {
-                debugger;
-            }
             this.slideToObjectRelative(token.id, $(side+'_battle_tokens'), 1500, 1500, null, "last");
         },
 
@@ -2904,10 +2917,10 @@ function (dojo, declare) {
                     t.remove();
                 });
             });
-            for (i = 0; i < 4; i++) {
+            for (i = 1; i <= 4; i++) {
                 dojo.place('<div id="battle_token_'+i+'" class="prk_battle_token"></div>', $('battle_tokens'));
             }
-            const crtcols = $('crt_table').getElementsByClassName("prk_crt");
+            const crtcols = document.getElementsByClassName("prk_crt");
             [...crtcols].forEach(c => {
                 c.classList.remove("prk_crt_active");
             });

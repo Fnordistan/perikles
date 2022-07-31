@@ -324,7 +324,7 @@ class PeriklesCities extends APP_GameClass
    */
   public function addDefeat($city) {
     $def = $city."_defeats";
-    $this->game->incGameStateValue($def);
+    $this->game->incGameStateValue($def, 1);
     return $this->getDefeats($city);
   }
 
