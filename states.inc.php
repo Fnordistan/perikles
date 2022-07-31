@@ -122,7 +122,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
         "args" => "argsSpecialBattle",
     	"type" => "multipleactiveplayer",
-    	"possibleactions" => array( "useSpecialTile" ),
+    	"possibleactions" => array( "useSpecialBattleTile" ),
     	"transitions" => array( "" => ROLL_BATTLE )
     ),
 

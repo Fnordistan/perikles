@@ -1354,7 +1354,7 @@ function (dojo, declare) {
                                 this.specialTileWrapper(location);
                             }, null, false, 'blue' );
                         }
-                        this.addSpecialPassButton();
+                        this.addSpecialPassButton(true);
                         break;
                     case 'takeLoss':
                         const type = args.type;
@@ -1461,8 +1461,9 @@ function (dojo, declare) {
                     break;
                 case PHORMIO:
                 case BRASIDAS:
+                    this.specialBattleTile(true);
+                    break;
                 case PERIKLES:
-                    // these three just need action
                     this.specialTile(true);
             };
         },
@@ -1486,8 +1487,10 @@ function (dojo, declare) {
                 this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
                     this.specialTileWrapper(location);
                 }, null, false, 'blue' );
-                if (state == "specialTile" || state == "specialBattleTile") {
+                if (state == "specialTile") {
                     this.addSpecialPassButton();
+                } else if (state == "specialBattleTile") {
+                    this.addSpecialPassButton(true);
                 }
             }, null, null, 'red');
         },
@@ -1503,10 +1506,15 @@ function (dojo, declare) {
 
         /**
          * Add the 'Pass' button to pass on playing a Special tile.
+         * @param {bool} isBattle
          */
-        addSpecialPassButton: function() {
+        addSpecialPassButton: function(isBattle=false) {
             this.addActionButton( 'pass_btn', _("Pass"), () => {
-                this.specialTile(false);
+                if (isBattle) {
+                    this.specialBattleTile(false);
+                } else {
+                    this.specialTile(false);
+                }
             }, null, false, 'red' );
         },
 
@@ -2335,6 +2343,21 @@ function (dojo, declare) {
         specialTile: function(bUse) {
             if (this.checkPossibleActions("useSpecialTile", true)) {
                 this.ajaxcall( "/perikles/perikles/specialTile.html", {
+                    player: this.player_id,
+                    use: bUse,
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+                this.restoreDescriptionOnMyTurn();
+            }
+        },
+
+        /**
+         * For Special Tiles applicable during battles.
+         * @param {bool} bUse 
+         */
+        specialBattleTile: function(bUse) {
+            if (this.checkPossibleActions("useSpecialBattleTile", true)) {
+                this.ajaxcall( "/perikles/perikles/specialBattleTile.html", {
                     player: this.player_id,
                     use: bUse,
                     lock: true 

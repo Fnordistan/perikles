@@ -127,6 +127,17 @@ class action_perikles extends APP_GameAction
     }
 
     /**
+     * Player plays Special Tile during battle or declines
+     */
+    public function specialBattleTile() {
+      self::setAjaxMode();     
+      $player_id = self::getArg( "player", AT_alphanum, true );
+      $use = self::getArg( "use", AT_bool, true );
+      $this->game->useSpecialBattleTile($player_id, $use);
+      self::ajaxResponse( );
+    }
+
+    /**
      * Player chose cubes to move with Alkibiades.
      */
     public function alkibiades() {

@@ -838,21 +838,25 @@ class Perikles extends Table
             $this->playSpecialTile($player_id);
         }
         // after playing tile, or if passed
-        if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
-            // We might be in the middle of battle (with Trireme or Hoplite Specials)
-            $nextstate = "";
-            if ($this->getGameStateValue('influence_phase') == 0) {
-                // if it was Slave Revolt, next Commit
-                $nextstate = "nextCommit";
-            } else {
-                // otherwise we're going to next player
-                $nextstate = "nextPlayer";
-            }
-            $this->gamestate->nextState($nextstate);
-        } elseif ($this->getStateName() == "specialBattleTile") {
-            $this->logDebug("player $player_id being deactivated");
-            $this->gamestate->setPlayerNonMultiactive( $player_id, "" );
+        $nextstate = "";
+        if ($this->getGameStateValue('influence_phase') == 0) {
+            // if it was Slave Revolt, next Commit
+            $nextstate = "nextCommit";
+        } else {
+            // otherwise we're going to next player
+            $nextstate = "nextPlayer";
         }
+        $this->gamestate->nextState($nextstate);
+    }
+
+    /**
+     * A player clicked a Special Tile Button or the Pass button during battle.
+     */
+    function useSpecialBattleTile($player_id, $use) {
+        if ($use) {
+            $this->playSpecialTile($player_id);
+        }
+        $this->gamestate->setPlayerNonMultiactive( $player_id, "" );
     }
 
     /**
@@ -864,7 +868,7 @@ class Perikles extends Table
         $special = $this->SpecialTiles->checkSpecialTile($player_id);
         // sanity check
         $t = $special['tile'];
-        $this->logDebug("player $player_id has tile $t");
+
         switch ($t) {
             case PERIKLES:
                 $this->playPerikles($player_id);
@@ -1302,8 +1306,6 @@ class Perikles extends Table
         $this->checkAction('assignUnits');
         $player_id = self::getActivePlayerId();
 
-        // $this->logDebug("$player_id assigns $unitstr");
-
         if (trim($unitstr) == "") {
             $this->noCommitUnits($player_id);
         } else {
@@ -1338,7 +1340,6 @@ class Perikles extends Table
                 throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->Cities->getNameTr($cube)));
             }
         }
-        // $this->logDebug("$player_id validates $unitstr");
 
         $units = explode(" ", trim($unitstr));
         // get main attackers/defenders location => player
@@ -1384,7 +1385,7 @@ class Perikles extends Table
                 $myforces['defend'][] = $counter;
             }
         }
-        // $this->logDebug("$player_id passed all validation");
+
         // all units passed all tests for valid assignment
         // did we spend an influence cube?
         if ($cube != "" && count($units) > 2) {
@@ -1400,7 +1401,6 @@ class Perikles extends Table
             ));
         }
         // now ship 'em off
-        // $this->logDebug("$player_id shipping forces");
         foreach($myforces as $attdef => $forces) {
             foreach($forces as $f) {
                 $battle = $f['battle'];
@@ -1413,7 +1413,6 @@ class Perikles extends Table
                 } else {
                     $battlepos = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
                 }
-                // $this->logDebug("$player_id sending to battle $battle");
                 $this->sendToBattle($player_id, $f, $battlepos);
             }
         }
@@ -2349,7 +2348,7 @@ class Perikles extends Table
                 }
             }
         }
-        $this->logDebug("$attacker attacks $defender at $location unopposed=$unopposed");
+
         if ($unopposed !== null) {
             $unopposed_id = ($unopposed == ATTACKER) ? $attacker : $defender;
             $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
@@ -2364,6 +2363,8 @@ class Perikles extends Table
             ));
 
             if ($round == 1) {
+                $loser = ($unopposed == ATTACKER) ? DEFENDER : ATTACKER;
+                $this->setGameStateValue("battle_loser", $loser);
                 $state = "continueBattle";
             } else {
                 // unopposed side wins tile
@@ -2381,7 +2382,6 @@ class Perikles extends Table
                 $state = "useSpecial";
             }
         }
-        $this->logDebug("going to state $state");
         $this->gamestate->nextState($state);
     }
 
@@ -2607,8 +2607,10 @@ class Perikles extends Table
                     $this->sendRandomUnits($active_player);
                     break;
                 case 'specialTile':
+                    $this->useSpecialTile($active_player, false);
+                    break;
                 case 'specialBattleTile':
-                        $this->useSpecialTile($active_player, false);
+                    $this->useSpecialBattleTile($active_player, false);
                     break;
                 case "takeLoss":
                         $casualty = null;
