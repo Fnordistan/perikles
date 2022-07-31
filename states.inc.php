@@ -187,6 +187,9 @@ $machinestates = array(
         "transitions" => array( "resolve" => RESOLVE_TILE, "nextBattle" => NEXT_BATTLE_TILE, "endTurn" => END_TURN )
     ),
 
+    /**
+     * Manage combat(s) for one tile.
+     */
     RESOLVE_TILE => array(
         "name" => "resolveTile",
         "description" => "",
@@ -204,7 +207,7 @@ $machinestates = array(
         "transitions" => array( "nextBattle" => NEXT_BATTLE_TILE, "continueBattle" => RESOLVE_TILE, "combat" => ROLL_BATTLE, "useSpecial" => SPECIAL_BATTLE_TILE )
     ),
 
-    // all player actions completed, roll until battle over
+    // all player actions completed, roll a SINGLE combat until it's over
     ROLL_BATTLE => array(
         "name" => "rollcombat",
         "description" => "",

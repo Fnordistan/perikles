@@ -378,7 +378,7 @@ class Perikles extends Table
      */
     function unitDescription($city, $strength, $type, $location) {
         $home_city = $this->Cities->getNameTr($city);
-        $unit_type = ($type == HOPLITE) ? clienttranslate("Hoplite") : clienttranslate("Trireme");
+        $unit_type = $this->getUnitName($type);
         $location_name = $this->Locations->getName($location);
         $unit_desc = sprintf(clienttranslate("%s %s-%s at %s", ), $home_city, $unit_type, $strength, $location_name);
         return $unit_desc;
@@ -1371,9 +1371,23 @@ class Perikles extends Table
     function chooseLoss($city) {
         self::checkAction('chooseLoss');
         // where is the current battle?
-
-        // $counter = $this->Battles->getCounter($id);
-        // $this->moveToDeadpool($counter);
+        $casualties = $this->getPossibleCasualties();
+        if (empty($casualties)) {
+            throw new BgaVisibleSystemException("no casualties at current battle location!"); // NOI18N
+        } else {
+            $deadpool = false;
+            // get the first one matching the chosen city
+            foreach ($casualties as $counter) {
+                if ($counter['city'] == $city) {
+                    $this->moveToDeadpool($counter);
+                    $deadpool = true;
+                    break;
+                }
+            }
+            if (!$deadpool) {
+                throw new BgaVisibleSystemException("no valid counter found for $city"); // NOI18N
+            }
+        }
     }
 
     /**
@@ -1644,25 +1658,25 @@ class Perikles extends Table
      * Assumes check has already been done for neither side having 2 tokens.
      * @param {int} ATTACKER or DEFENDER
      */
-    function takeToken($sideval) {
+    function takeToken($winner) {
         $token = "";
         $role = "";
         $side = "";
-        if ($sideval == ATTACKER) {
+        if ($winner == ATTACKER) {
             $side = "attacker";
             $token = ATTACKER_TOKENS;
             $role = clienttranslate("Attacker");
-        } elseif ($sideval == DEFENDER) {
+        } elseif ($winner == DEFENDER) {
             $side = "defender";
             $token = DEFENDER_TOKENS;
             $role = clienttranslate("Defender");
         } else {
-            throw new BgaVisibleSystemException("Invalid side to take Token: $sideval"); // NOI18N
+            throw new BgaVisibleSystemException("Invalid side to take Token: $winner"); // NOI18N
         }
-        self::notifyAllPlayers("takeToken", clienttranslate('${attordef} wins a Battle Token'), array(
-            'i18n' => ['side_name'],
+        self::notifyAllPlayers("takeToken", clienttranslate('${winner} gains a Battle Token'), array(
+            'i18n' => ['winner'],
             'side' => $side,
-            'attordef' => $role,
+            'winner' => $role,
         ));
         if ($this->getGameStateValue($token) > 1) {
             throw new BgaVisibleSystemException("$role already has 2 Battle Tokens"); // NOI18N
@@ -1698,12 +1712,31 @@ class Perikles extends Table
     function battleVictory($tile) {
         $winner = null;
         $location = $tile['location'];
+        $location_name = $this->Locations->getName($location);
+        $city = $tile['city'];
+        $city_name = $this->Cities->getNameTr($city);
         $attacker = $this->Battles->getAttacker($location);
         $defender = $this->Battles->getDefender($location);
         if ($this->getGameStateValue(ATTACKER_TOKENS) == 2) {
             $winner = $attacker;
+            self::notifyAllPlayers("attackerWins", clienttranslate("Attacker defeats ${city_name} at ${location_name}"), array(
+                'i18n' => ['city_name'],
+                'city' => $city,
+                'city_name' => $city_name,
+                'location' => $location,
+                'location_name' => $location_name,
+                'preserve' => ['city', 'location'],
+            ));
         } elseif ($this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             $winner = $defender;
+            self::notifyAllPlayers("defenderWins", clienttranslate("Defender (${city_name}) defeats attackers at ${location_name}"), array(
+                'i18n' => ['city_name'],
+                'city' => $city,
+                'city_name' => $city_name,
+                'location' => $location,
+                'location_name' => $location_name,
+                'preserve' => ['city', 'location'],
+            ));
         } else {
             throw new BgaVisibleSystemException("No winner found at end of battle for tile $location"); // NOI18N
         }
@@ -1720,10 +1753,15 @@ class Perikles extends Table
             $id = $counter['id'];
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $counter['location']);
             self::DbQuery("UPDATE MILITARY SET location=\"".DEADPOOL."\", battlepos=0 WHERE id=$id");
-            self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to deadpool'), array(
+            self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to Dead Pool'), array(
                 'i18n' => ['unit'],
                 'id' => $id,
                 'unit' => $unit_desc,
+                'city' => $counter['city'],
+                'strength' => $counter['strength'],
+                'type' => $counter['type'],
+                'location' => $counter['location'],
+                'preserve' => ['location'],
             ));
         }
     }
@@ -1745,7 +1783,7 @@ class Perikles extends Table
     }
 
     /**
-     * Reset for next battle
+     * Reset for entire next battle.
      */
     function battleReset() {
         // reinitialize battle tokens before every battle
@@ -1759,7 +1797,19 @@ class Perikles extends Table
         $this->setGameStateValue(PHORMIO, 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
     }
-    
+
+    /**
+     * Set up for second round of a battle.
+     * @param {int} ATTACKER or DEFENDER
+     */
+    function secondRoundReset($firstroundloser) {
+        $winner = ($firstroundloser == ATTACKER) ? DEFENDER : ATTACKER;
+        $this->setGameStateValue(ATTACKER_TOKENS, 0);
+        $this->setGameStateValue(DEFENDER_TOKENS, 0);
+        self::notifyAllPlayers("resetBattleTokens", '', []);
+        $this->takeToken($winner);
+    }
+
     /**
      * When a battle starts, flip all counters face up and place Victory tokens.
      * @param {object} battle tile
@@ -1826,10 +1876,16 @@ class Perikles extends Table
 
         // may be empty
         $casualties = $this->getPossibleCasualties();
+        $strength = 0;
+        if (!empty($casualties)) {
+            $strength = $casualties[0]['strength'];
+        }
         $cities = $this->Battles->getCounterCities($casualties);
         return array(
             "type" => $type,
-            "cities" => $cities
+            "strength" => $strength,
+            "cities" => $cities,
+            "location" => $location,
         );
     }
 
@@ -2190,6 +2246,10 @@ class Perikles extends Table
         } else {
             if ($round == 1) {
                 $this->revealCounters($tile);
+            } else {
+                // one side starts with a battle token
+                $loser = $this->getGameStateValue("battle_loser");
+                $this->secondRoundReset($loser);
             }
             $state = "nextCombat";
         }
@@ -2231,7 +2291,7 @@ class Perikles extends Table
                 }
             }
         }
-        if ($unopposed != null) {
+        if ($unopposed !== null) {
             $unopposed_id = ($unopposed == ATTACKER) ? $attacker : $defender;
             $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate("Attacker") : clienttranslate("Defender");
             self::notifyAllPlayers("freeToken", clienttranslate('${player_name} (${side}) wins ${combat_type} battle unopposed'), array(
@@ -2269,7 +2329,7 @@ class Perikles extends Table
 
     /**
      * All checks have been done, there are forces on each side, and all player actions completed.
-     * At this point, roll dice until one side wins.
+     * At this point, roll dice until one side wins. This is for ONE combat.
      */
     function stRollCombat() {
         $tile = $this->Battles->nextBattle();
@@ -2281,6 +2341,7 @@ class Perikles extends Table
         $attstrength = $this->Battles->getAttackStrength($location, $type, $bonus);
         // get all defending units
         $defstrength = $this->Battles->getDefenseStrength($location, $type, $bonus);
+
         $militia = $this->Locations->getMilitia($location);
         if (!empty($militia)) {
             switch ($militia) {
@@ -2311,19 +2372,28 @@ class Perikles extends Table
         }
         $winner = $this->rollBattle($location, $type, $attstrength, $defstrength);
 
+        $winningside = null;
         if ($winner == ATTACKER) {
+            $winningside = clienttranslate("Attacker");
             $loser = DEFENDER;
             $loser_id = $this->Battles->getDefender($location);
         } else {
+            $winningside = clienttranslate("Defender");
             $loser = ATTACKER;
             $loser_id = $this->Battles->getAttacker($location);
         }
+        self::notifyAllPlayers("combatWinner", clienttranslate('${winner} wins ${type} battle'), array(
+            'i18n' => ['winner', 'type'],
+            'winner' => $winningside,
+            'type' => $this->getUnitName($type),
+        ));
 
         $this->setGameStateValue("battle_loser", $loser);
         $casualties = $this->Battles->getCasualties($loser, $location, $type);
         $cities = $this->Battles->getCounterCities($casualties);
 
         $state = "endBattle";
+
         // more than one city, player must choose
         if (count($cities) > 1) {
             $this->gamestate->changeActivePlayer($loser_id);

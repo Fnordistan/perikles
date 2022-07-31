@@ -195,6 +195,16 @@ define(["dojo/_base/declare"], function (declare) {
             dojo.place(battlecounter, $(place));
         },
 
+        /**
+         * Assumes this counter has been set as location=deadpool.
+         * Assumes the zone for this city exists in the Deadpool.
+         * Places a military counter in the deadpool.
+         */
+        placeDeadpool: function() {
+            const counter_div = this.toRelativeDiv();
+            const deadpool_zone = this.city+'_'+this.type+'_'+DEAD_POOL;
+            dojo.place(counter_div, $(deadpool_zone));
+        },
 
     })
 });

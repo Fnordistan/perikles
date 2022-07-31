@@ -449,8 +449,9 @@ function (dojo, declare) {
                     counter.addToStack();
                 } else if (counter.getLocation() == DEAD_POOL) {
                     // in the dead pool
-                    
-
+                    this.createMilitaryArea(DEAD_POOL, counter.getCity());
+                    counter.setId(DEAD_POOL);
+                    counter.placeDeadpool();
                 } else if (Object.keys(LOCATION_TILES).includes(counter.getLocation())) {
                     // sent to a battle
                     counter.placeBattle();
@@ -500,24 +501,6 @@ function (dojo, declare) {
             tt = tt.replace('${city}', city_name);
             this.addTooltip(stack, tt, '');
         },
-
-        // /**
-        //  * Place a military counter on the battle stacks at a location tile.
-        //  * @param {Object} counter 
-        //  */
-        // placeCounterAtBattle: function(counter) {
-        //     const slotid = $(counter.getLocation()+"_tile").parentNode.id;
-        //     const slot = slotid[slotid.length-1];
-        //     const place = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
-        //     const stackct = $(place).childElementCount;
-        //     // zero ids for face-down units
-        //     if (counter.getStrength() == 0) {
-        //         counter.setId(stackct);
-        //     }
-        //     counter.setId(counter.getId()+"_"+counter.getLocation());
-        //     const battlecounter = counter.toBattleDiv(stackct);
-        //     dojo.place(battlecounter, $(place));
-        // },
 
         /**
          * Place Defeat counters on cities.
@@ -585,12 +568,12 @@ function (dojo, declare) {
                     if (args.location) {
                         const tile = new perikles.locationtile(args.location);
                         const tileicon = tile.createIcon();
-                        log += tileicon;
+                        log = tileicon+'<div>'+log+'</div>';
                     }
                     // a battle
                     if (args.attd1) {
-                        const hit = '<span style="color:red">'+_("Hit")+'</span>';
-                        const miss = '<span style="color:yellow">'+_("Miss")+'</span>';
+                        const hit = '<span class="prk_hit">'+_("Hit")+'</span>';
+                        const miss = '<span class="prk_miss">'+_("Miss")+'</span>';
                         args.attd1 = this.diceIcon(args.attd1);
                         args.attd2 = this.diceIcon(args.attd2);
                         args.defd1 = this.diceIcon(args.defd1, true);
@@ -600,6 +583,19 @@ function (dojo, declare) {
                         args.atttotal = '<span>'+args.atttotal+'</span>';
                         args.atthit = args.atthit ? hit : miss;
                         args.defhit = args.defhit ? hit : miss;
+                    }
+                    // assign casualties
+                    if (args.casualty) {
+                        const type = args.type;
+                        const strength = args.strength;
+                        const cities = args.cities;
+                        log += '<br/>';
+                        for (let c of cities) {
+                            counter = new perikles.counter(c, type, strength, "casualty");
+                            let mil_html = counter.toRelativeDiv();
+                            mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
+                            log += mil_html;
+                        }
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.decorator.spanYou(this.player_id));
@@ -762,16 +758,18 @@ function (dojo, declare) {
         },
 
         /**
-         * Create a military area for player, if it does not already exist
-         * @param {string} player_id 
+         * Create a military area for player, if it does not already exist.
+         * Or for DEAD_POOL
+         * @param {string} id
          * @param {strin} city 
          * @returns id of military div
          */
-        createMilitaryArea: function(player_id, city) {
-            const city_mil = city+'_military_'+player_id;
+        createMilitaryArea: function(id, city) {
+            const city_mil = city+'_military_'+id;
             if (!document.getElementById(city_mil)) {
-                const mil_div = this.format_block('jstpl_military_area', {city: city, id: player_id, cityname: this.getCityNameTr(city)});
-                dojo.place(mil_div, $('mymilitary'));
+                const mil_div = this.format_block('jstpl_military_area', {city: city, id: id, cityname: this.getCityNameTr(city)});
+                const zone = (id == DEAD_POOL) ? DEAD_POOL : 'mymilitary';
+                dojo.place(mil_div, $(zone));
             }
             return city_mil;
         },
@@ -1324,7 +1322,9 @@ function (dojo, declare) {
                     case 'takeLoss':
                         const type = args.type;
                         const cities = args.cities;
-                        debugger;
+                        const strength = args.strength;
+                        const location = args.location;
+                        this.addCasualtyButtons(type, strength, cities, location);
                 }
             }
 
@@ -1340,6 +1340,33 @@ function (dojo, declare) {
                         }, null, false, 'blue' );
                     }
                     break;
+            }
+        },
+
+        ///////////////////////////////////////////////////
+        //// Player must choose loss 
+        ///////////////////////////////////////////////////
+
+        /**
+         * Creates buttons to click for a casualty to send to dead pool.
+         * @param {string} type HOPLITE or TRIREME
+         * @param {string} strength 
+         * @param {array} cities list of choices
+         * @param {string} location label
+         */
+        addCasualtyButtons: function(type, strength, cities, location) {
+            const location_name = new perikles.locationtile(location).getNameTr();
+            let msg = _("Choose counter from ${location} to send to dead pool");
+            msg = msg.replace('${location}', location_name);
+            this.setDescriptionOnMyTurn(msg, {'casualty': true, 'type': type, 'strength': strength, 'cities': cities});
+            // add listeners to the buttons
+            for (let c of cities ) {
+                const id = c+'_'+type+'_'+strength+'_casualty';
+                const button = $(id);
+                button.classList.add("prk_casualty_btn");
+                button.addEventListener('click', () => {
+                    this.onSelectCasualty(city);
+                });
             }
         },
 
@@ -2255,7 +2282,7 @@ function (dojo, declare) {
          * Player chose a unit to lose as casualty.
          * @param {string} city from which casualty comes
          */
-        selectCasualty: function(city) {
+        onSelectCasualty: function(city) {
             if (this.checkPossibleActions("chooseLoss", true)) {
                 this.ajaxcall( "/perikles/perikles/selectcasualty.html", {
                     city: city,
@@ -2685,10 +2712,10 @@ function (dojo, declare) {
             const loc = notif.args.location;
             const tile = $(loc+'_tile');
             const player_id = notif.args.player_id;
-            const vp = int(notif.args.vp);
+            const vp = toint(notif.args.vp);
 
             tile.style.margin = null;
-            this.slideToObjectRelative(tile.id, player_id+'__player_tiles', 500, 0);
+            this.slideToObjectRelative(tile.id, player_id+'_player_tiles', 500, 0);
             this.removeTooltip(tile.id);
             this.scoreCtrl[ player_id ].incValue( vp );
         },
@@ -2726,14 +2753,7 @@ function (dojo, declare) {
                 counter = this.militaryToCounter(m);
                 counter.placeBattle();
             });
-            this.startBattle();
        },
-
-       /**
-        * Initialize a new battle
-        */
-       startBattle: function() {
-        },
 
         /**
          * Counter moved to Deadpool.
@@ -2741,8 +2761,14 @@ function (dojo, declare) {
          */
         notif_toDeadpool: function(notif) {
             const id = notif.args.id;
-            debugger;
-
+            const city = notif.args.city;
+            const type = notif.args.type;
+            const strength = notif.args.strength;
+            const location = notif.args.location;
+            const counter_id = city+'_'+type+'_'+strength+'_'+id+'_'+location;
+            this.createMilitaryArea(DEAD_POOL, city);
+            this.slideToObjectAndDestroy($(counter_id), DEAD_POOL, 1000, 1500);
+            new perikles.counter(city, type, strength, DEAD_POOL).placeDeadpool();
         },
 
        /**
@@ -2800,6 +2826,9 @@ function (dojo, declare) {
             // "attacker" or "defender"
             const side = notif.args.side;
             const token = $('battle_tokens').lastChild;
+            if (token == null) {
+                debugger;
+            }
             this.slideToObjectRelative(token.id, $(side+'_battle_tokens'), 1500, 1500, null, "last");
         },
 
@@ -2808,9 +2837,8 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_resetBattleTokens: function(notif) {
-            debugger;
             // remove Attacker/Defender Battle Tokens, put them back in the middle
-            [$('attacker_battle_tokens'), $('defender_battle_tokens')].forEach(box => {
+            [$('attacker_battle_tokens'), $('defender_battle_tokens'), $('battle_tokens')].forEach(box => {
                 const tokens = box.getElementsByClassName('prk_battle_token');
                 [...tokens].forEach(t => {
                     t.remove();

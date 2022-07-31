@@ -221,10 +221,23 @@
     width: calc(var(--location_scale) * var(--location_w));
     height: calc(var(--location_scale) * var(--location_h));
     transform: scale(0.7);
-    margin-left: auto;
-    margin-right: 0;
+    float: right;
 }
 
+/* spans in log messages */
+.prk_hit {
+    font-family: 'Bodoni Moda';
+    color: red;
+    background-image: linear-gradient(45deg,#8a0303 50%, black 100%);
+    box-shadow: 0px 0px 8px 8px rgb(147 19 19);
+}
+
+.prk_miss {
+    font-family: 'Bodoni Moda';
+    color: yellow;
+    background-image: linear-gradient(45deg,#c18b16 50%, black 100%);
+    box-shadow: 0px 0px 8px 8px rgb(147 19 19);
+}
 
 .perikles {
     background-position: 0px 0px;
@@ -375,17 +388,6 @@
 /* animation: prk_candidate_space_pulse 3s infinite; */
 }
 
-/* @keyframes prk_candidate_space_pulse {
-    0% {
-        border: white solid 2px;
-        border-radius: 4px;
-    }
-    100% {
-        border: red solid 4px;
-        border-radius: 4px;
-    }
-} */
-
 .prk_cube {
     position: relative;
     width: 14px;
@@ -403,7 +405,7 @@
 
 .prk_cubes_remove {
     border-radius: 2px;
-    outline: 2px dotted orangered;
+    outline: 1px solid orangered;
     outline-offset: 2px;
     box-shadow: 3px 3px 12px 5px #8a0303;
     cursor: url(img/sword_cursor.png), crosshair;
@@ -479,6 +481,14 @@
 /* scaling hoplite counter to a battle slot */
 .prk_trireme_battle {
     transform: matrix(0.8, 0, 0, 0.8, -8, -4);
+}
+
+.prk_casualty_btn {
+    box-shadow: 3px 3px 12px 5px #8a0303;
+}
+
+.prk_casualty_btn:hover {
+    box-shadow: inset 3px 3px 12px 5px #8a0303;
 }
 
 .prk_btn {
