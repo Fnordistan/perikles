@@ -1298,15 +1298,15 @@ function (dojo, declare) {
             
             switch( stateName ) {
                 case 'choosePlaceInfluence':
-                    this.stripClassName("prk_city_active");
+                    this.decorator.stripClassName("prk_city_active");
                     break;
                 case 'proposeCandidates':
-                    this.stripClassName("prk_city_active");
-                    this.stripClassName("prk_candidate_space_active");
-                    this.stripClassName("prk_cubes_active");
+                    this.decorator.stripClassName("prk_city_active");
+                    this.decorator.stripClassName("prk_candidate_space_active");
+                    this.decorator.stripClassName("prk_cubes_active");
                     break;
                 case 'assassinate':
-                    this.stripClassName("prk_cubes_remove");
+                    this.decorator.stripClassName("prk_cubes_remove");
                     break;
                 case 'commitForces':
                     const mils = $('mymilitary').getElementsByClassName("prk_military");
@@ -1478,7 +1478,6 @@ function (dojo, declare) {
             };
         },
 
-       
         /**
          * When Special tile is canceled, re-add it.
          * Also add the Pass button if it's the Special Tile phase.
@@ -1488,7 +1487,6 @@ function (dojo, declare) {
          */
          addSpecialTileCancel: function(special, location=null) {
             this.addActionButton( special+"_cancel_btn", _("Cancel"), () => {
-                debugger;
                 const state = this.gamedatas.gamestate.name;
                 this.restoreDescriptionOnMyTurn();
                 this.removeActionButtons();
@@ -1763,7 +1761,8 @@ function (dojo, declare) {
         /////////////////////// SLAVE REVOLT ///////////////////////
 
         /**
-         * Player clicked "Use Slave Revolt" button
+         * Player clicked "Use Slave Revolt" button.
+         * This adds the buttons that select a slave revolt location.
          */
         addSlaveRevoltButtons: function() {
             this.setDescriptionOnMyTurn(_("Choose location for Slave Revolt (one Spartan Hoplite counter will be placed back in Sparta)"), {'slaverevolt': true});
@@ -1779,8 +1778,9 @@ function (dojo, declare) {
          * @param {Object} button 
          */
         addSlaveRevoltListeners: function(button) {
-            // clicking a Civ to place cube there
             button.addEventListener('click', () => {
+                // clear any commits we may have been in the middle of
+                this.onCancelCommit();
                 const id = button.id.split("_")[0];
                 this.onSlaveRevolt(id);
             });
@@ -1910,15 +1910,6 @@ function (dojo, declare) {
                 }
             }
             return candidate_space;
-        },
-
-        /**
-         * Strip all elements of the document of a given class name
-         * @param {string} cls className
-         */
-        stripClassName: function(cls) {
-            let actdiv = document.getElementsByClassName(cls);
-            [...actdiv].forEach( a => a.classList.remove(cls));
         },
 
         /**
@@ -2054,7 +2045,7 @@ function (dojo, declare) {
 
         /**
          * Toggle the "Cancel" button for unit assignments.
-         * @param {bool} enable turn it on or off
+         * @param {bool} enable turn it on (visible) or off (hidden)
          */
         toggleAssignmentCancelButton: function(enable) {
             const commit_cancel = $('commit_cancel_btn');
@@ -2424,8 +2415,7 @@ function (dojo, declare) {
                 this.ajaxcall( "/perikles/perikles/slaverevolt.html", {
                     location: loc,
                     lock: true
-                }, this, function( result ) {  }, function( is_error) { } );
-                this.restoreDescriptionOnMyTurn();
+                }, this, function( result ) { }, function( is_error) { } );
             }
         },
 

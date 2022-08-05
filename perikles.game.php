@@ -1047,6 +1047,7 @@ class Perikles extends Table
             'location_name' => $location_name,
             'sparta_player' => $sparta_leader,
         ));
+        $this->gamestate->nextState("commitContinue");
     }
 
     /**
