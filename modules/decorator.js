@@ -106,5 +106,15 @@ define(["dojo/_base/declare"], function (declare) {
             // dojo.style(token, "transform", null);
         },
 
+        /**
+         * Strip all elements of the document of a given class name
+         * @param {string} cls className
+         */
+         stripClassName: function(cls) {
+            const actdiv = document.getElementsByClassName(cls);
+            [...actdiv].forEach( a => a.classList.remove(cls));
+        },
+
+
     })
 });
