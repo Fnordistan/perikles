@@ -583,7 +583,7 @@ function (dojo, declare) {
                     if (args.location) {
                         const tile = new perikles.locationtile(args.location);
                         const tileicon = tile.createIcon();
-                        log = tileicon+'<div>'+log+'</div>';
+                        log = tileicon+log;
                     }
                     // a battle
                     if (args.attd1) {
@@ -1213,9 +1213,10 @@ function (dojo, declare) {
         },
 
         /**
+         * Player clicked "Cancel" while committing forces.
          * Clear "committed" gamedatas
          */
-        onResetForces: function() {
+        onCancelCommit: function() {
             this.gamedatas.gamestate.args['committed'] = {};
             this.setDescriptionOnMyTurn(_("You must commit forces"));
 
@@ -1339,9 +1340,13 @@ function (dojo, declare) {
                         this.addCommitForcesButton();
                         // add Cancel button if some units have already been assigned
                         this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
-                            this.onResetForces();
+                            this.onCancelCommit();
                         }, null, null, 'red');
                         this.toggleAssignmentCancelButton(false);
+                        // if we have the Slave Revolt tile
+                        if (args._private.special) {
+                            this.addSpecialTileButton();
+                        }
                         break;
                     case 'specialTile':
                         this.addSpecialPassButton();
@@ -1349,10 +1354,7 @@ function (dojo, declare) {
                     case 'specialBattleTile':
                         if (args._private.special) {
                             const location = args._private.location;
-                            const buttonlbl = this.getSpecialButtonLabel(this.player_id);
-                            this.addActionButton( 'play_special_btn', buttonlbl, () => {
-                                this.specialTileWrapper(location);
-                            }, null, false, 'blue' );
+                            this.addSpecialTileButton(location);
                         }
                         this.addSpecialPassButton(true);
                         break;
@@ -1369,12 +1371,8 @@ function (dojo, declare) {
             switch( stateName ) {
                 case 'takeInfluence':
                 case 'specialTile':
-                case 'commitForces':
                     if (args._private.special) {
-                        const buttonlbl = this.getSpecialButtonLabel(this.player_id);
-                        this.addActionButton( 'play_special_btn', buttonlbl, () => {
-                            this.specialTileWrapper();
-                        }, null, false, 'blue' );
+                        this.addSpecialTileButton();
                     }
                     break;
             }
@@ -1437,10 +1435,22 @@ function (dojo, declare) {
         },
 
         /**
+         * Create an action button for this player that triggers their Special Tile.
+         * Assumes we've checked they have a valid one.
+         * @param {string} location only supplied for battle tiles
+         */
+         addSpecialTileButton: function(location=null) {
+            const buttonlbl = this.getSpecialButtonLabel(this.player_id);
+            this.addActionButton( 'play_special_btn', buttonlbl, () => {
+                this.activateSpecialTile(location);
+            }, null, false, 'blue' );
+        },
+
+        /**
          * Check cards before submitting to the specialTile function.
          * @param {string} location only supplied for battle tiles
          */
-         specialTileWrapper: function(location=null) {
+         activateSpecialTile: function(location=null) {
             const special = this.getPlayerSpecial(this.player_id);
 
             switch (special) {
@@ -1468,6 +1478,7 @@ function (dojo, declare) {
             };
         },
 
+       
         /**
          * When Special tile is canceled, re-add it.
          * Also add the Pass button if it's the Special Tile phase.
@@ -1477,6 +1488,7 @@ function (dojo, declare) {
          */
          addSpecialTileCancel: function(special, location=null) {
             this.addActionButton( special+"_cancel_btn", _("Cancel"), () => {
+                debugger;
                 const state = this.gamedatas.gamestate.name;
                 this.restoreDescriptionOnMyTurn();
                 this.removeActionButtons();
@@ -1485,7 +1497,7 @@ function (dojo, declare) {
                 }
 
                 this.addActionButton( 'play_special_btn', this.getSpecialButtonLabel(this.player_id), () => {
-                    this.specialTileWrapper(location);
+                    this.activateSpecialTile(location);
                 }, null, false, 'blue' );
                 if (state == "specialTile") {
                     this.addSpecialPassButton();
@@ -2048,7 +2060,7 @@ function (dojo, declare) {
             const commit_cancel = $('commit_cancel_btn');
             if (!commit_cancel) {
                 this.addActionButton( "commit_cancel_btn", _('Cancel'), () => {
-                    this.onResetForces();
+                    this.onCancelCommit();
                 }, null, null, 'red');
             }
 
@@ -2876,7 +2888,7 @@ function (dojo, declare) {
         */
        notif_slaveRevolt: function(notif) {
             const counter = notif.args.military;
-            const location = notif.args.location;
+            const location = notif.args.return_from;
             const sparta_player = notif.args.sparta_player;
             const counter_id = "sparta_hoplite_"+counter['strength']+"_"+counter.id;
             

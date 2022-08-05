@@ -100,6 +100,7 @@ class PeriklesSpecial extends APP_GameClass
     /**
      * Do a validity check and if it passes, return the Special tile belonging to this player.
      * Checks that player's Special tile has not been used, and it's the correct game state.
+     * This is in lieu of normal "checkAction" because specials can be played asynchronously.
      * 
      * @param player_id player_id player playing the tile
      * @param tile expected tile label (optional)

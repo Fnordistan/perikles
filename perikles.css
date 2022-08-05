@@ -82,6 +82,10 @@
     --military_s: 62px;
 }
 
+.log .roundedbox {
+    overflow:hidden;
+}
+
 .prk_player_infl {
     display: flex;
     flex-direction: row;
@@ -559,21 +563,20 @@
     font-family: 'ThrumsSerifRegular';
     background-color: var(--color_sparta);
     font-weight: 700;
-    line-height: 1em;
     text-align: center;
-    text-shadow: 0px 1px 0px rgba(219, 7, 7, 0), 0px -1px 0px rgba(174, 4, 4, 0.7);
-    width: 100px;
-    min-width: fit-content;
-    height: fit-content;
+    width: max-content;
+    height: 2em;
+    line-height: 2em;
     margin: 2px;
     padding: 0 4px;
     border: 4px ridge #767060;
+    text-shadow: 0px 1px 0px rgba(219, 7, 7, 0), 0px -1px 0px rgba(174, 4, 4, 0.7);
 }
 
 .prk_slaverevolt_btn:hover {
     color: black;
-    background-color: orangered !important;
-    border: 4px groove yellow;
+    background-color: white !important;
+    border: 4px groove black;
     cursor: grabbing;
 }
 

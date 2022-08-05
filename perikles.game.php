@@ -896,9 +896,9 @@ class Perikles extends Table
      * Play the Alkibiades Special tile
      */
     function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
-        if (!$this->checkAction("useSpecialTile", false)) {
-            $this->checkAction("takeInfluence");
-        }
+        // if (!$this->checkAction("useSpecialTile", false)) {
+        //     $this->checkAction("takeInfluence");
+        // }
          
         $player_id = self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, ALKIBIADES);
@@ -952,9 +952,9 @@ class Perikles extends Table
      * Play Plague special tile.
      */
     function playPlague($city) {
-        if (!$this->checkAction("useSpecialTile", false)) {
-            $this->checkAction("takeInfluence");
-        }
+        // if (!$this->checkAction("useSpecialTile", false)) {
+        //     $this->checkAction("takeInfluence");
+        // }
         $player_id = self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, PLAGUE);
 
@@ -994,9 +994,9 @@ class Perikles extends Table
      * Player selected Slave Revolt
      */
     function playSlaveRevolt($revoltlocation) {
-        if (!$this->checkAction("useSpecialTile", false)) {
-            $this->checkAction("assignUnits");
-        }
+        // if (!$this->checkAction("useSpecialTile", false)) {
+        //     $this->checkAction("assignUnits");
+        // }
         
         // sanity check - there is a Sparta leader
         $sparta_leader = $this->Cities->getLeader("sparta");
@@ -1043,7 +1043,7 @@ class Perikles extends Table
         self::notifyAllPlayers("slaveRevolt", clienttranslate('Hoplite counter returned to Sparta from ${location_name}'), array(
             'i18n' => ['location_name'],
             'military' => $counter,
-            'location' => $revoltlocation, // may be sparta or a battle name
+            'return_from' => $revoltlocation, // may be sparta or a battle name, don't use location because of format-string recursive
             'location_name' => $location_name,
             'sparta_player' => $sparta_leader,
         ));
