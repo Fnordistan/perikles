@@ -791,14 +791,14 @@ class Perikles extends Table
     }
 
     /**
-     * Move old locations to 
+     * Move new locations to slots.
      */
     function dealNewLocations() {
         $this->location_tiles->shuffle(DECK);
         for ($i = 1; $i <= 7; $i++) {
             $this->location_tiles->pickCardForLocation(DECK, BOARD, $i);
         }
-        $locations = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
+        $locations = self::getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location='".BOARD."'");
         self::notifyAllPlayers("newLocations", '', array(
             'locations' => $locations
         ));

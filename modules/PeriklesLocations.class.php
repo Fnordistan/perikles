@@ -195,7 +195,7 @@ class PeriklesLocations extends APP_GameClass
    * @return array
    */
   public function getLocationTiles() {
-    return $this->game->getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg battle, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location !='".DECK."'");
+    return $this->game->getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location !='".DECK."'");
   }
 
 

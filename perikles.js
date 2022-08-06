@@ -80,7 +80,7 @@ function (dojo, declare) {
             this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCubes(gamedatas.influencecubes);
-            this.setupLocationTiles(gamedatas.players, gamedatas.locationtiles);
+            this.setupLocationTiles(gamedatas.locationtiles);
             this.setupCandidates(gamedatas.candidates);
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
@@ -326,29 +326,29 @@ function (dojo, declare) {
          * @param {array} players
          * @param {rray} locationtiles 
          */
-        setupLocationTiles: function(players, locationtiles) {
+        setupLocationTiles: function(locationtiles) {
             const tile_scale = 0.2;
             // create player area for victory tiles
-            for (const player_id in players) {
+            for (const player_id in this.gamedatas.players) {
                 const player_tiles = this.format_block('jstpl_victory_tiles', {id: player_id, scale: tile_scale});
                 dojo.place(player_tiles, $('player_board_'+player_id));
             }
             for (const loc of locationtiles) {
                 const slot = loc['slot'];
-                const battle = loc['battle'];
-                const tile = new perikles.locationtile(battle);
-                const location = loc['loc'];
+                const location = loc['location'];
+                const tile = new perikles.locationtile(location);
+                const place = loc['loc'];
                 const loc_html = tile.createTile();
-                if (location == "board") {
+                if (place == "board") {
                     const tileObj = dojo.place(loc_html, $("location_"+slot));
                     const lochtml = tile.createTooltip(this.getCityNameTr(tile.getCity()));
                     this.addTooltipHtml(tileObj.id, lochtml, '');
-                } else if (location == "unclaimed") {
+                } else if (place == "unclaimed") {
                     const tileObj = dojo.place(loc_html, $("unclaimed_tiles"));
                     tileObj.style.margin = null;
                 } else {
                     // player claimed
-                    dojo.place(loc_html, $(location+'_player_tiles'));
+                    dojo.place(loc_html, $(place+'_player_tiles'));
                 }
             }
         },
