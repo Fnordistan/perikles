@@ -119,11 +119,11 @@ $machinestates = array(
     SPECIAL_BATTLE_TILE => array(
     	"name" => "specialBattleTile",
     	"description" => clienttranslate('Special Tile phase'),
-    	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
+    	"descriptionmyturn" => clienttranslate('You may use your Special Tile at ${battle_location}'),
         "args" => "argsSpecialBattle",
     	"type" => "multipleactiveplayer",
     	"possibleactions" => array( "useSpecialBattleTile" ),
-    	"transitions" => array( "" => ROLL_BATTLE )
+    	"transitions" => array( "battle" => ROLL_BATTLE )
     ),
 
     ELECTIONS => array(
@@ -175,7 +175,7 @@ $machinestates = array(
         "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "assignUnits", "useSpecialTile" ),
-    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE, "commitContinue" => COMMIT_FORCES)
+    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "commitContinue" => COMMIT_FORCES)
     ),
 
     // rotate to the next location tile
@@ -226,15 +226,6 @@ $machinestates = array(
     	"possibleactions" => array( "chooseLoss" ),
     	"transitions" => array( "" =>  RESOLVE_TILE )
     ),
-
-    // 77 => array(
-    //     "name" => "debugstate",
-    // 	"description" => clienttranslate('${actplayer} is paused'),
-    // 	"descriptionmyturn" => clienttranslate('You are paused'),
-    // 	"type" => "activeplayer",
-    // 	"possibleactions" => array( "doSomething" ),
-    //     "transitions" => array( "" => END_TURN )
-    // ),
 
     END_TURN => array(
         "name" => "endTurn",

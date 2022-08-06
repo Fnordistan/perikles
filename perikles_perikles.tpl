@@ -85,7 +85,9 @@ const jstpl_influence_back = '<div id="cardback_${id}" class="prk_influence_tile
 
 const jstpl_defeat = '<div id="${city}_defeat_${num}" class="prk_defeat_counter"></div>';
 
-const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_counter prk_statue prk_${type}_${color}"></div>';
+const jstpl_defeat_log = '<div id="${city}_defeat_${num}_log" class="prk_defeat_counter_log"></div>';
+
+const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_counter prk_statue prk_${type}_${color}" style="bottom: calc(${num}*22px); left: calc(${num}*6px);"></div>';
 
 const jstpl_cube = '<div id="${id}"" class="prk_cube" style="background-color: #${color};"></div>';
 

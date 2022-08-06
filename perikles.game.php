@@ -778,7 +778,7 @@ class Perikles extends Table
      * Discard remaining influence cards on board, shuffle, and deal new ones.
      */
     function dealNewInfluence() {
-        $this->influence_tiles->moveAllCardsInLocation(BOARD, DISCARD);
+        $this->influence_tiles->moveAllCardsInLocation(null, DECK);
         $this->influence_tiles->shuffle(DECK);
         for ($i = 1; $i <= 10; $i++) {
             $this->influence_tiles->pickCardForLocation(DECK, BOARD, $i);
@@ -856,7 +856,7 @@ class Perikles extends Table
         if ($use) {
             $this->playSpecialTile($player_id);
         }
-        $this->gamestate->setPlayerNonMultiactive( $player_id, "" );
+        $this->gamestate->setPlayerNonMultiactive( $player_id, "battle" );
     }
 
     /**
@@ -992,6 +992,7 @@ class Perikles extends Table
 
     /**
      * Player selected Slave Revolt
+     * @param {string} revoltlocation "sparta" or a tile location
      */
     function playSlaveRevolt($revoltlocation) {
         // if (!$this->checkAction("useSpecialTile", false)) {
@@ -1312,11 +1313,7 @@ class Perikles extends Table
         } else {
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
-        $state = "nextPlayer";
-        if ($this->SpecialTiles->canPlaySpecial($player_id, "commit")) {
-            $state = "useSpecial";
-        }
-        $this->gamestate->nextState($state);
+        $this->gamestate->nextState("nextPlayer");
     }
 
     /**
@@ -1674,11 +1671,11 @@ class Perikles extends Table
         // roll for attacker
         $attd1 = bga_rand(1,6);
         $attd2 = bga_rand(1,6);
-        $atthit = ($attd1 + $attd2) >= $attacker_tn;
+        $atthit = (($attd1 + $attd2) >= $attacker_tn) ? True : False;
         // roll for defender
         $defd1 = bga_rand(1,6);
         $defd2 = bga_rand(1,6);
-        $defhit = ($defd1 + $defd2) >= $defender_tn;
+        $defhit = (($defd1 + $defd2) >= $defender_tn) ? True : False;
         self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal} (${atthit}), Defender rolls ${defd1} ${defd2} ${deftotal} (${defhit})'), array(
             'attd1' => $attd1,
             'attd2' => $attd2,
@@ -1919,7 +1916,9 @@ class Perikles extends Table
             $private[$player_id] = array('special' => true, 'location' => $location);
         }
         return array(
-            '_private' => $private
+            '_private' => $private,
+            "i18n" => ['battle_location'],
+            'battle_location' => $this->Locations->getName($location),
         );
     }
 
@@ -2353,14 +2352,16 @@ class Perikles extends Table
         if ($unopposed !== null) {
             $unopposed_id = ($unopposed == ATTACKER) ? $attacker : $defender;
             $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
-            self::notifyAllPlayers("freeToken", clienttranslate('${player_name} (${side}) wins ${combat_type} battle unopposed'), array(
-                'i18n' => ['combat_type', 'side'],
+            self::notifyAllPlayers("freeToken", clienttranslate('${player_name} (${side}) wins ${combat_type} battle at ${location_name} unopposed'), array(
+                'i18n' => ['combat_type', 'side', 'location_name'],
                 'player_id' => $unopposed_id,
                 'player_name' => $players[$unopposed_id]['player_name'],
                 'type' => $combat,
                 'side' => $unopposed_role,
                 'combat_type' => $this->getUnitName($combat),
-                'preserve' => ['player_id']
+                'location' => $location,
+                'location_name' => $this->Locations->getName($location),
+                'preserve' => ['player_id', 'location']
             ));
 
             if ($round == 1) {
@@ -2379,7 +2380,7 @@ class Perikles extends Table
             if (empty($specialplayers)) {
                 $state = "combat";
             } else {
-                $this->gamestate->setPlayersMultiactive( $specialplayers, "combat", false );
+                $this->gamestate->setPlayersMultiactive( $specialplayers, "combat", true );
                 $state = "useSpecial";
             }
         }
@@ -2441,10 +2442,13 @@ class Perikles extends Table
             $loser = ATTACKER;
             $loser_id = $this->Battles->getAttacker($location);
         }
-        self::notifyAllPlayers("combatWinner", clienttranslate('${winner} wins ${type} battle'), array(
-            'i18n' => ['winner', 'type'],
+        self::notifyAllPlayers("combatWinner", clienttranslate('${winner} wins ${type} battle at ${location_name}'), array(
+            'i18n' => ['winner', 'type', 'location_name'],
             'winner' => $winningside,
             'type' => $this->getUnitName($type),
+            'location' => $location,
+            'location_name' => $this->Locations->getName($location),
+            'preserve' => ['location']
         ));
 
         $this->setGameStateValue("battle_loser", $loser);
@@ -2497,6 +2501,7 @@ class Perikles extends Table
         $this->Cities->clearLeaders();
         if ($state == "nextTurn") {
             // reshuffle Influence deck and deal new cards
+            $this->setGameStateValue("influence_phase", 1);
             $this->dealNewInfluence();
             $this->dealNewLocations();
         }
@@ -2577,11 +2582,10 @@ class Perikles extends Table
         you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message. 
     */
 
-    function zombieTurn( $state, $active_player )
-    {
+    function zombieTurn( $state, $active_player ) {
     	$statename = $state['name'];
-    	
-        if ($state['type'] === "activeplayer") {
+
+        // if ($state['type'] == "activeplayer") {
             switch ($statename) {
                 case 'takeInfluence':
                     $tile = $this->chooseRandomTile($active_player);
@@ -2614,27 +2618,21 @@ class Perikles extends Table
                     $this->useSpecialBattleTile($active_player, false);
                     break;
                 case "takeLoss":
-                        $casualty = null;
-                        $casualties = $this->getPossibleCasualties();
-                        if (!empty($casualties)) {
-                            shuffle($casualties);
-                            $casualty = array_pop($casualties);
-                        }
-                        $this->moveToDeadpool($casualty);
-                        $this->gamestate->nextState( "endBattle" );
-                        break;
+                    $casualty = null;
+                    $casualties = $this->getPossibleCasualties();
+                    if (!empty($casualties)) {
+                        shuffle($casualties);
+                        $casualty = array_pop($casualties);
+                    }
+                    $this->moveToDeadpool($casualty);
+                    $this->gamestate->nextState( "endBattle" );
+                    break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );
-                	break;
+                    break;
             }
-
             return;
-        }
-
-        if ($state['type'] === "multipleactiveplayer") {
-            $this->gamestate->setPlayerNonMultiactive( $active_player, "" );
-            return;
-        }
+        // }
 
         throw new feException( "Zombie mode not supported at this game state: ".$statename );
     }

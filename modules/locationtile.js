@@ -132,7 +132,6 @@ define(["dojo/_base/declare"], function (declare) {
             const yoff = -1 * (this.x()-1) * TILE_HEIGHT * TILE_SCALE;
             const html = '<div class="prk_location_tile_log" style="background-position: '+xoff+'px '+yoff+'px;"></div>'
             return html;
-
         },
 
         /**

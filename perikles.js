@@ -373,7 +373,7 @@ function (dojo, declare) {
          */
         setupLeaders: function(leaders) {
             for (const [city, player_id] of Object.entries(leaders)) {
-                this.createLeaderCounter(player_id, city, "leader", 1);
+                this.createLeaderCounter(player_id, city, "leader");
             }
         },
 
@@ -382,20 +382,10 @@ function (dojo, declare) {
          * @param {Object} statues 
          */
         setupStatues: function(statues) {
-            for (const city of CITIES) {
-                const citystatues = statues[city];
-                if (citystatues) {
-                    let s = 0; // statue ids are numbered 1+
-                    for (const [player_id, num] of Object.entries(citystatues)) {
-                        for (let i = 1; i <= parseInt(num); i++) {
-                            const statue_div = this.createLeaderCounter(player_id, city, "statue", s+1);
-                            const statue = dojo.place(statue_div, $(city+"_statues"));
-                            Object.assign(statue.style, {
-                                "bottom" : (s*22)+"px",
-                                "left" : (s*6)+"px",
-                            });
-                            s++;
-                        }
+            for (const [player_id, civs] of Object.entries(statues)) {
+                for (const [city, num] of Object.entries(civs)) {
+                    for (let i = 0; i < toint(num); i++) {
+                        this.createLeaderCounter(player_id, city, "statue");
                     }
                 }
             }
@@ -403,16 +393,23 @@ function (dojo, declare) {
 
         /**
          * For creating Leader and Statue counters.
+         * Places it in the zone.
          * @param {int} player_id 
          * @param {string} city 
          * @param {string} type "leader" or "statue"
-         * @param {int} n 
-         * @returns statue or leader div
          */
-        createLeaderCounter: function(player_id, city, type, n) {
-            const leaderhtml = this.format_block('jstpl_leader', {city: city, type: type, num: n, color: this.decorator.playerColor(player_id)});
-            const leader = dojo.place(leaderhtml, $(city+"_leader"));
+        createLeaderCounter: function(player_id, city, type) {
+            let counter_zone = $(city+"_leader");
+            let s = 0;
             let tt = _("${player_name} is Leader of ${city_name}");
+            if (type == "statue") {
+                counter_zone = $(city+"_statues");
+                counter_zone.childElementCount;
+                tt = _("${player_name} Statue in ${city_name}");
+            }
+            const leaderhtml = this.format_block('jstpl_leader', {city: city, type: type, num: s, color: this.decorator.playerColor(player_id)});
+            const leader = dojo.place(leaderhtml, counter_zone);
+
             tt = tt.replace('${player_name}', this.decorator.spanPlayerName(player_id));
             tt = tt.replace('${city_name}', this.getCityNameTr(city));
             this.addTooltip(leader.id, tt, '');
@@ -613,7 +610,7 @@ function (dojo, declare) {
                         }
                     }
                     if (args.defeats) {
-                        const def_ctr = this.format_block('jstpl_defeat', {city: 'city', num: args.defeats} );
+                        const def_ctr = this.format_block('jstpl_defeat_log', {city: 'city', num: args.defeats} );
                         log += def_ctr;
                     }
                     if (!this.isSpectator) {
@@ -2666,7 +2663,7 @@ function (dojo, declare) {
             // subtract loser's cubes from winner's
             this.removeInfluenceCubes(player_id, city, cubes);
             // place Leader
-            this.createLeaderCounter(player_id, city, "leader", 1);
+            this.createLeaderCounter(player_id, city, "leader");
         },
 
         /**
@@ -2747,7 +2744,7 @@ function (dojo, declare) {
                 this.slideToObjectAndDestroy(t, 'influence_slot_0', 500, 0);
             });
             const influence = notif.args.influence;
-            const sz = parseInt(notif.args.decksize);
+            const sz = toint(notif.args.decksize);
             this.setupInfluenceTiles(influence, sz);
         },
 
@@ -2796,18 +2793,9 @@ function (dojo, declare) {
         notif_addStatue: function(notif) {
             const player_id = notif.args.player_id;
             const city = notif.args.city;
-            const leader = $(city+'_leader_1');
-            const mystatues = notif.args.statues;
+            const leader = $(city+'_leader_0');
             this.slideToObjectAndDestroy(leader, city+'_statues', 1000, 0);
-            const statue_div = this.createLeaderCounter(player_id, city, "statue", mystatues);
-            const statue_zone = $(city+"_statues");
-            const statuecount = statue_zone.childElementCount;
-            const statueObj = dojo.place(statue_div, statue_zone);
-            // how many statues were already there?
-            Object.assign(statueObj.style, {
-                "bottom" : (statuecount*22)+"px",
-                "left" : (statuecount*6)+"px"
-            });
+            this.createLeaderCounter(player_id, city, "statue");
         },
 
         /**

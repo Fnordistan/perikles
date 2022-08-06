@@ -115,6 +115,5 @@ define(["dojo/_base/declare"], function (declare) {
             [...actdiv].forEach( a => a.classList.remove(cls));
         },
 
-
     })
 });
