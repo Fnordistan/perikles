@@ -15,17 +15,21 @@
  */
 
 if (!defined('SETUP')) { // ensure this block is only invoked once, since it is included multiple times
+    // state constants
     define("SETUP", 1);
+
+    // Influence phase
     define("TAKE_INFLUENCE", 2);
     define("PLACE_INFLUENCE", 3);
-    define("CHOOSE_PLACE_INFLUENCE", 33);
-    define("SPECIAL_TILE", 4);
+    define("CHOOSE_PLACE_INFLUENCE", 4);
     define("ASSIGN_CANDIDATE", 5);
     define("ASSASSINATE", 6);
     define("NEXT_PLAYER", 7);
+
     // Election phase
     define("PROPOSE_CANDIDATE", 10);
     define("ELECTIONS", 11);
+
     // Commit forces phase
     define("ASSIGN_LEADERS", 20);
     define("SPARTAN_CHOICE", 21);
@@ -33,16 +37,28 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("BRING_OUT_YOUR_DEAD", 23);
     define("COMMIT_FORCES", 24);
     define("NEXT_COMMIT", 25);
-    define("NEXT_BATTLE_TILE", 26);
-    define("RESOLVE_TILE", 27);
-    define("NEXT_COMBAT", 30);
-    define("ROLL_BATTLE", 31);
-    define("TAKE_LOSS", 32);
-    define("SPECIAL_BATTLE_TILE", 40);
-    define("END_TURN", 28);
+
+    // Request Permission
+    define("HANDLE_REQUEST", 50);
+    define("REQUEST_RESPONSE", 51);
+    define("HANDLE_RESPONSE", 52);
+
+    // Battle phase
+    define("NEXT_BATTLE_TILE", 30);
+    define("RESOLVE_TILE", 31);
+    define("NEXT_COMBAT", 32);
+    define("ROLL_BATTLE", 33);
+    define("TAKE_LOSS", 34);
+    define("END_TURN", 35);
+
+    // SPECIAL TILES
+    define("SPECIAL_TILE", 40);
+    define("SPECIAL_BATTLE_TILE", 41);
+
+    // Endgame
     define("SCORING", 90);
     define("ENDGAME", 99);
- }
+}
  
 $machinestates = array(
 
@@ -175,7 +191,33 @@ $machinestates = array(
         "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "assignUnits", "useSpecialTile" ),
-    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "commitContinue" => COMMIT_FORCES)
+    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "commitContinue" => COMMIT_FORCES, "askPermission" => HANDLE_REQUEST)
+    ),
+
+    HANDLE_REQUEST => array(
+        "name" => "handleRequest",
+        "description" => "",
+        "type" => "game",
+        "action" => "stPermissionRequest",
+        "transitions" => array( "getResponse" => REQUEST_RESPONSE )
+    ),
+
+    REQUEST_RESPONSE => array(
+    	"name" => "requestResponse",
+    	"description" => clienttranslate('${player_name} requests permission to join defenders at ${location_name}'),
+    	"descriptionmyturn" => clienttranslate('${player_name} requests permission to join defenders at ${location_name}'),
+        "args" => "argsPermission",
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "respondRequest", "cancelRequest" ),
+    	"transitions" => array( "" => HANDLE_RESPONSE)
+    ),
+
+    HANDLE_RESPONSE => array(
+        "name" => "handleResponse",
+        "description" => "",
+        "type" => "game",
+        "action" => "stRequestResponse",
+        "transitions" => array( "" => COMMIT_FORCES )
     ),
 
     // rotate to the next location tile

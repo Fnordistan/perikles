@@ -100,8 +100,9 @@ class Perikles extends Table
             "influence_phase" => 50,
             "last_influence_slot" => 51, // keep track of where to put next Influence tile
             "commit_phase" => 52,
-            "spartan_choice" => 53, // who Sparta picked to go first in military phase
-            "deadpool_picked" => 54, // how many players have been checked for deadpool?
+            "commit_player" => 53,
+            "spartan_choice" => 54, // who Sparta picked to go first in military phase
+            "deadpool_picked" => 55, // how many players have been checked for deadpool?
 
             BRASIDAS => 60, // Brasides activated for next battle
             PHORMIO => 61, // Phormio activated for next battle
@@ -175,6 +176,8 @@ class Perikles extends Table
         self::setGameStateInitialValue("influence_phase", 1);
         // when we are in the committing phase. Start with first commit, end with battle phase.
         self::setGameStateInitialValue("commit_phase", 0);
+        // keep track of who was the committer when asking for defend permissions
+        self::setGameStateInitialValue("commit_player", 0);
 
         $this->Cities->setupNewGame();
 
@@ -517,7 +520,7 @@ class Perikles extends Table
         $id = $tile['id'];
         $this->returnMilitaryUnits($tile);
         $this->location_tiles->insertCardOnExtremePosition($id, $destination, true);
-        self::DbQuery("UPDATE LOCATION SET attacker=NULL,defender=NULL,permissions=NULL WHERE card_id=$id");
+        $this->Locations->clearBattleStatus($id);
     }
 
     /**
@@ -722,34 +725,44 @@ class Perikles extends Table
     }
 
     /**
-     * Does a player have permission to defend a location?
+     * Get info about current battle.
+     * @return {array} ('city' => city, 'location' => location, 'defender' => defender)
      */
-    function hasDefendPermission($player_id, $location) {
-        $hasPerm = false;
-        $permissions = self::getUniqueValueFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
-        if ($permissions != null) {
-            $perms = explode(",", $permissions);
-            $hasPerm = in_array($player_id, $perms);
-        }
-        return $hasPerm;
+    function getCurrentDefender() {
+        $slot = $this->getGameStateValue("active_battle");
+        $location = $this->Locations->getBattleTile($slot);
+        $city = $this->Locations->getCity($location);
+        $defender = $this->Cities->getLeader($city);
+        return array('city' => $city, 'location' => $location, 'defender' => $defender);
     }
 
     /**
      * Let a player give another player permission to defend a location.
+     * @param {string} $requester being given permission
+     * @param {string} location
      */
-    function giveDefendPermission($player_id, $location) {
+    function giveDefendPermission($requester, $location) {
         // make sure assigner owns it
         $assigner = self::getActivePlayerId();
-        $location = self::getNonEmptyObjectFromDB("SELECT card_type city, permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
-        if (!$this->Cities->isLeader($assigner, $location['city'])) {
+
+        $city = $this->Locations->getCity($location);
+        if (!$this->Cities->isLeader($assigner, $city)) {
             throw new BgaUserException(self::_("You do not own this location's city"));
         }
-        $permissions = $location['permissions'] == null ? [] : explode(",", $location['permissions']);
-        if (!in_array($player_id, $permissions)) {
-            $permissions[] = $player_id;
-            $newperms = implode(',', $permissions);
-            self::DbQuery("UPDATE LOCATION SET permissions=$newperms");
-        }
+
+        $players = self::loadPlayersBasicInfos();
+        $this->Locations->addPermission($location, $requester);
+
+        self::notifyAllPlayers('givePermission', clienttranslate('${defender_name} gives ${player_name} permission to send forces to ${location_name}'), array(
+            'i18n' => ['location_name'],
+            'player_id' => $requester,
+            'player_name' =>  $players[$requester]['player_name'],
+            'defender_id' => $assigner,
+            'defender_name' => $players[$assigner]['player_name'],
+            'location' => $location,
+            'location_name' => $this->Locations->getName($location),
+            'preserve' => ['player_id', 'defender_id', 'location'],
+        ));
     }
 
     /**
@@ -1508,10 +1521,8 @@ class Perikles extends Table
         $city = $this->Locations->getCity($location);
         // Do I control this city? If not, I need permission from defender
         if (!$this->Cities->isLeader($player_id, $city)) {
-            if (!$this->hasDefendPermission($player_id, $location)) {
-                $city_name = $this->Cities->getNameTr($city);
-                $location_name = $this->Locations->getName($location);
-                throw new BgaUserException(self::_("You need permission from the leader of $city_name to defend $location_name"));
+            if (!$this->Locations->hasDefendPermission($player_id, $location)) {
+                $this->gamestate->nextState("askPermission");
             }
         }
 
@@ -1947,6 +1958,24 @@ class Perikles extends Table
     }
 
     /**
+     * For requesting defender permission to defend a location.
+     */
+    function argsPermission() {
+        $defender = $this->getCurrentDefender();
+        $location = $defender['location'];
+        $players = self::loadPlayersBasicInfos();
+        $player_id = $this->getGameStateValue("commit_player");
+
+        return array(
+            'i18n' => ['city_name', 'location_name'],
+            'requester' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'location' => $location,
+            'location_name' => $this->Locations->getName($location),
+        );
+    }
+
+    /**
      * Get the phase to check against for use of a Special tile.
      * @return "influence, commit, or
      */
@@ -2021,6 +2050,7 @@ class Perikles extends Table
             $player_id = self::activeNextPlayer();
             self::giveExtraTime( $player_id );
         }
+        $this->setGameStateValue("commit_player", $player_id);
         // use which of this player's tiles, 2 or 1 shard?
         $s = 2;
         // do I have a 2-shard tile?
@@ -2314,6 +2344,84 @@ class Perikles extends Table
     }
 
     /**
+     * Set the defeneder and requester.
+     */
+    function stPermissionRequest() {
+        $defender = $this->getCurrentDefender();
+        $this->gamestate->changeActivePlayer( $defender['defender'] );
+        $this->gamestate->nextState("getResponse");
+    }
+
+    /**
+     * The defender granted permission or refused, or the requester cancelled.
+     * Hand play back to original player.
+     */
+    function stRequestResponse() {
+        $next_player = $this->getGameStateValue("commit_player");
+        // clear info
+        $this->gamestate->changeActivePlayer( $next_player );
+        $this->gamestate->nextState();
+    }
+
+    /**
+     * Player responded to a request to defend his location.
+     * @param {bool} accept
+     */
+    function respondRequest($accept) {
+        self::checkAction( 'respondRequest' ); 
+        $player_id = $this->getGameStateValue("commit_player");
+
+        $defender = $this->getCurrentDefender();
+        $defender_id = $defender['defender'];
+        $location = $defender['location'];
+
+        $players = self::loadPlayersBasicInfos();
+
+        if ($accept) {
+            $this->giveDefendPermission($player_id, $location);
+        } else {
+            self::notifyAllPlayers('rejectPermission', clienttranslate('${defender_name} refused ${player_name} permission to send forces to ${location_name}'), array(
+                'i18n' => ['location_name'],
+                'player_id' => $player_id,
+                'player_name' =>  $players[$player_id]['player_name'],
+                'defender_id' => $defender_id,
+                'defender_name' => $players[$defender_id]['player_name'],
+                'location' => $location,
+                'location_name' => $this->Locations->getName($location),
+                'preserve' => ['player_id', 'defender_id', 'location'],
+            ));
+        }
+
+        // return action to the player who was committing forces
+        $this->gamestate->nextState();
+    }
+
+    /**
+     * Player requesting to join defense cancelled request.
+     */
+    function cancelRequest($player_id) {
+        // self::checkAction( 'cancelSpotTrade' ); 
+        if ($player_id != $this->getGameStateValue("commit_player")) {
+            throw new BgaVisibleSystemException("It is not your turn"); // NOI18N
+        }
+
+        $defender = $this->getCurrentDefender();
+        $location = $defender['location'];
+
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request to defend ${location_name}'), array(
+            'i18n' => ['location_name'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'location' => $location,
+            'location_name' => $this->Locations->getName($location),
+            'preserve' => ['player_id', 'location'],
+        ));
+        // return action to the player who made the offer
+        $this->gamestate->nextState();
+    }
+
+    /**
      * There are forces on both sides (at least in one battle).
      * We know there is a battle to be fought.
      */
@@ -2499,6 +2607,8 @@ class Perikles extends Table
             }
         }
         $this->Cities->clearLeaders();
+        $this->Locations->clearBattleStatus();
+        $this->setGameStateValue("commit_player", 0);
         if ($state == "nextTurn") {
             // reshuffle Influence deck and deal new cards
             $this->setGameStateValue("influence_phase", 1);
@@ -2633,8 +2743,6 @@ class Perikles extends Table
             }
             return;
         // }
-
-        throw new feException( "Zombie mode not supported at this game state: ".$statename );
     }
 
     /**
@@ -2745,15 +2853,15 @@ class Perikles extends Table
                     $unit = array_pop($military);
                     $city = $unit['city'];
                     // does this unit have any cities to defend?
-                    $mycitybattles = self::getObjectListFromDB("SELECT card_type_arg location FROM LOCATION WHERE card_type=\"$city\" AND card_location=\"".BOARD."\"", true);
+                    $mycitybattles = $this->Locations->getBattleTiles($city);
     
                     // is there a city we can attack?
                     if (empty($mycitybattles)) {
-                        $allbattles = self::getObjectListFromDB("SELECT card_type city, card_type_arg location, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"");
+                        $allbattles = $this->Locations->getBattleTiles();
                         shuffle($allbattles);
-                        $location = array_pop($allbattles);
-                        $defcity = $location['city'];
-                        $location = $location['location'];
+                        $tile = array_pop($allbattles);
+                        $defcity = $tile['city'];
+                        $location = $tile['location'];
                        
                         if ($this->Cities->canAttack($player_id, $city, $defcity, $location)) {
                             // we can attack this city
@@ -2766,9 +2874,10 @@ class Perikles extends Table
                         // go defend that place
                         shuffle($mycitybattles);
                         $defbattle = array_pop($mycitybattles);
+                        $location = $defbattle['location'];
                         // make sure not sending trireme to a land battle
-                        if (!($unit['type'] == TRIREME && $this->Locations->isLandBattle($defbattle))) {
-                            $unitstr = $unit['id']."_defend_".$defbattle;
+                        if (!($unit['type'] == TRIREME && $this->Locations->isLandBattle($location))) {
+                            $unitstr = $unit['id']."_defend_".$location;
                         }
                     }
                 }

@@ -172,4 +172,24 @@ class action_perikles extends APP_GameAction
       self::ajaxResponse( );
     }
 
+    /**
+     * Player gave/refused permission to defend.
+     */
+    public function respondrequest() {
+      self::setAjaxMode();     
+      $allow = self::getArg( "allow", AT_bool, true );
+      $this->game->respondRequest($allow);
+      self::ajaxResponse( );
+    }
+
+    /**
+     * Player asking permission to defend a city canceled.
+     */
+    public function cancelrequest() {
+      self::setAjaxMode();     
+      $player_id = self::getArg( "player_id", AT_alphanum, true );
+      $this->game->cancelRequest($player_id);
+      self::ajaxResponse( );
+    }
+
 }

@@ -1325,8 +1325,7 @@ function (dojo, declare) {
         {
             console.log( 'onUpdateActionButtons: '+stateName );
                       
-            if( this.isCurrentPlayerActive() )
-            {
+            if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
                     case 'spartanChoice':
                         for (player_id in this.gamedatas.players) {
@@ -1345,6 +1344,9 @@ function (dojo, declare) {
                             this.addSpecialTileButton();
                         }
                         break;
+                    case 'requestResponse':
+                        this.addPermissionButtons();
+                        break;
                     case 'specialTile':
                         this.addSpecialPassButton();
                         break;
@@ -1362,6 +1364,8 @@ function (dojo, declare) {
                         const location = args.location;
                         this.addCasualtyButtons(type, strength, cities, location);
                 }
+            } else if ((stateName == 'requestResponse') && (this.player_id == args.commit_player)) {
+                this.addCancelPermissionRequest();
             }
 
             // buttons that can be added even for non-current player
@@ -1375,6 +1379,32 @@ function (dojo, declare) {
             }
         },
 
+        ///////////////////////////////////////////////////
+        //// Handle permission requests to defend
+        ///////////////////////////////////////////////////
+
+        /**
+         * Add give/refuse request buttons for defense.
+         */
+        addPermissionButtons: function() {
+            this.addActionButton( "grant_request_btn", _("Give Permission"), () => {
+                this.respondPermissionRequest(true);
+            }, null, null, 'green');
+            this.addActionButton( "refuse_request_btn", _("Refuse Permission"), () => {
+                this.respondPermissionRequest(false);
+            }, null, null, 'red');
+
+        },
+
+        /**
+         * Add button to cancel request for permission.
+         */
+        addCancelPermissionRequest: function() {
+            this.addActionButton( "cancel_request_btn", _("Cancel Request"), () => {
+                this.cancelPermissionRequest();
+            }, null, null, 'red');
+        },
+        
         ///////////////////////////////////////////////////
         //// Player must choose loss 
         ///////////////////////////////////////////////////
@@ -2432,6 +2462,30 @@ function (dojo, declare) {
             return argstr;
         },
 
+        /**
+         * Player giving or denying request to defend a city.
+         */
+         respondPermissionRequest: function(bAllow) {
+            if (this.checkPossibleActions("respondRequest", true)) {
+                this.ajaxcall( "/perikles/perikles/respondrequest.html", {
+                    allow: bAllow,
+                    lock: true
+                }, this, function( result ) { }, function( is_error) { } );
+            }
+        },
+
+
+        /**
+         * Player asking permission to defend canceled request.
+         */
+         cancelPermissionRequest: function() {
+            if (this.checkPossibleActions("cancelRequest", true)) {
+                this.ajaxcall( "/perikles/perikles/cancelrequest.html", {
+                    player_id: this.player_id,
+                    lock: true
+                }, this, function( result ) { }, function( is_error) { } );
+            }
+        },
 
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications

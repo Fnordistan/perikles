@@ -190,6 +190,20 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Get all locations on the board where there is a battle.
+   * @param {string} city to check (optional)
+   * @return {array} of tiles
+   */
+  public function getBattleTiles($city=null) {
+      $sql = "SELECT card_type city, card_type_arg location, attacker FROM LOCATION WHERE card_location=\"".BOARD."\"";
+      if (!empty($city)) {
+        $sql .= " AND card_type=\"$city\"";
+      }
+      $locations = self::getObjectListFromDB($sql);
+      return $locations;
+  }
+
+  /**
    * Get all the Location Tiles not currently in the deck (i.e. either on the board, in a player's hand, or unclaimed)
    * [id,city,battle,loc,slot]
    * @return array
@@ -198,5 +212,56 @@ class PeriklesLocations extends APP_GameClass
     return $this->game->getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location !='".DECK."'");
   }
 
+  /**
+   * Get the permissions currently set for a location.
+   * @return {array} player_ids with permissions to this location, may be empty
+   */
+  public function getPermissions($location) {
+    $permissionval = $this->game->getObjectListFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"", true);
+    $permissions = empty($permissionval) ? [] : explode(",", $permissionval);
+    return $permissions;
+  }
+
+  /**
+   * Add a new player to the list of permissions to defend a location.
+   * @param {string} location
+   * @param {string} player_id
+   */
+  public function addPermission($location, $player_id) {
+    $permissions = $this->getPermissions($location);
+    if (!in_array($player_id, $permissions)) {
+        $permissions[] = $player_id;
+        $newperms = implode(',', $permissions);
+        self::DbQuery("UPDATE LOCATION SET permissions=$newperms WHERE card_type_arg=\"$location\"");
+    }
+  }
+
+  /**
+   * Does a player have permission to defend a location?
+   * @param {string} player_id asking for permission
+   * @param {string} location
+   * @return {bool} true if this player_id has permission flag set
+   */
+  function hasDefendPermission($player_id, $location) {
+    $hasPerm = false;
+    $permissions = $this->game->getUniqueValueFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
+    if (!empty($permissions)) {
+        $perms = explode(",", $permissions);
+        $hasPerm = in_array($player_id, $perms);
+    }
+    return $hasPerm;
+}
+
+  /**
+   * Clear all permissions, end of battle/turn.
+   * @param {string} id optional for specific location (all locations if null)
+   */
+  public function clearBattleStatus($id=null) {
+    $sql = "UPDATE LOCATION SET attacker=NULL,defender=NULL,permissions=NULL";
+    if ($id != null) {
+      $sql .= " WHERE card_id=$id";
+    }
+    $this->game->DbQuery($sql);
+  }
 
 }
