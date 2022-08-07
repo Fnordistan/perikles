@@ -356,6 +356,50 @@ class PeriklesBattles extends APP_GameClass
       return empty($buckets) ? [] : $buckets[$min];
   }
 
+  /**
+   * Does 
+   * @param {string} city
+   * @return true if any units of city in deadpool
+   */
+  public function hasDeadPoolUnits($city) {
+    $dead = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"$city\" AND location=\"".DEADPOOL."\"", true);
+    return !empty($dead);
+  }
+
+  /**
+   * Get potential units to be retrieved from deadpool by city. Gets checks for weakest.
+   * @param {string} city
+   * @return {array} (HOPLITE => counter, TRIREME => counter) only if there is one of that tupe in deadpool.
+   */
+  public function getDeadpoolUnits($city) {
+    $units = array();
+
+    $hoplite = $this->getLowestDeadPoolUnit($city, HOPLITE);
+    $trireme = $this->getLowestDeadPoolUnit($city, TRIREME);
+    if ($hoplite != null) {
+        $units[HOPLITE] = $hoplite;
+    }
+    if ($trireme != null) {
+      $units[TRIREME] = $trireme;
+    }
+    return $units;  
+  }
+
+  /**
+   * Get a counter with the lowest strength by city and type in the deadpool.
+   * @param {string} city
+   * @param {string} HOPLITE or TRIREME
+   * @return NULL or one counter
+   */
+  private function getLowestDeadPoolUnit($city, $type) {
+    $counter = null;
+    $dead = $this->game->getObjectFromDB("SELECT id, city, type, MIN(strength) FROM MILITARY WHERE type=\"$type\" AND city=\"$city\" AND location=\"".DEADPOOL."\" LIMIT 1");
+    if ((!empty($dead)) && $dead['id'] != null) {
+      $counter = $dead;
+    }
+    return $counter;
+  }
+
 
     /**
      * Return Location tile where the next battleis, or null if there are no more.

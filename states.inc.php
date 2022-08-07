@@ -169,11 +169,12 @@ $machinestates = array(
 
     BRING_OUT_YOUR_DEAD => array(
     	"name" => "takeDead",
-    	"description" => clienttranslate('${actplayer} must choose unit(s) from the dead pool'),
-    	"descriptionmyturn" => clienttranslate('You must choose unit(s) from the dead pool'),
+    	"description" => clienttranslate('${actplayer} must choose unit(s) from the dead pool ${length}'),
+    	"descriptionmyturn" => clienttranslate('You must choose unit(s) from the dead pool ${length}'),
     	"type" => "activeplayer",
+        "args" => "argsDeadPool",
     	"possibleactions" => array( "chooseDeadUnits" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER)
+    	"transitions" => array( "" => DEAD_POOL)
     ),
 
     NEXT_COMMIT => array(
@@ -283,7 +284,7 @@ $machinestates = array(
         "description" => "",
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "proposeCandidate" => PROPOSE_CANDIDATE, "elections" => ELECTIONS, "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT )
+        "transitions" => array( "takeInfluence" => TAKE_INFLUENCE, "proposeCandidate" => PROPOSE_CANDIDATE, "elections" => ELECTIONS, "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT)
     ),
 
     SCORING => array(

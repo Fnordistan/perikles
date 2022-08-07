@@ -664,8 +664,7 @@ class Perikles extends Table
     function hasDeadPool($player_id) {
         foreach($this->Cities->cities() as $cn) {
             if ($this->Cities->isLeader($player_id, $cn)) {
-                $dead = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"$cn\" AND location='deadpool'", true);
-                if (!empty($dead)) {
+                if ($this->Battles->hasDeadPoolUnits($cn)) {
                     return true;
                 }
             }
@@ -1352,7 +1351,10 @@ class Perikles extends Table
     }
 
     function chooseDeadUnits() {
+        $player_id = self::getActivePlayerId();
+        // chooseDeadUnits
         throw new BgaUserException("Take dead not implemented yet");
+        $this->gamestate->nextState();
     }
 
     /**
@@ -1938,6 +1940,24 @@ class Perikles extends Table
         ));
     }
 
+    /**
+     * Get an associative array {city => {HOPLITE => $counter, TRIREME => $counter}} of units that can be picked from deadpool.
+     * There is only a choice if at least one city has a choice of HOPLITE or TRIREME.
+     * @param {string} player_id
+     * 
+     */
+    function getDeadPool($player_id) {
+        $mycities = $this->Cities->controlledCities($player_id);
+        $deadpool = array();
+        foreach($mycities as $city) {
+            $topick = $this->Battles->getDeadpoolUnits($city);
+            if (!empty($topick)) {
+                $deadpool[$city] = $topick;
+            }
+        }
+        return $deadpool;
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -2022,6 +2042,17 @@ class Perikles extends Table
             'player_name' => $players[$player_id]['player_name'],
             'location' => $location,
             'location_name' => $this->Locations->getName($location),
+        );
+    }
+
+    /**
+     * Return all the units that may be retrieved from Deadpool by the current active player.
+     */
+    function argsDeadPool() {
+        $player_id = self::getActivePlayerId();
+        $deadpool = $this->getDeadPool($player_id);
+        return array(
+            'length' => count($deadpool),
         );
     }
 
@@ -2164,6 +2195,7 @@ class Perikles extends Table
      * Check whether player can collect units
      */
     function stDeadPool() {
+        // increment until each player has had their pick
         $picked = $this->getGameStateValue("deadpool_picked");
         if ($picked == 0) {
             $first_player = $this->getGameStateValue("spartan_choice");
@@ -2178,13 +2210,29 @@ class Perikles extends Table
             $state = "startCommit";
         } else {
             $player_id = self::getActivePlayerId();
-            if ($this->hasDeadPool($player_id)) {
-                $state = "takeDead";
-            } else {
+            // does this player have any choices to make about the deadpool?
+            $deadpool = $this->getDeadPool($player_id);
+            if (empty($deadpool)) {
                 $player_id = self::activeNextPlayer();
                 self::giveExtraTime( $player_id );
                 $state = "nextPlayer";
+            } else {
+                $is_choice = false;
+                foreach($deadpool as $city) {
+                    if (count($city) > 1) {
+                        $is_choice = true;
+                        break;
+                    }
+                }
+                if ($is_choice) {
+                    $state = "takeDead";
+                    throw new BgaVisibleSystemException("I have deadpool units to choose");
+                } else {
+                    // do all the deadpool picks for the player
+                    throw new BgaVisibleSystemException("I have deadpool units to be automatically picked");
+                }
             }
+
             $this->incGameStateValue("deadpool_picked", 1);
         }
         $this->gamestate->nextState($state);
