@@ -59,7 +59,7 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("SCORING", 90);
     define("ENDGAME", 99);
 }
- 
+
 $machinestates = array(
 
     // The initial state. Please do not modify.
@@ -77,8 +77,8 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must take an Influence tile'),
     	"type" => "activeplayer",
         "args" => "argsSpecial",
-    	"possibleactions" => array( "takeInfluence", "useSpecialTile" ),
-    	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "choosePlaceCube" => CHOOSE_PLACE_INFLUENCE)
+    	"possibleactions" => array("takeInfluence", "useSpecial"),
+    	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "choosePlaceCube" => CHOOSE_PLACE_INFLUENCE, "continueTurn" => TAKE_INFLUENCE)
     ),
 
     PLACE_INFLUENCE => array(
@@ -125,8 +125,8 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You may use your Special Tile'),
         "args" => "argsSpecial",
     	"type" => "activeplayer",
-    	"possibleactions" => array( "useSpecialTile" ),
-    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT )
+    	"possibleactions" => array("useSpecial"),
+    	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "nextCommit" => NEXT_COMMIT, "continueCommit" => COMMIT_FORCES )
     ),
 
     /**
@@ -138,7 +138,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You may use your Special Tile at ${battle_location}'),
         "args" => "argsSpecialBattle",
     	"type" => "multipleactiveplayer",
-    	"possibleactions" => array( "useSpecialBattleTile" ),
+    	"possibleactions" => array( "useSpecialBattle" ),
     	"transitions" => array( "battle" => ROLL_BATTLE )
     ),
 
@@ -190,8 +190,8 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must commit forces'),
         "args" => "argsSpecial",
     	"type" => "activeplayer",
-    	"possibleactions" => array( "assignUnits", "useSpecialTile" ),
-    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "commitContinue" => COMMIT_FORCES, "askPermission" => HANDLE_REQUEST)
+    	"possibleactions" => array( "assignUnits", "useSpecial" ),
+    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE, "askPermission" => HANDLE_REQUEST)
     ),
 
     HANDLE_REQUEST => array(

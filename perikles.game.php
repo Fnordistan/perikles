@@ -101,8 +101,9 @@ class Perikles extends Table
             "last_influence_slot" => 51, // keep track of where to put next Influence tile
             "commit_phase" => 52,
             "commit_player" => 53,
-            "spartan_choice" => 54, // who Sparta picked to go first in military phase
-            "deadpool_picked" => 55, // how many players have been checked for deadpool?
+            "commit_slot" => 54,
+            "spartan_choice" => 55, // who Sparta picked to go first in military phase
+            "deadpool_picked" => 56, // how many players have been checked for deadpool?
 
             BRASIDAS => 60, // Brasides activated for next battle
             PHORMIO => 61, // Phormio activated for next battle
@@ -178,6 +179,7 @@ class Perikles extends Table
         self::setGameStateInitialValue("commit_phase", 0);
         // keep track of who was the committer when asking for defend permissions
         self::setGameStateInitialValue("commit_player", 0);
+        self::setGameStateInitialValue("commit_slot", 0);
 
         $this->Cities->setupNewGame();
 
@@ -566,6 +568,43 @@ class Perikles extends Table
     }
 
     /**
+     * End of turn, turn every city leader into a statue, send notification.
+     */
+    function leadersToStatues() {
+        $players = self::loadPlayersBasicInfos();
+
+        foreach ($this->Cities->cities() as $cn) {
+            $leader = $this->Cities->getLeader($cn);
+            if (!empty($leader)) {
+                $statues = $this->Cities->addStatue($leader, $cn);
+                self::notifyAllPlayers("addStatue", clienttranslate('Statue to ${player_name} erected in ${city_name}'), array(
+                    'i18n' => ['city_name'],
+                    'city' => $cn,
+                    'city_name' => $this->Cities->getNameTr($cn),
+                    'player_id' => $leader,
+                    'statues' => $statues,
+                    'player_name' => $players[$leader]['player_name'],
+                    'preserve' => ['player_id', 'city'],
+                ));
+            }
+        }
+    }
+
+    /**
+     * Return all military counters from players' pools.
+     */
+    function returnPlayersMilitary() {
+        $players = self::loadPlayersBasicInfos();
+        foreach (array_keys($players) as $player_id) {
+            $counters = $this->Battles->returnCounters($player_id);
+            self::notifyAllPlayers("returnMilitaryPool", '', array(
+                'player_id' => $player_id,
+                'counters' => $counters,
+            ));
+        }
+    }
+
+    /**
      * Assumes all checks have been done. Send a military unit to a battle location.
      */
     function sendToBattle($player_id, $mil, $battlepos) {
@@ -729,7 +768,7 @@ class Perikles extends Table
      * @return {array} ('city' => city, 'location' => location, 'defender' => defender)
      */
     function getCurrentDefender() {
-        $slot = $this->getGameStateValue("active_battle");
+        $slot = $this->getGameStateValue("commit_slot");
         $location = $this->Locations->getBattleTile($slot);
         $city = $this->Locations->getCity($location);
         $defender = $this->Cities->getLeader($city);
@@ -842,14 +881,16 @@ class Perikles extends Table
 //////////// 
 
     /**
-     * A player clicked a Special Tile Button or the Pass button.
-     * Skipped by Plague and Alkibiades.
+     * A player clicked pass on a Special Tile Button.
+     * Zombie can provide player id.
+     * @param {string} player_id (optional)
      */
-    function useSpecialTile($player_id, $use) {
-        // $this->checkAction('useSpecial');
-        if ($use) {
-            $this->playSpecialTile($player_id);
-        }
+    function specialTilePass($player_id=null) {
+        // validity check
+        $this->checkAction('useSpecial');
+        $player_id ??= self::getCurrentPlayerId();
+        $this->SpecialTiles->checkSpecialTile($player_id);
+
         // after playing tile, or if passed
         $nextstate = "";
         if ($this->getGameStateValue('influence_phase') == 0) {
@@ -866,6 +907,7 @@ class Perikles extends Table
      * A player clicked a Special Tile Button or the Pass button during battle.
      */
     function useSpecialBattleTile($player_id, $use) {
+        $this->checkAction('useSpecialBattle');
         if ($use) {
             $this->playSpecialTile($player_id);
         }
@@ -883,9 +925,6 @@ class Perikles extends Table
         $t = $special['tile'];
 
         switch ($t) {
-            case PERIKLES:
-                $this->playPerikles($player_id);
-                break;
             case BRASIDAS:
                 $this->setGameStateValue(BRASIDAS, 1);
                 break;
@@ -900,19 +939,22 @@ class Perikles extends Table
     /**
      * Play Perikles Special tile.
      */
-    function playPerikles($player_id) {
+    function playPerikles() {
+        $this->checkAction('useSpecial');
+        $player_id = self::getCurrentPlayerId();
+        $this->SpecialTiles->checkSpecialTile($player_id);
         $this->flipSpecialTile($player_id);
         $this->addInfluenceToCity('athens', $player_id, 2);
+        $state = $this->getStateName();
+        $nextState = ($state == "specialTile") ? "nextPlayer" : "continueTurn";
+        $this->gamestate->nextState($nextState);
     }
 
     /**
      * Play the Alkibiades Special tile
      */
     function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
-        // if (!$this->checkAction("useSpecialTile", false)) {
-        //     $this->checkAction("takeInfluence");
-        // }
-         
+        $this->checkAction('useSpecial');
         $player_id = self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, ALKIBIADES);
 
@@ -939,16 +981,16 @@ class Perikles extends Table
         $this->Cities->changeInfluence($to_city2, $owner2, 1);
         $this->alkibiadesNotify($owner1, $from_city1, $to_city1);
         $this->alkibiadesNotify($owner2, $from_city2, $to_city2);
-        if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
-            $this->gamestate->nextState("nextPlayer");
-        }
+
+        $state = $this->getStateName();
+        $nextState = ($state == "specialTile") ? "nextPlayer" : "continueTurn";
+        $this->gamestate->nextState($nextState);
     }
 
     /**
      * Send a notification about a cube being moved between cities.
      */
     function alkibiadesNotify($player_id, $city, $city2) {
-        $players = self::loadPlayersBasicInfos();
         self::notifyAllPlayers("alkibiadesMove", clienttranslate('1 of ${player_name}\'s cubes moved from ${city_name} to ${city_name2}'), array(
             'i18n' => ['city_name', 'city_name2'],
             'player_id' => $player_id,
@@ -965,9 +1007,7 @@ class Perikles extends Table
      * Play Plague special tile.
      */
     function playPlague($city) {
-        // if (!$this->checkAction("useSpecialTile", false)) {
-        //     $this->checkAction("takeInfluence");
-        // }
+        $this->checkAction('useSpecial');
         $player_id = self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, PLAGUE);
 
@@ -998,9 +1038,9 @@ class Perikles extends Table
                 }
             }
         }
-        if ($player_id == self::getActivePlayerId() && $this->getStateName() == "specialTile") {
-            $this->gamestate->nextState("nextPlayer");
-        }
+        $state = $this->getStateName();
+        $nextState = ($state == "specialTile") ? "nextPlayer" : "continueTurn";
+        $this->gamestate->nextState($nextState);
     }
 
     /**
@@ -1008,10 +1048,7 @@ class Perikles extends Table
      * @param {string} revoltlocation "sparta" or a tile location
      */
     function playSlaveRevolt($revoltlocation) {
-        // if (!$this->checkAction("useSpecialTile", false)) {
-        //     $this->checkAction("assignUnits");
-        // }
-        
+        $this->checkAction('useSpecial');
         // sanity check - there is a Sparta leader
         $sparta_leader = $this->Cities->getLeader("sparta");
         if (empty($sparta_leader)) {
@@ -1061,7 +1098,10 @@ class Perikles extends Table
             'location_name' => $location_name,
             'sparta_player' => $sparta_leader,
         ));
-        $this->gamestate->nextState("commitContinue");
+
+        $state = $this->getStateName();
+        $nextState = ($state == "specialTile") ? "nextPlayer" : "continueCommit";
+        $this->gamestate->nextState($nextState);
     }
 
     /**
@@ -1166,7 +1206,7 @@ class Perikles extends Table
         $player_id = self::getActivePlayerId();
         $this->addInfluenceToCity($city, $player_id, 1);
         $state = "nextPlayer";
-        if ($this->SpecialTiles->canPlaySpecial($player_id, "influence")) {
+        if ($this->SpecialTiles->canPlaySpecial($player_id, "influence_phase")) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -1220,7 +1260,7 @@ class Perikles extends Table
             'candidate' => $c,
             'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
-        $state = $this->SpecialTiles->canPlaySpecial($actingplayer, "influence") ? "useSpecial" : "nextPlayer";
+        $state = $this->SpecialTiles->canPlaySpecial($actingplayer, "influence_phase") ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
     }
@@ -1303,7 +1343,7 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'candidate_id', 'city']
             ));
         }
-        $state = $this->SpecialTiles->canPlaySpecial($player_id, "influence") ? "useSpecial" : "nextPlayer";
+        $state = $this->SpecialTiles->canPlaySpecial($player_id, "influence_phase") ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
     }
@@ -1326,7 +1366,11 @@ class Perikles extends Table
         } else {
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
-        $this->gamestate->nextState("nextPlayer");
+        $state = "nextPlayer";
+        if ($this->SpecialTiles->canPlaySpecial($player_id, "commit_phase")) {
+            $state = "useSpecial";
+        }
+        $this->gamestate->nextState($state);
     }
 
     /**
@@ -1452,6 +1496,7 @@ class Perikles extends Table
                 throw new BgaVisibleSystemException("no valid counter found for $city"); // NOI18N
             }
         }
+        $this->gamestate->nextState();
     }
 
     /**
@@ -1522,6 +1567,8 @@ class Perikles extends Table
         // Do I control this city? If not, I need permission from defender
         if (!$this->Cities->isLeader($player_id, $city)) {
             if (!$this->Locations->hasDefendPermission($player_id, $location)) {
+                $tile = $this->Locations->getTile($location);
+                $this->setGameStateValue("commit_slot", $tile['slot']);
                 $this->gamestate->nextState("askPermission");
             }
         }
@@ -2157,7 +2204,7 @@ class Perikles extends Table
             $state = "assassinate";
         } else if ($type == 'candidate') {
             $state = "candidate";
-        } else if ($this->SpecialTiles->canPlaySpecial($player_id, "influence")) {
+        } else if ($this->SpecialTiles->canPlaySpecial($player_id, "influence_phase")) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState( $state );
@@ -2358,7 +2405,6 @@ class Perikles extends Table
      */
     function stRequestResponse() {
         $next_player = $this->getGameStateValue("commit_player");
-        // clear info
         $this->gamestate->changeActivePlayer( $next_player );
         $this->gamestate->nextState();
     }
@@ -2589,32 +2635,22 @@ class Perikles extends Table
         self::incStat(1, 'turns_number');
         $state = $this->isEndGame() ? "endGame" : "nextTurn";
 
-        $players = self::loadPlayersBasicInfos();
         // add statues
-        foreach ($this->Cities->cities() as $cn) {
-            $leader = $this->Cities->getLeader($cn);
-            if (!empty($leader)) {
-                $statues = $this->Cities->addStatue($leader, $cn);
-                self::notifyAllPlayers("addStatue", clienttranslate('Statue to ${player_name} erected in ${city_name}'), array(
-                    'i18n' => ['city_name'],
-                    'city' => $cn,
-                    'city_name' => $this->Cities->getNameTr($cn),
-                    'player_id' => $leader,
-                    'statues' => $statues,
-                    'player_name' => $players[$leader]['player_name'],
-                    'preserve' => ['player_id', 'city'],
-                ));
-            }
-        }
+        $this->leadersToStatues();
         $this->Cities->clearLeaders();
         $this->Locations->clearBattleStatus();
+        $this->returnPlayersMilitary();
+
         $this->setGameStateValue("commit_player", 0);
+        $this->setGameStateValue("commit_slot", 0);
+
         if ($state == "nextTurn") {
             // reshuffle Influence deck and deal new cards
             $this->setGameStateValue("influence_phase", 1);
             $this->dealNewInfluence();
             $this->dealNewLocations();
         }
+
         $this->gamestate->nextState($state);
     }
 
@@ -2721,8 +2757,11 @@ class Perikles extends Table
                 case 'commitForces':
                     $this->sendRandomUnits($active_player);
                     break;
+                case 'requestResponse':
+                    $this->respondRequest(false);
+                    break;
                 case 'specialTile':
-                    $this->useSpecialTile($active_player, false);
+                    $this->specialTilePass($active_player);
                     break;
                 case 'specialBattleTile':
                     $this->useSpecialBattleTile($active_player, false);

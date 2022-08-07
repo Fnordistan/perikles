@@ -24,6 +24,7 @@ class PeriklesBattles extends APP_GameClass
    * Get all counters belonging to a player.
    * Includes check for Persian counters.
    * @param {string} player_id
+   * @return {array} of counters
    */
   public function getPlayerCounters($player_id) {
     $counters = [];
@@ -274,6 +275,7 @@ class PeriklesBattles extends APP_GameClass
    * Return all counters from a locaton to their respective cities.
    * Only does db changes, not clientside notifications.
    * @param {string} location
+   * @return {array} the counters that were returned
    */
   public function returnCounters($location) {
     $counters = $this->getCounters($location);
@@ -282,6 +284,7 @@ class PeriklesBattles extends APP_GameClass
       $city = $counter['city'];
       self::DbQuery("UPDATE MILITARY SET location=\"$city\", battlepos=0 WHERE id=$id");
     }
+    return $counters;
   }
 
     /**

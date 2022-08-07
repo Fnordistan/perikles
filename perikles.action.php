@@ -116,13 +116,20 @@ class action_perikles extends APP_GameAction
     }
 
     /**
-     * Player plays Special Tile or declines
+     * Player passes on a Special Tile.
      */
-    public function specialTile() {
+    public function passspecialtile() {
       self::setAjaxMode();     
-      $player_id = self::getArg( "player", AT_alphanum, true );
-      $use = self::getArg( "use", AT_bool, true );
-      $this->game->useSpecialTile($player_id, $use);
+      $this->game->specialTilePass();
+      self::ajaxResponse( );
+    }
+
+    /**
+     * Player clicked the Perikles special tile button.
+     */
+    public function perikles() {
+      self::setAjaxMode();     
+      $this->game->playPerikles();
       self::ajaxResponse( );
     }
 

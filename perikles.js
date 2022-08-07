@@ -1327,6 +1327,11 @@ function (dojo, declare) {
                       
             if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
+                    case 'takeInfluence':
+                        if (args._private.special) {
+                            this.addSpecialTileButton();
+                        }
+                        break;
                     case 'spartanChoice':
                         for (player_id in this.gamedatas.players) {
                             this.addActionButton( 'choose_'+player_id, this.decorator.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
@@ -1348,14 +1353,17 @@ function (dojo, declare) {
                         this.addPermissionButtons();
                         break;
                     case 'specialTile':
-                        this.addSpecialPassButton();
+                        if (args._private.special) {
+                            this.addSpecialTileButton();
+                            this.addSpecialPassButton();
+                        }
                         break;
                     case 'specialBattleTile':
                         if (args._private.special) {
                             const location = args._private.location;
                             this.addSpecialTileButton(location);
+                            this.addSpecialPassButton(true);
                         }
-                        this.addSpecialPassButton(true);
                         break;
                     case 'takeLoss':
                         const type = args.type;
@@ -1366,16 +1374,6 @@ function (dojo, declare) {
                 }
             } else if ((stateName == 'requestResponse') && (this.player_id == args.commit_player)) {
                 this.addCancelPermissionRequest();
-            }
-
-            // buttons that can be added even for non-current player
-            switch( stateName ) {
-                case 'takeInfluence':
-                case 'specialTile':
-                    if (args._private.special) {
-                        this.addSpecialTileButton();
-                    }
-                    break;
             }
         },
 
@@ -1427,7 +1425,7 @@ function (dojo, declare) {
                 const button = $(id);
                 button.classList.add("prk_casualty_btn");
                 button.addEventListener('click', () => {
-                    this.onSelectCasualty(city);
+                    this.onSelectCasualty(c);
                 });
             }
         },
@@ -1501,7 +1499,7 @@ function (dojo, declare) {
                     this.specialBattleTile(true);
                     break;
                 case PERIKLES:
-                    this.specialTile(true);
+                    this.onPerikles();
             };
         },
 
@@ -1550,7 +1548,7 @@ function (dojo, declare) {
                 if (isBattle) {
                     this.specialBattleTile(false);
                 } else {
-                    this.specialTile(false);
+                    this.specialTilePass();
                 }
             }, null, false, 'red' );
         },
@@ -2370,11 +2368,9 @@ function (dojo, declare) {
          * Player plays or declines to play Special Tile.
          * @param {bool} use
          */
-        specialTile: function(bUse) {
-            if (this.checkPossibleActions("useSpecialTile", true)) {
-                this.ajaxcall( "/perikles/perikles/specialTile.html", {
-                    player: this.player_id,
-                    use: bUse,
+        specialTilePass: function(bUse) {
+            if (this.checkPossibleActions("useSpecial", true)) {
+                this.ajaxcall( "/perikles/perikles/passspecialtile.html", {
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
                 this.restoreDescriptionOnMyTurn();
@@ -2386,7 +2382,7 @@ function (dojo, declare) {
          * @param {bool} bUse 
          */
         specialBattleTile: function(bUse) {
-            if (this.checkPossibleActions("useSpecialBattleTile", true)) {
+            if (this.checkPossibleActions("useSpecialBattle", true)) {
                 this.ajaxcall( "/perikles/perikles/specialBattleTile.html", {
                     player: this.player_id,
                     use: bUse,
@@ -2400,8 +2396,21 @@ function (dojo, declare) {
          * Player clicked a City to Plague.
          * @param {string} city 
          */
+         onPerikles: function(city) {
+            if (this.checkPossibleActions("useSpecial", true)) {
+                this.ajaxcall( "/perikles/perikles/perikles.html", { 
+                    lock: true 
+                }, this, function( result ) {  }, function( is_error) { } );
+                this.restoreDescriptionOnMyTurn();
+            }
+        },
+
+        /**
+         * Player clicked a City to Plague.
+         * @param {string} city 
+         */
         onPlagueCity: function(city) {
-            if (this.checkPossibleActions("useSpecialTile", true)) {
+            if (this.checkPossibleActions("useSpecial", true)) {
                 this.ajaxcall( "/perikles/perikles/plague.html", { 
                     city: city,
                     lock: true 
@@ -2414,7 +2423,7 @@ function (dojo, declare) {
          * Player clicked Confirm on Alkibiades.
          */
         onAlkibiadesMove: function() {
-            if (this.checkPossibleActions("useSpecialTile", true)) {
+            if (this.checkPossibleActions("useSpecial", true)) {
                 const cubes = this.getAlkibiadesCubesToMove();
                 if (cubes.length == 2) {
                     this.ajaxcall( "/perikles/perikles/alkibiades.html", {
@@ -2438,7 +2447,7 @@ function (dojo, declare) {
          * @param {string} loc sparta or battle location
          */
         onSlaveRevolt: function(loc) {
-            if (this.checkPossibleActions("useSpecialTile", true)) {
+            if (this.checkPossibleActions("useSpecial", true)) {
                 this.ajaxcall( "/perikles/perikles/slaverevolt.html", {
                     location: loc,
                     lock: true
@@ -2525,27 +2534,33 @@ function (dojo, declare) {
             dojo.subscribe( 'scoreCubes', this, "notif_scoreCubes" );
             dojo.subscribe( 'scoreStatues', this, "notif_scoreStatues" );
 
-            // battle notifications
+            // pre-battle/commits
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
             this.notifqueue.setSynchronous( 'takeMilitary', 2500 );
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
             this.notifqueue.setSynchronous( 'takePersians', 2500 );
+            dojo.subscribe( 'rejectPermission', this, "notif_rejectPermission");
             dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
             this.notifqueue.setSynchronous( 'sendMilitary', 2500 );
+
+            // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
-            this.notifqueue.setSynchronous( 'unclaimedTile', 2500 );
+            this.notifqueue.setSynchronous( 'unclaimedTile', 2000 );
             dojo.subscribe( 'claimTile', this, "notif_claimTile");
-            this.notifqueue.setSynchronous( 'claimTile', 2500 );
+            this.notifqueue.setSynchronous( 'claimTile', 2000 );
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
             this.notifqueue.setSynchronous( 'returnMilitary', 2500 );
+            dojo.subscribe( 'returnMilitaryPool', this, "notif_returnMilitaryPool");
+            this.notifqueue.setSynchronous( 'returnMilitaryPool', 2500 );
             dojo.subscribe( 'toDeadpool', this, "notif_toDeadpool");
             this.notifqueue.setSynchronous( 'toDeadpool', 2500 );
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
-            this.notifqueue.setSynchronous( 'crtOdds', 2500 );
+            this.notifqueue.setSynchronous( 'crtOdds', 1000 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
-            this.notifqueue.setSynchronous( 'takeToken', 2500 );
+            this.notifqueue.setSynchronous( 'takeToken', 2000 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
+
 
             // special tiles
             dojo.subscribe( 'useTile', this, "notif_useTile");
@@ -2745,6 +2760,15 @@ function (dojo, declare) {
         },
 
         /**
+         * Clear committed units, player must resend
+         * @param {Object} notif 
+         */
+        notif_rejectPermission: function() {
+            this.gamedatas.gamestate.args = {};
+            this.gamedatas.gamestate.args.committed = {};
+        },
+
+        /**
          * Send military units to battle tiles.
          * @param {Object} notif 
          */
@@ -2867,7 +2891,7 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_returnMilitary: function(notif) {
-            slot = notif.args.slot;
+            const slot = notif.args.slot;
             const counters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...counters].forEach(c => {
                 const counter_name = c.id;
@@ -2876,6 +2900,47 @@ function (dojo, declare) {
                 this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
                 new perikles.counter(city, unit, strength, id).addToStack();
             });
+        },
+
+        /**
+         * Return military from a player's pools.
+         * @param {Object} notif 
+         */
+         notif_returnMilitaryPool: function(notif) {
+            const player_id = notif.args.player_id;
+            if (player_id == this.player_id) {
+                // moving counters from own visible board
+                const mycounters = $('mymilitary').getElementsByClassName("prk_military");
+                [...mycounters].forEach(c => {
+                    const counter_name = c.id;
+                    const [city, unit, strength, _, id] = counter_name.split('_');
+                    this.counterFromPlayerBoard(c, city, unit, strength, id);
+                });
+            } else {
+                const counters = notif.args.counters;
+                [...counters].forEach(c => {
+                    const counter = this.militaryToCounter(c);
+                    const counter_div = counter.toDiv(0, 0);
+                    counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
+                    this.counterFromPlayerBoard(counterObj, counter['city'], counter['type'], counter['strength'], counter['id']);
+                });
+            }
+            // hide military board
+            $('military_board').style['display'] = 'none';
+        },
+
+        /**
+         * Move military token from a player's board to its city
+         * @param {Object} counter
+         * @param {string} city
+         * @param {string} type
+         * @param {string} strength
+         * @param {string} id
+         */
+         counterFromPlayerBoard: function(counter, city, type, strength, id) {
+            const city_military = city+"_military";
+            this.slideToObjectAndDestroy(counter, city_military, 1000, 1500);
+            new perikles.counter(city, type, strength, id).addToStack();
         },
 
         /**
@@ -2973,7 +3038,7 @@ function (dojo, declare) {
         },
 
         /**
-         * 
+         * Send all Battle tokens back to center for next battle.
          * @param {Object} notif 
          */
         notif_resetBattleTokens: function(notif) {
