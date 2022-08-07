@@ -905,6 +905,9 @@ class Perikles extends Table
 
     /**
      * A player clicked a Special Tile Button or the Pass button during battle.
+     * Only applies to special BATTLE tiles
+     * @param {string} player_id
+     * @param {bool} use true if use, false if pass
      */
     function useSpecialBattleTile($player_id, $use) {
         $this->checkAction('useSpecialBattle');
@@ -1221,7 +1224,7 @@ class Perikles extends Table
         $city_name = $this->Cities->getNameTr($city);
         // player must have a cube in the city
         if (!$this->Cities->hasInfluence($actingplayer, $city)) {
-            throw new BgaUserException(sprintf(self::_("You cannot propose a Candidate in %s: you have no Influence cubes in this city"), $city_name));
+            throw new BgaUserException(sprintf(self::_("You cannot propose a Candidate in %s: you have no Influence cubes in that city"), $city_name));
         }
 
         $players = self::loadPlayersBasicInfos();

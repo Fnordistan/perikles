@@ -1301,6 +1301,7 @@ function (dojo, declare) {
                     this.decorator.stripClassName("prk_city_active");
                     this.decorator.stripClassName("prk_candidate_space_active");
                     this.decorator.stripClassName("prk_cubes_active");
+                    this.last_cube = null;
                     break;
                 case 'assassinate':
                     this.decorator.stripClassName("prk_cubes_remove");
@@ -1823,12 +1824,18 @@ function (dojo, declare) {
             const msg = this.getChooseSidesMsg(location, type);
             this.setDescriptionOnMyTurn(msg, {special: true});
             this.removeActionButtons();
-            this.addActionButton( "attacker_btn", _('Attackers'), () => {
-                console.log("Attackers");
-            }, null, null, 'blue');
-            this.addActionButton( "defender_btn", _('Defenders'), () => {
-                console.log("Defenders");
-            }, null, null, 'blue');
+            // check whether a side already has a Victory Token: may not add to that side
+
+            if ($('attacker_battle_tokens').childElementCount == 0) {
+                this.addActionButton( "attacker_btn", _('Attackers'), () => {
+                    console.log("Attackers");
+                }, null, null, 'blue');
+            }
+            if ($('defender_battle_tokens').childElementCount == 0) {
+                this.addActionButton( "defender_btn", _('Defenders'), () => {
+                    console.log("Defenders");
+                }, null, null, 'blue');
+            }
 
             this.addSpecialTileCancel(special, location);
         },
@@ -1899,12 +1906,12 @@ function (dojo, declare) {
         /**
          * Does current player have a cube in the city?
          * @param {string} city 
-         * @param {bool} candidates including candidates? default: false
+         * @param {bool} bCheckCandidates including candidates? default: false
          * @returns true if this player has a cube in city
          */
-        hasCubeInCity: function(city, candidates=false) {
+        hasCubeInCity: function(city, bCheckCandidates=false) {
             const player_id = this.player_id;
-            if (candidates) {
+            if (bCheckCandidates) {
                 if (document.getElementById(player_id+"_"+city+"_a")) {
                     return true;
                 }
@@ -1913,6 +1920,10 @@ function (dojo, declare) {
                 }
             }
             if ($(city+"_cubes_"+player_id).getElementsByClassName("prk_cube").length > 0) {
+                return true;
+            }
+            // edge case: I might have just added a cube to this city but the element hasn't been placed yet
+            if (this.isLastCubeAdded(player_id, city)) {
                 return true;
             }
             return false;
@@ -2087,6 +2098,29 @@ function (dojo, declare) {
                 $('commit_cancel_btn').classList.add('disabled');
                 $('commit_cancel_btn').style['display'] = 'none';
             }
+        },
+
+        /**
+         * Memoize last cube added for special case where someone just added a cube to a city they want to propose a candidate in.
+         * @param {string} player_id 
+         * @param {string} city 
+         */
+        lastCubeAdded(player_id, city) {
+            this.last_cube = {"player_id": player_id, "city": city};
+        },
+
+        /**
+         * Check when the moving of last cube to a city might not have caught up yet.
+         * @param {string*} player_id 
+         * @param {string} city 
+         * @returns true if this player just added a cube to city
+         */
+        isLastCubeAdded(player_id, city) {
+            let is_last = false;
+            if (this.last_cube) {
+                is_last = (this.last_cube['player_id'] == player_id) && (this.last_cube['city'] == city);
+            }
+            return is_last;
         },
 
         ///////////////////////////////////////////////////
@@ -2585,6 +2619,7 @@ function (dojo, declare) {
             const from_div = $(player_id+'_player_cards');
             const to_div = $(city+'_cubes_'+player_id);
             const num = to_div.childElementCount;
+            this.lastCubeAdded(player_id, city);
             for (let c = 0; c < cubes; c++) {
                 const i = num+c+1;
                 const cube = this.createInfluenceCube(player_id, city, i);
@@ -2711,6 +2746,7 @@ function (dojo, declare) {
             const to_div = $(tocity+'_cubes_'+owner);
             const i = to_div.childElementCount+1;
             const cube = this.createInfluenceCube(owner, tocity, i);
+            this.lastCubeAdded(owner, tocity);
             this.moveCube(cube, from_div, to_div, 1000);
         },
 

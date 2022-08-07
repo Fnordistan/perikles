@@ -127,7 +127,8 @@ class PeriklesBattles extends APP_GameClass
 
   /**
    * Given a Special tile name, check whether it can be used at the current battle.
-   * Only checks unit types, not victory tokens (for Thessalanians and Persian Fleet)
+   * Only checks unit types, not victory tokens (for Thessalanians and Persian Fleet).
+   * We already know there is a battle (i.e., fighters on both sides).
    * @param {string} name of tile
    * @return true if this tile is eligible to use at this combat
    */
@@ -233,11 +234,11 @@ class PeriklesBattles extends APP_GameClass
   }
 
   /**
-   * Get total counter strength for one side.
+   * Get total counter strength for one side. Applies BRASIDAS or PHORMIO bonus if applicable.
    * @param {int} ATTACKER or DEFENDER
    * @param {location} tile
    * @param {type} HOPLITE or TRIREME
-   * @param {string} bonus true if PHORMIO or BRASIDAS bonus
+   * @param {string} bonus true if PHORMIO or BRASIDAS bonus in effect
    */
   private function totalCounterStrength($side, $location, $type, $bonus) {
     $counters = ($side == ATTACKER) ? $this->getAttackingCounters($location, $type) : $this->getDefendingCounters($location, $type);
