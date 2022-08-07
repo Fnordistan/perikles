@@ -404,8 +404,8 @@ function (dojo, declare) {
             let tt = _("${player_name} is Leader of ${city_name}");
             if (type == "statue") {
                 counter_zone = $(city+"_statues");
-                counter_zone.childElementCount;
-                tt = _("${player_name} Statue in ${city_name}");
+                s = counter_zone.childElementCount;
+                tt = _("Statue of ${player_name} in ${city_name}");
             }
             const leaderhtml = this.format_block('jstpl_leader', {city: city, type: type, num: s, color: this.decorator.playerColor(player_id)});
             const leader = dojo.place(leaderhtml, counter_zone);

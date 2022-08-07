@@ -79,11 +79,11 @@
 
 // Javascript HTML templates
 
-const jstpl_influence_tile = '<div id="${city}_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; margin: ${margin};"></div>';
+const jstpl_influence_tile = '<div id="${city}_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; margin: ${margin}; outline: 4px groove var(--color_${city});"></div>';
 
-const jstpl_influence_back = '<div id="cardback_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; position: absolute; margin: -${m}px ${m}px;"></div>';
+const jstpl_influence_back = '<div id="cardback_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; position: absolute; margin: -${m}px ${m}px; outline: 1px gray ridge;"></div>';
 
-const jstpl_defeat = '<div id="${city}_defeat_${num}" class="prk_defeat_counter"></div>';
+const jstpl_defeat = '<div id="${city}_defeat_${num}" class="prk_defeat_counter" title="Defeat counter"></div>';
 
 const jstpl_defeat_log = '<div id="${city}_defeat_${num}_log" class="prk_defeat_counter_log"></div>';
 

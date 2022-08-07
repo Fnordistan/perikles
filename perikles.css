@@ -52,7 +52,7 @@
     --color_argos: #A9D035;
     --color_thebes: #F8F654;
     --color_megara: #FF633A;
-    --color_anycity: #9A5200;
+    --color_any: #9A5200;
     /* tokens */
     --counter_dim: 52px;
     /* board has been blown up to 2x size */
@@ -282,7 +282,7 @@
     position: relative;
     width: calc(var(--influence_w)*var(--influence_scale));
     height: calc(var(--influence_h)*var(--influence_scale));
-    outline: 1px gray ridge;
+    /* outline: 1px gray ridge; */
 }
 
 .prk_influence_tile_active {
