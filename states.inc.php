@@ -19,12 +19,14 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("SETUP", 1);
 
     // Influence phase
-    define("TAKE_INFLUENCE", 2);
-    define("PLACE_INFLUENCE", 3);
-    define("CHOOSE_PLACE_INFLUENCE", 4);
-    define("ASSIGN_CANDIDATE", 5);
-    define("ASSASSINATE", 6);
-    define("NEXT_PLAYER", 7);
+    define("INITIAL_INFLUENCE", 2);
+    define("CHOOSE_INITIAL_INFLUENCE", 3);
+    define("TAKE_INFLUENCE", 4);
+    define("PLACE_INFLUENCE", 5);
+    define("CHOOSE_PLACE_INFLUENCE", 6);
+    define("ASSIGN_CANDIDATE", 7);
+    define("ASSASSINATE", 8);
+    define("NEXT_PLAYER", 9);
 
     // Election phase
     define("PROPOSE_CANDIDATE", 10);
@@ -63,12 +65,30 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
 $machinestates = array(
 
     // The initial state. Please do not modify.
-    1 => array(
+    SETUP => array(
         "name" => "gameSetup",
         "description" => "",
         "type" => "manager",
         "action" => "stGameSetup",
-        "transitions" => array( "" => TAKE_INFLUENCE )
+        "transitions" => array( "" => CHOOSE_INITIAL_INFLUENCE )
+    ),
+
+    INITIAL_INFLUENCE => array(
+    	"name" => "initialInfluence",
+    	"description" => "",
+    	"type" => "game",
+    	"action" => "stInitialInfluence",
+    	"transitions" => array( "nextPlayer" => CHOOSE_INITIAL_INFLUENCE, "startGame" => TAKE_INFLUENCE )
+    ),
+
+    CHOOSE_INITIAL_INFLUENCE => array(
+    	"name" => "chooseInitialInfluence",
+    	"description" => clienttranslate('${actplayer} must choose a city to add ${count} starting Influence cube'),
+    	"descriptionmyturn" => clienttranslate('You must choose a city to add ${count} starting Influence cube'),
+        "args" => "argsInitial",
+    	"type" => "activeplayer",
+    	"possibleactions" => array( "placeAnyCube" ),
+    	"transitions" => array( "nextPlayerInitial" => INITIAL_INFLUENCE )
     ),
 
     TAKE_INFLUENCE => array(

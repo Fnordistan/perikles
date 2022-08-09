@@ -65,7 +65,9 @@ class Perikles extends Table
         parent::__construct();
         
 
-        self::initGameStateLabels( array( 
+        self::initGameStateLabels( array(
+            "initial_influence" => 70,
+
             "argos_leader" => 10,
             "argos_a" => 11,
             "argos_b" => 12,
@@ -163,6 +165,7 @@ class Perikles extends Table
                 self::setGameStateInitialValue( $cn."_".$lbl, 0 );
             }
         }
+        self::setGameStateInitialValue("initial_influence", 0);
         self::setGameStateInitialValue("last_influence_slot", 0);
         self::setGameStateInitialValue("deadpool_picked", 0);
         self::setGameStateInitialValue("spartan_choice", 0);
@@ -174,7 +177,7 @@ class Perikles extends Table
         self::setGameStateInitialValue(BRASIDAS, 0);
         self::setGameStateInitialValue(PHORMIO, 0);
         // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with candidate nominations.
-        self::setGameStateInitialValue("influence_phase", 1);
+        self::setGameStateInitialValue("influence_phase", 0);
         // when we are in the committing phase. Start with first commit, end with battle phase.
         self::setGameStateInitialValue("commit_phase", 0);
         // keep track of who was the committer when asking for defend permissions
@@ -993,6 +996,7 @@ class Perikles extends Table
      * Send a notification about a cube being moved between cities.
      */
     function alkibiadesNotify($player_id, $city, $city2) {
+        $players = self::loadPlayersBasicInfos();
         self::notifyAllPlayers("alkibiadesMove", clienttranslate('1 of ${player_name}\'s cubes moved from ${city_name} to ${city_name2}'), array(
             'i18n' => ['city_name', 'city_name2'],
             'player_id' => $player_id,
@@ -1208,7 +1212,9 @@ class Perikles extends Table
         $player_id = self::getActivePlayerId();
         $this->addInfluenceToCity($city, $player_id, 1);
         $state = "nextPlayer";
-        if ($this->SpecialTiles->canPlaySpecial($player_id, "influence_phase")) {
+        if ($this->getGameStateValue("influence_phase") == 0) {
+            $state = "nextPlayerInitial";
+        } elseif ($this->SpecialTiles->canPlaySpecial($player_id, "influence_phase")) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -1520,18 +1526,25 @@ class Perikles extends Table
 
         // does this location belong to my own city?
         if ($this->Cities->isLeader($player_id, $city)) {
-            throw new BgaUserException(sprintf(self::_("%s cannot attack a city you control!"), $unit_desc));
+            throw new BgaUserException(sprintf(self::_("%s cannot attack a location owned by a city you control!"), $unit_desc));
         }
         // is this unit allied with the defender (including because a unit was already played as a defender)?
         if ($this->Cities->isAlly($counter['city'], $city)) {
-            throw new BgaUserException(sprintf(self::_("%s cannot attack a city it is allied with!"), $unit_desc));
+            throw new BgaUserException(sprintf(self::_("%s cannot attack a location owned by an allied city!"), $unit_desc));
+        }
+        // is it allied with any of the other defenders?
+        $defenders = $this->Cities->getAllDefenders($location, $city);
+        foreach($defenders as $def) {
+            if ($this->Cities->isAlly($counter['city'], $def)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot attack a location being defended by an allied city!"), $unit_desc));
+            }
         }
 
         // is counter at war with any of the other attackers?
         $attackers = $this->Cities->getAllAttackers($location);
         foreach($attackers as $att) {
             if ($this->Cities->atWar($counter['city'], $att)) {
-                throw new BgaUserException(sprintf(self::_("%s cannot join battle with hostile units"), $unit_desc));
+                throw new BgaUserException(sprintf(self::_("%s cannot join battle with a city it is at war with!"), $unit_desc));
             }
         }
 
@@ -1540,7 +1553,6 @@ class Perikles extends Table
             throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
         }
         // passed all checks. Declare war with all defenders.
-        $defenders = $this->Cities->getAllDefenders($location, $city);
         foreach($defenders as $def) {
             $this->Cities->setWar($counter['city'], $def);
         }
@@ -1565,9 +1577,17 @@ class Perikles extends Table
         $defenders = $this->Cities->getAllDefenders($location, $city);
         foreach($defenders as $def) {
             if ($this->Cities->atWar($counter['city'], $def)) {
-                throw new BgaUserException(sprintf(self::_("%s cannot join battle with hostile units"), $unit_desc));
+                throw new BgaUserException(sprintf(self::_("%s cannot join battle with a city it is at war with!"), $unit_desc));
             }
         }
+        // am I allied with any of the attackers?
+        $attackers = $this->Cities->getAllAttackers($location);
+        foreach($attackers as $att) {
+            if ($this->Cities->isAlly($counter['city'], $att)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot defend a location being attacked by an allied city!"), $unit_desc));
+            }
+        }
+
         $city = $this->Locations->getCity($location);
         // Do I control this city? If not, I need permission from defender
         if (!$this->Cities->isLeader($player_id, $city)) {
@@ -1584,7 +1604,6 @@ class Perikles extends Table
         }
 
         // passed all checks. Declare war with all attackers
-        $attackers = $this->Cities->getAllAttackers($location);
         foreach($attackers as $att) {
             $this->Cities->setWar($counter['city'], $att);
         }
@@ -1969,6 +1988,24 @@ class Perikles extends Table
     */
 
     /**
+     * During initial influence cube choice, are we choosing first or second cube?
+     */
+    function argsInitial() {
+        $players = self::loadPlayersBasicInfos();
+        $nbr = count($players);
+        $init_count = $this->getGameStateValue("initial_influence");
+        $first = clienttranslate("first");
+        $second = clienttranslate("second");
+
+        $countinf = ($init_count < $nbr) ? $first : $second;
+
+        return array(
+            'i18n' => ['count'],
+            'count' => $countinf,   
+        );
+    }
+
+    /**
      * Can the current active player play a special card during this Influence phase.
      */
     function argsSpecial() {
@@ -1998,7 +2035,7 @@ class Perikles extends Table
         }
         return array(
             '_private' => $private,
-            "i18n" => ['battle_location'],
+            'i18n' => ['battle_location'],
             'battle_location' => $this->Locations->getName($location),
         );
     }
@@ -2052,7 +2089,7 @@ class Perikles extends Table
         $player_id = self::getActivePlayerId();
         $deadpool = $this->getDeadPool($player_id);
         return array(
-            'length' => count($deadpool),
+            'deadpool' => $deadpool,
         );
     }
 
@@ -2080,6 +2117,27 @@ class Perikles extends Table
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state actions
 ////////////
+
+    /**
+     * Each player adds 2 influence cubes at start of game.
+     */
+    function stInitialInfluence() {
+        $state = "nextPlayer";
+        $this->incGameStateValue("initial_influence", 1);
+        $init_count = $this->getGameStateValue("initial_influence");
+        $players = self::loadPlayersBasicInfos();
+        $nbr = count($players);
+
+        if ($init_count == ($nbr*2)) {
+            $this->setGameStateValue("influence_phase", 1);
+            $state = "startGame";
+        }
+
+        $player_id = self::activeNextPlayer();
+        self::giveExtraTime( $player_id );
+
+        $this->gamestate->nextState($state);
+    }
 
     /**
      * Handles next player action through Influence phase.
@@ -2784,15 +2842,15 @@ class Perikles extends Table
 
         // if ($state['type'] == "activeplayer") {
             switch ($statename) {
+                case 'chooseInitialInfluence':
+                    $this->placeRandomInfluenceCube();
+                    break;
                 case 'takeInfluence':
                     $tile = $this->chooseRandomTile($active_player);
                     $this->takeInfluence($tile['id']);
                     break;
                 case 'choosePlaceInfluence':
-                    $cities = $this->Cities->cities();
-                    shuffle($cities);
-                    $city = $cities[0];
-                    $this->placeAnyCube($city);
+                    $this->placeRandomInfluenceCube();
                     break;
                 case 'proposeCandidates':
                     // should have already checked that it's possible
@@ -2833,6 +2891,16 @@ class Perikles extends Table
             }
             return;
         // }
+    }
+
+    /**
+     * Choose a random city to place a cube in.
+     */
+    function placeRandomInfluenceCube() {
+        $cities = $this->Cities->cities();
+        shuffle($cities);
+        $city = $cities[0];
+        $this->placeAnyCube($city);
     }
 
     /**

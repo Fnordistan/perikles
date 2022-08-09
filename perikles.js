@@ -1274,7 +1274,13 @@ function (dojo, declare) {
                         this.gamedatas.gamestate.args.committed = {};
                     }
                     break;
-                case 'dummmy':
+                case 'takeDead':
+                    if (this.isCurrentPlayerActive()) {
+                        const deadpool = args.deadpool;
+                        debugger;
+                    }
+                    break;
+                    case 'dummmy':
                     break;
             }
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
