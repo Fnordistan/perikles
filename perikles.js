@@ -2830,8 +2830,11 @@ function (dojo, declare) {
          */
          notif_takePersians: function(notif) {
             const military = notif.args.military;
-            const player_id = notif.args.player_id;
-            for (const mil of military) {
+            const persianleaders = notif.args.persianleaders;
+
+            // in case of multiple Persians, just show counters moving to first
+            const player_id = this.isPersianLeader(this.player_id) ? this.player_id : persianleaders[0];
+            for (let mil of military) {
                 mil['location'] = player_id;
                 this.counterToPlayerBoard(mil);
             }

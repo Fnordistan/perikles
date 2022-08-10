@@ -555,11 +555,13 @@ class Perikles extends Table
     function movePersianUnits($persianleaders) {
         $persianunits = $this->Battles->claimPersians();
 
-        foreach($persianleaders as $persian) {
-            // send notification that moves units from city stack to player's military zone
-            self::notifyAllPlayers("takePersians", '', array(
-                'player_id' => $persian,
+        // need to send individual notifications to each player
+        // because Persian stacks may be shared
+        $players = self::loadPlayersBasicInfos();
+        foreach (array_keys($players) as $player_id) {
+            self::notifyPlayer($player_id, "takePersians", '', array(
                 'military' => $persianunits,
+                'persianleaders' => $persianleaders
             ));
         }
     }
@@ -1275,7 +1277,8 @@ class Perikles extends Table
             'candidate' => $c,
             'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
-        $state = $this->SpecialTiles->canPlaySpecial($actingplayer, "influence_phase") ? "useSpecial" : "nextPlayer";
+        $canusespecial = ($this->getGameStateValue("influence_phase") == 1) && $this->SpecialTiles->canPlaySpecial($actingplayer, "influence_phase");
+        $state = $canusespecial ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
     }
