@@ -685,7 +685,12 @@ function (dojo, declare) {
                     if (spend_cubes_div != null) {
                         let cubehtml = this.createInfluenceCube(this.player_id, 'commit', '');
                         cubehtml = this.decorator.prependStyle(cubehtml, "display: inline-block; margin-left: 5px;");
-                        spend_cubes_div = _("You may spend an Influence cube to send 1 or 2 units from that city")+cubehtml+'<br/>'+spend_cubes_div;
+
+                        let msg = _("You may spend an Influence cube to send an additional 1 or 2 units from that city");
+                        if (this.isPersianLeader(this.player_id)) {
+                            msg = _("You may spend an Influence cube from any city to send an additional 1 or 2 units");
+                        }
+                        spend_cubes_div = msg+cubehtml+'<br/>'+spend_cubes_div;
                         commit_log += spend_cubes_div;
                     }
                 }
@@ -1143,7 +1148,7 @@ function (dojo, declare) {
          onSendUnit: function(id, city, unit, strength, side, battle) {
             // is this an extra unit sent with a cube?
             const commit_city = this.gamedatas.gamestate.args.committed['cube'];
-            const is_extra = (commit_city != null) && (commit_city == city);
+            const is_extra = (commit_city != null) && (commit_city == city || city == "persia");
             this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit, cube: is_extra};
             this.setDescriptionOnMyTurn(_("You must commit forces")+'<br/>committed_forces');
             // add event listeners
@@ -1159,10 +1164,16 @@ function (dojo, declare) {
             // don't unselect anything if < 2
             if (len > 1) {
                 let selectable_city = null;
+                let mil_tag = this.player_id;
                 if (len > 2) {
                     if (commit_city) {
                         if (len == 4) {
-                            selectable_city = commit_city;
+                            if (city == "persia") {
+                                selectable_city = "persia";
+                                mil_tag = "_persia_";
+                            } else {
+                                selectable_city = commit_city;
+                            }
                         } else if (len > 5) {
                             // sanity check 2
                             throw new Error("More than 4 units selected!");
@@ -1175,7 +1186,7 @@ function (dojo, declare) {
                 const mymil = $(mymilitary).getElementsByClassName("prk_military");
                 [...mymil].forEach(m => this.makeSelectable(m, false));
                 if (selectable_city) {
-                    const selunits = $(selectable_city+"_mil_ctnr_"+this.player_id).getElementsByClassName("prk_military");
+                    const selunits = $(selectable_city+"_mil_ctnr_"+mil_tag).getElementsByClassName("prk_military");
                     [...selunits].forEach(s => this.makeSelectable(s));
                 }
             }
@@ -1205,7 +1216,14 @@ function (dojo, declare) {
             // hide other buttons
             $(COMMIT_INFLUENCE_CUBES).innerHTML = this.format_block('jstpl_city_banner', {city: city, city_name: this.getCityNameTr(city)});
             // readd listeners to chosen city
-            const civ_mils = $(city+'_military_'+this.player_id).getElementsByClassName('prk_military');
+            // handle Persians
+            let unit_city = city;
+            let mil_div = this.player_id;
+            if (this.isPersianLeader(this.player_id)) {
+                unit_city = "persia";
+                mil_div = "_persia_";
+            }
+            const civ_mils = $(unit_city+'_military_'+mil_div).getElementsByClassName('prk_military');
             [...civ_mils].forEach(ctr => this.makeSelectable(ctr));
         },
 
@@ -1896,13 +1914,28 @@ function (dojo, declare) {
         },
 
         /**
-         * Does the player have any uncommitted military units in that city?
+         * Is this player a Persian leader?
+         * @param {string} player_id 
+         * @return true if player_id controls Persians
+         */
+        isPersianLeader: function(player_id) {
+            for (const city of CITIES) {
+                if (this.isLeader(player_id, city)) {
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        /**
+         * Does the player have any uncommitted military units in that city? (or Persian)
          * @param {string} player_id 
          * @param {string} city 
          */
         hasAvailableUnits: function(player_id, city) {
+            const mil_div_tag = (city == "persia") ? "_persia_" : player_id;
             for (const u of [HOPLITE, TRIREME]) {
-                if ($(city+'_'+u+'_'+player_id).childElementCount > 0) {
+                if ($(city+'_'+u+'_'+mil_div_tag).childElementCount > 0) {
                     return true;
                 }
             };
@@ -2140,10 +2173,13 @@ function (dojo, declare) {
             let html = null;
             let canSpend = false;
             let civ_btns = "";
+            const is_persian = this.isPersianLeader(this.player_id);
             for (const city of CITIES) {
-                if (this.isLeader(this.player_id, city)) {
+                if (is_persian || this.isLeader(this.player_id, city)) {
                     //any cubes left?
-                    if (this.hasCubeInCity(city) && this.hasAvailableUnits(this.player_id, city)) {
+                    if (this.hasCubeInCity(city)) {
+                        const unit_city = is_persian ? "persia" : city;
+                        canSpend = this.hasAvailableUnits(this.player_id, unit_city);
                         civ_btns += this.format_block('jstpl_city_btn', {city: city, city_name: this.getCityNameTr(city)});
                         canSpend = true;
                     }
@@ -3005,7 +3041,7 @@ function (dojo, declare) {
        },
 
         /**
-         * Counter moved to Deadpool.
+         * Counter moved to Deadpool (or back to stack, for Persians).
          * @param {Object} notif 
          */
         notif_toDeadpool: function(notif) {
@@ -3015,10 +3051,16 @@ function (dojo, declare) {
             const strength = notif.args.strength;
             const location = notif.args.location;
             const counter_id = city+'_'+type+'_'+strength+'_'+id+'_'+location;
-            this.createMilitaryArea(DEAD_POOL, city);
-            const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
-            this.slideToObjectAndDestroy($(counter_id), deadpoolloc, 1000, 1500);
-            new perikles.counter(city, type, strength, DEAD_POOL).placeDeadpool();
+            // Persians just go back to Persian stack
+            if (city == "persia") {
+                this.slideToObjectAndDestroy($(counter_id), 'persia_military', 1000, 1500);
+                new perikles.counter(city, type, strength).addToStack();
+            } else {
+                this.createMilitaryArea(DEAD_POOL, city);
+                const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
+                this.slideToObjectAndDestroy($(counter_id), deadpoolloc, 1000, 1500);
+                new perikles.counter(city, type, strength, DEAD_POOL).placeDeadpool();
+            }
         },
 
        /**

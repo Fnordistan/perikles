@@ -679,13 +679,24 @@ class PeriklesCities extends APP_GameClass
 
     /**
      * Check whether this player can spend an influence cube to commit extra units.
-     * Must have influence cube in the city, and be leader.
+     * Must have influence cube in the city, and be leader (except Persian leader,
+     * who can spend cube from any city).
      * @param {string} player_id
      * @param {string} city
      * @return boolean true if player_id is able to spend a cube from this city
      */
     function canSpendInfluence($player_id, $city) {
-      return ($this->influence($player_id, $city) > 0) && $this->isLeader($player_id, $city);
+      $can_spend = false;
+      // must have a cube in the city
+      if ($this->influence($player_id, $city) > 0) {
+        // persian leader can spend cube from any city
+        if ($this->isLeader($player_id, PERSIA)) {
+            $can_spend = true;
+        } else {
+            $can_spend = $this->isLeader($player_id, $city);
+        }
+      }
+      return $can_spend;
     }
 
     /**

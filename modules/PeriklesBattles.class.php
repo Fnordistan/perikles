@@ -59,6 +59,17 @@ class PeriklesBattles extends APP_GameClass
   }
 
   /**
+   * Get all counters for a city at a location.
+   * @param {string} city
+   * @param {string} location
+   * @return {array} all counters of city at the location
+   */
+  public function getCountersByCity($city, $location) {
+    $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE city=\"$city\" AND location=\"$location\"");
+    return $counters;
+  }
+
+  /**
    * Get counters currently at a battle location or in a player's pool.
    * As an array of [id,city,type,strength,location,battlepos] counters.
    * @param {string} location name of tile or player_id
@@ -283,7 +294,7 @@ class PeriklesBattles extends APP_GameClass
     foreach($counters as $counter) {
       $id = $counter['id'];
       $city = $counter['city'];
-      self::DbQuery("UPDATE MILITARY SET location=\"$city\", battlepos=0 WHERE id=$id");
+      $this->toLocation($id, $city);
     }
     return $counters;
   }
@@ -357,12 +368,34 @@ class PeriklesBattles extends APP_GameClass
   }
 
   /**
-   * Does 
+   * Set a counter's location by its id and unset battlepos.
+   * @param {id} of counter
+   * @param {string} location
+   * @param {int} position optional, defaults to 0
+   */
+  public function toLocation($id, $location, $position=0) {
+    self::DbQuery("UPDATE MILITARY SET location=\"$location\", battlepos=$position WHERE id=$id");
+  }
+
+  /**
+   * Put a unit in the Deadpool. For Persians, in their city instead.
+   * Does not send notifications.
+   * @param {Object} counter
+   */
+  public function toDeadpool($counter) {
+    $id = $counter['id'];
+    $city = $counter['city'];
+    $deadpool = ($city == PERSIA) ? PERSIA : DEADPOOL;
+    $this->toLocation($id, $deadpool);
+  }
+
+  /**
+   * Does this city have any units in the deadpool?
    * @param {string} city
    * @return true if any units of city in deadpool
    */
   public function hasDeadPoolUnits($city) {
-    $dead = self::getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"$city\" AND location=\"".DEADPOOL."\"", true);
+    $dead = $this->game->getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"$city\" AND location=\"".DEADPOOL."\"", true);
     return !empty($dead);
   }
 
@@ -400,6 +433,27 @@ class PeriklesBattles extends APP_GameClass
     return $counter;
   }
 
+  /**
+   * When a player takes leadership of a city. Sets all counters in the city to his ownership.
+   * Returns all the counters just claimed.
+   * @param {string} player_id
+   * @param {string} city
+   * @return {array} of counters
+   */
+  public function claimCountersInCity($player_id, $city) {
+    self::DbQuery("UPDATE MILITARY SET location=\"$player_id\" WHERE location=\"$city\"");
+    $units = $this->getCountersByCity($city, $player_id);
+    return $units;
+  }
+
+  /**
+   * Same as claimCountersInCity, but claims all the Persians and flags them with special "controlled" flag (not player_id)
+   * @return {array} of counters
+   */
+  public function claimPersians() {
+      $persians = $this->claimCountersInCity(CONTROLLED_PERSIANS, PERSIA);
+      return $persians;
+  }
 
     /**
      * Return Location tile where the next battleis, or null if there are no more.

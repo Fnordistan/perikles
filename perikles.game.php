@@ -356,6 +356,15 @@ class Perikles extends Table
     }
 
     /**
+     * Convenience function, add VPs to a player's total.
+     * @param {string} player_id
+     * @param {int} vp
+     */
+    function addVPs($player_id, $vp) {
+        self::DbQuery( "UPDATE player SET player_score=player_score+$vp WHERE player_id=$player_id" );
+    }
+
+    /**
      * Returns true if this player has at least once Influence tile of this city
      */
     function hasCityInfluenceTile($player_id, $city) {
@@ -487,7 +496,7 @@ class Perikles extends Table
         $location = $tile['location'];
         $players = self::loadPlayersBasicInfos();
         $vp = $this->Locations->getVictoryPoints($location);
-        self::DbQuery( "UPDATE player SET player_score=player_score+$vp WHERE player_id=$player_id" );
+        $this->addVPs($player_id, $vp);
         self::notifyAllPlayers('claimTile', clienttranslate('${player_name} claims ${location_name} tile'), array(
             'i18n' => ['location_name'],
             'city' => $city,
@@ -532,8 +541,7 @@ class Perikles extends Table
      * As Leader of a city, player takes all military units.
      */
     function moveMilitaryUnits($player_id, $city) {
-        self::DbQuery("UPDATE MILITARY SET location = $player_id WHERE location=\"$city\"");
-        $units = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE city=\"$city\" AND location=$player_id");
+        $units = $this->Battles->claimCountersInCity($player_id, $city);
         // send notification that moves units from city stack to player's military zone
         self::notifyAllPlayers("takeMilitary", '', array(
             'military' => $units,
@@ -545,9 +553,7 @@ class Perikles extends Table
      * @param {array} persianleaders should already have been verified non-empty
      */
     function movePersianUnits($persianleaders) {
-        // flag Persians as controlled
-        self::DbQuery("UPDATE MILITARY SET location = \"".CONTROLLED_PERSIANS."\" WHERE location=\"".PERSIA."\"");
-        $persianunits = self::getObjectListFromDB("SELECT id, city, type, strength, location FROM MILITARY WHERE city=\"".PERSIA."\" AND location=\"".CONTROLLED_PERSIANS."\"");
+        $persianunits = $this->Battles->claimPersians();
 
         foreach($persianleaders as $persian) {
             // send notification that moves units from city stack to player's military zone
@@ -617,7 +623,8 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         $counter = $this->Battles->getCounter($id);
 
-        self::DbQuery("UPDATE MILITARY SET location=\"$location\", battlepos=$battlepos WHERE id=$id");
+        $this->Battles->toLocation($id, $location, $battlepos);
+
         $role = $this->getRoleName($battlepos);
         $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
 
@@ -667,7 +674,7 @@ class Perikles extends Table
     function hasDeadPool($player_id) {
         foreach($this->Cities->cities() as $cn) {
             if ($this->Cities->isLeader($player_id, $cn)) {
-                if ($this->Battles->hasDeadPoolUnits($cn)) {
+                if ($this->Battles->hasDeadpoolUnits($cn)) {
                     return true;
                 }
             }
@@ -733,7 +740,7 @@ class Perikles extends Table
         $deadpool = array();
         foreach($this->Cities->cities() as $cn) {
             if ($player_id == $this->Cities->isLeader($player_id, $cn)) {
-                $dead = self::getObjectListFromDB("SELECT id, city, type, strength FROM MILITARY WHERE city=\"$cn\" AND location='deadpool'");
+                $dead = $this->Battles->getCountersByCity($cn, DEADPOOL);
                 if (!empty($dead)) {
                     $deadpool[$cn] = array();
                     $hop = null;
@@ -1094,7 +1101,7 @@ class Perikles extends Table
         $counter = self::getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE id=$id")[0];
 
         // relocate it to Sparta
-        self::DbQuery("UPDATE MILITARY SET location=\"sparta\", battlepos=0 WHERE id=$id");
+        $this->Battles->toLocation($id, "sparta");
 
         // this will flip the counter, and move it to Sparta
         self::notifyAllPlayers("slaveRevolt", clienttranslate('Hoplite counter returned to Sparta from ${location_name}'), array(
@@ -1498,7 +1505,7 @@ class Perikles extends Table
             // get the first one matching the chosen city
             foreach ($casualties as $counter) {
                 if ($counter['city'] == $city) {
-                    $this->moveToDeadpool($counter);
+                    $this->sendToDeadpool($counter);
                     $deadpool = true;
                     break;
                 }
@@ -1516,7 +1523,7 @@ class Perikles extends Table
      */
     private function validateAttacker($player_id, $counter, $unit_desc) {
         if ($counter['location'] != $player_id) {
-            // is this a Persiam?
+            // is this a Persian?
             if (!($counter['location'] == CONTROLLED_PERSIANS && $this->Cities->isLeader($player_id, PERSIA))) {
                 throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
             }
@@ -1885,11 +1892,11 @@ class Perikles extends Table
      * Send notification.
      * @param {Object} counter to lose; may be null
      */
-    function moveToDeadpool($counter) {
+    function sendToDeadpool($counter) {
         if ($counter != null) {
             $id = $counter['id'];
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $counter['location']);
-            self::DbQuery("UPDATE MILITARY SET location=\"".DEADPOOL."\", battlepos=0 WHERE id=$id");
+            $this->Battles->toDeadpool($counter);
             self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to Dead Pool'), array(
                 'i18n' => ['unit'],
                 'id' => $id,
@@ -2730,7 +2737,7 @@ class Perikles extends Table
             if (!empty($casualties)) {
                 $casualty = array_pop($casualties);
             }
-            $this->moveToDeadpool($casualty);
+            $this->sendToDeadpool($casualty);
         }
 
         // claiming the tile is done in stResolveTile
@@ -2882,7 +2889,7 @@ class Perikles extends Table
                         shuffle($casualties);
                         $casualty = array_pop($casualties);
                     }
-                    $this->moveToDeadpool($casualty);
+                    $this->sendToDeadpool($casualty);
                     $this->gamestate->nextState( "endBattle" );
                     break;
                 default:
