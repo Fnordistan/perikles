@@ -832,7 +832,18 @@ function (dojo, declare) {
          */
         moveToBattle: function(player_id, counter, slot) {
             // if it's my counter, remove it from my board
+            let mycounter = false;
             if (player_id == this.player_id) {
+                mycounter = true;
+            } else {
+                // also need to check for shared Persian counters
+                if (counter.getCity() == "persia") {
+                    if (this.isPersianLeader(player_id) && this.isPersianLeader(this.player_id)) {
+                        mycounter = true;
+                    }
+                }
+            }
+            if (mycounter) {
                 $(counter.getCity()+'_'+counter.getType()+'_'+counter.getStrength()+'_'+counter.getId()).remove();
             }
             // move from city to battle
@@ -1738,11 +1749,11 @@ function (dojo, declare) {
                     let movestr = _("Move one of ${player_name}'s cubes from ${from_city} to ${to_city}");
                     const from_city_name = this.spanCityName(fromcity);
                     const to_city_name = this.spanCityName(tocity);
-                    // const cube = this.createInfluenceCube(player_id, fromcity, 'banner');
+
                     movestr = movestr.replace('${player_name}', this.decorator.spanPlayerName(player_id));
                     movestr = movestr.replace('${from_city}', from_city_name);
                     movestr = movestr.replace('${to_city}', to_city_name);
-                    // movestr = movestr.replace('${cube}', cube);
+
                     $('alkibiades_selections').innerHTML += (movedcubes == 0 ? '' : '<br/>') + movestr;
                     if (movedcubes == 0) {
                         // if this was the first cube, and it was the only cube that player had in the city, take it off the Alkibiades banner

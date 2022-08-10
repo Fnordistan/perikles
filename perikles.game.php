@@ -631,14 +631,25 @@ class Perikles extends Table
         $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
 
         foreach (array_keys($players) as $pid) {
+            $is_mine = false;
+            // if this is not our counter, id becomes 0 to client side
+            if ($player_id == $pid) {
+                $is_mine = true;
+            } elseif ($counter['city'] == PERSIA) {
+                // check in case Persians are under shared control
+                if ($this->Cities->isLeader($player_id, PERSIA) && $this->Cities->isLeader($pid, PERSIA)) {
+                    $is_mine = true;
+                }
+            }
+
             self::notifyPlayer($pid, "sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
                 'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
-                'id' => ($pid == $player_id) ? $counter['id'] : 0,
+                'id' => $is_mine ? $id : 0,
                 'type' => $counter['type'],
                 'unit_type' => $this->getUnitName($counter['type']),
-                'strength' => ($pid == $player_id) ? $counter['strength'] : 0,
+                'strength' => $is_mine ? $counter['strength'] : 0,
                 'city' => $counter['city'],
                 'city_name' => $this->Cities->getNameTr($counter['city']),
                 'battlepos' => $battlepos,
@@ -1486,6 +1497,9 @@ class Perikles extends Table
                     $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
                     $col = $attdef == "attack" ? "attacker" : "defender";
                     self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$battle\"");
+                } elseif ($this->Cities->isLeader($main, PERSIA) && $this->Cities->isLeader($player_id, PERSIA)) {
+                    // Sharing Persian leadership
+                    $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
                 } else {
                     $battlepos = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
                 }
