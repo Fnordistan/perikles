@@ -3038,7 +3038,8 @@ function (dojo, declare) {
         notif_returnMilitary: function(notif) {
             const slot = notif.args.slot;
             const counters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
-            [...counters].forEach(c => {
+            const sortedByUnit = this.sorted_counters(counters);
+            sortedByUnit.forEach(c => {
                 const counter_name = c.id;
                 const [city, unit, strength, _, id] = counter_name.split('_');
                 const city_military = city+"_military";
@@ -3056,14 +3057,16 @@ function (dojo, declare) {
             if (player_id == this.player_id) {
                 // moving counters from own visible board
                 const mycounters = $('mymilitary').getElementsByClassName("prk_military");
-                [...mycounters].forEach(c => {
+                const sortedByUnit = this.sorted_counters(mycounters);
+                sortedByUnit.forEach(c => {
                     const counter_name = c.id;
                     const [city, unit, strength, _, id] = counter_name.split('_');
                     this.counterFromPlayerBoard(c, city, unit, strength, id);
                 });
             } else {
                 const counters = notif.args.counters;
-                [...counters].forEach(c => {
+                const sortedByUnit = this.sorted_counters(counters);
+                sortedByUnit.forEach(c => {
                     const counter = this.militaryToCounter(c);
                     const counter_div = counter.toDiv(0, 0);
                     counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
@@ -3072,6 +3075,18 @@ function (dojo, declare) {
             }
             // hide military board
             $('military_board').style['display'] = 'none';
+        },
+
+        /**
+         * Take a mixed batch of counters and sort them by city, unit, strength, etc.
+         * @param {element list} counters 
+         * @returns sorted array
+         */
+        sorted_counters: function(counters) {
+            const sortbyunit = [...counters].sort((a,b) => {
+                a.id - b.id;
+            });
+            return sortbyunit;
         },
 
         /**
