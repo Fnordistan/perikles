@@ -199,6 +199,15 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Get the current slot on the battle display where a location tile is.
+   * @param {string} location
+   * @return {int} slot
+   */
+  public function getSlot($location) {
+    return $this->game->getUniqueValueFromDB("SELECT card_location_arg slot FROM LOCATION WHERE card_location=$location");
+  }
+
+  /**
    * Get all locations on the board where there is a battle.
    * @param {string} city to check (optional)
    * @return {array} of tiles
@@ -218,7 +227,7 @@ class PeriklesLocations extends APP_GameClass
    * @return {array}
    */
   public function getLocationTiles() {
-    return $this->game->getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location loc, card_location_arg slot FROM LOCATION WHERE card_location !='".DECK."'");
+    return $this->game->getObjectListFromDB("SELECT card_id id, card_type city, card_type_arg location, card_location loc, card_location_arg slot, persia1, persia2, persia3, persia4 FROM LOCATION WHERE card_location !='".DECK."'");
   }
 
   /**

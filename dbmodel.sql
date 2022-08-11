@@ -33,11 +33,15 @@ CREATE TABLE IF NOT EXISTS `LOCATION` (
   `card_id` TINYINT unsigned NOT NULL AUTO_INCREMENT,
   `card_type` varchar(8) NOT NULL COMMENT 'city',
   `card_type_arg` varchar(16) NOT NULL COMMENT 'battle name',
-  `card_location` varchar(16) NOT NULL COMMENT 'deck, board, player, unclaimed',
+  `card_location` varchar(16) NOT NULL COMMENT 'deck, board, player, unclaimed,persian',
   `card_location_arg` TINYINT COMMENT 'slot #',
   `attacker` varchar(16) COMMENT 'main attacker',
   `defender` varchar(16) COMMENT 'main defender',
   `permissions` varchar(85) COMMENT 'comma-delimited player ids',
+  `persia1` varchar(16) COMMENT 'shared by Persian players',
+  `persia2` varchar(16) COMMENT 'shared by Persian player!',
+  `persia3` varchar(16) COMMENT 'shared by 3 persian players!!',
+  `persia4` varchar(16) COMMENT 'shared by 4 persian players!!!',
   PRIMARY KEY (`card_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 

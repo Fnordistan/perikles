@@ -333,23 +333,35 @@ function (dojo, declare) {
                 const player_tiles = this.format_block('jstpl_victory_tiles', {id: player_id, scale: tile_scale});
                 dojo.place(player_tiles, $('player_board_'+player_id));
             }
-            for (const loc of locationtiles) {
+            for (let loc of locationtiles) {
                 const slot = loc['slot'];
                 const location = loc['location'];
                 const tile = new perikles.locationtile(location);
                 const place = loc['loc'];
-                const loc_html = tile.createTile();
+                const tile_div = tile.createTile();
                 if (place == "board") {
-                    const tileObj = dojo.place(loc_html, $("location_"+slot));
+                    const tileObj = dojo.place(tile_div, $("location_"+slot));
                     const lochtml = tile.createTooltip(this.getCityNameTr(tile.getCity()));
                     this.addTooltipHtml(tileObj.id, lochtml, '');
                 } else if (place == "unclaimed") {
-                    const tileObj = dojo.place(loc_html, $("unclaimed_tiles"));
+                    const tileObj = dojo.place(tile_div, $("unclaimed_tiles"));
                     tileObj.style.margin = null;
+                } else if (place.startsWith("persia")) {
+                    // this is the special case where a tile was claimed by multiple players sharing Persian control
+                    const n = toint(place.slice(-1));
+                    for (let i = 1; i <= n; i++) {
+                        const persian_player = loc['persia'+i];
+                        let tileObj = dojo.place(tile_div, $(persian_player+'_player_tiles'));
+                        tileObj = this.makePersianVictoryTile(tileObj, i);
+                        const tt = tile.createVictoryTileTooltip();
+                        this.addTooltipHtml(tileObj.id, tt, '');
+                    }
                 } else {
                     // player claimed
-                    dojo.place(loc_html, $(place+'_player_tiles'));
-                }
+                    const victoryTile = dojo.place(tile_div, $(place+'_player_tiles'));
+                    const tt = tile.createVictoryTileTooltip();
+                    this.addTooltipHtml(victoryTile.id, tt, '');
+            }
             }
         },
 
@@ -1944,9 +1956,9 @@ function (dojo, declare) {
          * @param {string} city 
          */
         hasAvailableUnits: function(player_id, city) {
-            const mil_div_tag = (city == "persia") ? "_persia_" : player_id;
+            const suffix = (city == "persia") ? "_persia_" : player_id;
             for (const u of [HOPLITE, TRIREME]) {
-                if ($(city+'_'+u+'_'+mil_div_tag).childElementCount > 0) {
+                if ($(city+'_'+u+'_'+suffix).childElementCount > 0) {
                     return true;
                 }
             };
@@ -2230,6 +2242,21 @@ function (dojo, declare) {
             });
             loc_html += '</div>';
             return loc_html;
+        },
+
+        /**
+         * Modify a created element to make it a shared Persian victory tile.
+         * @param {Object} element 
+         * @param {int} i 
+         * @returns element modified as Persian victory tile
+         */       
+        makePersianVictoryTile: function(element, i) {
+            element.id = element.id+"_"+i;
+            const banner = document.createElement("span");
+            banner.innerHTML = _("Persians");
+            banner.classList.add("prk_persian_victory");
+            dojo.place(banner, element);
+            return element;
         },
 
         /**
@@ -2623,31 +2650,32 @@ function (dojo, declare) {
 
             // pre-battle/commits
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
-            this.notifqueue.setSynchronous( 'takeMilitary', 2500 );
+            this.notifqueue.setSynchronous( 'takeMilitary', 1000 );
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
-            this.notifqueue.setSynchronous( 'takePersians', 2500 );
+            this.notifqueue.setSynchronous( 'takePersians', 1000 );
             dojo.subscribe( 'rejectPermission', this, "notif_rejectPermission");
             dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
-            this.notifqueue.setSynchronous( 'sendMilitary', 2500 );
+            this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
 
             // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
-            this.notifqueue.setSynchronous( 'unclaimedTile', 2000 );
+            this.notifqueue.setSynchronous( 'unclaimedTile', 1500 );
             dojo.subscribe( 'claimTile', this, "notif_claimTile");
-            this.notifqueue.setSynchronous( 'claimTile', 2000 );
+            this.notifqueue.setSynchronous( 'claimTile', 1500 );
+            dojo.subscribe( 'claimTilePersians', this, "notif_claimTilePersians");
+            this.notifqueue.setSynchronous( 'claimTilePersians', 1500 );
             dojo.subscribe( 'returnMilitary', this, "notif_returnMilitary");
-            this.notifqueue.setSynchronous( 'returnMilitary', 2500 );
+            this.notifqueue.setSynchronous( 'returnMilitary', 1000 );
             dojo.subscribe( 'returnMilitaryPool', this, "notif_returnMilitaryPool");
-            this.notifqueue.setSynchronous( 'returnMilitaryPool', 2500 );
+            this.notifqueue.setSynchronous( 'returnMilitaryPool', 1000 );
             dojo.subscribe( 'toDeadpool', this, "notif_toDeadpool");
-            this.notifqueue.setSynchronous( 'toDeadpool', 2500 );
+            this.notifqueue.setSynchronous( 'toDeadpool', 1000 );
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
-            this.notifqueue.setSynchronous( 'crtOdds', 1000 );
+            this.notifqueue.setSynchronous( 'crtOdds', 1500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
-            this.notifqueue.setSynchronous( 'takeToken', 2000 );
+            this.notifqueue.setSynchronous( 'takeToken', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
-
 
             // special tiles
             dojo.subscribe( 'useTile', this, "notif_useTile");
@@ -2954,6 +2982,31 @@ function (dojo, declare) {
             this.slideToObjectRelative(tile.id, player_id+'_player_tiles', 500, 0);
             this.removeTooltip(tile.id);
             this.scoreCtrl[ player_id ].incValue( vp );
+        },
+
+        /**
+         * Multiple Persian players claim a tile.
+         * @param {Object} notif 
+         */
+         notif_claimTilePersians: function(notif) {
+            const location = notif.args.location;
+            const persians = notif.args.persians;
+            const vp = toint(notif.args.vp);
+            const slot = notif.args.slot;
+
+            let i = 1;
+            [...Object.values(persians)].forEach(persian_player => {
+                const tile = new perikles.locationtile(location);
+                const div = tile.createTile();
+                let tileObj = dojo.place(div, $('location_'+slot));
+                tileObj = this.makePersianVictoryTile(tileObj, i);
+                this.slideToObjectRelative(tileObj.id, persian_player+'_player_tiles', 500, 0);
+                this.removeTooltip(tileObj.id);
+                this.scoreCtrl[ persian_player ].incValue( vp );
+                i++;
+            });
+            // destroy original tile
+            $(location+'_tile').remove();
         },
 
         /**

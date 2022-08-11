@@ -110,7 +110,6 @@ define(["dojo/_base/declare"], function (declare) {
             return this.xy[1];
         },
 
-
         /**
          * Create location tile html.
          * @param {int} m margin optional
@@ -157,6 +156,25 @@ define(["dojo/_base/declare"], function (declare) {
                                     <h1 style="font-family: Bodoni Moda;">'+this.getNameTr()+'</h1>\
                                     <h2>'+defendingcity+'</h2>\
                                     <span style="font-size: 22px;">'+desc+'</span>\
+                                </div>\
+                            </div>';
+            return tt;
+        },
+
+        /**
+         * Tooltip for tile after it's claimed.
+         */
+        createVictoryTileTooltip: function() {
+            let vpstr = _("${vp} Victory Points");
+            vpstr = vpstr.replace('${vp}', this.vp);
+            const x = -1 * (this.y()-1) * TILE_WIDTH * TILE_SCALE;
+            const y = -1 * (this.x()-1) * TILE_HEIGHT * TILE_SCALE;
+
+            const tt = '<div style="display: flex; flex-direction: row;">\
+                                <div class="prk_location_tile" style="background-position: '+x+'px '+y+'px; margin: 5px;"></div>\
+                                <div style="flex: 1;">\
+                                    <h1 style="font-family: Bodoni Moda;">'+this.getNameTr()+'</h1>\
+                                    <span style="font-size: 22px;">'+vpstr+'</span>\
                                 </div>\
                             </div>';
             return tt;

@@ -52,6 +52,7 @@
     --color_argos: #A9D035;
     --color_thebes: #F8F654;
     --color_megara: #FF633A;
+    --color_persia: #C9C5C4;
     --color_any: #9A5200;
     /* tokens */
     --counter_dim: 52px;
@@ -188,6 +189,16 @@
 .prk_special_tile_used {
     opacity: 0.5;
     transform: rotate(180deg);
+}
+
+/* marks a tile as claimed by multiple players */
+.prk_persian_victory {
+    font-family: 'Bodoni Moda';
+    background-color: var(--color_persia);
+    font-weight: 700;
+    color: black;
+    position: absolute;
+    width: 100%;
 }
 
 .prk_special_log {

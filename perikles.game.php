@@ -492,22 +492,78 @@ class Perikles extends Table
      * @param {Object} tile
      */
     function claimTile($player_id, $tile) {
-        $city = $tile['city'];
-        $location = $tile['location'];
         $players = self::loadPlayersBasicInfos();
+        $persians = $this->Cities->getPersianLeaders();
+        if (count($persians) > 1 && in_array($player_id, $persians)) {
+            $this->persiansClaimTile($tile);
+        } else {
+            $city = $tile['city'];
+            $location = $tile['location'];
+            $vp = $this->Locations->getVictoryPoints($location);
+            $this->addVPs($player_id, $vp);
+            self::notifyAllPlayers('claimTile', clienttranslate('${player_name} claims ${location_name} tile'), array(
+                'i18n' => ['location_name'],
+                'city' => $city,
+                'location' => $location,
+                'player_id' => $player_id,
+                'vp' => $vp,
+                'player_name' => $players[$player_id]['player_name'],
+                'location_name' => $this->Locations->getName($location),
+                'preserve' => ['player_id', 'city', 'location'],
+            ));
+            $this->moveTile($tile, $player_id);
+        }
+    }
+
+    /**
+     * Handle the special case where Persians are under joint control, and each Persian player
+     * gets the tile.
+     * @param {Object} tile
+     */
+    function persiansClaimTile($tile) {
+        $persians = $this->Cities->getPersianLeaders();
+        $num_persians = count($persians);
+        // sanity check
+        if ($num_persians < 2) {
+            throw new BgaVisibleSystemException("should be multiple Persian leaders in this state");
+        }
+        $id = $tile['id'];
+        $location = $tile['location'];
         $vp = $this->Locations->getVictoryPoints($location);
-        $this->addVPs($player_id, $vp);
-        self::notifyAllPlayers('claimTile', clienttranslate('${player_name} claims ${location_name} tile'), array(
+
+        // we use a terrible hack here, setting location as "persiaN" N= number of Persians
+        $persian_label = PERSIA.$num_persians;
+        self::DbQuery("UPDATE LOCATION SET card_location=\"$persian_label\" WHERE card_id=$id");
+        $i = 1;
+
+        $sql = "UPDATE LOCATION SET ";
+        foreach ($persians as $persia_leader) {
+            $this->addVPs($persia_leader, $vp);
+            $dbcol = PERSIA.$i;
+            $sql .= "$dbcol=$persia_leader";
+            if ($i < $num_persians) {
+                $sql .= ",";
+            }
+            $i++;
+        }
+        $sql .= " WHERE card_id=$id";
+        self::DbQuery($sql);
+
+        $slot = $tile['slot'];
+        $city = $tile['city'];
+        self::notifyAllPlayers('claimTilePersians', clienttranslate('Persian players jointly claim ${location_name} tile'), array(
             'i18n' => ['location_name'],
             'city' => $city,
             'location' => $location,
-            'player_id' => $player_id,
-            'vp' => $vp,
-            'player_name' => $players[$player_id]['player_name'],
             'location_name' => $this->Locations->getName($location),
-            'preserve' => ['player_id', 'city', 'location'],
+            'persians' => $persians,
+            'slot' => $slot,
+            'vp' => $vp,
+            'preserve' => ['city', 'location'],
         ));
-        $this->moveTile($tile, $player_id);
+
+        $this->returnMilitaryUnits($tile);
+        $this->Locations->clearBattleStatus($id);
     }
 
     /**
@@ -554,7 +610,6 @@ class Perikles extends Table
      */
     function movePersianUnits($persianleaders) {
         $persianunits = $this->Battles->claimPersians();
-
         // need to send individual notifications to each player
         // because Persian stacks may be shared
         $players = self::loadPlayersBasicInfos();

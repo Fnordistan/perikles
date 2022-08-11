@@ -431,12 +431,14 @@ class PeriklesCities extends APP_GameClass
   }
 
   /**
-   * Get current leader of a city
+   * Get current leader of a city (not PERSIA)
    * @return player id, or 0
    */
   public function getLeader($city) {
     return $this->game->getGameStateValue($city."_leader");
   }
+
+
 
   /**
    * Get all cities controlled by a player.
@@ -482,7 +484,8 @@ class PeriklesCities extends APP_GameClass
 
   /**
     * Return associative array: city => player_id
-    * Omits cities without leaders
+    * Omits cities without leaders, and excludes Persia.
+    * @return {array} city => leader
     */
   public function getLeaders() {
       $leaders = array();
