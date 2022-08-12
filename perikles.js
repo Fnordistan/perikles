@@ -1397,9 +1397,6 @@ function (dojo, declare) {
                             this.addSpecialTileButton();
                         }
                         break;
-                    case 'requestResponse':
-                        this.addPermissionButtons();
-                        break;
                     case 'specialTile':
                         if (args._private.special) {
                             this.addSpecialTileButton();
@@ -1420,37 +1417,9 @@ function (dojo, declare) {
                         const location = args.location;
                         this.addCasualtyButtons(type, strength, cities, location);
                 }
-            } else if ((stateName == 'requestResponse') && (this.player_id == args.commit_player)) {
-                this.addCancelPermissionRequest();
             }
         },
 
-        ///////////////////////////////////////////////////
-        //// Handle permission requests to defend
-        ///////////////////////////////////////////////////
-
-        /**
-         * Add give/refuse request buttons for defense.
-         */
-        addPermissionButtons: function() {
-            this.addActionButton( "grant_request_btn", _("Give Permission"), () => {
-                this.respondPermissionRequest(true);
-            }, null, null, 'green');
-            this.addActionButton( "refuse_request_btn", _("Refuse Permission"), () => {
-                this.respondPermissionRequest(false);
-            }, null, null, 'red');
-
-        },
-
-        /**
-         * Add button to cancel request for permission.
-         */
-        addCancelPermissionRequest: function() {
-            this.addActionButton( "cancel_request_btn", _("Cancel Request"), () => {
-                this.cancelPermissionRequest();
-            }, null, null, 'red');
-        },
-        
         ///////////////////////////////////////////////////
         //// Player must choose loss 
         ///////////////////////////////////////////////////
@@ -2585,31 +2554,6 @@ function (dojo, declare) {
             return argstr;
         },
 
-        /**
-         * Player giving or denying request to defend a city.
-         */
-         respondPermissionRequest: function(bAllow) {
-            if (this.checkPossibleActions("respondRequest", true)) {
-                this.ajaxcall( "/perikles/perikles/respondrequest.html", {
-                    allow: bAllow,
-                    lock: true
-                }, this, function( result ) { }, function( is_error) { } );
-            }
-        },
-
-
-        /**
-         * Player asking permission to defend canceled request.
-         */
-         cancelPermissionRequest: function() {
-            if (this.checkPossibleActions("cancelRequest", true)) {
-                this.ajaxcall( "/perikles/perikles/cancelrequest.html", {
-                    player_id: this.player_id,
-                    lock: true
-                }, this, function( result ) { }, function( is_error) { } );
-            }
-        },
-
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
@@ -2620,7 +2564,6 @@ function (dojo, declare) {
             
             Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
                   your perikles.game.php file.
-        
         */
         setupNotifications: function() {
             dojo.subscribe( 'influenceCardTaken', this, "notif_influenceCardTaken" );
@@ -2653,7 +2596,6 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'takeMilitary', 1000 );
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
             this.notifqueue.setSynchronous( 'takePersians', 1000 );
-            dojo.subscribe( 'rejectPermission', this, "notif_rejectPermission");
             dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
             this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
 
@@ -2877,15 +2819,6 @@ function (dojo, declare) {
                 mil['location'] = player_id;
                 this.counterToPlayerBoard(mil);
             }
-        },
-
-        /**
-         * Clear committed units, player must resend
-         * @param {Object} notif 
-         */
-        notif_rejectPermission: function() {
-            this.gamedatas.gamestate.args = {};
-            this.gamedatas.gamestate.args.committed = {};
         },
 
         /**

@@ -40,11 +40,6 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("COMMIT_FORCES", 24);
     define("NEXT_COMMIT", 25);
 
-    // Request Permission
-    define("HANDLE_REQUEST", 50);
-    define("REQUEST_RESPONSE", 51);
-    define("HANDLE_RESPONSE", 52);
-
     // Battle phase
     define("NEXT_BATTLE_TILE", 30);
     define("RESOLVE_TILE", 31);
@@ -212,33 +207,7 @@ $machinestates = array(
         "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "assignUnits", "useSpecial" ),
-    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE, "askPermission" => HANDLE_REQUEST)
-    ),
-
-    HANDLE_REQUEST => array(
-        "name" => "handleRequest",
-        "description" => "",
-        "type" => "game",
-        "action" => "stPermissionRequest",
-        "transitions" => array( "getResponse" => REQUEST_RESPONSE )
-    ),
-
-    REQUEST_RESPONSE => array(
-    	"name" => "requestResponse",
-    	"description" => clienttranslate('${player_name} requests permission to join defenders at ${location_name}'),
-    	"descriptionmyturn" => clienttranslate('${player_name} requests permission to join defenders at ${location_name}'),
-        "args" => "argsPermission",
-    	"type" => "activeplayer",
-    	"possibleactions" => array( "respondRequest", "cancelRequest" ),
-    	"transitions" => array( "" => HANDLE_RESPONSE)
-    ),
-
-    HANDLE_RESPONSE => array(
-        "name" => "handleResponse",
-        "description" => "",
-        "type" => "game",
-        "action" => "stRequestResponse",
-        "transitions" => array( "" => COMMIT_FORCES )
+    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE)
     ),
 
     // rotate to the next location tile

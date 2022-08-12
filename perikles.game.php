@@ -102,8 +102,6 @@ class Perikles extends Table
             "influence_phase" => 50,
             "last_influence_slot" => 51, // keep track of where to put next Influence tile
             "commit_phase" => 52,
-            "commit_player" => 53,
-            "commit_slot" => 54,
             "spartan_choice" => 55, // who Sparta picked to go first in military phase
             "deadpool_picked" => 56, // how many players have been checked for deadpool?
 
@@ -180,9 +178,6 @@ class Perikles extends Table
         self::setGameStateInitialValue("influence_phase", 0);
         // when we are in the committing phase. Start with first commit, end with battle phase.
         self::setGameStateInitialValue("commit_phase", 0);
-        // keep track of who was the committer when asking for defend permissions
-        self::setGameStateInitialValue("commit_player", 0);
-        self::setGameStateInitialValue("commit_slot", 0);
 
         $this->Cities->setupNewGame();
 
@@ -838,18 +833,6 @@ class Perikles extends Table
             }
         }
         return $deadpool;
-    }
-
-    /**
-     * Get info about current battle.
-     * @return {array} ('city' => city, 'location' => location, 'defender' => defender)
-     */
-    function getCurrentDefender() {
-        $slot = $this->getGameStateValue("commit_slot");
-        $location = $this->Locations->getBattleTile($slot);
-        $city = $this->Locations->getCity($location);
-        $defender = $this->Cities->getLeader($city);
-        return array('city' => $city, 'location' => $location, 'defender' => $defender);
     }
 
     /**
@@ -1669,11 +1652,11 @@ class Perikles extends Table
 
         $city = $this->Locations->getCity($location);
         // Do I control this city? If not, I need permission from defender
-        if (!$this->Cities->isLeader($player_id, $city)) {
+        $leader = $this->Cities->getLeader($city);
+        if ($leader != $player_id) {
             if (!$this->Locations->hasDefendPermission($player_id, $location)) {
-                $tile = $this->Locations->getTile($location);
-                $this->setGameStateValue("commit_slot", $tile['slot']);
-                $this->gamestate->nextState("askPermission");
+                $players = $this->loadPlayersBasicInfos();
+                throw new BgaUserException(sprintf(self::_("%s must give permission for %s to defend %s"), $players[$leader]['player_name'], $unit_desc, $this->Locations->getName($location)));
             }
         }
 
@@ -2152,24 +2135,6 @@ class Perikles extends Table
     }
 
     /**
-     * For requesting defender permission to defend a location.
-     */
-    function argsPermission() {
-        $defender = $this->getCurrentDefender();
-        $location = $defender['location'];
-        $players = self::loadPlayersBasicInfos();
-        $player_id = $this->getGameStateValue("commit_player");
-
-        return array(
-            'i18n' => ['city_name', 'location_name'],
-            'requester' => $player_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'location' => $location,
-            'location_name' => $this->Locations->getName($location),
-        );
-    }
-
-    /**
      * Return all the units that may be retrieved from Deadpool by the current active player.
      */
     function argsDeadPool() {
@@ -2276,7 +2241,6 @@ class Perikles extends Table
             $player_id = self::activeNextPlayer();
             self::giveExtraTime( $player_id );
         }
-        $this->setGameStateValue("commit_player", $player_id);
         // use which of this player's tiles, 2 or 1 shard?
         $s = 2;
         // do I have a 2-shard tile?
@@ -2587,83 +2551,6 @@ class Perikles extends Table
     }
 
     /**
-     * Set the defeneder and requester.
-     */
-    function stPermissionRequest() {
-        $defender = $this->getCurrentDefender();
-        $this->gamestate->changeActivePlayer( $defender['defender'] );
-        $this->gamestate->nextState("getResponse");
-    }
-
-    /**
-     * The defender granted permission or refused, or the requester cancelled.
-     * Hand play back to original player.
-     */
-    function stRequestResponse() {
-        $next_player = $this->getGameStateValue("commit_player");
-        $this->gamestate->changeActivePlayer( $next_player );
-        $this->gamestate->nextState();
-    }
-
-    /**
-     * Player responded to a request to defend his location.
-     * @param {bool} accept
-     */
-    function respondRequest($accept) {
-        self::checkAction( 'respondRequest' ); 
-        $player_id = $this->getGameStateValue("commit_player");
-
-        $defender = $this->getCurrentDefender();
-        $defender_id = $defender['defender'];
-        $location = $defender['location'];
-
-        $players = self::loadPlayersBasicInfos();
-
-        if ($accept) {
-            $this->giveDefendPermission($player_id, $location);
-        } else {
-            self::notifyAllPlayers('rejectPermission', clienttranslate('${defender_name} refused ${player_name} permission to send forces to ${location_name}'), array(
-                'i18n' => ['location_name'],
-                'player_id' => $player_id,
-                'player_name' =>  $players[$player_id]['player_name'],
-                'defender_id' => $defender_id,
-                'defender_name' => $players[$defender_id]['player_name'],
-                'location' => $location,
-                'location_name' => $this->Locations->getName($location),
-                'preserve' => ['player_id', 'defender_id', 'location'],
-            ));
-        }
-
-        // return action to the player who was committing forces
-        $this->gamestate->nextState();
-    }
-
-    /**
-     * Player requesting to join defense cancelled request.
-     */
-    function cancelRequest($player_id) {
-        // self::checkAction( 'cancelSpotTrade' ); 
-        if ($player_id != $this->getGameStateValue("commit_player")) {
-            throw new BgaVisibleSystemException("It is not your turn"); // NOI18N
-        }
-
-        $defender = $this->getCurrentDefender();
-        $location = $defender['location'];
-
-        $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request to defend ${location_name}'), array(
-            'i18n' => ['location_name'],
-            'player_id' => $player_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'location' => $location,
-            'location_name' => $this->Locations->getName($location),
-            'preserve' => ['player_id', 'location'],
-        ));
-        // return action to the player who made the offer
-        $this->gamestate->nextState();
-    }
-
-    /**
      * There are forces on both sides (at least in one battle).
      * We know there is a battle to be fought.
      */
@@ -2837,9 +2724,6 @@ class Perikles extends Table
         $this->Cities->clearWars();
         $this->Locations->clearBattleStatus();
         $this->returnPlayersMilitary();
-
-        $this->setGameStateValue("commit_player", 0);
-        $this->setGameStateValue("commit_slot", 0);
 
         if ($state == "nextTurn") {
             // reshuffle Influence deck and deal new cards
