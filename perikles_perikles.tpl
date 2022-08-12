@@ -76,7 +76,7 @@
 
 // Javascript HTML templates
 
-const jstpl_influence_tile = '<div id="${city}_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; margin: ${margin}; outline: 4px groove var(--color_${city});"></div>';
+const jstpl_influence_tile = '<div id="${city}_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; margin: ${margin}; outline: 2px groove var(--color_${city});"></div>';
 
 const jstpl_influence_back = '<div id="cardback_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; position: absolute; margin: -${m}px ${m}px; outline: 1px gray ridge;"></div>';
 
