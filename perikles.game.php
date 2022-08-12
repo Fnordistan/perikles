@@ -1744,7 +1744,15 @@ class Perikles extends Table
                 'location_name' => $this->Locations->getName($location),
                 'preserve' => ['location']
             ));
-            $this->addInfluenceToCity($city, $player_id, 2);
+            // have to check special case where Persians jointly defend an uncontested city
+            $persians = $this->Cities->getPersianLeaders();
+            if (count($persians) > 1 && in_array($player_id, $persians)) {
+                foreach($persians as $persian) {
+                    $this->addInfluenceToCity($city, $persian, 2);
+                }
+            } else {
+                $this->addInfluenceToCity($city, $player_id, 2);
+            }
             $this->unclaimedTile($tile);
         } else {
             // attacker with no defenders
