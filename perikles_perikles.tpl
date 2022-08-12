@@ -12,13 +12,14 @@
     perikles_perikles.tpl
 -->
 
-<div id="military_board">
-    <h1 class="prk_hdr">{MILITARY}</h1>
-    <div id="mymilitary">
-    </div>
-</div>
 
 <div id="periklesboard">
+    <div id="military_board">
+        <h1 class="prk_hdr">{MILITARY}</h1>
+        <div id="mymilitary">
+        </div>
+    </div>
+    
     <div id="perikles_map">
         <div id="influence_tiles">
             <!-- BEGIN INFLUENCE_TILES_BLOCK -->
@@ -69,10 +70,6 @@
     <div id="deadpool">
         <h1 class="prk_hdr">{DEADPOOL}</h1>
     </div>
-    <div id="unclaimed">
-        <h1 class="prk_hdr" id="unclaimed_hdr">{UNCLAIMED}</h1>
-        <div id="unclaimed_tiles"></div>
-    </div>
 </div>
 
 <script type="text/javascript">
@@ -92,6 +89,8 @@ const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_counter prk_st
 const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: #${color};"></div>';
 
 const jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
+
+const jstpl_permission_btn = '<button id="${location}_${city}_btn" type="button" class="prk_city_btn" class="prk_permission_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
 const jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_city_btn prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 

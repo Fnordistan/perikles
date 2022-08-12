@@ -344,6 +344,7 @@ function (dojo, declare) {
                     const lochtml = tile.createTooltip(this.getCityNameTr(tile.getCity()));
                     this.addTooltipHtml(tileObj.id, lochtml, '');
                 } else if (place == "unclaimed") {
+                    this.createUnclaimedTilesBox();
                     const tileObj = dojo.place(tile_div, $("unclaimed_tiles"));
                     tileObj.style.margin = null;
                 } else if (place.startsWith("persia")) {
@@ -361,7 +362,7 @@ function (dojo, declare) {
                     const victoryTile = dojo.place(tile_div, $(place+'_player_tiles'));
                     const tt = tile.createVictoryTileTooltip();
                     this.addTooltipHtml(victoryTile.id, tt, '');
-            }
+                }
             }
         },
 
@@ -1330,6 +1331,7 @@ function (dojo, declare) {
                 [...battleslots].forEach(b => {
                     this.makeSplayable(b);
                 });
+                this.createPermissionButtons();
             }
         },
 
@@ -2342,6 +2344,44 @@ function (dojo, declare) {
             return unit;
         },
 
+        // PERMISSION HANDLING
+
+        createPermissionButtons: function() {
+            for (let i = 1; i <= 7; i++) {
+                const tile = $('location_'+i).firstChild;
+                const location = tile.id.split("_")[0];
+                const controlling_city = new perikles.locationtile(location).getCity();
+
+                const bb_div = '<div id="'+location+'_permissions" class="prk_permission_box"></div>';
+                const button_box = dojo.place(bb_div, tile);
+
+                for (city of CITIES) {
+                    if (city != controlling_city && this.getLeader(city) != this.getLeader(controlling_city)) {
+                        const btn = this.format_block('jstpl_permission_btn', {location: location, city: city, city_name: this.getCityNameTr(city)});
+                        const button = dojo.place(btn, button_box);
+                        if (!this.isLeader(this.player_id, controlling_city)) {
+                            button.setAttribute("disabled", true);
+                        }
+                    }
+                }
+
+            }
+        },
+
+        /**
+         * Invoked when unclaimed tiles should be placed - checks if
+         * there is already an inclaimed tiles box, and if not, creates it.
+         */
+        createUnclaimedTilesBox: function() {
+            if (!document.getElementById('unclaimed')) {
+                const unclaimed_div = '<div id="unclaimed">'+
+                                        '<h1 class="prk_hdr" id="unclaimed_hdr">'+_("Unclaimed Tiles")+'</h1>'+
+                                        '<div id="unclaimed_tiles"></div>'+
+                                    '</div>';
+                dojo.place(unclaimed_div, $('player_boards'));
+            }
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
         
@@ -2893,6 +2933,8 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_unclaimedTile: function(notif) {
+            this.createUnclaimedTilesBox();
+
             const loc = notif.args.location;
             const tile = $(loc+'_tile');
             // clear margin before putting in box

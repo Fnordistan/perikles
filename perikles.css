@@ -557,6 +557,16 @@
     border: 3px ridge darkslategray;
 }
 
+.prk_permission_box {
+    display: flex;
+    flex-direction: row;
+    transform: translateX(300px);
+}
+
+.prk_permission_btn {
+    opacity: 0.5;
+}
+
 .prk_city_btn {
     color: black;
     font-size: 18px;
@@ -805,7 +815,7 @@
 
 #periklesboard {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     height: 100%;
     overflow: auto;
 }
@@ -830,8 +840,8 @@
 #deadpool {
     display: flex;
     flex-direction: column;
-    min-width: max-content;
-    margin: 0 5px;
+    width: 1298px;
+    margin: 5px;
     padding: 5px;
     border: 3px ridge #44443e;
     background-color: #8F8C7E;
@@ -847,8 +857,8 @@
 
 #unclaimed_tiles {
     display: flex;
-    flex-direction: row;
-    margin: 0 5px;
+    flex-direction: columns;
+    margin: 5px 0;
     width: 100%;
     padding: 5px;
 }
@@ -866,6 +876,7 @@
     margin: 5px;
     border: 3px ridge #1E131B;
     background-color: lightgrey;
+    max-width: 1298px;
     overflow: auto;
     display: none;
 }
