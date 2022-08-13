@@ -279,6 +279,21 @@ class PeriklesCities extends APP_GameClass
   }
 
   /**
+   * For data sent to client.
+   * Returns a double array: {city => city[relationship]}
+   */
+  public function getCityRelationships() {
+    $wars = array();
+    foreach($this->cities() as $city) {
+      $wars[$city] = [];
+      foreach($this->cities() as $city2) {
+        $wars[$city][$city2] = $this->getRelationship($city, $city2);
+      }
+    }
+    return $wars;
+  }
+
+  /**
    * Array of city names (not including Persia)
    * @return array of strings
    */

@@ -104,6 +104,7 @@ class Perikles extends Table
             "commit_phase" => 52,
             "spartan_choice" => 55, // who Sparta picked to go first in military phase
             "deadpool_picked" => 56, // how many players have been checked for deadpool?
+            "athens_previous" => 57, // most recent leader of Athens
 
             BRASIDAS => 60, // Brasides activated for next battle
             PHORMIO => 61, // Phormio activated for next battle
@@ -254,6 +255,7 @@ class Perikles extends Table
         $result['defeats'] = $this->Cities->getAllDefeats();
         $result['military'] = $this->getMilitary();
         $result['battletokens'] = $this->getBattleTokens();
+        $result['wars'] = $this->Cities->getCityRelationships();
 
         return $result;
     }
@@ -692,7 +694,7 @@ class Perikles extends Table
                 }
             }
 
-            self::notifyPlayer($pid, "sendMilitary", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
+            self::notifyPlayer($pid, "sendBattle", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
                 'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
@@ -705,6 +707,7 @@ class Perikles extends Table
                 'battlepos' => $battlepos,
                 'battlerole' => $role,
                 'location' => $location,
+                'wars' => $this->Cities->getCityRelationships(),
                 'slot' => $slot,
                 'location_name' => $this->Locations->getName($location),
                 'preserve' => ['city', 'location'],
@@ -2146,6 +2149,15 @@ class Perikles extends Table
     }
 
     /**
+     * Provide relationship status of cities in war phase.
+     */
+    function argsWarPhase() {
+        return array(
+            'wars' => $this->Cities->getCityRelationships()
+        );
+    }
+
+    /**
      * Get the phase to check against for use of a Special tile.
      * @return "influence, commit, or
      */
@@ -2717,6 +2729,12 @@ class Perikles extends Table
     function stEndTurn() {
         self::incStat(1, 'turns_number');
         $state = $this->isEndGame() ? "endGame" : "nextTurn";
+        // most recent Athens leader is start player next turn
+        $athens_leader = $this->Cities->getLeader("athens");
+        if ($athens_leader == 0) {
+            $athens_leader = $this->getGameStateValue("athens_previous");
+        }
+        $this->setGameStateValue("athens_previous", $athens_leader);
 
         // add statues
         $this->leadersToStatues();
@@ -2730,6 +2748,7 @@ class Perikles extends Table
             $this->setGameStateValue("influence_phase", 1);
             $this->dealNewInfluence();
             $this->dealNewLocations();
+            $this->gamestate->changeActivePlayer($athens_leader);
         }
 
         $this->gamestate->nextState($state);

@@ -560,11 +560,10 @@
 .prk_permission_box {
     display: flex;
     flex-direction: row;
+    background: lightgray;
+    width: max-content;
+    padding: 2px;
     transform: translateX(300px);
-}
-
-.prk_permission_btn {
-    opacity: 0.5;
 }
 
 .prk_city_btn {
@@ -578,6 +577,12 @@
     height: 35px;
     margin: 2px;
     border: 4px ridge #767060;
+}
+
+.prk_city_btn:hover {
+    text-shadow: none;
+    border: 4px ridge lightgray;
+    transition: all 0.25s;
 }
 
 .prk_plague_btn {
@@ -667,12 +672,6 @@
     background-color: lightgray !important;
 }
 
-.prk_city_btn:hover {
-    text-shadow: none;
-    border: 4px ridge lightgray;
-    transition: all 0.25s;
-}
-
 .prk_city_banner {
     color: black;
     font-size: 1em;
@@ -724,6 +723,18 @@
     color: #767060;
     text-align: center;
     text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
+}
+
+.prk_permission_hdr {
+    font-family: 'ThrumsSerifRegular';
+    font-size: 36px;
+    font-weight: 700;
+    width: max-content;
+    margin-top: -160px;
+    background: gray;
+    padding: 2px;
+    border: 2px solid black;
+    transform: translate(300px);
 }
 
 .prk_send_dlg {

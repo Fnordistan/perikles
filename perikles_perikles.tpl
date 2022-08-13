@@ -90,9 +90,9 @@ const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: #$
 
 const jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
-const jstpl_permission_btn = '<button id="${location}_${city}_btn" type="button" class="prk_city_btn" class="prk_permission_btn" style="background-color: var(--color_${city});">${city_name}</button>';
+const jstpl_permission_btn = '<button id="${location}_${city}_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
-const jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_city_btn prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
+const jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
 const jstpl_alkibiades_from_btn = '<div id="${city}_alkibiades_from_btn" class="prk_alkibiades_btn" style="background-color: var(--color_${city});">${city_name}</div>';
 

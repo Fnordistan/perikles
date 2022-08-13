@@ -1322,7 +1322,11 @@ function (dojo, declare) {
                         debugger;
                     }
                     break;
-                    case 'dummmy':
+                case 'nextPlayerCommit':
+                    this.gamedatas.wars = args.wars;
+                    break;
+                case 'endTurn':
+                    this.gamedatas.wars = {};
                     break;
             }
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
@@ -1922,6 +1926,19 @@ function (dojo, declare) {
         },
 
         /**
+         * Check whether the Persians are controlled by anyone.
+         * @return {bool} true if at least one player controls the Persians
+         */
+        existsPersianLeader: function() {
+            for (const player_id in this.gamedatas.players) {
+                if (this.isPersianLeader(player_id)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        /**
          * Does the player have any uncommitted military units in that city? (or Persian)
          * @param {string} player_id 
          * @param {string} city 
@@ -2347,6 +2364,18 @@ function (dojo, declare) {
         // PERMISSION HANDLING
 
         createPermissionButtons: function() {
+            const is_buttons = $('location_area').getElementsByClassName("prk_permission_box");
+            if (is_buttons.length > 0) {
+                return;
+            }
+            const wars = this.gamedatas.wars;
+            const permission_banner = '<div class="prk_permission_hdr">'+_("Granted Permissions")+'</div>';
+            dojo.place(permission_banner, $('location_1'));
+
+            const cities = [...CITIES];
+            if (this.existsPersianLeader()) {
+                cities.push("persia");
+            }
             for (let i = 1; i <= 7; i++) {
                 const tile = $('location_'+i).firstChild;
                 const location = tile.id.split("_")[0];
@@ -2354,17 +2383,28 @@ function (dojo, declare) {
 
                 const bb_div = '<div id="'+location+'_permissions" class="prk_permission_box"></div>';
                 const button_box = dojo.place(bb_div, tile);
-
-                for (city of CITIES) {
-                    if (city != controlling_city && this.getLeader(city) != this.getLeader(controlling_city)) {
+                for (city of cities) {
+                    if (city == "persia" || (city != controlling_city && this.getLeader(city) != this.getLeader(controlling_city))) {
                         const btn = this.format_block('jstpl_permission_btn', {location: location, city: city, city_name: this.getCityNameTr(city)});
                         const button = dojo.place(btn, button_box);
-                        if (!this.isLeader(this.player_id, controlling_city)) {
-                            button.setAttribute("disabled", true);
+                        const is_leader = this.isLeader(this.player_id, controlling_city);
+                        if (!is_leader) {
+                            button.style["pointer-events"] = 'none';
                         }
+                        const relationship = wars[controlling_city][city];
+                        // at war
+                        if (relationship == -1) {
+                            Object.assign(button.style, {"pointer-events" : "none", "border": "4px ridge red"});
+                        } else if (relationship == 1) {
+                            Object.assign(button.style, {"pointer-events" : "none",  "border": "4px ridge green"});
+                        } else if (is_leader) {
+                            button.addEventListener('click', () => {
+                                console.log("click");
+                            });
+                        }
+                        button.setAttribute("data-rel", relationship);
                     }
                 }
-
             }
         },
 
@@ -2636,8 +2676,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'takeMilitary', 1000 );
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
             this.notifqueue.setSynchronous( 'takePersians', 1000 );
-            dojo.subscribe( 'sendMilitary', this, "notif_sendBattle");
-            this.notifqueue.setSynchronous( 'sendMilitary', 1000 );
+            dojo.subscribe( 'sendBattle', this, "notif_sendBattle");
+            this.notifqueue.setSynchronous( 'sendBattle', 1000 );
 
             // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
@@ -2873,6 +2913,11 @@ function (dojo, declare) {
             const strength = notif.args.strength;
             const slot = notif.args.slot;
             const location = notif.args.location;
+            
+            // adjust war status
+            const wars = notif.args.wars;
+            Object.assign(this.gamedatas.wars, wars);
+
             const battlepos= notif.args.battlepos;
             const counter = new perikles.counter(city, type, strength, id, location, battlepos);
             this.moveToBattle(player_id, counter, slot);

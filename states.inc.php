@@ -196,6 +196,7 @@ $machinestates = array(
         "name" => "nextPlayerCommit",
         "description" => "",
         "type" => "game",
+        "args" => "argsWarPhase",
         "action" => "stNextCommit",
         "transitions" => array( "commit" => COMMIT_FORCES, "nextPlayer" => NEXT_COMMIT, "resolve" => NEXT_BATTLE_TILE )
     ),
