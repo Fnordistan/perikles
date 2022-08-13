@@ -2384,6 +2384,7 @@ function (dojo, declare) {
                 const bb_div = '<div id="'+location+'_permissions" class="prk_permission_box"></div>';
                 const button_box = dojo.place(bb_div, tile);
                 for (city of cities) {
+                    debugger;
                     if (city == "persia" || (city != controlling_city && this.getLeader(city) != this.getLeader(controlling_city))) {
                         const btn = this.format_block('jstpl_permission_btn', {location: location, city: city, city_name: this.getCityNameTr(city)});
                         const button = dojo.place(btn, button_box);

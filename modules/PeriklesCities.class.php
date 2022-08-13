@@ -289,6 +289,9 @@ class PeriklesCities extends APP_GameClass
       foreach($this->cities() as $city2) {
         $wars[$city][$city2] = $this->getRelationship($city, $city2);
       }
+      $persia = $this->getRelationship($city, PERSIA);
+      $wars[$city][PERSIA] = $persia;
+      $wars[PERSIA][$city] = $persia;
     }
     return $wars;
   }
