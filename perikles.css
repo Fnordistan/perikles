@@ -303,13 +303,14 @@
     cursor: grab;
 }
 
-.prk_counter {
+.prk_player_counter {
     background-image: url(img/leader_counters.jpg);
     background-size:  calc(11 * var(--counter_scale) * var(--counter_w)) calc(var(--counter_scale) * var(--counter_h));
     background-repeat: no-repeat;
     position: relative;
     width: calc(var(--counter_scale) * var(--counter_w));
     height: calc(var(--counter_scale) * var(--counter_h));
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
 }
 
 .prk_defeat_counter {
@@ -336,47 +337,43 @@
     float: right;
 }
 
-.prk_statue {
-    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
-}
-
-.prk_leader_black {
+.prk_leader[data-color='black'] {
     background-position: 0 0;
 }
 
-.prk_statue_black {
+.prk_statue[data-color='black'] {
     background-position: calc(-1 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_leader_white {
+.prk_leader[data-color='white'] {
     background-position: calc(-2 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_statue_white {
+.prk_statue[data-color='white'] {
     background-position: calc(-3 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_leader_orange {
+.prk_leader[data-color='orange'] {
     background-position: calc(-4 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_statue_orange {
+.prk_statue[data-color='orange'] {
     background-position: calc(-5 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_leader_green {
+.prk_leader[data-color='green'] {
     background-position: calc(-6 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_statue_green {
+.prk_statue[data-color='green'] {
     background-position: calc(-7 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_leader_red {
+.prk_leader[data-color='red'] {
     background-position: calc(-8 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_statue_red {
+.prk_statue[data-color='red'] {
     background-position: calc(-9 * var(--counter_scale) * var(--counter_w)) 0;
 }
 

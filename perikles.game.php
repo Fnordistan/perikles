@@ -42,6 +42,20 @@ define("ATTACKER", 0);
 define("DEFENDER", 2);
 define("MAIN", 1);
 define("ALLY", 2);
+
+// state values
+define("ATHENS_PLAYER", "athens_previous");
+define("ATTACKER_TOKENS", "attacker_tokens");
+define("DEFENDER_TOKENS", "defender_tokens");
+define("INFLUENCE_PHASE", "influence_phase");
+define("COMMIT_PHASE", "commit_phase");
+define("LAST_INFLUENCE", "last_influence_slot");
+define("ACTIVE_BATTLE", "active_battle");
+define("BATTLE_ROUND", "battle_round");
+define("LOSER", "battle_loser");
+define("FIRST_PLAYER_BATTLE", "spartan_choice");
+define("DEADPOOL_COUNTER", "deadpool_picked");
+
 // Special tiles
 define("PERIKLES", "perikles");
 define("PERSIANFLEET", "persianfleet");
@@ -52,8 +66,6 @@ define("ALKIBIADES", "alkibiades");
 define("PHORMIO", "phormio");
 define("PLAGUE", "plague");
 
-define("ATTACKER_TOKENS", "attacker_tokens");
-define("DEFENDER_TOKENS", "defender_tokens");
 define("CONTROLLED_PERSIANS", "_persia_"); // used to flag Persian units that will go to a player board
 
 define("DEADPOOL", "deadpool");
@@ -63,7 +75,6 @@ class Perikles extends Table
 	function __construct( )
 	{
         parent::__construct();
-        
 
         self::initGameStateLabels( array(
             "initial_influence" => 70,
@@ -93,18 +104,18 @@ class Perikles extends Table
             "sparta_defeats" => 34,
             "thebes_defeats" => 35,
 
-            "active_battle" => 40,
-            "battle_round" => 41, // 0,1
-            "battle_loser" => 42,
+            ACTIVE_BATTLE => 40,
+            BATTLE_ROUND => 41, // 0,1
+            LOSER => 42,
             ATTACKER_TOKENS => 43, // battle tokens won by attacker so far in current battle
             DEFENDER_TOKENS => 44, // battle tokens won by defender so far in current battle
 
-            "influence_phase" => 50,
-            "last_influence_slot" => 51, // keep track of where to put next Influence tile
-            "commit_phase" => 52,
-            "spartan_choice" => 55, // who Sparta picked to go first in military phase
-            "deadpool_picked" => 56, // how many players have been checked for deadpool?
-            "athens_previous" => 57, // most recent leader of Athens
+            INFLUENCE_PHASE => 50,
+            LAST_INFLUENCE => 51, // keep track of where to put next Influence tile
+            COMMIT_PHASE => 52,
+            FIRST_PLAYER_BATTLE => 55, // who Sparta picked to go first in military phase
+            DEADPOOL_COUNTER => 56, // how many players have been checked for deadpool?
+            ATHENS_PLAYER => 57, // most recent leader of Athens
 
             BRASIDAS => 60, // Brasides activated for next battle
             PHORMIO => 61, // Phormio activated for next battle
@@ -119,7 +130,6 @@ class Perikles extends Table
         $this->influence_tiles->init("INFLUENCE");
         $this->location_tiles = self::getNew("module.common.deck");
         $this->location_tiles->init("LOCATION");
-
     }
 	
     protected function getGameName( )
@@ -165,20 +175,20 @@ class Perikles extends Table
             }
         }
         self::setGameStateInitialValue("initial_influence", 0);
-        self::setGameStateInitialValue("last_influence_slot", 0);
-        self::setGameStateInitialValue("deadpool_picked", 0);
-        self::setGameStateInitialValue("spartan_choice", 0);
+        self::setGameStateInitialValue(LAST_INFLUENCE, 0);
+        self::setGameStateInitialValue(DEADPOOL_COUNTER, 0);
+        self::setGameStateInitialValue(FIRST_PLAYER_BATTLE, 0);
         self::setGameStateInitialValue(ATTACKER_TOKENS, 0);
         self::setGameStateInitialValue(DEFENDER_TOKENS, 0);
-        self::setGameStateInitialValue("active_battle", 0);
-        self::setGameStateInitialValue("battle_round", 0);
-        self::setGameStateInitialValue("battle_loser", -1);
+        self::setGameStateInitialValue(ACTIVE_BATTLE, 0);
+        self::setGameStateInitialValue(BATTLE_ROUND, 0);
+        self::setGameStateInitialValue(LOSER, -1);
         self::setGameStateInitialValue(BRASIDAS, 0);
         self::setGameStateInitialValue(PHORMIO, 0);
         // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with candidate nominations.
-        self::setGameStateInitialValue("influence_phase", 0);
+        self::setGameStateInitialValue(INFLUENCE_PHASE, 0);
         // when we are in the committing phase. Start with first commit, end with battle phase.
-        self::setGameStateInitialValue("commit_phase", 0);
+        self::setGameStateInitialValue(COMMIT_PHASE, 0);
 
         $this->Cities->setupNewGame();
 
@@ -311,7 +321,7 @@ class Perikles extends Table
      */
     function getBattleTokens() {
         $tokens = array();
-        $is_battle = ($this->getGameStateValue("active_battle") != 0);
+        $is_battle = ($this->getGameStateValue(ACTIVE_BATTLE) != 0);
         if ($is_battle) {
             $att = $this->getGameStateValue(ATTACKER_TOKENS);
             $def = $this->getGameStateValue(DEFENDER_TOKENS);
@@ -448,10 +458,10 @@ class Perikles extends Table
      * Draw a new Influence card from deck and place.
      */
     function drawInfluenceTile() {
-        $slot = $this->getGameStateValue("last_influence_slot");
+        $slot = $this->getGameStateValue(LAST_INFLUENCE);
         $this->influence_tiles->pickCardForLocation(DECK, BOARD, $slot);
         $newtile = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_location = \"".BOARD."\" AND card_location_arg =$slot");
-        $this->setGameStateValue("last_influence_slot", 0);
+        $this->setGameStateValue(LAST_INFLUENCE, 0);
 
         $descriptors = $this->influenceTileDescriptors($newtile);
         $city_name = $descriptors[0];
@@ -1203,7 +1213,7 @@ class Perikles extends Table
             'candidate_name' => $players[$first_player]['player_name'],
             'preserve' => ['player_id', 'candidate_id'],
         ));
-        $this->setGameStateValue("spartan_choice", $first_player);
+        $this->setGameStateValue(FIRST_PLAYER_BATTLE, $first_player);
         $this->gamestate->nextState();
     }
 
@@ -1245,7 +1255,7 @@ class Perikles extends Table
         }
 
         $slot = $influence_card['slot'];
-        $this->setGameStateValue("last_influence_slot", $slot);
+        $this->setGameStateValue(LAST_INFLUENCE, $slot);
 
         self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${shards}-Shard ${city_name} tile ${inf_type}'), array(
             'i18n' => ['city_name', 'inf_type'],
@@ -1273,9 +1283,9 @@ class Perikles extends Table
         $player_id = self::getActivePlayerId();
         $this->addInfluenceToCity($city, $player_id, 1);
         $state = "nextPlayer";
-        if ($this->getGameStateValue("influence_phase") == 0) {
+        if ($this->getGameStateValue(INFLUENCE_PHASE) == 0) {
             $state = "nextPlayerInitial";
-        } elseif ($this->SpecialTiles->canPlaySpecial($player_id, "influence_phase")) {
+        } elseif ($this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE)) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -1329,7 +1339,7 @@ class Perikles extends Table
             'candidate' => $c,
             'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
-        $canusespecial = ($this->getGameStateValue("influence_phase") == 1) && $this->SpecialTiles->canPlaySpecial($actingplayer, "influence_phase");
+        $canusespecial = ($this->getGameStateValue(INFLUENCE_PHASE) == 1) && $this->SpecialTiles->canPlaySpecial($actingplayer, INFLUENCE_PHASE);
         $state = $canusespecial ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
@@ -1413,7 +1423,7 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'candidate_id', 'city']
             ));
         }
-        $state = $this->SpecialTiles->canPlaySpecial($player_id, "influence_phase") ? "useSpecial" : "nextPlayer";
+        $state = $this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE) ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
     }
@@ -1440,7 +1450,7 @@ class Perikles extends Table
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
         $state = "nextPlayer";
-        if ($this->SpecialTiles->canPlaySpecial($player_id, "commit_phase")) {
+        if ($this->SpecialTiles->canPlaySpecial($player_id, COMMIT_PHASE)) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -1983,10 +1993,10 @@ class Perikles extends Table
      * @return {array} list of counters, may be empty
      */
     function getPossibleCasualties() {
-        $battle = $this->getGameStateValue("active_battle");
+        $battle = $this->getGameStateValue(ACTIVE_BATTLE);
         $location = $this->Locations->getBattleTile($battle);
-        $loser = $this->getGameStateValue("battle_loser");
-        $round = $this->getGameStateValue("battle_round");
+        $loser = $this->getGameStateValue(LOSER);
+        $round = $this->getGameStateValue(BATTLE_ROUND);
         $type = $this->Locations->getCombat($location, $round);
         $casualties = $this->Battles->getCasualties($loser, $location, $type);
         return $casualties;
@@ -1999,10 +2009,10 @@ class Perikles extends Table
         // reinitialize battle tokens before every battle
         $this->setGameStateValue(ATTACKER_TOKENS, 0);
         $this->setGameStateValue(DEFENDER_TOKENS, 0);
-        $this->setGameStateValue("commit_phase", 0);
-        $this->setGameStateValue("active_battle", 0);
-        $this->setGameStateValue("battle_round", 0);
-        $this->setGameStateValue("battle_loser", -1);
+        $this->setGameStateValue(COMMIT_PHASE, 0);
+        $this->setGameStateValue(ACTIVE_BATTLE, 0);
+        $this->setGameStateValue(BATTLE_ROUND, 0);
+        $this->setGameStateValue(LOSER, -1);
         $this->setGameStateValue(BRASIDAS, 0);
         $this->setGameStateValue(PHORMIO, 0);
         self::notifyAllPlayers("resetBattleTokens", '', []);
@@ -2117,9 +2127,9 @@ class Perikles extends Table
      * Present player with choice of cities to take casualties from
      */
     function argsLoss() {
-        $battle = $this->getGameStateValue("active_battle");
+        $battle = $this->getGameStateValue(ACTIVE_BATTLE);
         $location = $this->Locations->getBattleTile($battle);
-        $round = $this->getGameStateValue("battle_round");
+        $round = $this->getGameStateValue(BATTLE_ROUND);
         $type = $this->Locations->getCombat($location, $round);
 
         // may be empty
@@ -2164,15 +2174,15 @@ class Perikles extends Table
     function checkPhase() {
         $state = $this->getStateName();
         if ($state == "takeInfluence") {
-            return "influence_phase";
+            return INFLUENCE_PHASE;
         } elseif ($state == "commitForces") {
-            return "commit_phase";
+            return COMMIT_PHASE;
         } elseif ($state == "specialTile") {
             // this may be 0, 1, or 2 (2 = candidate phase, no special tiles)
-            if ($this->getGameStateValue("influence_phase") == 1) {
-                return "influence_phase";
-            } elseif ($this->getGameStateValue("commit_phase") == 1) {
-                return "commit_phase";
+            if ($this->getGameStateValue(INFLUENCE_PHASE) == 1) {
+                return INFLUENCE_PHASE;
+            } elseif ($this->getGameStateValue(COMMIT_PHASE) == 1) {
+                return COMMIT_PHASE;
             }
         }
         return null;
@@ -2193,7 +2203,7 @@ class Perikles extends Table
         $nbr = count($players);
 
         if ($init_count == ($nbr*2)) {
-            $this->setGameStateValue("influence_phase", 1);
+            $this->setGameStateValue(INFLUENCE_PHASE, 1);
             $state = "startGame";
         }
 
@@ -2208,10 +2218,10 @@ class Perikles extends Table
      */
     function stNextPlayer() {
         $state = "";
-        if ($this->getGameStateValue("influence_phase") > 0) {
+        if ($this->getGameStateValue(INFLUENCE_PHASE) > 0) {
             if ($this->allInfluenceTilesTaken()) {
                 // no longer taking influence, enter candidates phase
-                $this->setGameStateValue("influence_phase", 2);
+                $this->setGameStateValue(INFLUENCE_PHASE, 2);
 
                 // we're nominating candidates
                 if ($this->Cities->canAnyoneNominate()) {
@@ -2232,7 +2242,7 @@ class Perikles extends Table
                 self::giveExtraTime( $player_id );
                 $state = "takeInfluence";
             }
-        } elseif ($this->getGameStateValue("commit_phase") == 1) {
+        } elseif ($this->getGameStateValue(COMMIT_PHASE) == 1) {
             $state = "nextCommit";
         }
         $this->gamestate->nextState($state);
@@ -2244,11 +2254,11 @@ class Perikles extends Table
     function stNextCommit() {
         $state = "commit";
         // is this the first committer? Start with whoever Spartan player chose
-        $player_id = $this->getGameStateValue("spartan_choice");
+        $player_id = $this->getGameStateValue(FIRST_PLAYER_BATTLE);
         if ($player_id != 0) {
             $this->gamestate->changeActivePlayer($player_id);
-            $this->setGameStateValue("spartan_choice", 0);
-            $this->setGameStateValue("commit_phase", 1);
+            $this->setGameStateValue(FIRST_PLAYER_BATTLE, 0);
+            $this->setGameStateValue(COMMIT_PHASE, 1);
         } else {
             $player_id = self::activeNextPlayer();
             self::giveExtraTime( $player_id );
@@ -2317,9 +2327,9 @@ class Perikles extends Table
      */
     function stDeadPool() {
         // increment until each player has had their pick
-        $picked = $this->getGameStateValue("deadpool_picked");
+        $picked = $this->getGameStateValue(DEADPOOL_COUNTER);
         if ($picked == 0) {
-            $first_player = $this->getGameStateValue("spartan_choice");
+            $first_player = $this->getGameStateValue(FIRST_PLAYER_BATTLE);
             $this->gamestate->changeActivePlayer($first_player);
         }
 
@@ -2327,7 +2337,7 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         $nbr = count($players);
         if ($picked == $nbr) {
-            $this->setGameStateValue("deadpool_picked", 0);
+            $this->setGameStateValue(DEADPOOL_COUNTER, 0);
             $state = "startCommit";
         } else {
             $player_id = self::getActivePlayerId();
@@ -2354,7 +2364,7 @@ class Perikles extends Table
                 }
             }
 
-            $this->incGameStateValue("deadpool_picked", 1);
+            $this->incGameStateValue(DEADPOOL_COUNTER, 1);
         }
         $this->gamestate->nextState($state);
     }
@@ -2376,7 +2386,7 @@ class Perikles extends Table
             $state = "assassinate";
         } else if ($type == 'candidate') {
             $state = "candidate";
-        } else if ($this->SpecialTiles->canPlaySpecial($player_id, "influence_phase")) {
+        } else if ($this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE)) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState( $state );
@@ -2388,7 +2398,7 @@ class Perikles extends Table
     function stElections() {
         $players = self::loadPlayersBasicInfos();
         // end influence phase
-        $this->setGameStateValue("influence_phase", 0);
+        $this->setGameStateValue(INFLUENCE_PHASE, 0);
 
         foreach ($this->Cities->cities() as $cn) {
             $city_name = $this->Cities->getNameTr($cn);
@@ -2539,10 +2549,10 @@ class Perikles extends Table
         $location = $tile['location'];
         $slot = $tile['slot'];
 
-        $this->setGameStateValue("active_battle", $slot);
+        $this->setGameStateValue(ACTIVE_BATTLE, $slot);
         // initialized to 0 in stNextLocationTile, so this makes it either 1 or 2
-        $this->incGameStateValue("battle_round", 1);
-        $round = $this->getGameStateValue("battle_round");
+        $this->incGameStateValue(BATTLE_ROUND, 1);
+        $round = $this->getGameStateValue(BATTLE_ROUND);
 
         $combat = $this->Locations->getCombat($location, $round);
         if ($combat == null) {
@@ -2554,7 +2564,7 @@ class Perikles extends Table
                 $this->revealCounters($tile);
             } else {
                 // one side starts with a battle token
-                $loser = $this->getGameStateValue("battle_loser");
+                $loser = $this->getGameStateValue(LOSER);
                 $this->secondRoundReset($loser);
             }
             $state = "nextCombat";
@@ -2615,7 +2625,7 @@ class Perikles extends Table
 
             if ($round == 1) {
                 $loser = ($unopposed == ATTACKER) ? DEFENDER : ATTACKER;
-                $this->setGameStateValue("battle_loser", $loser);
+                $this->setGameStateValue(LOSER, $loser);
                 $state = "continueBattle";
             } else {
                 // unopposed side wins tile
@@ -2643,7 +2653,7 @@ class Perikles extends Table
     function stRollCombat() {
         $tile = $this->Battles->nextBattle();
         $location = $tile['location'];
-        $round = $this->getGameStateValue("battle_round");
+        $round = $this->getGameStateValue(BATTLE_ROUND);
         $type = $this->Locations->getCombat($location, $round);
         $bonus = (($this->getGameStateValue(BRASIDAS) == 1) || ($this->getGameStateValue(PHORMIO) == 1));
         // get all attacking units
@@ -2700,7 +2710,7 @@ class Perikles extends Table
             'preserve' => ['location']
         ));
 
-        $this->setGameStateValue("battle_loser", $loser);
+        $this->setGameStateValue(LOSER, $loser);
         $casualties = $this->Battles->getCasualties($loser, $location, $type);
         $cities = $this->Battles->getCounterCities($casualties);
 
@@ -2732,9 +2742,9 @@ class Perikles extends Table
         // most recent Athens leader is start player next turn
         $athens_leader = $this->Cities->getLeader("athens");
         if ($athens_leader == 0) {
-            $athens_leader = $this->getGameStateValue("athens_previous");
+            $athens_leader = $this->getGameStateValue(ATHENS_PLAYER);
         }
-        $this->setGameStateValue("athens_previous", $athens_leader);
+        $this->setGameStateValue(ATHENS_PLAYER, $athens_leader);
 
         // add statues
         $this->leadersToStatues();
@@ -2745,7 +2755,7 @@ class Perikles extends Table
 
         if ($state == "nextTurn") {
             // reshuffle Influence deck and deal new cards
-            $this->setGameStateValue("influence_phase", 1);
+            $this->setGameStateValue(INFLUENCE_PHASE, 1);
             $this->dealNewInfluence();
             $this->dealNewLocations();
             $this->gamestate->changeActivePlayer($athens_leader);

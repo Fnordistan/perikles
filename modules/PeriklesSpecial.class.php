@@ -35,7 +35,7 @@ class PeriklesSpecial extends APP_GameClass
   }
 
   /**
-   * Get Special Tilelabel  owned by player.
+   * Get Special Tile label owned by player.
    * @param {string} player_id
    * @return {string} label
    */
@@ -54,12 +54,11 @@ class PeriklesSpecial extends APP_GameClass
     return $this->specialcards[$special]['name'];
   }
 
-
-    /**
-     * Return a list of players who are eligible to play a special tile now.
-     * Note that it only checks for correct phase, not specific battle states.
-     * @return {array} may be empty
-     */
+ /**
+ * Return a list of players who are eligible to play a special tile now.
+ * Note that it only checks for correct phase, not specific battle states.
+ * @return {array} may be empty
+ */
   public function playersWithSpecial($phase) {
       $canplay = [];
       $playertiles = $this->game->getCollectionFromDB("SELECT player_id, special_tile FROM player WHERE special_tile_used IS NOT TRUE", true);

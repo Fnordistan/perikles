@@ -420,8 +420,9 @@ function (dojo, declare) {
                 s = counter_zone.childElementCount;
                 tt = _("Statue of ${player_name} in ${city_name}");
             }
-            const leaderhtml = this.format_block('jstpl_leader', {city: city, type: type, num: s, color: this.decorator.playerColor(player_id)});
+            const leaderhtml = this.format_block('jstpl_leader', {city: city, type: type, num: s});
             const leader = dojo.place(leaderhtml, counter_zone);
+            leader.dataset.color = this.decorator.playerColor(player_id);
 
             tt = tt.replace('${player_name}', this.decorator.spanPlayerName(player_id));
             tt = tt.replace('${city_name}', this.getCityNameTr(city));
@@ -1904,7 +1905,7 @@ function (dojo, declare) {
             const leader = $(city+'_leader').firstChild;
             if (leader) {
                 const color = this.decorator.playerColor(player_id);
-                if (leader.classList.contains('prk_leader_'+color)) {
+                if (leader.dataset.color == color) {
                     isLeader = true;
                 }
             }
