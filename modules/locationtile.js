@@ -32,6 +32,10 @@ const TILE_WIDTH = 124;
 const TILE_HEIGHT = 195;
 const TILE_SCALE = 0.55;
 
+const WAR = -1;
+const ALLIED = 1;
+const NEUTRAL = 0;
+
 define(["dojo/_base/declare"], function (declare) {
     return declare("perikles.locationtile", null, {
         

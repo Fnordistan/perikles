@@ -266,6 +266,7 @@ class Perikles extends Table
         $result['military'] = $this->getMilitary();
         $result['battletokens'] = $this->getBattleTokens();
         $result['wars'] = $this->Cities->getCityRelationships();
+        $result['permissions'] = $this->Locations->getAllPermissions();
 
         return $result;
     }
@@ -877,6 +878,7 @@ class Perikles extends Table
             'location_name' => $this->Locations->getName($location),
             'city' => $city,
             'city_name' => $this->Cities->getNameTr($city),
+            'permissions' => $this->Locations->getPermissions($location),
             'preserve' => ['player_id', 'location', 'city'],
         ));
     }

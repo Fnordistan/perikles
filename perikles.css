@@ -584,6 +584,7 @@
 .prk_city_btn[data-status="war"] {
     border: 4px ridge red;
     background-color: lightgray;
+    pointer-events: 'none';
 }
 
 .prk_city_btn[data-status="allied"] {
@@ -591,8 +592,8 @@
     background-color: lightgray;
 }
 
-.prk_city_btn[data-status="defender"] {
-    border: 4px ridge green;
+/* just means CAN be a defender, not actually one */
+.prk_city_btn[data-defender="true"] {
     background-color: green !important;
 }
 

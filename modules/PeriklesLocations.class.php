@@ -231,6 +231,15 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Get associative array of locations to current permissions setting.
+   * @return {array} {location => permissions}
+   */
+  public function getAllPermissions() {
+      $permissions = $this->game->getCollectionFromDB("SELECT card_type_arg location, permissions FROM LOCATION WHERE card_location=\"".BOARD."\"", true);
+      return $permissions;
+  }
+
+  /**
    * Get the permissions currently set for a location.
    * @return {array} cities with permissions to this location, may be empty
    */
@@ -265,9 +274,6 @@ class PeriklesLocations extends APP_GameClass
         self::DbQuery("UPDATE LOCATION SET permissions=$perms WHERE card_type_arg=\"$location\"");
     }
   }
-
-  
-
 
   /**
    * Does a city have permission to defend a location?
