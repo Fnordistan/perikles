@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `LOCATION` (
   `card_location_arg` TINYINT COMMENT 'slot #',
   `attacker` varchar(16) COMMENT 'main attacker',
   `defender` varchar(16) COMMENT 'main defender',
-  `permissions` varchar(85) COMMENT 'comma-delimited player ids',
+  `permissions` varchar(85) COMMENT 'comma-delimited cities',
   `persia1` varchar(16) COMMENT 'shared by Persian players',
   `persia2` varchar(16) COMMENT 'shared by Persian player!',
   `persia3` varchar(16) COMMENT 'shared by 3 persian players!!',

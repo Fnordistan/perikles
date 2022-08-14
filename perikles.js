@@ -2174,6 +2174,22 @@ function (dojo, declare) {
             return is_last;
         },
 
+        /**
+         * Pack all units being sent into a space-delimited string "id_attdef_location"
+         * @param {Object} committed 
+         */
+         packCommitForcesArg: function(committed) {
+            let argstr = "";
+            for (const[id, selected] of Object.entries(committed)) {
+                if (id != "cube") {
+                    let location = selected.location;
+                    let side = selected.side;
+                    argstr += id+"_"+side+"_"+location+" ";
+                }
+            }
+            return argstr;
+        },
+
         ///////////////////////////////////////////////////
         //// Component creation - create HTML elements
 
@@ -2365,48 +2381,92 @@ function (dojo, declare) {
         // PERMISSION HANDLING
 
         createPermissionButtons: function() {
-            const is_buttons = $('location_area').getElementsByClassName("prk_permission_box");
-            if (is_buttons.length > 0) {
-                return;
-            }
-            const wars = this.gamedatas.wars;
-            const permission_banner = '<div class="prk_permission_hdr">'+_("Granted Permissions")+'</div>';
-            dojo.place(permission_banner, $('location_1'));
-
-            const cities = [...CITIES];
-            if (this.existsPersianLeader()) {
-                cities.push("persia");
-            }
-            for (let i = 1; i <= 7; i++) {
-                const tile = $('location_'+i).firstChild;
-                const location = tile.id.split("_")[0];
-                const controlling_city = new perikles.locationtile(location).getCity();
-
-                const bb_div = '<div id="'+location+'_permissions" class="prk_permission_box"></div>';
-                const button_box = dojo.place(bb_div, tile);
-                for (city of cities) {
-                    debugger;
-                    if (city == "persia" || (city != controlling_city && this.getLeader(city) != this.getLeader(controlling_city))) {
-                        const btn = this.format_block('jstpl_permission_btn', {location: location, city: city, city_name: this.getCityNameTr(city)});
-                        const button = dojo.place(btn, button_box);
-                        const is_leader = this.isLeader(this.player_id, controlling_city);
-                        if (!is_leader) {
-                            button.style["pointer-events"] = 'none';
+            if ($('defenders_permission_banner') == null) {
+                const wars = this.gamedatas.wars;
+                const hdr = _("Defender Permissions");
+                const msg = _("Leader of the controlling city may click to give permission to other cities to defend");
+                const atwar = this.format_block('jstpl_permission_icon', {rel: "war", relationship: _("At War")});
+                const ally = this.format_block('jstpl_permission_icon', {rel: "allied", relationship: _("Allied")});
+                const neutral = this.format_block('jstpl_permission_icon', {rel: "neutral", relationship: _("Neutral")});
+                const defender = this.format_block('jstpl_permission_icon', {rel: "defender", relationship: _("Defender")});
+                const permission_banner = '<div id="defenders_permission_banner" class="prk_permission_banner">'+
+                                                '<span class="prk_hdr"; style="font-size: 48px; color: white;">'+hdr+'</span><br/>'+
+                                                '<span style="font-size: 32px;">'+msg+'</span>'+
+                                                '<hr style="width: 100%;"/>'+
+                                                '<div id="perm_icons_row" style="display: flex; flex-direction: row; justify-content: center; align-items: center;"></div>'+
+                                            '</div>';
+    
+                const banner = dojo.place(permission_banner, $('battle_tokens'));
+                const legend = '<span style="font-size: 24px; color: white; vertical-align: center; margin-right: 5px;">'+_("Legend: ")+'</span>';
+                
+                dojo.place(legend, $('perm_icons_row'));
+                dojo.place(atwar, $('perm_icons_row'));
+                dojo.place(ally, $('perm_icons_row'));
+                dojo.place(neutral, $('perm_icons_row'));
+                dojo.place(defender, $('perm_icons_row'));
+                const othercities = [...CITIES];
+                if (this.existsPersianLeader()) {
+                    othercities.push("persia");
+                }
+                for (let i = 1; i <= 7; i++) {
+                    const tile = $('location_'+i).firstChild;
+                    const location = tile.id.split("_")[0];
+                    const controlling_city = new perikles.locationtile(location).getCity();
+                    const controlling_player = this.getLeader(controlling_city);
+    
+                    const bb_div = '<div id="'+location+'_permissions" class="prk_permission_box"></div>';
+                    const button_box = dojo.place(bb_div, tile);
+                    for (city of othercities) {
+                        // display all other cities NOT controlled by the same player
+                        if (city == "persia" || (city != controlling_city && this.getLeader(city) != controlling_player)) {
+                            const btn = this.format_block('jstpl_permission_btn', {location: location, city: city, city_name: this.getCityNameTr(city)});
+                            const button = dojo.place(btn, button_box);
+                            button.dataset.controller = controlling_player;
+                            const is_leader = (this.player_id == controlling_player);
+    
+                            if (!is_leader) {
+                                button.style["pointer-events"] = 'none';
+                            }
+                            const relationship = wars[controlling_city][city];
+                            if (relationship == -1) {
+                                button.dataset.status = "war";
+                                button.style["pointer-events"] = 'none';
+                            } else if (relationship == 1) {
+                                button.dataset.status = "allied";
+                            }
+                            if (button.dataset.status != "war") {
+                                button.addEventListener('click', () => {
+                                    const [location,city,_] = button.id.split("_");
+                                    const bDefend = button.dataset.status != "defender";
+                                    this.setDefenderPermissions(location, city, bDefend);
+                                });
+                            }
                         }
-                        const relationship = wars[controlling_city][city];
-                        // at war
-                        if (relationship == -1) {
-                            Object.assign(button.style, {"pointer-events" : "none", "border": "4px ridge red"});
-                        } else if (relationship == 1) {
-                            Object.assign(button.style, {"pointer-events" : "none",  "border": "4px ridge green"});
-                        } else if (is_leader) {
-                            button.addEventListener('click', () => {
-                                console.log("click");
-                            });
-                        }
-                        button.setAttribute("data-rel", relationship);
                     }
                 }
+            } else {
+                // just update buttons
+                const buttons = $('location_area').getElementsByClassName("prk_city_btn");
+                [...buttons].forEach(b => {
+                    const [location,city,_] = b.id.split("_");
+                    const controlling_city = new perikles.locationtile(location).getCity();
+                    const controlling_player = this.getLeader(controlling_city);
+                    const relationship = wars[controlling_city][city];
+                    if (relationship == -1) {
+                        b.dataset.status = "war";
+                        b.style["pointer-events"] = 'none';
+                    } else if (relationship == 1) {
+                        b.dataset.status = "allied";
+                    }
+                    if (b.dataset.status != "war") {
+                        b.addEventListener('click', () => {
+                            const bDefend = b.dataset.status != "defender";
+                            this.setDefenderPermissions(location, city, bDefend);
+                        });
+                    }
+
+                });
+
             }
         },
 
@@ -2621,19 +2681,18 @@ function (dojo, declare) {
         },
 
         /**
-         * Pack all units being sent into a space-delimited string "id_attdef_location"
-         * @param {Object} committed 
+         * Player clicked button to give defend permissions to another city.
+         * @param {string} location tile to be defended
+         * @param {string} city granted permission to defend
+         * @param {bool} bDefend true to give, false to revoke
          */
-        packCommitForcesArg: function(committed) {
-            let argstr = "";
-            for (const[id, selected] of Object.entries(committed)) {
-                if (id != "cube") {
-                    let location = selected.location;
-                    let side = selected.side;
-                    argstr += id+"_"+side+"_"+location+" ";
-                }
-            }
-            return argstr;
+        setDefenderPermissions: function(location, city, bDefend=true) {
+            this.ajaxcall( "/perikles/perikles/setdefender.html", {
+                location: location,
+                defender: city,
+                defend: bDefend,
+                lock: true
+            }, this, function( result ) { }, function( is_error) { } );
         },
 
         ///////////////////////////////////////////////////
@@ -2700,6 +2759,9 @@ function (dojo, declare) {
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
+
+            dojo.subscribe( 'givePermission', this, "notif_givePermission");
+            this.notifqueue.setSynchronous( 'givePermission', 500);
 
             // special tiles
             dojo.subscribe( 'useTile', this, "notif_useTile");
@@ -3123,6 +3185,22 @@ function (dojo, declare) {
             const city_military = city+"_military";
             this.slideToObjectAndDestroy(counter, city_military, 1000, 1500);
             new perikles.counter(city, type, strength, id).addToStack();
+        },
+
+        /**
+         * Someone sent permission to defend.
+         * @param {Object} notif 
+         */
+        notif_givePermission: function(notif) {
+            const location = notif.args.location;
+            const city = notif.args.city;
+            const button = $(location+'_'+city+'_btn');
+
+            if (button == null) {
+                throw new Error("Received invalid permission notification for "+city+" "+location); // NOI18N
+            }
+
+            button.dataset.status = "defender";
         },
 
         /**

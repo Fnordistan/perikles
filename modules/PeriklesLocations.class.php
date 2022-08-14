@@ -232,40 +232,55 @@ class PeriklesLocations extends APP_GameClass
 
   /**
    * Get the permissions currently set for a location.
-   * @return {array} player_ids with permissions to this location, may be empty
+   * @return {array} cities with permissions to this location, may be empty
    */
   public function getPermissions($location) {
-    $permissionval = $this->game->getObjectListFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"", true);
+    $permissionval = $this->game->getUniqueValueFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
     $permissions = empty($permissionval) ? [] : explode(",", $permissionval);
     return $permissions;
   }
 
   /**
-   * Add a new player to the list of permissions to defend a location.
+   * Add a new city to the list of permissions to defend a location.
    * @param {string} location
-   * @param {string} player_id
+   * @param {string} city
    */
-  public function addPermission($location, $player_id) {
+  public function addPermission($location, $city) {
     $permissions = $this->getPermissions($location);
-    if (!in_array($player_id, $permissions)) {
-        $permissions[] = $player_id;
+    if (!in_array($city, $permissions)) {
+        $permissions[] = $city;
         $newperms = implode(',', $permissions);
-        self::DbQuery("UPDATE LOCATION SET permissions=$newperms WHERE card_type_arg=\"$location\"");
+        self::DbQuery("UPDATE LOCATION SET permissions=\"$newperms\" WHERE card_type_arg=\"$location\"");
     }
   }
 
   /**
-   * Does a player have permission to defend a location?
-   * @param {string} player_id asking for permission
+   * Remove permission from a city to defend a location.
+   */
+  public function removePermission($location, $city) {
+    $permissions = $this->getPermissions($location);
+    if (in_array($city, $permissions)) {
+        $newperms = array_filter($permissions, fn($p) => $p != $city);
+        $perms = implode(',', $newperms);
+        self::DbQuery("UPDATE LOCATION SET permissions=$perms WHERE card_type_arg=\"$location\"");
+    }
+  }
+
+  
+
+
+  /**
+   * Does a city have permission to defend a location?
+   * @param {string} city asking for permission
    * @param {string} location
    * @return {bool} true if this player_id has permission flag set
    */
-  function hasDefendPermission($player_id, $location) {
+  function hasDefendPermission($city, $location) {
     $hasPerm = false;
     $permissions = $this->game->getUniqueValueFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
     if (!empty($permissions)) {
         $perms = explode(",", $permissions);
-        $hasPerm = in_array($player_id, $perms);
+        $hasPerm = in_array($city, $perms);
     }
     return $hasPerm;
 }

@@ -849,31 +849,35 @@ class Perikles extends Table
     }
 
     /**
-     * Let a player give another player permission to defend a location.
-     * @param {string} $requester being given permission
-     * @param {string} location
+     * Let a player give another city permission to defend a location.
+     * @param {string} location tile being given permission for
+     * @param {string} city being given permission
+     * @param {bool} bDefend give/retract permission
      */
-    function giveDefendPermission($requester, $location) {
+    function giveDefendPermission($location, $city, $bDefend) {
         // make sure assigner owns it
-        $assigner = self::getActivePlayerId();
+        $assigner = self::getCurrentPlayerId();
 
-        $city = $this->Locations->getCity($location);
-        if (!$this->Cities->isLeader($assigner, $city)) {
-            throw new BgaUserException(self::_("You do not own this location's city"));
+        $controlling_city = $this->Locations->getCity($location);
+        if (!$this->Cities->isLeader($assigner, $controlling_city)) {
+            throw new BgaUserException(sprintf(self::_("You do not control %s"), $this->Cities->getNameTr($controlling_city)));
+        }
+        if ($city != PERSIA && $this->Cities->isLeader($assigner, $city)) {
+            throw new BgaUserException(sprintf(self::_("You are the Leader of %s!"), $this->Cities->getNameTr($city)));
         }
 
         $players = self::loadPlayersBasicInfos();
-        $this->Locations->addPermission($location, $requester);
+        $this->Locations->addPermission($location, $city);
 
-        self::notifyAllPlayers('givePermission', clienttranslate('${defender_name} gives ${player_name} permission to send forces to ${location_name}'), array(
-            'i18n' => ['location_name'],
-            'player_id' => $requester,
-            'player_name' =>  $players[$requester]['player_name'],
-            'defender_id' => $assigner,
-            'defender_name' => $players[$assigner]['player_name'],
+        self::notifyAllPlayers('givePermission', clienttranslate('${player_name} gives ${city_name} permission to send forces to ${location_name}'), array(
+            'i18n' => ['location_name', 'city_name'],
+            'player_id' => $assigner,
+            'player_name' =>  $players[$assigner]['player_name'],
             'location' => $location,
             'location_name' => $this->Locations->getName($location),
-            'preserve' => ['player_id', 'defender_id', 'location'],
+            'city' => $city,
+            'city_name' => $this->Cities->getNameTr($city),
+            'preserve' => ['player_id', 'location', 'city'],
         ));
     }
 
@@ -1585,6 +1589,11 @@ class Perikles extends Table
         $this->gamestate->nextState();
     }
 
+    //////////////////////////////////////////////////////////////////
+    /// BATTLE FUNCTIONS
+    //////////////////////////////////////////////////////////////////
+
+
     /**
      * Checks whether a unit can attack a city, throws an Exception if it fails.
      * Also marks unit as Allies with all attackers and At War with all Defenders.
@@ -1667,7 +1676,7 @@ class Perikles extends Table
         // Do I control this city? If not, I need permission from defender
         $leader = $this->Cities->getLeader($city);
         if ($leader != $player_id) {
-            if (!$this->Locations->hasDefendPermission($player_id, $location)) {
+            if (!$this->Locations->hasDefendPermission($counter['city'], $location)) {
                 $players = $this->loadPlayersBasicInfos();
                 throw new BgaUserException(sprintf(self::_("%s must give permission for %s to defend %s"), $players[$leader]['player_name'], $unit_desc, $this->Locations->getName($location)));
             }
@@ -2866,9 +2875,6 @@ class Perikles extends Table
                     break;
                 case 'commitForces':
                     $this->sendRandomUnits($active_player);
-                    break;
-                case 'requestResponse':
-                    $this->respondRequest(false);
                     break;
                 case 'specialTile':
                     $this->specialTilePass($active_player);

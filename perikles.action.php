@@ -180,23 +180,14 @@ class action_perikles extends APP_GameAction
     }
 
     /**
-     * Player gave/refused permission to defend.
+     * Player send/revokes permission to defend a location.
      */
-    public function respondrequest() {
+    public function setdefender() {
       self::setAjaxMode();     
-      $allow = self::getArg( "allow", AT_bool, true );
-      $this->game->respondRequest($allow);
+      $location = self::getArg( "location", AT_alphanum, true );
+      $defender = self::getArg( "defender", AT_alphanum, true );
+      $bDefend =  self::getArg( "defend", AT_bool, true );
+      $this->game->giveDefendPermission($location, $defender, $bDefend);
       self::ajaxResponse( );
     }
-
-    /**
-     * Player asking permission to defend a city canceled.
-     */
-    public function cancelrequest() {
-      self::setAjaxMode();     
-      $player_id = self::getArg( "player_id", AT_alphanum, true );
-      $this->game->cancelRequest($player_id);
-      self::ajaxResponse( );
-    }
-
 }
