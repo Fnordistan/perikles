@@ -241,11 +241,10 @@ class PeriklesLocations extends APP_GameClass
 
   /**
    * Get the permissions currently set for a location.
-   * @return {array} cities with permissions to this location, may be empty
+   * @return {string} comma-separated cities with permissions to this location, may be null
    */
   public function getPermissions($location) {
-    $permissionval = $this->game->getUniqueValueFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
-    $permissions = empty($permissionval) ? [] : explode(",", $permissionval);
+    $permissions = $this->game->getUniqueValueFromDB("SELECT permissions FROM LOCATION WHERE card_type_arg=\"$location\"");
     return $permissions;
   }
 
@@ -256,11 +255,12 @@ class PeriklesLocations extends APP_GameClass
    */
   public function addPermission($location, $city) {
     $permissions = $this->getPermissions($location);
-    if (!in_array($city, $permissions)) {
-        $permissions[] = $city;
-        $newperms = implode(',', $permissions);
-        self::DbQuery("UPDATE LOCATION SET permissions=\"$newperms\" WHERE card_type_arg=\"$location\"");
+    if ($permissions == null) {
+      $permissions = $city;
+    } elseif (!str_contains($permissions, $city)) {
+      $permissions .= ",".$city;
     }
+    self::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
   }
 
   /**
@@ -268,10 +268,9 @@ class PeriklesLocations extends APP_GameClass
    */
   public function removePermission($location, $city) {
     $permissions = $this->getPermissions($location);
-    if (in_array($city, $permissions)) {
-        $newperms = array_filter($permissions, fn($p) => $p != $city);
-        $perms = implode(',', $newperms);
-        self::DbQuery("UPDATE LOCATION SET permissions=$perms WHERE card_type_arg=\"$location\"");
+    if (str_contains($permissions, $city)) {
+      $permissions = str_replace($city, '', $permissions);
+      self::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
     }
   }
 

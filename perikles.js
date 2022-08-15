@@ -1325,22 +1325,29 @@ function (dojo, declare) {
                     }
                     break;
                 case 'nextPlayerCommit':
-                    this.gamedatas.gamestate.wars = args.wars;
+                    this.gamedatas.wars = args.args.wars;
                     break;
                 case 'endTurn':
-                    this.gamedatas.gamestate.wars = {};
-                    this.gamedatas.gamestate.permissions = {};
+                    this.gamedatas.wars = {};
+                    this.gamedatas.permissions = {};
                     this.removePermissionButtons();
                     break;
             }
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
-                $('military_board').style['display'] = 'block';
-                const battleslots = $('location_area').getElementsByClassName("prk_battle");
-                [...battleslots].forEach(b => {
-                    this.makeSplayable(b);
-                });
-                this.createPermissionsDisplay();
+                this.militaryPhaseDisplay();
             }
+        },
+
+        /**
+         * Attach event listeners to stacks and permissions buttons if we're in the military stage.
+         */
+        militaryPhaseDisplay: function() {
+            $('military_board').style['display'] = 'block';
+            const battleslots = $('location_area').getElementsByClassName("prk_battle");
+            [...battleslots].forEach(b => {
+                this.makeSplayable(b);
+            });
+            this.createPermissionsDisplay();
         },
 
         // onLeavingState: this method is called each time we are leaving a game state.
@@ -2418,11 +2425,8 @@ function (dojo, declare) {
                         this.createPermissionsBox(tile, othercities);
                     }
                 }
-                this.updatePermissions();
-            } else {
-                // just update buttons
-                this.updatePermissions();
             }
+            this.updatePermissions();
         },
 
         /**
@@ -2438,10 +2442,10 @@ function (dojo, declare) {
                                             '<div id="perm_icons_row" style="display: flex; flex-direction: row; justify-content: center; align-items: center;"></div>'+
                                         '</div>';
             dojo.place(permission_banner, $('battle_tokens'));
-            const atwar = this.format_block('jstpl_permission_icon', {rel: "war", relationship: _("At War")});
-            const ally = this.format_block('jstpl_permission_icon', {rel: "allied", relationship: _("Allied")});
-            const neutral = this.format_block('jstpl_permission_icon', {rel: "neutral", relationship: _("Neutral")});
-            const defender = this.format_block('jstpl_permission_icon', {rel: "defender", relationship: _("Defender")});
+            const atwar = this.format_block('jstpl_permission_icon', {rel: "war", defender: "false", relationship: _("At War")});
+            const ally = this.format_block('jstpl_permission_icon', {rel: "allied", defender: "false", relationship: _("Allied")});
+            const neutral = this.format_block('jstpl_permission_icon', {rel: "neutral", defender: "false", relationship: _("Neutral")});
+            const defender = this.format_block('jstpl_permission_icon', {rel: "neutral", defender: "true", relationship: _("Defender")});
             const legend = '<span style="font-size: 24px; color: white; vertical-align: center; margin-right: 5px;">'+_("Legend:")+'</span>';
 
             dojo.place(legend, $('perm_icons_row'));
@@ -2462,12 +2466,13 @@ function (dojo, declare) {
             const controlling_player = this.getLeader(controlling_city);
             const bb_div = '<div id="'+location+'_permissions" class="prk_permission_box"></div>';
             const button_box = dojo.place(bb_div, tile);
+
+            const wars = this.gamedatas.wars;
             for (let city of cities) {
                 // display all other cities NOT controlled by the same player
                 if (city == "persia" || (city != controlling_city && this.getLeader(city) != controlling_player)) {
                     const btn = this.format_block('jstpl_permission_btn', {location: location, city: city, city_name: this.getCityNameTr(city)});
                     const button = dojo.place(btn, button_box);
-                    button.dataset.controller = controlling_player;
                     const is_leader = (this.player_id == controlling_player);
 
                     if (!is_leader) {
@@ -2481,7 +2486,6 @@ function (dojo, declare) {
                         button.dataset.status = "allied";
                     }
                     button.addEventListener('click', this.onClickPermissionButton.bind(this));
-
                 }
             }
         },
@@ -2489,11 +2493,11 @@ function (dojo, declare) {
         /**
          * Look for all active permissions buttons and update their status.
          * Does not create the buttons or set the event listeners/styles, only the data tags.
-         * Relies on this.gamedatas.gamestate.wars and this.gamedatas.gamestate.permissions to be current!
+         * Relies on this.gamedatas.wars and this.gamedatas.permissions to be current!
          */
         updatePermissions: function() {
-            const wars = this.gamedatas.gamestate.wars;
-            const permissions = this.gamedatas.gamestate.permissions;
+            const wars = this.gamedatas.wars;
+            const permissions = this.gamedatas.permissions;
 
             // all the permission buttons attached to the location tiles
             const buttons = $('location_area').getElementsByClassName("prk_city_btn");
@@ -2502,11 +2506,14 @@ function (dojo, declare) {
                 const controlling_city = new perikles.locationtile(location).getCity();
                 const relationship = wars[controlling_city][city];
 
-                b.dataset.defender = (permissions[location] == 'true');
+                b.dataset.defender = (permissions[location] && permissions[location].includes(city));
                 // war will override any permission that shouldn't have been granted
                 if (relationship == WAR) {
                     b.dataset.status = "war";
                     b.dataset.defender = 'false';
+                    if (permissions[location]) {
+                        this.gamedatas.permissions[location] = permissions[location].replace(city, '');
+                    }
                 } else if (relationship == ALLIED) {
                     b.dataset.status = "allied";
                 } else {
@@ -2539,8 +2546,6 @@ function (dojo, declare) {
                 if (button.dataset.defender != "true") {
                     // it's neutral or allied, we can enable defense
                     this.setDefenderPermissions(location, city, true);
-                } else {
-                    console.log("already defender");
                 }
             }
         },
@@ -3047,7 +3052,7 @@ function (dojo, declare) {
 
             // adjust war status
             const wars = notif.args.wars;
-            Object.assign(this.gamedatas.gamestate.wars, wars);
+            Object.assign(this.gamedatas.wars, wars);
             this.updatePermissions();
         },
 
@@ -3263,14 +3268,14 @@ function (dojo, declare) {
 
         /**
          * Someone sent permission to defend.
-         * Need to update gamedatas.gamestate.permissions
+         * Need to update gamedatas.permissions
          * @param {Object} notif 
          */
         notif_givePermission: function(notif) {
             const location = notif.args.location;
-            // only for this one location
+            // only a string for this one location
             const permissions = notif.args.permissions;
-            this.gamedatas.gamestate.permissions[location] = permissions;
+            this.gamedatas.permissions[location] = permissions;
             this.updatePermissions();
         },
 
