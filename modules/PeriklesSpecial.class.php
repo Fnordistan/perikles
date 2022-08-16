@@ -105,9 +105,10 @@ class PeriklesSpecial extends APP_GameClass
      * 
      * @param player_id player_id player playing the tile
      * @param tile expected tile label (optional)
+     * @param combat (optional)
      * @return {array} Special Tile object [tile, used]
      */
-    function checkSpecialTile($player_id, $tile = null) {
+    function checkSpecialTile($player_id, $tile = null, $combat=null) {
       $special = $this->game->getObjectFromDB("SELECT special_tile tile, special_tile_used used FROM player WHERE player_id=$player_id", true);
       // sanity check
       if ($special == null) {
@@ -119,8 +120,12 @@ class PeriklesSpecial extends APP_GameClass
       }
       $label = $special['tile'];
       $phase = $this->specialcards[$label]['phase'];
-      if ($this->game->getGameStateValue($phase) == 0) {
-          throw new BgaVisibleSystemException("Special Tile $label cannot be used during the current phase"); // NOI18N
+      if ($phase == "trireme_battle" || $phase == "hoplite_battle") {
+        if ($phase != $combat."_battle") {
+            throw new BgaVisibleSystemException("Special Tile $label cannot be used during the current phase"); // NOI18N
+        }
+      } elseif ($this->game->getGameStateValue($phase) == 0) {
+            throw new BgaVisibleSystemException("Special Tile $label cannot be used during the current phase"); // NOI18N
       }
       if ($tile != null && $label != $tile) {
           throw new BgaVisibleSystemException(sprintf("You cannot play %s", $this->specialcards[$label]['name'])); // NOI18N

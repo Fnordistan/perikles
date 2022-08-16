@@ -1863,12 +1863,12 @@ function (dojo, declare) {
 
             if ($('attacker_battle_tokens').childElementCount == 0) {
                 this.addActionButton( "attacker_btn", _('Attackers'), () => {
-                    console.log("Attackers");
+                    this.specialBattleTile(true, "attacker");
                 }, null, null, 'blue');
             }
             if ($('defender_battle_tokens').childElementCount == 0) {
                 this.addActionButton( "defender_btn", _('Defenders'), () => {
-                    console.log("Defenders");
+                    this.specialBattleTile(true, "defender");
                 }, null, null, 'blue');
             }
 
@@ -2674,11 +2674,12 @@ function (dojo, declare) {
          * For Special Tiles applicable during battles.
          * @param {bool} bUse 
          */
-        specialBattleTile: function(bUse) {
+        specialBattleTile: function(bUse, side=null) {
             if (this.checkPossibleActions("useSpecialBattle", true)) {
                 this.ajaxcall( "/perikles/perikles/specialBattleTile.html", {
                     player: this.player_id,
                     use: bUse,
+                    side: side,
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
                 this.restoreDescriptionOnMyTurn();

@@ -987,12 +987,17 @@ class Perikles extends Table
      * Only applies to special BATTLE tiles
      * @param {string} player_id
      * @param {bool} use true if use, false if pass
+     * @param {string} side (optional, only for PERSIANFLEET and THESSALANIANALLIES)
      */
-    function useSpecialBattleTile($player_id, $use) {
+    function useSpecialBattleTile($player_id, $use, $side=null) {
         $this->checkAction('useSpecialBattle');
         if ($use) {
-            $special = $this->SpecialTiles->checkSpecialTile($player_id);
-            // sanity check
+
+            $battle = $this->getGameStateValue(ACTIVE_BATTLE);
+            $location = $this->Locations->getBattleTile($battle);
+            $round = $this->getGameStateValue(BATTLE_ROUND);
+            $type = $this->Locations->getCombat($location, $round);
+            $special = $this->SpecialTiles->checkSpecialTile($player_id, null, $type);
             $t = $special['tile'];
     
             switch ($t) {
@@ -1001,6 +1006,10 @@ class Perikles extends Table
                     break;
                 case PHORMIO:
                     $this->setGameStateValue(PHORMIO, 1);
+                    break;
+                case THESSALANIANALLIES:
+                case PERSIANFLEET:
+                    throw new BgaVisibleSystemException("Played $t on side $side"); // NOI18N
                     break;
                 default:
                     throw new BgaVisibleSystemException("Invalid special tile: $t"); // NOI18N

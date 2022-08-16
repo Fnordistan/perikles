@@ -140,7 +140,8 @@ class action_perikles extends APP_GameAction
       self::setAjaxMode();     
       $player_id = self::getArg( "player", AT_alphanum, true );
       $use = self::getArg( "use", AT_bool, true );
-      $this->game->useSpecialBattleTile($player_id, $use);
+      $side = self::getArg( "side", AT_alphanum, false );
+      $this->game->useSpecialBattleTile($player_id, $use, $side);
       self::ajaxResponse( );
     }
 
