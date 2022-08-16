@@ -584,7 +584,6 @@
 .prk_city_btn[data-status="war"] {
     border: 4px ridge red;
     background-color: lightgray;
-    pointer-events: 'none' !important;
 }
 
 .prk_city_btn[data-status="allied"] {
@@ -598,7 +597,7 @@
     background-color: green !important;
 }
 
-.prk_city_btn:hover {
+.prk_city_btn:hover:not([data-status="war"]) {
     text-shadow: none;
     border: 4px ridge lightgray;
     transition: all 0.25s;

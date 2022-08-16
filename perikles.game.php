@@ -991,7 +991,20 @@ class Perikles extends Table
     function useSpecialBattleTile($player_id, $use) {
         $this->checkAction('useSpecialBattle');
         if ($use) {
-            $this->playSpecialTile($player_id);
+            $special = $this->SpecialTiles->checkSpecialTile($player_id);
+            // sanity check
+            $t = $special['tile'];
+    
+            switch ($t) {
+                case BRASIDAS:
+                    $this->setGameStateValue(BRASIDAS, 1);
+                    break;
+                case PHORMIO:
+                    $this->setGameStateValue(PHORMIO, 1);
+                    break;
+                default:
+                    throw new BgaVisibleSystemException("Invalid special tile: $t"); // NOI18N
+            }
         }
         $this->gamestate->setPlayerNonMultiactive( $player_id, "battle" );
     }
@@ -1002,20 +1015,6 @@ class Perikles extends Table
      * @param player_id
      */
     function playSpecialTile($player_id) {
-        $special = $this->SpecialTiles->checkSpecialTile($player_id);
-        // sanity check
-        $t = $special['tile'];
-
-        switch ($t) {
-            case BRASIDAS:
-                $this->setGameStateValue(BRASIDAS, 1);
-                break;
-            case PHORMIO:
-                $this->setGameStateValue(PHORMIO, 1);
-                break;
-            default:
-                throw new BgaVisibleSystemException("Invalid special tile: $t"); // NOI18N
-        }
     }
 
     /**

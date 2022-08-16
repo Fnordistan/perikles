@@ -1178,10 +1178,12 @@ function (dojo, declare) {
             this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit, cube: is_extra};
             this.setDescriptionOnMyTurn(_("You must commit forces")+'<br/>committed_forces');
             // add event listeners
-            const city_btns = document.getElementsByClassName("prk_city_btn");
-            [...city_btns].forEach(btn => {
-                btn.addEventListener('click', this.onCommitExtraForces.bind(this));
-            });
+            if ($(COMMIT_INFLUENCE_CUBES)) {
+                const city_btns = $('commit_influence_cubes').getElementsByClassName("prk_city_btn");
+                [...city_btns].forEach(btn => {
+                    btn.addEventListener('click', this.onCommitExtraForces.bind(this));
+                });
+            }
             // hide unit on military board
             $(city+'_'+unit+'_'+strength+'_'+id).style.display = "none";
 
