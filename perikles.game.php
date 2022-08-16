@@ -992,7 +992,6 @@ class Perikles extends Table
     function useSpecialBattleTile($player_id, $use, $side=null) {
         $this->checkAction('useSpecialBattle');
         if ($use) {
-
             $battle = $this->getGameStateValue(ACTIVE_BATTLE);
             $location = $this->Locations->getBattleTile($battle);
             $round = $this->getGameStateValue(BATTLE_ROUND);
@@ -1000,6 +999,7 @@ class Perikles extends Table
             $special = $this->SpecialTiles->checkSpecialTile($player_id, null, $type);
             $t = $special['tile'];
     
+            $this->flipSpecialTile($player_id);
             switch ($t) {
                 case BRASIDAS:
                     $this->setGameStateValue(BRASIDAS, 1);
@@ -1009,7 +1009,8 @@ class Perikles extends Table
                     break;
                 case THESSALANIANALLIES:
                 case PERSIANFLEET:
-                    throw new BgaVisibleSystemException("Played $t on side $side"); // NOI18N
+                    $tokens = array("attacker" => ATTACKER, "defender" => DEFENDER);
+                    $this->startingBattleToken($tokens[$side]);
                     break;
                 default:
                     throw new BgaVisibleSystemException("Invalid special tile: $t"); // NOI18N
@@ -1019,11 +1020,15 @@ class Perikles extends Table
     }
 
     /**
-     * Active a Special Tile.
-     * Applies only to special tiles that are yes/no
-     * @param player_id
+     * For THESSALANIANALLIES or PERSIANFLEET to give one side a starting token.
+     * @param {int} ATTACKER or DEFENDER
      */
-    function playSpecialTile($player_id) {
+    function startingBattleToken($side) {
+        $tokens = ($side == ATTACKER) ? ATTACKER_TOKENS : DEFENDER_TOKENS;
+        if ($this->getGameStateValue($tokens) > 0) {
+            throw new BgaVisibleSystemException("Chosen side already has a Victory Token!"); // NOI18N
+        }
+        $this->takeToken($side);
     }
 
     /**

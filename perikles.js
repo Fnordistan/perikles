@@ -2437,13 +2437,13 @@ function (dojo, declare) {
         createPermissionsBannerHtml: function() {
             const hdr = _("Defender Permissions");
             const msg = _("Leader of the controlling city may click to give permission to other cities to defend");
-            const permission_banner =   '<div id="defenders_permission_banner" class="prk_permission_banner">'+
+            const permission_banner =   '<div id="defenders_permission_banner">'+
                                             '<span class="prk_hdr"; style="font-size: 48px; color: white;">'+hdr+'</span><br/>'+
                                             '<span style="font-size: 32px;">'+msg+'</span>'+
                                             '<hr style="width: 100%;"/>'+
                                             '<div id="perm_icons_row" style="display: flex; flex-direction: row; justify-content: center; align-items: center;"></div>'+
                                         '</div>';
-            dojo.place(permission_banner, $('battle_tokens'));
+            dojo.place(permission_banner, $('perikles_map'));
             const atwar = this.format_block('jstpl_permission_icon', {rel: "war", defender: "false", relationship: _("At War")});
             const ally = this.format_block('jstpl_permission_icon', {rel: "allied", defender: "false", relationship: _("Allied")});
             const neutral = this.format_block('jstpl_permission_icon', {rel: "neutral", defender: "false", relationship: _("Neutral")});

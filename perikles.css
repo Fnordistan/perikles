@@ -54,6 +54,9 @@
     --color_megara: #FF633A;
     --color_persia: #C9C5C4;
     --color_any: #9A5200;
+    /* map dimensions */
+    --map_w: 1298px;
+    --map_h: 1500px;
     /* tokens */
     --counter_dim: 52px;
     /* board has been blown up to 2x size */
@@ -743,20 +746,6 @@
     text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
 }
 
-.prk_permission_banner {
-    display: flex;
-    flex-direction: column;
-    font-family: 'ThrumsSerifRegular';
-    color: white;
-    width: 600px;
-    height: min-content;
-    margin-top: -160px;
-    background: gray;
-    padding: 2px;
-    border: 2px solid black;
-    transform: translate(300px);
-}
-
 .prk_send_dlg {
     display: flex;
     flex-direction: column;
@@ -853,11 +842,11 @@
 
 #perikles_map {
     position: relative;
-    background-size: 1298px 1500px;
+    background-size: var(--map_w) var(--map_h);
     background-image: url(img/perikles_board.jpg);
     background-repeat: no-repeat;
-    min-width: 1298px;
-    min-height: 1500px;
+    min-width: var(--map_w);
+    min-height: var(--map_h);
 }
 
 #crt_table {
@@ -871,7 +860,7 @@
 #deadpool {
     display: flex;
     flex-direction: column;
-    width: 1298px;
+    width: var(--map_w);
     margin: 5px;
     padding: 5px;
     border: 3px ridge #44443e;
@@ -907,7 +896,7 @@
     margin: 5px;
     border: 3px ridge #1E131B;
     background-color: lightgrey;
-    max-width: 1298px;
+    max-width: var(--map_w);
     overflow: auto;
     display: none;
 }
@@ -931,4 +920,20 @@
 
 #slaverevolt_div > div {
  margin-left: 4px;
+}
+
+#defenders_permission_banner {
+    position: absolute;
+    left: var(--map_w);
+    top: 600px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'ThrumsSerifRegular';
+    color: white;
+    width: 600px;
+    height: min-content;
+    margin-top: -160px;
+    background: gray;
+    padding: 2px;
+    border: 2px solid black;
 }
