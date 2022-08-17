@@ -1059,7 +1059,7 @@ function (dojo, declare) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     if (enter) {
-                        mycubes.dataset.status = "active";
+                        mycubes.dataset.status = "highlight";
                     } else {
                         delete mycubes.dataset.status;
                     }
@@ -1075,7 +1075,7 @@ function (dojo, declare) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("placeAnyCube", true)) {
                     this.placeInfluenceCube(city);
-                    this.decorator.removeActivationAll();
+                    this.decorator.removeAllHighlighted();
                 }
             }
         },
@@ -1091,8 +1091,8 @@ function (dojo, declare) {
                 const cube_div = event.target;
                 // player must have a cube in the city
                 if (enter && this.hasCubeInCity(city, true)) {
-                    if (cube_div.hasChildNodes() && $(city).dataset.status == "active") {
-                        cube_div.dataset.status = "active";
+                    if (cube_div.hasChildNodes() && $(city).dataset.status == "highlight") {
+                        cube_div.dataset.status = "highlight";
                     }
                 } else {
                     delete cube_div.dataset.status;
@@ -1111,10 +1111,10 @@ function (dojo, declare) {
                 if (this.checkAction("proposeCandidate", true)) {
                     const tgt = event.target;
                     // it's either the cube area or one of the cubes
-                    if ($(city).dataset.status == "active" && this.hasCubeInCity(city, true)) {
+                    if ($(city).dataset.status == "highlight" && this.hasCubeInCity(city, true)) {
                         if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
                             this.proposeCandidate(city, player_id);
-                            this.decorator.removeActivationAll();
+                            this.decorator.removeAllHighlighted();
                         }    
                     }
                 }
@@ -1140,9 +1140,9 @@ function (dojo, declare) {
             if (this.checkAction("takeInfluence", true)) {
                 const card = $(id);
                 if (hover) {
-                    card.classList.add("prk_influence_tile_active");
+                    card.dataset.status = "highlight";
                 } else {
-                    card.classList.remove("prk_influence_tile_active");
+                    delete card.dataset.status;
                 }
             }
         },
@@ -1288,7 +1288,7 @@ function (dojo, declare) {
                 case 'choosePlaceInfluence':
                     if( this.isCurrentPlayerActive() ) {
                         let cities = document.getElementsByClassName("prk_city");
-                        [...cities].forEach(c => c.dataset.status = "active");
+                        [...cities].forEach(c => c.dataset.status = "highlight");
                     }
                     break;
                 case 'proposeCandidates':
@@ -1297,8 +1297,8 @@ function (dojo, declare) {
                             const candidate_space = this.openCandidateSpace(city);
                             if (candidate_space && this.hasCubeInCity(city, true)) {
                                 const city_div = $(city);
-                                city_div.dataset.status = "active";
-                                candidate_space.dataset.status = "active";
+                                city_div.dataset.status = "highlight";
+                                candidate_space.dataset.status = "highlight";
                             }
                         }
                     }
@@ -1360,10 +1360,10 @@ function (dojo, declare) {
             
             switch( stateName ) {
                 case 'choosePlaceInfluence':
-                    this.decorator.removeActivationAll();
+                    this.decorator.removeAllHighlighted();
                     break;
                 case 'proposeCandidates':
-                    this.decorator.removeActivationAll();
+                    this.decorator.removeAllHighlighted();
                     this.last_cube = null;
                     break;
                 case 'assassinate':
@@ -1636,17 +1636,17 @@ function (dojo, declare) {
          * @param {Object} cube 
          */
          addAlkibiadesCubesEventListeners: function(cube) {
-            cube.classList.add("prk_cube_alkibiades");
+            cube.dataset.action = "alkibiades";
             // spin and highlight
             cube.addEventListener('mouseenter', () => {
                 const cubes = this.getAlkibiadesCubesToMove();
                 if (cubes.length < 2) {
-                    cube.classList.add("prk_cube_alkibiades_active");
+                    cube.dataset.status = "highlight";
                 }
             });
             // unhighlight
             cube.addEventListener('mouseleave', () => {
-                cube.classList.remove("prk_cube_alkibiades_active");
+                delete cube.dataset.status;
             });
             cube.addEventListener('click', () => {
                 const cubes = this.getAlkibiadesCubesToMove();
@@ -1654,7 +1654,7 @@ function (dojo, declare) {
                     // unmark any previous cube
                     this.deselectAlkibiadesCube();
                     // mark the cube
-                    cube.classList.add('prk_alkibiades_selected');
+                    cube.dataset.selected = "true";
                     // highlight the To box with the selected player's color
                     const [selected_pid, fromcity] = cube.id.split("_").splice(0, 2);
                     this.decorateAlkibiadesToDiv(selected_pid, fromcity);
@@ -1795,7 +1795,7 @@ function (dojo, declare) {
          * @return a selected cube or null
          */
         getAlkibiadesCubeSelected: function() {
-            const selected = $('alkibiades_from_cities').getElementsByClassName('prk_alkibiades_selected');
+            const selected = $('alkibiades_from_cities').querySelectorAll('[data-selected="true"]');
             if (selected.length > 1) {
                 throw new Error("Multiple Alkibiades cubes have been marked as selected");
             }
@@ -1815,8 +1815,8 @@ function (dojo, declare) {
             const toButtons = to_city_container.getElementsByClassName('prk_alkibiades_btn');
             // remove any previously disabled toCiv marks
             [...toButtons].forEach(tb => tb.classList.remove('prk_alkibiades_civ_noselect'));
-            const fromCubes = $('alkibiades_from_cities').getElementsByClassName('prk_cube_alkibiades');
-            [...fromCubes].forEach(c => c.classList.remove('prk_alkibiades_selected'));
+            const fromCubes = $('alkibiades_from_cities').querySelectorAll('[data-action="alkibiades"]');;
+            [...fromCubes].forEach(c => delete c.dataset.selected);
         },
 
         /////////////////////// SLAVE REVOLT ///////////////////////
@@ -2930,7 +2930,7 @@ function (dojo, declare) {
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
                 delete $(city+"_a").dataset.status;
-                $(city+"_b").dataset.status = "active";
+                $(city+"_b").dataset.status = "highlight";
             } else {
                 delete $(city+"_b").dataset.status;
                 delete $(city).dataset.status;
@@ -3079,8 +3079,9 @@ function (dojo, declare) {
             const player_div = $(player_id+"_player_cards");
             const special = notif.args.tile;
             const spec = player_div.getElementsByClassName("prk_special_tile")[0];
-            spec.classList.remove("prk_special_tile_back");
-            spec.classList.add("prk_special_tile_front", "prk_special_tile_used", special);
+            spec.classList.add(special);
+            spec.dataset.side = "front";
+            spec.dataset.status = "used";
             if (this.player_id == player_id) {
                 this.removeActionButtons();
             }

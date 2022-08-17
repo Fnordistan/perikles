@@ -92,11 +92,12 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns {html} div 
          */
         frontDiv: function() {
-            let classes = "prk_special_tile prk_special_tile_front "+this.special;
+            let classes = "prk_special_tile "+this.special;
+            let dataset = "";
             if (this.used) {
-                classes += " prk_special_tile_used";
+                dataset = 'data-status = "used"';
             }
-            const html = '<div id="'+this.special+'_special_tile" class="'+classes+'" style="--scale: '+SPECIAL_TILE_SCALE+'; margin: '+SPECIAL_MARGIN+';"></div>';
+            const html = '<div id="'+this.special+'_special_tile" class="'+classes+'" '+dataset+' data-side="front" style="--scale: '+SPECIAL_TILE_SCALE+'; margin: '+SPECIAL_MARGIN+';"></div>';
             return html;
         },
 
@@ -105,7 +106,7 @@ define(["dojo/_base/declare"], function (declare) {
          * @returns {html} div 
          */
         backDiv: function() {
-            const html = '<div id="special_'+this.id+'" class="prk_special_tile prk_special_tile_back" style="--scale: '+SPECIAL_TILE_SCALE+';"></div>';
+            const html = '<div id="special_'+this.id+'" class="prk_special_tile" data-side="back" style="--scale: '+SPECIAL_TILE_SCALE+';"></div>';
             return html;
         },
 

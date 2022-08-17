@@ -115,7 +115,7 @@
     height: 215px;
 }
 
-.prk_city[data-status="active"] {
+.prk_city[data-status="highlight"] {
     animation: prk_border_pulse 5s infinite;
 }
 
@@ -169,14 +169,19 @@
     height: calc(var(--scale) * var(--special_h));
 }
 
-.prk_special_tile_front {
+.prk_special_tile[data-side="front"] {
     background-image: url(img/special_tiles.jpg);
     background-size: calc(var(--scale) * var(--special_sprites_w)) calc(var(--scale) * var(--special_sprites_h));
 }
 
-.prk_special_tile_back {
+.prk_special_tile[data-side="back"] {
     background-image: url(img/special_cardback.jpg);
     background-size: calc(var(--special_w)*var(--scale)) calc(var(--special_h)*var(--scale));
+}
+
+.prk_special_tile[data-status="used"] {
+    opacity: 0.5;
+    transform: rotate(180deg);
 }
 
 .prk_special_tile_tt {
@@ -187,11 +192,6 @@
     width: calc(var(--scale) * var(--special_w));
     height: calc(var(--scale) * var(--special_h));
     margin: 5px;
-}
-
-.prk_special_tile_used {
-    opacity: 0.5;
-    transform: rotate(180deg);
 }
 
 /* marks a tile as claimed by multiple players */
@@ -299,7 +299,7 @@
     /* outline: 1px gray ridge; */
 }
 
-.prk_influence_tile_active {
+.prk_influence_tile[data-status="highlight"] {
     transform: scale(1.1);
     transition: transform 0.5s;
     box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.4);
@@ -401,7 +401,7 @@
     height: 120px;
 }
 
-.prk_city_cubes[data-status="active"] {
+.prk_city_cubes[data-status="highlight"] {
     border-radius: 4px;
     outline: 2px dotted red;
     box-shadow: darkgray 0px 4px 8px 8px;
@@ -414,7 +414,7 @@
     height: 14px;
 }
 
-.prk_candidate_space[data-status="active"] {
+.prk_candidate_space[data-status="highlight"] {
     background-color: lightpink;
     border: red solid 1px;
     border-radius: 4px;
@@ -444,17 +444,17 @@
     outline: 1px dotted white;
 }
 
-.prk_cube_alkibiades {
+.prk_cube[data-action="alkibiades"] {
     margin-left: 4px;
 }
 
-.prk_cube_alkibiades_active {
+.prk_cube[data-status="highlight"] {
     border-radius: 4px;
     outline: 2px dotted green;
     cursor: pointer;
 }
 
-.prk_cube_alkibiades_active:hover {
+.prk_cube[data-action="alkibiades"]:hover {
     transform: scale(1.1) rotate(180deg);
     transition: transform 0.25s;
     box-shadow: lightgray 0px 2px 4px 4px;
@@ -657,7 +657,7 @@
 }
 
 /* cube that is currently selected */
-.prk_alkibiades_selected {
+.prk_cube[data-selected="true"] {
     transform: scale(1.1);
     outline: yellow solid 2px;
 }
