@@ -1059,9 +1059,9 @@ function (dojo, declare) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     if (enter) {
-                        mycubes.classList.add("prk_cubes_active");
+                        mycubes.dataset.status = "active";
                     } else {
-                        mycubes.classList.remove("prk_cubes_active");
+                        delete mycubes.dataset.status;
                     }
                 }
             }
@@ -1075,8 +1075,7 @@ function (dojo, declare) {
             if( this.isCurrentPlayerActive() ) {
                 if (this.checkAction("placeAnyCube", true)) {
                     this.placeInfluenceCube(city);
-                    const mycubes = $(city+"_cubes_"+this.player_id);
-                    mycubes.classList.remove("prk_cubes_active");
+                    this.decorator.removeActivationAll();
                 }
             }
         },
@@ -1092,11 +1091,11 @@ function (dojo, declare) {
                 const cube_div = event.target;
                 // player must have a cube in the city
                 if (enter && this.hasCubeInCity(city, true)) {
-                    if (cube_div.hasChildNodes() && $(city).classList.contains("prk_city_active")) {
-                        cube_div.classList.add("prk_cubes_active");
+                    if (cube_div.hasChildNodes() && $(city).dataset.status == "active") {
+                        cube_div.dataset.status = "active";
                     }
                 } else {
-                    cube_div.classList.remove("prk_cubes_active");
+                    delete cube_div.dataset.status;
                 }
             }
         },
@@ -1112,11 +1111,11 @@ function (dojo, declare) {
                 if (this.checkAction("proposeCandidate", true)) {
                     const tgt = event.target;
                     // it's either the cube area or one of the cubes
-                    if ($(city).classList.contains("prk_city_active") && this.hasCubeInCity(city, true)) {
+                    if ($(city).dataset.status == "active" && this.hasCubeInCity(city, true)) {
                         if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
                             this.proposeCandidate(city, player_id);
-                        }
-    
+                            this.decorator.removeActivationAll();
+                        }    
                     }
                 }
             }
@@ -1289,7 +1288,7 @@ function (dojo, declare) {
                 case 'choosePlaceInfluence':
                     if( this.isCurrentPlayerActive() ) {
                         let cities = document.getElementsByClassName("prk_city");
-                        [...cities].forEach(c => c.classList.add("prk_city_active"));
+                        [...cities].forEach(c => c.dataset.status = "active");
                     }
                     break;
                 case 'proposeCandidates':
@@ -1298,8 +1297,8 @@ function (dojo, declare) {
                             const candidate_space = this.openCandidateSpace(city);
                             if (candidate_space && this.hasCubeInCity(city, true)) {
                                 const city_div = $(city);
-                                city_div.classList.add("prk_city_active");
-                                candidate_space.classList.add("prk_candidate_space_active");
+                                city_div.dataset.status = "active";
+                                candidate_space.dataset.status = "active";
                             }
                         }
                     }
@@ -1307,7 +1306,7 @@ function (dojo, declare) {
                 case 'assassinate':
                     if (this.isCurrentPlayerActive()) {
                         let cubes = document.getElementsByClassName("prk_cube");
-                        [...cubes].forEach( c => c.classList.add("prk_cubes_remove"));
+                        [...cubes].forEach( c => c.dataset.action = "remove");
                     }
                     break;
                 case 'commitForces':
@@ -1361,16 +1360,17 @@ function (dojo, declare) {
             
             switch( stateName ) {
                 case 'choosePlaceInfluence':
-                    this.decorator.stripClassName("prk_city_active");
+                    this.decorator.removeActivationAll();
                     break;
                 case 'proposeCandidates':
-                    this.decorator.stripClassName("prk_city_active");
-                    this.decorator.stripClassName("prk_candidate_space_active");
-                    this.decorator.stripClassName("prk_cubes_active");
+                    this.decorator.removeActivationAll();
                     this.last_cube = null;
                     break;
                 case 'assassinate':
-                    this.decorator.stripClassName("prk_cubes_remove");
+                    const cubes = document.querySelectorAll('[data-action="remove"]');
+                    cubes.forEach(c => {
+                        delete c.dataset.action;
+                    });
                     break;
                 case 'commitForces':
                     const mils = $('mymilitary').getElementsByClassName("prk_military");
@@ -2929,11 +2929,11 @@ function (dojo, declare) {
             this.moveCube(cube, player_cubes, $(city+'_'+c), 500);
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
-                $(city+"_a").classList.remove("prk_candidate_space_active");
-                $(city+"_b").classList.add("prk_candidate_space_active");
+                delete $(city+"_a").dataset.status;
+                $(city+"_b").dataset.status = "active";
             } else {
-                $(city+"_b").classList.remove("prk_candidate_space_active");
-                $(city).classList.remove("prk_city_active")
+                delete $(city+"_b").dataset.status;
+                delete $(city).dataset.status;
             }
         },
 

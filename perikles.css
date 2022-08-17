@@ -115,7 +115,7 @@
     height: 215px;
 }
 
-.prk_city_active {
+.prk_city[data-status="active"] {
     animation: prk_border_pulse 5s infinite;
 }
 
@@ -401,13 +401,20 @@
     height: 120px;
 }
 
+.prk_city_cubes[data-status="active"] {
+    border-radius: 4px;
+    outline: 2px dotted red;
+    box-shadow: darkgray 0px 4px 8px 8px;
+    cursor: pointer;
+}
+
 .prk_candidate_space {
     position: absolute;
     width: 14px;
     height: 14px;
 }
 
-.prk_candidate_space_active {
+.prk_candidate_space[data-status="active"] {
     background-color: lightpink;
     border: red solid 1px;
     border-radius: 4px;
@@ -423,14 +430,7 @@
     margin: 2px 0;
 }
 
-.prk_cubes_active {
-    border-radius: 4px;
-    outline: 2px dotted red;
-    box-shadow: darkgray 0px 4px 8px 8px;
-    cursor: pointer;
-}
-
-.prk_cubes_remove {
+.prk_cube[data-action="remove"] {
     border-radius: 2px;
     outline: 1px solid orangered;
     outline-offset: 2px;
@@ -438,7 +438,7 @@
     cursor: url(img/sword_cursor.png), crosshair;
 }
 
-.prk_cubes_remove:hover {
+.prk_cube[data-action="remove"]:hover {
     transform: scale(0.9) rotate(45deg);
     transition: transform 0.25s;
     outline: 1px dotted white;

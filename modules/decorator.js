@@ -115,5 +115,15 @@ define(["dojo/_base/declare"], function (declare) {
             [...actdiv].forEach( a => a.classList.remove(cls));
         },
 
+        /**
+         * Removes active from all elements.
+         */
+        removeActivationAll: function() {
+            const actives = document.querySelectorAll('[data-status="active"]');
+            actives.forEach(a => {
+                delete a.dataset.status;
+            });
+        }
+
     })
 });
