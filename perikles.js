@@ -3369,7 +3369,7 @@ function (dojo, declare) {
         notif_crtOdds: function(notif) {
             const crt = notif.args.crt;
             const crt_col = $('crt_'+crt);
-            crt_col.classList.add("prk_crt_active");
+            crt_col.dataset.status = "highlight";
         },
 
         /**
@@ -3400,7 +3400,7 @@ function (dojo, declare) {
             }
             const crtcols = document.getElementsByClassName("prk_crt");
             [...crtcols].forEach(c => {
-                c.classList.remove("prk_crt_active");
+                delete c.dataset.status;
             });
         },
 

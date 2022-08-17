@@ -793,7 +793,7 @@
     height: 95px;
 }
 
-.prk_crt_active {
+.prk_crt[data-status="highlight"] {
     border: dashed 3px red;
 }
 
