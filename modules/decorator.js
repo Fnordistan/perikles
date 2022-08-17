@@ -119,7 +119,7 @@ define(["dojo/_base/declare"], function (declare) {
          * Removes active from all elements.
          */
         removeAllHighlighted: function() {
-            const actives = document.querySelectorAll('[data-status="active"]');
+            const actives = document.querySelectorAll('[data-status="highlight"]');
             actives.forEach(a => {
                 delete a.dataset.status;
             });
