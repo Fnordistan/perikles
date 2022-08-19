@@ -86,7 +86,7 @@ const jstpl_defeat_log = '<div id="${city}_defeat_${num}_log" class="prk_defeat"
 
 const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_player_counter prk_${type}" style="bottom: calc(${num}*22px); left: calc(${num}*6px);"></div>';
 
-const jstpl_leader_log = '<div id="${city}_${type}_log" class="prk_player_counter prk_${type}" data-color="${color}"></div>';
+const jstpl_leader_log = '<div id="${city}_${type}_log" class="prk_player_counter prk_${type}" data-color="${color}" data-log="true"></div>';
 
 const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: #${color};"></div>';
 

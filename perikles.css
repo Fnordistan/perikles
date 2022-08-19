@@ -381,6 +381,16 @@ body {
     background-position: calc(-9 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
+.prk_leader[data-log="true"] {
+    top: 0;
+    float: right;
+}
+
+.prk_statue[data-log="true"] {
+    top: 0;
+    float: right;
+}
+
 .prk_influence_slot {
     position: absolute;
     width: calc(var(--boardscale) * 38px);
@@ -862,6 +872,7 @@ body {
     padding: 5px;
     border: 3px ridge #44443e;
     background-color: #8F8C7E;
+    display: none;
 }
 
 #unclaimed {

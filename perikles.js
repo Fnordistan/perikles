@@ -1335,6 +1335,12 @@ function (dojo, declare) {
                         debugger;
                     }
                     break;
+                case 'deadPool':
+                    const deadunits = ($('deadpool')).getElementsByClassName("prk_military");
+                    if (deadunits.length > 0) {
+                        $('deadpool').style['display'] = "block";
+                    }
+                    break;
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
                     break;

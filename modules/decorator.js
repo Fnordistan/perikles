@@ -124,20 +124,20 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Check whether an element is highlighted.
-         * @param {DOM} element 
-         * @returns true if element is highlighted
-         */
-        isHighlighted: function(element) {
-            return element.dataset.highlight == "true";
-        },
-
-        /**
          * Remove the highlight data tag from an element.
          * @param {DOM} element 
          */
         unhighlight: function(element) {
             delete element.dataset.highlight;
+        },
+
+        /**
+         * Check whether an element is highlighted.
+         * @param {DOM} element 
+         * @returns true if element is highlighted
+         */
+         isHighlighted: function(element) {
+            return element.dataset.highlight == "true";
         },
 
         /**

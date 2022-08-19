@@ -2487,7 +2487,8 @@ class Perikles extends Table
                     'city' => $cn,
                     'city_name' => $city_name,
                     'cubes' => $loser_inf,
-                    'preserve' => ['player_id', 'city']
+                    'leader' => 'leader',
+                    'preserve' => ['player_id', 'city', 'leader']
                 ));
             }
             $this->Cities->clearCandidates($cn);
