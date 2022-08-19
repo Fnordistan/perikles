@@ -579,9 +579,12 @@ class Perikles extends Table
      */
     function defeatCity($city) {
         $defeats = $this->Cities->addDefeat($city);
-        self::notifyAllPlayers('cityDefeat', clienttranslate('${city_name} suffers a defeat'), array(
-            'i18n' => ['city_name'],
+        $num = $this->ordinals[$defeats];
+
+        self::notifyAllPlayers('cityDefeat', clienttranslate('${city_name} suffers ${num} defeat'), array(
+            'i18n' => ['city_name', 'num'],
             'city' => $city,
+            'num' => $num,
             'city_name' => $this->Cities->getNameTr($city),
             'defeats' => $defeats,
             'preserve' => ['city'],

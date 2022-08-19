@@ -19,3 +19,9 @@
  *
  */
 
+$this->ordinals = array(
+        1 => clienttranslate("first"),
+        2 => clienttranslate("second"),
+        3 => clienttranslate("third"),
+        4 => clienttranslate("fourth"),
+);
