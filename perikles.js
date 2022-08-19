@@ -1069,9 +1069,9 @@ function (dojo, declare) {
                 if (this.checkAction("placeAnyCube", true)) {
                     const mycubes = $(city+"_cubes_"+this.player_id);
                     if (enter) {
-                        mycubes.dataset.status = "highlight";
+                        this.decorator.highlight(mycubes);
                     } else {
-                        delete mycubes.dataset.status;
+                        this.decorator.unhighlight(mycubes);
                     }
                 }
             }
@@ -1101,11 +1101,11 @@ function (dojo, declare) {
                 const cube_div = event.target;
                 // player must have a cube in the city
                 if (enter && this.hasCubeInCity(city, true)) {
-                    if (cube_div.hasChildNodes() && $(city).dataset.status == "highlight") {
-                        cube_div.dataset.status = "highlight";
+                    if (cube_div.hasChildNodes() && this.decorator.isHighlighted($(city))) {
+                        this.decorator.highlight(cube_div);
                     }
                 } else {
-                    delete cube_div.dataset.status;
+                    this.decorator.unhighlight(cube_div);
                 }
             }
         },
@@ -1121,7 +1121,7 @@ function (dojo, declare) {
                 if (this.checkAction("proposeCandidate", true)) {
                     const tgt = event.target;
                     // it's either the cube area or one of the cubes
-                    if ($(city).dataset.status == "highlight" && this.hasCubeInCity(city, true)) {
+                    if (this.decorator.isHighlighted($(city)) && this.hasCubeInCity(city, true)) {
                         if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
                             this.proposeCandidate(city, player_id);
                             this.decorator.removeAllHighlighted();
@@ -1150,9 +1150,9 @@ function (dojo, declare) {
             if (this.checkAction("takeInfluence", true)) {
                 const card = $(id);
                 if (hover) {
-                    card.dataset.status = "highlight";
+                    this.decorator.highlight(card);
                 } else {
-                    delete card.dataset.status;
+                    this.decorator.unhighlight(card);
                 }
             }
         },
@@ -1298,7 +1298,7 @@ function (dojo, declare) {
                 case 'choosePlaceInfluence':
                     if( this.isCurrentPlayerActive() ) {
                         let cities = document.getElementsByClassName("prk_city");
-                        [...cities].forEach(c => c.dataset.status = "highlight");
+                        [...cities].forEach(c => this.decorator.highlight(c));
                     }
                     break;
                 case 'proposeCandidates':
@@ -1307,8 +1307,8 @@ function (dojo, declare) {
                             const candidate_space = this.openCandidateSpace(city);
                             if (candidate_space && this.hasCubeInCity(city, true)) {
                                 const city_div = $(city);
-                                city_div.dataset.status = "highlight";
-                                candidate_space.dataset.status = "highlight";
+                                this.decorator.highlight(city_div);
+                                this.decorator.highlight(candidate_space);
                             }
                         }
                     }
@@ -1651,12 +1651,12 @@ function (dojo, declare) {
             cube.addEventListener('mouseenter', () => {
                 const cubes = this.getAlkibiadesCubesToMove();
                 if (cubes.length < 2) {
-                    cube.dataset.status = "highlight";
+                    this.decorator.highlight(cube);
                 }
             });
             // unhighlight
             cube.addEventListener('mouseleave', () => {
-                delete cube.dataset.status;
+                this.decorator.unhighlight(cube);
             });
             cube.addEventListener('click', () => {
                 const cubes = this.getAlkibiadesCubesToMove();
@@ -1699,8 +1699,8 @@ function (dojo, declare) {
             to_city_container.style['box-shadow'] = '2px 2px 15px 5px '+pcolor;
             const toButtons = to_city_container.getElementsByClassName('prk_alkibiades_btn ');
             // remove any previously disabled toCiv marks
-            [...toButtons].forEach(tb => tb.classList.remove('prk_alkibiades_civ_noselect'));
-            $(fromcity+"_alkibiades_to_btn").classList.add('prk_alkibiades_civ_noselect');
+            [...toButtons].forEach(tb => delete tb.dataset.noselect);
+            $(fromcity+"_alkibiades_to_btn").dataset.noselect = "true";
         },
 
         /**
@@ -1727,7 +1727,7 @@ function (dojo, declare) {
          * @param {element} tociv 
          */
          leaveCivBtnAlkibiades: function(tociv) {
-             if (!tociv.classList.contains('prk_alkibiades_civ_noselect')) {
+             if (tociv.dataset.noselect != "true") {
                 Object.assign(tociv.style, {
                     'background-color': 'white',
                     'cursor': 'default'
@@ -1740,7 +1740,7 @@ function (dojo, declare) {
          * @param {element} tociv
          */
          clickCivBtnAlkibiades: function(tociv) {
-             if (tociv.classList.contains('prk_alkibiades_civ_noselect')) {
+             if (tociv.dataset.noselect == "true") {
                  return;
              }
             const selected = this.getAlkibiadesCubeSelected();
@@ -1824,7 +1824,7 @@ function (dojo, declare) {
             to_city_container.style['box-shadow'] = '';
             const toButtons = to_city_container.getElementsByClassName('prk_alkibiades_btn');
             // remove any previously disabled toCiv marks
-            [...toButtons].forEach(tb => tb.classList.remove('prk_alkibiades_civ_noselect'));
+            [...toButtons].forEach(tb => delete tb.dataset.noselect);
             const fromCubes = $('alkibiades_from_cities').querySelectorAll('[data-action="alkibiades"]');;
             [...fromCubes].forEach(c => delete c.dataset.selected);
         },
@@ -2939,11 +2939,11 @@ function (dojo, declare) {
             this.moveCube(cube, player_cubes, $(city+'_'+c), 500);
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
-                delete $(city+"_a").dataset.status;
-                $(city+"_b").dataset.status = "highlight";
+                this.decorator.unhighlight($(city+"_a"));
+                this.decorator.highlight($(city+"_b"));
             } else {
-                delete $(city+"_b").dataset.status;
-                delete $(city).dataset.status;
+                this.decorator.unhighlight($(city+"_b"));
+                this.decorator.unhighlight($(city));
             }
         },
 
@@ -3379,7 +3379,7 @@ function (dojo, declare) {
         notif_crtOdds: function(notif) {
             const crt = notif.args.crt;
             const crt_col = $('crt_'+crt);
-            crt_col.dataset.status = "highlight";
+            this.decorator.highlight(crt_col);
         },
 
         /**
@@ -3410,7 +3410,7 @@ function (dojo, declare) {
             }
             const crtcols = document.getElementsByClassName("prk_crt");
             [...crtcols].forEach(c => {
-                delete c.dataset.status;
+                this.decorator.unhighlight(c);
             });
         },
 

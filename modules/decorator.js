@@ -116,12 +116,37 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Add highlight data tag to an element.
+         * @param {DOM} element 
+         */
+        highlight: function(element) {
+            element.dataset.highlight = "true";
+        },
+
+        /**
+         * Check whether an element is highlighted.
+         * @param {DOM} element 
+         * @returns true if element is highlighted
+         */
+        isHighlighted: function(element) {
+            return element.dataset.highlight == "true";
+        },
+
+        /**
+         * Remove the highlight data tag from an element.
+         * @param {DOM} element 
+         */
+        unhighlight: function(element) {
+            delete element.dataset.highlight;
+        },
+
+        /**
          * Removes active from all elements.
          */
         removeAllHighlighted: function() {
-            const actives = document.querySelectorAll('[data-status="highlight"]');
-            actives.forEach(a => {
-                delete a.dataset.status;
+            const hilighted = document.querySelectorAll('[data-highlight="true"]');
+            hilighted.forEach(a => {
+                this.unhighlight(a);
             });
         }
 
