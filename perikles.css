@@ -316,7 +316,7 @@
     box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
 }
 
-.prk_defeat_counter {
+.prk_defeat {
     background-image: url(img/leader_counters.jpg);
     background-size:  calc(11 * var(--counter_scale) * var(--counter_w)) calc(var(--counter_scale) * var(--counter_h));
     background-repeat: no-repeat;
@@ -328,14 +328,15 @@
     box-shadow: 3px 3px 12px 5px #8a0303;
 }
 
-.prk_defeat_counter_log {
-    background-image: url(img/leader_counters.jpg);
+.prk_defeat[data-log="true"] {
+    /* background-image: url(img/leader_counters.jpg);
     background-size:  calc(11 * var(--counter_scale) * var(--counter_w)) calc(var(--counter_scale) * var(--counter_h));
     background-repeat: no-repeat;
-    position: relative;
-    width: calc(var(--counter_scale) * var(--counter_w));
+    position: relative; */
+    /* width: calc(var(--counter_scale) * var(--counter_w));
     height: calc(var(--counter_scale) * var(--counter_h));
-    background-position: calc(-10 * var(--counter_scale) * var(--counter_w)) 0;
+    background-position: calc(-10 * var(--counter_scale) * var(--counter_w)) 0; */
+    top: 0;
     box-shadow: 3px 3px 12px 5px #8a0303;
     float: right;
 }

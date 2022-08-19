@@ -657,8 +657,9 @@ class Perikles extends Table
                     'city_name' => $this->Cities->getNameTr($cn),
                     'player_id' => $leader,
                     'statues' => $statues,
+                    'leader' => 'statue',
                     'player_name' => $players[$leader]['player_name'],
-                    'preserve' => ['player_id', 'city'],
+                    'preserve' => ['player_id', 'city', 'statue'],
                 ));
             }
         }
@@ -2447,7 +2448,8 @@ class Perikles extends Table
                         'city' => $cn,
                         'city_name' => $city_name,
                         'cubes' => 0,
-                        'preserve' => ['player_id', 'city']
+                        'leader' => 'leader',
+                        'preserve' => ['player_id', 'city', 'leader']
                         ));
                 }
             } elseif (empty($b)) {
@@ -2460,7 +2462,8 @@ class Perikles extends Table
                     'city' => $cn,
                     'city_name' => $city_name,
                     'cubes' => 0,
-                    'preserve' => ['player_id', 'city']
+                    'leader' => 'leader',
+                    'preserve' => ['player_id', 'city', 'leader']
                 ));
             } else {
                 // contested election
@@ -2794,7 +2797,7 @@ class Perikles extends Table
     function stScoring() {
         $players = self::loadPlayersBasicInfos();
 
-        foreach($players as $player_id) {
+        foreach(array_keys($players) as $player_id) {
             $playerstatues = $this->Cities->getStatues($player_id);
             foreach($this->Cities->cities() as $city) {
                 // 1 point per cube
@@ -2814,8 +2817,8 @@ class Perikles extends Table
                 $statues = $playerstatues[$city];
                 if ($statues > 0) {
                     $vp = $this->Cities->victoryPoints($city);
-                    $total = $statues*$cityvp;
-                    self::notifyAllPlayers("scoreStatues", clienttranslate('${player_name} scores ${total} points for ${statues} in ${city_name}'), array(
+                    $total = $statues*$vp;
+                    self::notifyAllPlayers("scoreStatues", clienttranslate('${player_name} scores ${total} points for ${statues} statues in ${city_name}'), array(
                         'i18n' => ['city_name'],
                         'player_id' => $player_id,
                         'player_name' => $players[$player_id]['player_name'],

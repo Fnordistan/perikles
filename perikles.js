@@ -628,6 +628,14 @@ function (dojo, declare) {
                         const def_ctr = this.format_block('jstpl_defeat_log', {city: 'city', num: args.defeats} );
                         log += def_ctr;
                     }
+                    if (args.leader) {
+                        const leader = args.leader;
+                        const player_id = args.player_id;
+                        const city = args.city;
+                        const color = this.decorator.playerColor(player_id);
+                        const ldr_ctr = this.format_block('jstpl_leader_log', {city: city, type: leader, color: color});
+                        log += ldr_ctr;
+                    }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.decorator.spanYou(this.player_id));
 
@@ -883,7 +891,9 @@ function (dojo, declare) {
          */
         addDefeatCounter: function(city, num) {
             if (num <= 4) {
-                const def_ctr = this.format_block('jstpl_defeat', {city: city, num: num} );
+                let title_str = _("${city_name} Defeat");
+                title_str = title_str.replace('${city_name}', this.getCityNameTr(city));
+                const def_ctr = this.format_block('jstpl_defeat', {city: city, num: num, title: title_str} );
                 const def_div = $(city+'_defeat_slot_'+num);
                 dojo.place(def_ctr, def_div);
             }
