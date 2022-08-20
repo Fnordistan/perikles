@@ -2660,6 +2660,9 @@ class Perikles extends Table
                 $state = "continueBattle";
             } else {
                 // unopposed side wins tile
+                if ($unopposed == ATTACKER) {
+                    $this->defeatCity($tile['city']);
+                }
                 $this->claimTile($unopposed_id, $tile);
                 $state = "nextBattle";
             }
