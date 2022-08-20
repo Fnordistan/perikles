@@ -587,7 +587,7 @@ class Perikles extends Table
             'num' => $num,
             'city_name' => $this->Cities->getNameTr($city),
             'defeats' => $defeats,
-            'preserve' => ['city'],
+            'preserve' => ['city', 'defeats'],
         ));
     }
 

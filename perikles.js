@@ -601,10 +601,10 @@ function (dojo, declare) {
                     if (args.attd1) {
                         const hit = '<span class="prk_hit">'+_("Hit")+'</span>';
                         const miss = '<span class="prk_miss">'+_("Miss")+'</span>';
-                        args.attd1 = this.diceIcon(args.attd1);
-                        args.attd2 = this.diceIcon(args.attd2);
-                        args.defd1 = this.diceIcon(args.defd1, true);
-                        args.defd2 = this.diceIcon(args.defd2, true);
+                        args.attd1 = this.diceIcon(args.attd1, "attacker");
+                        args.attd2 = this.diceIcon(args.attd2, "attacker");
+                        args.defd1 = this.diceIcon(args.defd1, "defender");
+                        args.defd2 = this.diceIcon(args.defd2, "defender");
                         args.atttotal = '<span class="prk_dicetotal">['+args.atttotal+']</span>';
                         args.deftotal = '<span class="prk_dicetotal">['+args.deftotal+']</span>';
                         args.atttotal = '<span>'+args.atttotal+'</span>';
@@ -725,17 +725,13 @@ function (dojo, declare) {
         /**
          * Create die icon.
          * @param {string} val 
-         * @param {bool} def is defensive dice
+         * @param {string} side "attacker" or "defender"
          * @returns html icon
          */
-        diceIcon: function(val, def=false) {
+        diceIcon: function(val, side) {
             const roll = toint(val);
             const xoff = -33 * (roll-1);
-            let die_icon = this.format_block('jstpl_die', {x: xoff});
-            if (def) {
-                const def_color = "filter: sepia(100%)";
-                die_icon = this.decorator.prependStyle(die_icon, def_color);
-            }
+            let die_icon = this.format_block('jstpl_die', {x: xoff, side: side});
             return die_icon;
         },
 

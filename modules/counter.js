@@ -204,7 +204,8 @@ define(["dojo/_base/declare"], function (declare) {
             $(DEAD_POOL).style['display'] = 'block';
             const counter_div = this.toRelativeDiv();
             const deadpool_zone = this.city+'_'+this.type+'_'+DEAD_POOL;
-            dojo.place(counter_div, $(deadpool_zone));
+            const unit = dojo.place(counter_div, $(deadpool_zone));
+            unit.dataset.deadpool = "true";
         },
 
     })

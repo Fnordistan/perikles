@@ -329,13 +329,6 @@ body {
 }
 
 .prk_defeat[data-log="true"] {
-    /* background-image: url(img/leader_counters.jpg);
-    background-size:  calc(11 * var(--counter_scale) * var(--counter_w)) calc(var(--counter_scale) * var(--counter_h));
-    background-repeat: no-repeat;
-    position: relative; */
-    /* width: calc(var(--counter_scale) * var(--counter_w));
-    height: calc(var(--counter_scale) * var(--counter_h));
-    background-position: calc(-10 * var(--counter_scale) * var(--counter_w)) 0; */
     top: 0;
     box-shadow: 3px 3px 12px 5px #8a0303;
     float: right;
@@ -505,6 +498,10 @@ body {
 /* for hiding units that have been selected on main board */
 .prk_military[data-selected="true"] {
     display: none;
+}
+
+.prk_military[data-deadpool="true"] {
+    opacity: 0.75;
 }
 
 .prk_hoplite {
@@ -844,6 +841,10 @@ body {
     width: 33px;
     height: 33px;
     vertical-align: bottom;
+}
+
+.prk_dice[data-side="defender"] {
+    filter: sepia(100%);
 }
 
 .prk_dicetotal {

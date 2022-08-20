@@ -126,7 +126,7 @@ const jstpl_influence_cards = '<div id="${id}_player_cards" class="prk_player_in
 
 const jstpl_victory_tiles = '<div id="${id}_player_tiles" class="prk_player_tiles" style="--scale: ${scale};"></div>';
 
-const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;"></div>';
+const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;" data-side="${side}"></div>';
 
 </script>  
 
