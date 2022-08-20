@@ -727,6 +727,11 @@ body {
     margin: 0 10px;
 }
 
+
+.prk_mil_board > h3 {
+    font-size: 2em;
+}
+
 .prk_mil_container {
     display: flex;
     flex-direction: row;
@@ -874,14 +879,25 @@ body {
 }
 
 #deadpool {
-    display: flex;
-    flex-direction: column;
+    display: none;
     width: var(--map_w);
     margin: 5px;
     padding: 5px;
     border: 3px ridge #44443e;
     background-color: #8F8C7E;
-    display: none;
+}
+
+#deadpool > h2 {
+    font-size: 3em;
+}
+
+#deadpool > h3 {
+    font-size: 2em;
+}
+
+#deadpool_ctnr {
+    display: flex;
+    flex-direction: row;
 }
 
 #unclaimed {
@@ -916,6 +932,10 @@ body {
     max-width: var(--map_w);
     overflow: auto;
     display: none;
+}
+
+#military_board > h2 {
+    font-size: 3em;
 }
 
 #mymilitary {

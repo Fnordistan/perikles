@@ -1551,7 +1551,7 @@ class Perikles extends Table
         // did we spend an influence cube?
         if ($cube != "" && count($units) > 2) {
             $this->Cities->changeInfluence($cube, $player_id, -1);
-            self::notifyAllPlayers('spentInfluence', clienttranslate('${player_name} spent an Influence cube from ${city_name} to send extra units'), array(
+            self::notifyAllPlayers('spentInfluence', clienttranslate('${player_name} spends a ${city_name} Influence cube to send extra units'), array(
                 'i18n' => ['city_name'],
                 'candidate_id' => $player_id, // candidate because that's the notif arg
                 'player_id' => $player_id,

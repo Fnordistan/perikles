@@ -15,7 +15,7 @@
 
 <div id="periklesboard">
     <div id="military_board">
-        <h1 class="prk_hdr">{MILITARY}</h1>
+        <h2 class="prk_hdr">{MILITARY}</h2>
         <div id="mymilitary">
         </div>
     </div>
@@ -68,7 +68,8 @@
         <!-- END CRT_BLOCK -->
     </div>
     <div id="deadpool">
-        <h1 class="prk_hdr">{DEADPOOL}</h1>
+        <h2 class="prk_hdr">{DEADPOOL}</h2>
+        <div id="deadpool_ctnr"></div>
     </div>
 </div>
 
@@ -105,7 +106,7 @@ const jstpl_alkibiades_to_btn = '<div id="${city}_alkibiades_to_btn" class="prk_
 const jstpl_city_banner = '<button id="${city}_commit_btn" type="button" class="prk_city_banner" style="background-color: var(--color_${city});">${city_name}</button>';
 
 const jstpl_military_area = '<div id="${city}_military_${id}" class="prk_mil_board">\
-                                <h2 class="prk_hdr">${cityname}</h2>\
+                                <h3 class="prk_hdr">${cityname}</h3>\
                                 <div id="${city}_mil_ctnr_${id}" class="prk_mil_container">\
                                     <div id="${city}_hoplite_${id}" class="prk_hoplites"></div>\
                                     <div id="${city}_trireme_${id}" class="prk_triremes"></div>\

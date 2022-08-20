@@ -812,7 +812,7 @@ function (dojo, declare) {
             const city_mil = city+'_military_'+id;
             if (!document.getElementById(city_mil)) {
                 const mil_div = this.format_block('jstpl_military_area', {city: city, id: id, cityname: this.getCityNameTr(city)});
-                const zone = (id == DEAD_POOL) ? DEAD_POOL : 'mymilitary';
+                const zone = (id == DEAD_POOL) ? 'deadpool_ctnr' : 'mymilitary';
                 dojo.place(mil_div, $(zone));
             }
             return city_mil;
@@ -1391,8 +1391,8 @@ function (dojo, declare) {
                     this.gamedatas.gamestate.args.committed = {};
                     break;
                 case 'takeDead':
-                    const deadunits = ($('deadpool')).getElementsByClassName("prk_military");
-                    $('deadpool').style['display'] = (deadunits.length == 0) ? 'none' : 'block';
+                    const deadunits = ($(DEAD_POOL)).getElementsByClassName("prk_military");
+                    $(DEAD_POOL).style['display'] = (deadunits.length == 0) ? 'none' : 'block';
                     break;
                 case 'dummmy':
                     break;
@@ -2403,7 +2403,7 @@ function (dojo, declare) {
          createUnclaimedTilesBox: function() {
             if (!document.getElementById('unclaimed')) {
                 const unclaimed_div = '<div id="unclaimed">'+
-                                        '<h1 class="prk_hdr" id="unclaimed_hdr">'+_("Unclaimed Tiles")+'</h1>'+
+                                        '<h2 class="prk_hdr" id="unclaimed_hdr">'+_("Unclaimed Tiles")+'</h2>'+
                                         '<div id="unclaimed_tiles"></div>'+
                                     '</div>';
                 dojo.place(unclaimed_div, $('player_boards'));
@@ -2444,8 +2444,8 @@ function (dojo, declare) {
             const hdr = _("Defender Permissions");
             const msg = _("Leader of the controlling city may click to give permission to other cities to defend");
             const permission_banner =   '<div id="defenders_permission_banner">'+
-                                            '<span class="prk_hdr"; style="font-size: 48px; color: white;">'+hdr+'</span><br/>'+
-                                            '<span style="font-size: 32px;">'+msg+'</span>'+
+                                            '<h2 class="prk_hdr"; style="font-size: 3em; color: white;">'+hdr+'</h2><br/>'+
+                                            '<span style="font-size: 2em;">'+msg+'</span>'+
                                             '<hr style="width: 100%;"/>'+
                                             '<div id="perm_icons_row" style="display: flex; flex-direction: row; justify-content: center; align-items: center;"></div>'+
                                         '</div>';
