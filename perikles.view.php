@@ -89,7 +89,7 @@ class view_perikles_perikles extends game_view
         /** BEGIN CITY BLOCK */
         $CITIES = array(
           "argos" => array(
-            "xy" => [348, 769],
+            "xy" => [308, 769],
             "defeats" => array(
               "y" => 989,
               "x" => [467, 416]
@@ -154,7 +154,7 @@ class view_perikles_perikles extends game_view
               "cubes" => [202, 1295],
               ),
           "thebes" => array(
-            "xy" => [465, 103],
+            "xy" => [455, 103],
             "defeats" => array(
                 "y" => 325,
                 "x" => [618, 566, 514]

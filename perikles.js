@@ -1291,6 +1291,7 @@ function (dojo, declare) {
             console.log( this.player_id + ' Entering state: '+stateName );
             
             switch( stateName ) {
+                case 'chooseInitialInfluence':
                 case 'choosePlaceInfluence':
                     if( this.isCurrentPlayerActive() ) {
                         let cities = document.getElementsByClassName("prk_city");
@@ -1365,6 +1366,7 @@ function (dojo, declare) {
             console.log( 'Leaving state: '+stateName );
             
             switch( stateName ) {
+                case 'chooseInitialInfluence':
                 case 'choosePlaceInfluence':
                     this.decorator.removeAllHighlighted();
                     break;
