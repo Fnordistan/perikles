@@ -1194,7 +1194,7 @@ function (dojo, declare) {
                 });
             }
             // hide unit on military board
-            $(city+'_'+unit+'_'+strength+'_'+id).style.display = "none";
+            $(city+'_'+unit+'_'+strength+'_'+id).dataset.selected = "true";
 
             // don't forget the cube is one of the keys
             const len = Object.keys(this.gamedatas.gamestate.args.committed).length;
@@ -1275,9 +1275,9 @@ function (dojo, declare) {
             const mils = $('mymilitary').getElementsByClassName('prk_military ');
             [...mils].forEach(m => {
                 // redisplay counters that were hidden before
-                m.style.display = "block";
+                delete m.dataset.selected;
                 // reenable deselected counters
-                if (m.getAttribute("data-selectable") == "false") {
+                if (m.dataset.selectable == "false") {
                     this.makeSelectable(m);
                 }
             });
@@ -1335,12 +1335,6 @@ function (dojo, declare) {
                         debugger;
                     }
                     break;
-                case 'deadPool':
-                    const deadunits = ($('deadpool')).getElementsByClassName("prk_military");
-                    if (deadunits.length > 0) {
-                        $('deadpool').style['display'] = "block";
-                    }
-                    break;
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
                     break;
@@ -1395,6 +1389,10 @@ function (dojo, declare) {
                     });
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
+                    break;
+                case 'takeDead':
+                    const deadunits = ($('deadpool')).getElementsByClassName("prk_military");
+                    $('deadpool').style['display'] = (deadunits.length == 0) ? 'none' : 'block';
                     break;
                 case 'dummmy':
                     break;
@@ -1973,13 +1971,8 @@ function (dojo, declare) {
          * @param {string} city 
          */
         hasAvailableUnits: function(player_id, city) {
-            const suffix = (city == "persia") ? "_persia_" : player_id;
-            for (const u of [HOPLITE, TRIREME]) {
-                if ($(city+'_'+u+'_'+suffix).childElementCount > 0) {
-                    return true;
-                }
-            };
-            return false;
+            const units = $(city+'_mil_ctnr_'+player_id).querySelectorAll('div.prk_military:not([data-selected="true"])');
+            return units.length > 0;
         },
 
         /**
@@ -2048,15 +2041,10 @@ function (dojo, declare) {
          * @param {bool} selectable (default true)
          */
         makeSelectable: function(counter, selectable=true) {
-            counter.setAttribute("data-selectable", selectable);
-            counter.style.outline = selectable ? "3px red dashed" : null;
+            counter.dataset.selectable = selectable;
             if (selectable) {
-                this.connect(counter, 'mouseenter', this.stacks.hoverUnit);
-                this.connect(counter, 'mouseleave', this.stacks.unhoverUnit);
                 this.connect(counter, 'click', this.assignUnit.bind(this));
             } else {
-                this.disconnect(counter, 'mouseenter');
-                this.disconnect(counter, 'mouseleave');
                 this.disconnect(counter, 'click');
             }
         },
@@ -2234,10 +2222,12 @@ function (dojo, declare) {
                 if (is_persian || this.isLeader(this.player_id, city)) {
                     //any cubes left?
                     if (this.hasCubeInCity(city)) {
+                        // persians can spend cubes from any city
                         const unit_city = is_persian ? "persia" : city;
-                        canSpend = this.hasAvailableUnits(this.player_id, unit_city);
-                        civ_btns += this.format_block('jstpl_city_btn', {city: city, city_name: this.getCityNameTr(city)});
-                        canSpend = true;
+                        if (this.hasAvailableUnits(this.player_id, unit_city)) {
+                            civ_btns += this.format_block('jstpl_city_btn', {city: city, city_name: this.getCityNameTr(city)});
+                            canSpend = true;
+                        }
                     }
                 }
             }

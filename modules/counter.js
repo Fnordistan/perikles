@@ -201,6 +201,7 @@ define(["dojo/_base/declare"], function (declare) {
          * Places a military counter in the deadpool.
          */
         placeDeadpool: function() {
+            $('deadpool').style['display'] = 'block';
             const counter_div = this.toRelativeDiv();
             const deadpool_zone = this.city+'_'+this.type+'_'+DEAD_POOL;
             dojo.place(counter_div, $(deadpool_zone));

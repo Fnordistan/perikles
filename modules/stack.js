@@ -157,21 +157,5 @@ define(["dojo/_base/declare"], function (declare) {
             });
         },
 
-        /**
-         * When hovering over a military counter.
-         * @param {Event} evt 
-         */
-         hoverUnit: function(evt) {
-            evt.currentTarget.classList.add("prk_military_active");
-        },
-
-        /**
-         * When unhovering a military counter.
-         * @param {Event} evt 
-         */
-        unhoverUnit: function(evt) {
-            evt.currentTarget.classList.remove("prk_military_active");
-        },
-
     })
 });

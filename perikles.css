@@ -491,11 +491,20 @@ body {
     box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;    
 }
 
-.prk_military_active {
+.prk_military[data-selectable="true"] {
+    outline: 3px dashed red;
+}
+
+.prk_military[data-selectable="true"]:hover {
     transform: scale(1.05);
     transition: transform 0.25s;
     box-shadow: rgba(143, 15, 15, 0.4) 0px 54px 55px, rgba(143, 15, 15, 0.4) 0px -12px 30px, rgba(143, 15, 15, 0.4) 0px 4px 6px, rgba(143, 15, 15, 0.4) 0px 12px 13px, rgba(143, 15, 15, 0.4) 0px -3px 5px;    
     cursor: grab;
+}
+
+/* for hiding units that have been selected on main board */
+.prk_military[data-selected="true"] {
+    display: none;
 }
 
 .prk_hoplite {
