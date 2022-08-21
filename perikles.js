@@ -3244,13 +3244,21 @@ function (dojo, declare) {
             $(location+'_permissions').remove();
 
             const counters = slot_div.getElementsByClassName("prk_military");
-            counters.forEach(c => {
+            // const sorted_counters = this.stacks.sorted_counters(counters);
+
+            const cities = new Set();
+            [...counters].forEach(c => {
                 const counter_name = c.id;
-                const [city, unit, strength, _, id] = counter_name.split('_');
+                const [city, unit, strength, id, _] = counter_name.split('_');
+                cities.add(city);
                 const city_military = city+"_military";
                 this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
                 new perikles.counter(city, unit, strength, id).addToStack();
             });
+            for (let c of cities) {
+                this.stacks.sortStack(c);
+                console.log("sorted "+c);
+            }
         },
 
         /**
@@ -3259,24 +3267,31 @@ function (dojo, declare) {
          */
          notif_returnMilitaryPool: function(notif) {
             const player_id = notif.args.player_id;
+            const cities = new Set();
             if (player_id == this.player_id) {
                 // moving counters from own visible board
                 const mycounters = $('mymilitary').getElementsByClassName("prk_military");
-                const sortedByUnit = this.stacks.sorted_counters(mycounters);
-                sortedByUnit.forEach(c => {
+                // const sortedByUnit = this.stacks.sorted_counters(mycounters);
+                [...mycounters].forEach(c => {
                     const counter_name = c.id;
-                    const [city, unit, strength, _, id] = counter_name.split('_');
+                    const [city, unit, strength, id] = counter_name.split('_');
                     this.counterFromPlayerBoard(c, city, unit, strength, id);
+                    cities.add(city);
                 });
             } else {
                 const counters = notif.args.counters;
-                const sortedByUnit = this.stacks.sorted_counters(counters);
-                sortedByUnit.forEach(c => {
+                // const sortedByUnit = this.stacks.sorted_counters(counters);
+                [...counters].forEach(c => {
                     const counter = this.militaryToCounter(c);
                     const counter_div = counter.toDiv(0, 0);
                     counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
                     this.counterFromPlayerBoard(counterObj, counter['city'], counter['type'], counter['strength'], counter['id']);
+                    cities.add(counter['city']);
                 });
+            }
+            // reorder stacks
+            for(let c of cities) {
+                this.stacks.sortStack(c);
             }
             // hide military board
             $('military_board').style['display'] = 'none';
@@ -3342,7 +3357,8 @@ function (dojo, declare) {
             // Persians just go back to Persian stack
             if (city == "persia") {
                 this.slideToObjectAndDestroy($(counter_id), 'persia_military', 1000, 1500);
-                new perikles.counter(city, type, strength).addToStack();
+                new perikles.counter(city, type, strength, id).addToStack();
+                this.stacks.sortStack("persia");
             } else {
                 this.createMilitaryArea(DEAD_POOL, city);
                 const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
@@ -3363,6 +3379,7 @@ function (dojo, declare) {
             const counter_id = city+'_'+type+'_'+strength+'_'+id+'_deadpool';
             this.slideToObjectAndDestroy($(counter_id), city+"_military", 1000, 1500);
             new perikles.counter(city, type, strength, id).addToStack();
+            this.stacks.sortStack(city);
         },
 
        /**
@@ -3400,6 +3417,7 @@ function (dojo, declare) {
             // now move it back to Sparta
             this.slideToObjectAndDestroy(hoplite, 'sparta_military', 1000, 500);
             new perikles.counter('sparta', HOPLITE, counter['strength'], counter['id']).addToStack();
+            this.stacks.sortStack("sparta");
         },
 
         /**

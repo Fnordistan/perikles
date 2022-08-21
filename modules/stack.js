@@ -158,19 +158,39 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Sort the military stack on a city.
+         * @param {string} city 
+         */
+        sortStack: function(city) {
+            const stack = $(city+"_military");
+            const counters = stack.children;
+            const sorted_counters = this.sorted_counters(counters);
+            while (stack.firstChild) {
+                stack.removeChild(stack.firstChild);
+            }
+            for (let i = 0; i < sorted_counters.length; i++) {
+                const counter = sorted_counters[i];
+                counter.style['margin'] = (i*2)+"px";
+                dojo.place(counter, stack);
+            }
+        },
+
+        /**
          * Take a mixed batch of counters and sort them by city, unit, strength, etc.
          * @param {element list} counters 
          * @returns sorted array
          */
          sorted_counters: function(counters) {
             const sortbyunit = [...counters].sort((a,b) => {
-                [city,strength,type,_] = a.split("_");
-                [city2,strength2,type2,_] = b.split("_");
-                if (type == type2) {
-                    return strength - strength2;
-                } else {
-                    type - type2;
-                }
+                const a_id = a.id.split("_")[3];
+                const b_id = b.id.split("_")[3];
+                // [city2,strength2,type2,i2] = b.id.split("_");
+                // if (type == type2) {
+                //     return strength - strength2;
+                // } else {
+                //     type - type2;
+                // }
+                return a_id - b_id;
             });
             return sortbyunit;
         },

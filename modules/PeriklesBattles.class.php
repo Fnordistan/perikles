@@ -452,7 +452,6 @@ class PeriklesBattles extends APP_GameClass
     return !empty($dead);
   }
 
-
   /**
    * Get a counter with the lowest strength by city and type in the deadpool.
    * @param {string} city

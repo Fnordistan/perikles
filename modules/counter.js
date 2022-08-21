@@ -184,11 +184,51 @@ define(["dojo/_base/declare"], function (declare) {
          addToStack: function() {
             // first add
             const stack = $(this.city+"_military");
-            const ct = stack.childElementCount;
             const top = (this.type == TRIREME) ? MIL_DIM.s : 0;
-            const counter = this.toDiv(2*ct, top);
-            dojo.place(counter, stack);
+            const newDiv = this.toDiv(stack.children.length*2, top);
+            dojo.place(newDiv, stack);
+            // look for the first node we should be UNDER
+            // let inserted = false;
+            // let m = 0;
+            // for (let i = 0; i < stack.children.length; i++) {
+            //     const counter = stack.children[i];
+            //     if (this.isUnder(counter)) {
+            //         inserted = true;
+            //         const newDiv = this.toDiv(2*i, top);
+            //         const thiscounter = dojo.place(newDiv, stack);
+            //         stack.insertBefore(thiscounter, counter);
+            //     }
+            //     // now we have to move all the ones above it up
+            //     if (inserted) {
+            //         counter.style['margin'] = ((i+1)*2)+"px";
+            //         m = (i+1)*2;
+            //     }
+            // }
+            // // if never inserted, it goes on top of the stack
+            // if (!inserted) {
+            //     m = 2*stack.children.length;
+            //     const topcounter = this.toDiv(2*stack.children.length, top);
+            //     dojo.place(topcounter, stack);
+            // }
+            // console.log("placed " + this.getCounterId() + " at " + m);
         },
+
+        // /**
+        //  * For arranging stacks, check whether this unit should be under another one.
+        //  * Looks for higher strength units, and places hoplites under triremes.
+        //  * @param {object} counter 
+        //  * @returns true if this counter should be under the other one.
+        //  */
+        // isUnder: function(counter) {
+        //     const counter_id = counter.id.split("_")[3];
+        //     const under = (this.id < counter_id);
+        //     // if (this.type == ct && this.strength < cs) {
+        //     //     under = true;
+        //     // } else if (this.type == HOPLITE && ct == TRIREME) {
+        //     //     under = true;
+        //     // }
+        //     return under;
+        // },
 
         /**
          * Assumes this counter has been set a location at a battle tile.
