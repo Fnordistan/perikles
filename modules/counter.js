@@ -191,19 +191,6 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Take a mixed batch of counters and sort them by city, unit, strength, etc.
-         * @param {element list} counters 
-         * @returns sorted array
-         */
-         sorted_counters: function(counters) {
-            const sortbyunit = [...counters].sort((a,b) => {
-                a.id - b.id;
-            });
-            return sortbyunit;
-        },
-
-
-        /**
          * Assumes this counter has been set a location at a battle tile.
          * Place a military counter on the battle stack at the location tile.
          */

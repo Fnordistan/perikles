@@ -157,5 +157,23 @@ define(["dojo/_base/declare"], function (declare) {
             });
         },
 
+        /**
+         * Take a mixed batch of counters and sort them by city, unit, strength, etc.
+         * @param {element list} counters 
+         * @returns sorted array
+         */
+         sorted_counters: function(counters) {
+            const sortbyunit = [...counters].sort((a,b) => {
+                [city,strength,type,_] = a.split("_");
+                [city2,strength2,type2,_] = b.split("_");
+                if (type == type2) {
+                    return strength - strength2;
+                } else {
+                    type - type2;
+                }
+            });
+            return sortbyunit;
+        },
+
     })
 });

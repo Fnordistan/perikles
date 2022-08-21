@@ -449,7 +449,7 @@ class PeriklesBattles extends APP_GameClass
    */
   private function inDeadpool($city, $type) {
     $dead = $this->game->getObjectFromDB("SELECT id FROM MILITARY WHERE type=\"$type\" AND city=\"$city\" AND location=\"".DEADPOOL."\" LIMIT 1");
-    return empty($dead);
+    return !empty($dead);
   }
 
 

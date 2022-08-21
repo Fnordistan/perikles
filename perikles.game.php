@@ -1904,7 +1904,7 @@ class Perikles extends Table
         } elseif ($defhit && !$atthit) {
             $winner = DEFENDER;
         }
-        $this->logDebug("Attacker hit=$atthit, Defenderhit=$defhit, winner=$winner");
+        // $this->logDebug("Attacker hit=$atthit, Defenderhit=$defhit, winner=$winner");
         return $winner;
     }
 

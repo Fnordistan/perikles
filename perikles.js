@@ -1140,7 +1140,6 @@ function (dojo, declare) {
                     if (this.decorator.isHighlighted($(city)) && this.hasCubeInCity(city, true)) {
                         if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
                             this.proposeCandidate(city, player_id);
-                            this.decorator.removeAllHighlighted();
                         }    
                     }
                 }
@@ -3002,7 +3001,9 @@ function (dojo, declare) {
             const candidate_id = notif.args.candidate_id;
             const fromcube = candidate_id+"_"+city+"_b";
             const to_div = $(city+"_a");
-            this.slideToObjectRelative(fromcube, to_div, 1000, 1000, null, "last")
+            this.slideToObjectRelative(fromcube, to_div, 1000, 1000, null, "last");
+            // need to rename the cube
+            $(fromcube).id = candidate_id+"_"+city+"_a";
         },
 
         /**
@@ -3261,16 +3262,16 @@ function (dojo, declare) {
             if (player_id == this.player_id) {
                 // moving counters from own visible board
                 const mycounters = $('mymilitary').getElementsByClassName("prk_military");
-                // const sortedByUnit = this.sorted_counters(mycounters);
-                mycounters.forEach(c => {
+                const sortedByUnit = this.stacks.sorted_counters(mycounters);
+                sortedByUnit.forEach(c => {
                     const counter_name = c.id;
                     const [city, unit, strength, _, id] = counter_name.split('_');
                     this.counterFromPlayerBoard(c, city, unit, strength, id);
                 });
             } else {
                 const counters = notif.args.counters;
-                // const sortedByUnit = this.sorted_counters(counters);
-                counters.forEach(c => {
+                const sortedByUnit = this.stacks.sorted_counters(counters);
+                sortedByUnit.forEach(c => {
                     const counter = this.militaryToCounter(c);
                     const counter_div = counter.toDiv(0, 0);
                     counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
