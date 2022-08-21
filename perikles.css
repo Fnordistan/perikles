@@ -45,7 +45,7 @@
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-body {
+:root {
     --color_sparta: #F3BE7A;
     --color_athens: #83CBFA;
     --color_corinth: #B95AB4;
@@ -504,6 +504,12 @@ body {
     opacity: 0.75;
 }
 
+.prk_military[data-log="true"] {
+    top: 0;
+    transform: scale(0.7);
+    float: right;
+}
+
 .prk_hoplite {
     background-image: url(img/hoplites.jpg);
     background-size:  calc(5 * var(--military_s)) calc(7 * var(--military_l));
@@ -801,6 +807,7 @@ body {
 .prk_shield {
     background-image: url(img/spartan-shield.png);
 }
+
 .prk_shield:hover {
     transform: translateX(-5px);
 }

@@ -594,8 +594,28 @@ function (dojo, declare) {
                     }
                     if (args.location) {
                         const tile = new perikles.locationtile(args.location);
-                        const tileicon = tile.createIcon();
-                        log = tileicon+log;
+                        const tile_div = tile.createIcon();
+                        let loc_msg = tile_div;
+                        if (args.battlepos && args.type) {
+                            // loc_msg = '<div style="display: flex; flex-direction: row;">';
+                            loc_msg = '<div style="display: flex; flex-direction: row; align-items: center;">';
+                            const counter = new perikles.counter(args.city, args.type, 0);
+                            const mil_div = counter.toLogIcon();
+                            if (toint(args.battlepos) > 2) {
+                                // defender
+                                loc_msg += tile_div+'<div class="prk_battle_icon prk_shield"></div>'+mil_div;
+                            } else {
+                                // attacker
+                                loc_msg += mil_div+'<div class="prk_battle_icon prk_sword"></div>'+tile_div;
+                            }
+                            loc_msg += '</div>';
+                        }
+                        log += loc_msg;
+                    }
+                    if (args.deadpool) {
+                        const counter = new perikles.counter(args.city, args.type, args.strength);
+                        const mil_div = counter.toLogIcon();
+                        log += mil_div;
                     }
                     // a battle
                     if (args.attd1) {
@@ -1447,6 +1467,11 @@ function (dojo, declare) {
                         const strength = args.strength;
                         const location = args.location;
                         this.addCasualtyButtons(type, strength, cities, location);
+                        break;
+                    case 'takeDead':
+                        const dead = args.deadpool;
+                        debugger;
+                        break;
                 }
             }
         },
@@ -1969,8 +1994,13 @@ function (dojo, declare) {
          * @param {string} city 
          */
         hasAvailableUnits: function(player_id, city) {
-            const units = $(city+'_mil_ctnr_'+player_id).querySelectorAll('div.prk_military:not([data-selected="true"])');
-            return units.length > 0;
+            let avail = false;
+            const city_zone = $(city+'_mil_ctnr_'+player_id);
+            if (city_zone) {
+                const units = city_zone.querySelectorAll('div.prk_military:not([data-selected="true"])');
+                avail = units.length > 0;
+            }
+            return avail;
         },
 
         /**
@@ -2837,6 +2867,10 @@ function (dojo, declare) {
             dojo.subscribe( 'givePermission', this, "notif_givePermission");
             this.notifqueue.setSynchronous( 'givePermission', 500);
 
+            // deadpool
+            dojo.subscribe( 'retrieveDeadpool', this, "notif_retrieveDeadpool");
+            this.notifqueue.setSynchronous( 'retrieveDeadpool', 500);
+
             // special tiles
             dojo.subscribe( 'useTile', this, "notif_useTile");
             this.notifqueue.setSynchronous( 'useTile', 500 );
@@ -3209,8 +3243,7 @@ function (dojo, declare) {
             $(location+'_permissions').remove();
 
             const counters = slot_div.getElementsByClassName("prk_military");
-            const sortedByUnit = this.sorted_counters(counters);
-            sortedByUnit.forEach(c => {
+            counters.forEach(c => {
                 const counter_name = c.id;
                 const [city, unit, strength, _, id] = counter_name.split('_');
                 const city_military = city+"_military";
@@ -3228,16 +3261,16 @@ function (dojo, declare) {
             if (player_id == this.player_id) {
                 // moving counters from own visible board
                 const mycounters = $('mymilitary').getElementsByClassName("prk_military");
-                const sortedByUnit = this.sorted_counters(mycounters);
-                sortedByUnit.forEach(c => {
+                // const sortedByUnit = this.sorted_counters(mycounters);
+                mycounters.forEach(c => {
                     const counter_name = c.id;
                     const [city, unit, strength, _, id] = counter_name.split('_');
                     this.counterFromPlayerBoard(c, city, unit, strength, id);
                 });
             } else {
                 const counters = notif.args.counters;
-                const sortedByUnit = this.sorted_counters(counters);
-                sortedByUnit.forEach(c => {
+                // const sortedByUnit = this.sorted_counters(counters);
+                counters.forEach(c => {
                     const counter = this.militaryToCounter(c);
                     const counter_div = counter.toDiv(0, 0);
                     counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
@@ -3246,18 +3279,6 @@ function (dojo, declare) {
             }
             // hide military board
             $('military_board').style['display'] = 'none';
-        },
-
-        /**
-         * Take a mixed batch of counters and sort them by city, unit, strength, etc.
-         * @param {element list} counters 
-         * @returns sorted array
-         */
-        sorted_counters: function(counters) {
-            const sortbyunit = [...counters].sort((a,b) => {
-                a.id - b.id;
-            });
-            return sortbyunit;
         },
 
         /**
@@ -3325,8 +3346,22 @@ function (dojo, declare) {
                 this.createMilitaryArea(DEAD_POOL, city);
                 const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
                 this.slideToObjectAndDestroy($(counter_id), deadpoolloc, 1000, 1500);
-                new perikles.counter(city, type, strength, DEAD_POOL).placeDeadpool();
+                new perikles.counter(city, type, strength, id, DEAD_POOL).placeDeadpool();
             }
+        },
+
+        /**
+         * Counter moved from Deadpool back to stack.
+         * @param {Object} notif 
+         */
+        notif_retrieveDeadpool: function(notif) {
+            const id = notif.args.id;
+            const city = notif.args.city;
+            const type = notif.args.type;
+            const strength = notif.args.strength;
+            const counter_id = city+'_'+type+'_'+strength+'_'+id+'_deadpool';
+            this.slideToObjectAndDestroy($(counter_id), city+"_military", 1000, 1500);
+            new perikles.counter(city, type, strength, id).addToStack();
         },
 
        /**

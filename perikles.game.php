@@ -420,12 +420,18 @@ class Perikles extends Table
 
     /**
      * Create translateable description string of a unit
+     * @param {string} city
+     * @param {string} strength
+     * @param {string} type
+     * @param {string} location (optional)
+     * @return {string}
      */
-    function unitDescription($city, $strength, $type, $location) {
+    function unitDescription($city, $strength, $type, $location=null) {
         $home_city = $this->Cities->getNameTr($city);
         $unit_type = $this->getUnitName($type);
         $location_name = $this->Locations->getName($location);
-        $unit_desc = sprintf(clienttranslate("%s %s-%s at %s"), $home_city, $unit_type, $strength, $location_name);
+        $desc = ($location == null) ? clienttranslate("%s %s-%s") : clienttranslate("%s %s-%s at %s");
+        $unit_desc = sprintf($desc, $home_city, $unit_type, $strength, $location_name);
         return $unit_desc;
     }
 
@@ -725,7 +731,7 @@ class Perikles extends Table
                 'wars' => $this->Cities->getCityRelationships(),
                 'slot' => $slot,
                 'location_name' => $this->Locations->getName($location),
-                'preserve' => ['city', 'location'],
+                'preserve' => ['city', 'location', 'battlepos', 'type'],
             ));
         }
     }
@@ -1451,6 +1457,9 @@ class Perikles extends Table
         $this->gamestate->nextState($state);
     }
 
+    /**
+     * 
+     */
     function chooseDeadUnits() {
         $player_id = self::getActivePlayerId();
         // chooseDeadUnits
@@ -1895,6 +1904,7 @@ class Perikles extends Table
         } elseif ($defhit && !$atthit) {
             $winner = DEFENDER;
         }
+        $this->logDebug("Attacker hit=$atthit, Defenderhit=$defhit, winner=$winner");
         return $winner;
     }
 
@@ -1964,7 +1974,8 @@ class Perikles extends Table
         $city_name = $this->Cities->getNameTr($city);
         $attacker = $this->Battles->getAttacker($location);
         $defender = $this->Battles->getDefender($location);
-        if ($this->getGameStateValue(ATTACKER_TOKENS) == 2) {
+        $loser = $this->getGameStateValue(LOSER);
+        if ($loser == DEFENDER) {
             $winner = $attacker;
             self::notifyAllPlayers("attackerWins", clienttranslate('Attacker defeats ${city_name} at ${location_name}'), array(
                 'i18n' => ['city_name'],
@@ -1975,7 +1986,7 @@ class Perikles extends Table
                 'preserve' => ['city', 'location'],
             ));
             $this->defeatCity($city);
-        } elseif ($this->getGameStateValue(DEFENDER_TOKENS) == 2) {
+        } elseif ($loser == ATTACKER) {
             $winner = $defender;
             self::notifyAllPlayers("defenderWins", clienttranslate('Defender (${city_name}) defeats attackers at ${location_name}'), array(
                 'i18n' => ['city_name'],
@@ -2071,10 +2082,10 @@ class Perikles extends Table
     }
 
     /**
-     * Get an associative array {city => {HOPLITE => $counter, TRIREME => $counter}} of units that can be picked from deadpool.
-     * There is only a choice if at least one city has a choice of HOPLITE or TRIREME.
+     * Get an associative array {city => array of unit types that can be picked from deadpool.
+     * There is only a choice if at a city has a choice of HOPLITE or TRIREME.
      * @param {string} player_id
-     * 
+     * @return {array} {city => [HOPLITE and/or TRIREME] or empty}
      */
     function getDeadPool($player_id) {
         $mycities = $this->Cities->controlledCities($player_id);
@@ -2179,8 +2190,7 @@ class Perikles extends Table
      * Return all the units that may be retrieved from Deadpool by the current active player.
      */
     function argsDeadPool() {
-        $player_id = self::getActivePlayerId();
-        $deadpool = $this->getDeadPool($player_id);
+        $deadpool = $this->Battles->getDeadpoolChoices();
         return array(
             'deadpool' => $deadpool,
         );
@@ -2368,6 +2378,8 @@ class Perikles extends Table
             $this->setGameStateValue(DEADPOOL_COUNTER, 0);
             $state = "startCommit";
         } else {
+            $this->incGameStateValue(DEADPOOL_COUNTER, 1);
+
             $player_id = self::getActivePlayerId();
             // does this player have any choices to make about the deadpool?
             $deadpool = $this->getDeadPool($player_id);
@@ -2376,25 +2388,44 @@ class Perikles extends Table
                 self::giveExtraTime( $player_id );
                 $state = "nextPlayer";
             } else {
-                $is_choice = false;
-                foreach($deadpool as $city) {
-                    if (count($city) > 1) {
-                        $is_choice = true;
-                        break;
+                $choices = [];
+                foreach($deadpool as $city => $units) {
+                    if (count($units) > 1) {
+                        $choices[] = $city;
+                    } else {
+                        $this->retrieveFromDeadpool($city, $units[0]);
                     }
                 }
-                if ($is_choice) {
+                if (!empty($choices)) {
+                    $this->Battles->setDeadpoolChoice($choices);
                     $state = "takeDead";
-                    throw new BgaVisibleSystemException("I have deadpool units to choose");
-                } else {
-                    // do all the deadpool picks for the player
-                    throw new BgaVisibleSystemException("I have deadpool units to be automatically picked");
                 }
             }
-
-            $this->incGameStateValue(DEADPOOL_COUNTER, 1);
         }
         $this->gamestate->nextState($state);
+    }
+
+    /**
+     * Send notification to move a unit from Deadpool back to its city stack.
+     * @param {string} city
+     * @param {string} type
+     */
+    function retrieveFromDeadpool($city, $type) {
+        $counter = $this->Battles->fromDeadpool($city, $type);
+        $id = $counter['id'];
+        $strength = $counter['strength'];
+        $unit_desc = $this->unitDescription($city, $strength, $type);
+
+        self::notifyAllPlayers('retrieveDeadpool', clienttranslate('${unit} retrieved from deadpool'), array(
+            'i18n' => ['unit'],
+            'unit' => $unit_desc,
+            'city' => $city,
+            'id' => $id,
+            'strength' => $strength,
+            'type' => $type,
+            'deadpool' => true,
+            'preserve' => ['city', 'type', 'strength', 'deadpool'],
+        ));
     }
 
     /**

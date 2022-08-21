@@ -109,6 +109,19 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Create html div for a unit in logs.
+         * @returns html for a log message
+         */
+        toLogIcon: function() {
+            const counter_id = this.getCounterId()+"_log";
+            const class_id = "prk_military prk_"+this.type;
+            const [xoff, yoff] = this.getOffsets();
+            let style = "background-position: "+xoff+"px "+yoff+"px; position: relative;";
+            const html = '<div id=\"'+counter_id+'"\" class=\"'+class_id+'"\" style=\"'+style+'\" data-log=true></div>';
+            return html;
+        },
+
+        /**
          * Creates a military counter with position: relative.
          * @param {string} city 
          * @param {string} type HOPLITE or TRIREME
@@ -169,12 +182,26 @@ define(["dojo/_base/declare"], function (declare) {
          * Add this unit to its city stack.
          */
          addToStack: function() {
+            // first add
             const stack = $(this.city+"_military");
             const ct = stack.childElementCount;
             const top = (this.type == TRIREME) ? MIL_DIM.s : 0;
             const counter = this.toDiv(2*ct, top);
             dojo.place(counter, stack);
         },
+
+        /**
+         * Take a mixed batch of counters and sort them by city, unit, strength, etc.
+         * @param {element list} counters 
+         * @returns sorted array
+         */
+         sorted_counters: function(counters) {
+            const sortbyunit = [...counters].sort((a,b) => {
+                a.id - b.id;
+            });
+            return sortbyunit;
+        },
+
 
         /**
          * Assumes this counter has been set a location at a battle tile.
