@@ -3244,7 +3244,6 @@ function (dojo, declare) {
             $(location+'_permissions').remove();
 
             const counters = slot_div.getElementsByClassName("prk_military");
-            // const sorted_counters = this.stacks.sorted_counters(counters);
 
             const cities = new Set();
             [...counters].forEach(c => {
@@ -3257,7 +3256,6 @@ function (dojo, declare) {
             });
             for (let c of cities) {
                 this.stacks.sortStack(c);
-                console.log("sorted "+c);
             }
         },
 
@@ -3271,7 +3269,6 @@ function (dojo, declare) {
             if (player_id == this.player_id) {
                 // moving counters from own visible board
                 const mycounters = $('mymilitary').getElementsByClassName("prk_military");
-                // const sortedByUnit = this.stacks.sorted_counters(mycounters);
                 [...mycounters].forEach(c => {
                     const counter_name = c.id;
                     const [city, unit, strength, id] = counter_name.split('_');
@@ -3280,7 +3277,6 @@ function (dojo, declare) {
                 });
             } else {
                 const counters = notif.args.counters;
-                // const sortedByUnit = this.stacks.sorted_counters(counters);
                 [...counters].forEach(c => {
                     const counter = this.militaryToCounter(c);
                     const counter_div = counter.toDiv(0, 0);
