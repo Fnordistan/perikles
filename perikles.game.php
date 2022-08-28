@@ -681,9 +681,20 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         foreach (array_keys($players) as $player_id) {
             $counters = $this->Battles->returnCounters($player_id);
+            if (!empty($counters)) {
+                self::notifyAllPlayers("returnMilitaryPool", '', array(
+                    'player_id' => $player_id,
+                    'counters' => $counters,
+                ));
+            }
+        }
+        // add Persians!
+        $persians = $this->Battles->returnCounters(CONTROLLED_PERSIANS);
+        if (!empty($persians)) {
             self::notifyAllPlayers("returnMilitaryPool", '', array(
-                'player_id' => $player_id,
-                'counters' => $counters,
+                'player_id' => "persia",
+                'counters' => $persians,
+                'persianleaders' => $this->Cities->getPersianLeaders()
             ));
         }
     }

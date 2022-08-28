@@ -3270,7 +3270,7 @@ function (dojo, declare) {
          */
         notif_returnMilitary: function(notif) {
             const slot = notif.args.slot;
-            const location = notif.args.location;
+            // const location = notif.args.location;
             // remove the listeners
             const slot_div = $('battle_zone_'+slot);
             const stacks = slot_div.getElementsByClassName("prk_battle");
@@ -3302,8 +3302,13 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
          notif_returnMilitaryPool: function(notif) {
-            const player_id = notif.args.player_id;
+            let player_id = notif.args.player_id;
             const cities = new Set();
+            // persians units are sent as slightly reformatted argument
+            if (player_id == "persia") {
+                const persianleaders = notif.args.persianleaders;
+                player_id = this.isPersianLeader(this.player_id) ? this.player_id : persianleaders[0];
+            }
             if (player_id == this.player_id) {
                 // moving counters from own visible board
                 const mycounters = $('mymilitary').getElementsByClassName("prk_military");
