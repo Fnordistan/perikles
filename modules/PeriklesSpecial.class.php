@@ -28,7 +28,7 @@ class PeriklesSpecial extends APP_GameClass
       $spec = array_keys($this->specialcards);
       shuffle($spec);
       //   testing
-      $spec = ["perikles", "slaverevolt", "brasidas", "plague", "phormio", "alkibiades", "thessalanianallies", "persianfleet"];
+      //   $spec = ["perikles", "slaverevolt", "brasidas", "plague", "phormio", "alkibiades", "thessalanianallies", "persianfleet"];
       $players = $this->game->loadPlayersBasicInfos();
       foreach (array_keys($players) as $player_id) {
           $tile = array_pop($spec);
@@ -86,7 +86,6 @@ class PeriklesSpecial extends APP_GameClass
   public function canPlaySpecial($player_id, $phase) {
       $players = $this->playersWithSpecial($phase);
       $canplay = in_array($player_id, $players);
-      self::debug("$player_id in phase $phase canplay=$canplay");
       return $canplay;
   }
 

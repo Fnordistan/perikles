@@ -843,8 +843,9 @@ function (dojo, declare) {
          */
          moveCube: function(cube, from_div, to_div, delay) {
             const mobile = dojo.place(cube, from_div);
+            Object.assign(mobile.style, {"opacity":1});
             mobile.addEventListener('click', (event) => this.onSelectCube(event));
-            this.slideToObjectRelative(mobile, to_div, 1000, delay, null, "last")
+            this.slideToObjectRelative(mobile, to_div, 1000, delay, this.decorator.visibilize, "last");
         },
 
         /**
@@ -1355,7 +1356,7 @@ function (dojo, declare) {
                     this.gamedatas.wars = args.args.wars;
                     break;
                 case 'endTurn':
-                    this.gamedatas.wars = {};
+                    this.resetWars();
                     this.gamedatas.permissions = {};
                     this.removePermissionButtons();
                     break;
@@ -1363,18 +1364,6 @@ function (dojo, declare) {
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
                 this.militaryPhaseDisplay();
             }
-        },
-
-        /**
-         * Attach event listeners to stacks and permissions buttons if we're in the military stage.
-         */
-        militaryPhaseDisplay: function() {
-            $('military_board').style['display'] = 'block';
-            const battleslots = $('location_area').getElementsByClassName("prk_battle");
-            [...battleslots].forEach(b => {
-                this.makeSplayable(b);
-            });
-            this.createPermissionsDisplay();
         },
 
         // onLeavingState: this method is called each time we are leaving a game state.
@@ -2056,10 +2045,9 @@ function (dojo, declare) {
         removeInfluenceCubes: function(player_id, city, num) {
             const from_div = $(city+'_cubes_'+player_id);
             const cubes = from_div.children;
-            for (let i = 0; i < num; i++) {
-                const toremove = cubes[i];
-                this.fadeOutAndDestroy(toremove, 500);
-            }
+            [...cubes].slice(0, num).forEach(c => {
+                this.fadeOutAndDestroy(c, 500);
+            });
         },
 
         /**
@@ -2231,6 +2219,50 @@ function (dojo, declare) {
                 }
             }
             return argstr;
+        },
+
+        /**
+         * When browser is not refreshed, need to set all ways to base values
+         */
+         resetWars: function() {
+            this.gamedatas.wars = {};
+            this.gamedatas.wars["persia"] ={};
+            for (let city of CITIES) {
+                this.gamedatas.wars[city] = {};
+            }
+            for (let city of CITIES) {
+                for (let city2 of CITIES) {
+                    const rel = (city == city2) ? 1 : 0;
+                    this.gamedatas.wars[city][city2] = rel;
+                    this.gamedatas.wars[city2][city] = rel;
+                }
+                this.gamedatas.wars["persia"][city] = 0;
+                this.gamedatas.wars[city]["persia"] = 0;
+            }
+            this.gamedatas.wars["persia"]["persia"] = 1;
+        },
+
+        /**
+         * Attach event listeners to stacks and permissions buttons if we're in the military stage.
+         */
+        militaryPhaseDisplay: function() {
+            $('military_board').style['display'] = 'block';
+            // hide previously displayed boards that we are no longer leader of
+            for (let city of CITIES) {
+                const board = $(city+"_military_"+this.player_id);
+                if (board && !this.isLeader(this.player_id, city)) {
+                    board.style['display'] = "none";
+                }
+            }
+            if (this.isPersianLeader(this.player_id) && $('persia_military_'+this.player_id)) {
+                $('persia_military_'+this.player_id).style['display'] = "none";
+            }
+
+            const battleslots = $('location_area').getElementsByClassName("prk_battle");
+            [...battleslots].forEach(b => {
+                this.makeSplayable(b);
+            });
+            this.createPermissionsDisplay();
         },
 
         ///////////////////////////////////////////////////
@@ -2960,10 +2992,12 @@ function (dojo, declare) {
             const candidate = notif.args.candidate; // alpha or beta
             const c = CANDIDATES[candidate]; // "a" or "b"
             const player_cubes = $(city+"_cubes_"+player_id);
-            const cube1 = player_cubes.lastChild;
 
-            const cube = this.createInfluenceCube(player_id, city, c);
-            this.moveCube(cube, player_cubes, $(city+'_'+c), 500);
+            const cube_div = this.createInfluenceCube(player_id, city, c);
+            // dojo.place(cube_div, $(city+'_'+c));
+            // this.slideToObject( cube, $(city+'_'+c), 500, 0 );
+            this.moveCube(cube_div, player_cubes, $(city+'_'+c), 500);
+            const cube1 = player_cubes.lastChild;
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
                 this.decorator.unhighlight($(city+"_a"));
@@ -3042,6 +3076,8 @@ function (dojo, declare) {
                 }
             });
             // subtract loser's cubes from winner's
+            console.log(player_id+" loses "+cubes+" from " + city);
+            debugger;
             this.removeInfluenceCubes(player_id, city, cubes);
             // place Leader
             this.createLeaderCounter(player_id, city, "leader");
@@ -3240,8 +3276,9 @@ function (dojo, declare) {
             [...stacks].forEach(s => {
                 this.makeSplayable(s, false);
             });
-            // remove the permissions box
-            $(location+'_permissions').remove();
+            // NOT NEEDED because currently the permissions box is attached to the location tile,
+            // which already gets moved
+            // $(location+'_permissions').remove();
 
             const counters = slot_div.getElementsByClassName("prk_military");
 

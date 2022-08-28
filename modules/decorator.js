@@ -93,8 +93,6 @@ define(["dojo/_base/declare"], function (declare) {
          * This method will remove all inline style added to element that affect positioning
          */
          stripPosition: function (token) {
-            // console.log(token + " STRIPPING");
-            // remove any added positioning style
             token = $(token);
 
             token.style.removeProperty("display");
@@ -103,8 +101,16 @@ define(["dojo/_base/declare"], function (declare) {
             token.style.removeProperty("left");
             token.style.removeProperty("right");
             token.style.removeProperty("position");
-            // dojo.style(token, "transform", null);
         },
+
+        /**
+         * For elements that have been assigned opacity 0 for some reason.
+         * @param {DOMElement} token 
+         */
+        visibilize: function(token) {
+            token.style['opacity'] = 'initial';
+        },
+
 
         /**
          * Strip all elements of the document of a given class name

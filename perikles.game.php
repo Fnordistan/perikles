@@ -2510,6 +2510,10 @@ class Perikles extends Table
                     $winner = $b;
                     $loser_inf = $a_inf;
                 }
+                $this->logDebug("$a has $a_inf cubes in $cn");
+                $this->logDebug("$b has $b_inf cubes in $cn");
+                $this->logDebug("$winner loses $loser_inf cubes in $cn");
+
                 $this->Cities->changeInfluence($cn, $winner, -$loser_inf);
                 self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name}'), array(
                     'i18n' => ['city_name'],
@@ -2947,6 +2951,14 @@ class Perikles extends Table
                     }
                     $this->sendToDeadpool($casualty);
                     $this->gamestate->nextState( "endBattle" );
+                    break;
+                case "takeDead":
+                    $deadpool = $this->getDeadPool($active_player);
+                    foreach ($deadpool as $city => $units) {
+                        $coinflip = bga_rand(0,1);
+                        $type = $units[$coinflip];
+                        $this->retrieveFromDeadpool($city, $type);
+                    }
                     break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );

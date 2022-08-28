@@ -423,7 +423,7 @@
     border: red solid 1px;
     border-radius: 4px;
     opacity: 0.5;
-/* animation: prk_candidate_space_pulse 3s infinite; */
+    animation: prk_candidate_space_pulse 3s infinite;
 }
 
 .prk_cube {
