@@ -618,10 +618,11 @@ class PeriklesCities extends APP_GameClass
      * Influence of a player in a city.
      * @param {string} player_id
      * @param {string} city
-     * @return number of cubes (not counting candidates) player has in city, may be 0
+     * @return {int} number of cubes (not counting candidates) player has in city, may be 0
      */
   public function influence($player_id, $city) {
-      return $this->game->getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
+      $inf = $this->game->getUniqueValueFromDB("SELECT $city FROM player WHERE player_id=$player_id");
+      return intval($inf);
   }
 
     /**
@@ -686,16 +687,15 @@ class PeriklesCities extends APP_GameClass
       self::DbQuery("UPDATE player SET $city = $influence WHERE player_id=$player_id");
   }
 
-
     /**
      * Does this player have any influence in the city, including a candidate?
      */
-    function hasInfluence($player_id, $city) {
-      if ($this->isCandidate($player_id, $city)) {
-        return true;
-      }
-      // not a candidate so check for influence cubes
-      return ($this->influence($player_id, $city) > 0);
+  function hasInfluence($player_id, $city) {
+    if ($this->isCandidate($player_id, $city)) {
+      return true;
+    }
+    // not a candidate so check for influence cubes
+    return ($this->influence($player_id, $city) > 0);
   }
 
     /**
@@ -704,7 +704,7 @@ class PeriklesCities extends APP_GameClass
      * who can spend cube from any city).
      * @param {string} player_id
      * @param {string} city
-     * @return boolean true if player_id is able to spend a cube from this city
+     * @return {bool} true if player_id is able to spend a cube from this city
      */
     function canSpendInfluence($player_id, $city) {
       $can_spend = false;

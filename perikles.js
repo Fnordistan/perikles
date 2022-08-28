@@ -843,7 +843,7 @@ function (dojo, declare) {
          */
          moveCube: function(cube, from_div, to_div, delay) {
             const mobile = dojo.place(cube, from_div);
-            Object.assign(mobile.style, {"opacity":1});
+            // Object.assign(mobile.style, {"opacity":1});
             mobile.addEventListener('click', (event) => this.onSelectCube(event));
             this.slideToObjectRelative(mobile, to_div, 1000, delay, this.decorator.visibilize, "last");
         },
@@ -2997,7 +2997,7 @@ function (dojo, declare) {
             // dojo.place(cube_div, $(city+'_'+c));
             // this.slideToObject( cube, $(city+'_'+c), 500, 0 );
             this.moveCube(cube_div, player_cubes, $(city+'_'+c), 500);
-            const cube1 = player_cubes.lastChild;
+            const cube1 = player_cubes.firstChild;
             this.fadeOutAndDestroy( cube1.id, 250);
             if (c == "a") {
                 this.decorator.unhighlight($(city+"_a"));
@@ -3077,7 +3077,6 @@ function (dojo, declare) {
             });
             // subtract loser's cubes from winner's
             console.log(player_id+" loses "+cubes+" from " + city);
-            debugger;
             this.removeInfluenceCubes(player_id, city, cubes);
             // place Leader
             this.createLeaderCounter(player_id, city, "leader");

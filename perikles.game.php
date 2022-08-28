@@ -965,6 +965,81 @@ class Perikles extends Table
         return $units[$unit];
     }
 
+    /**
+     * For an unopposed election, sends notification about the winner.
+     * @param {string} winner player id
+     * @param {string} city
+     */
+    function unopposedElection($winner, $city) {
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
+            'i18n' => ['city_name'],
+            'player_id' => $winner,
+            'player_name' => $players[$winner]['player_name'],
+            'city' => $city,
+            'city_name' => $this->Cities->getNameTr($city),
+            'cubes' => 0,
+            'leader' => 'leader',
+            'preserve' => ['player_id', 'city', 'leader']
+            ));
+    }
+
+    /**
+     * Assumes we have determined this is a contested election. Calculates winner, adjusts influence, sends notification.
+     * @param {string} city
+     * @return {string} the winner player id
+     */
+    function resolveElection($city) {
+        $a = $this->Cities->getCandidate($city, "a");
+        $b = $this->Cities->getCandidate($city, "b");
+
+        $a_inf = $this->Cities->influence($a, $city);
+        $b_inf = $this->Cities->influence($b, $city);
+        // default
+        $winner = $a;
+        $loser_inf = $b_inf;
+        if ($a_inf < $b_inf) {
+            $winner = $b;
+            $loser_inf = $a_inf;
+        }
+        $players = self::loadPlayersBasicInfos();
+
+        $this->Cities->changeInfluence($city, $winner, -$loser_inf);
+
+        self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name}'), array(
+            'i18n' => ['city_name'],
+            'player_id' => $winner,
+            'player_name' => $players[$winner]['player_name'],
+            'city' => $city,
+            'city_name' => $this->Cities->getNameTr($city),
+            'cubes' => $loser_inf,
+            'leader' => 'leader',
+            'preserve' => ['player_id', 'city', 'leader']
+        ));
+        return $winner;
+    }
+
+    /**
+     * After elections, make anyone who's not a city leader a Persian leader.
+     * Send notifications.
+     */
+    function setPersianLeaders() {
+        $players = self::loadPlayersBasicInfos();
+        $this->Cities->assignPersianLeaders();
+        $persianleaders = $this->Cities->getPersianLeaders();
+        if (!empty($persianleaders)) {
+            foreach($persianleaders as $persian) {
+                $msg = (count($persianleaders) > 1) ? clienttranslate('${player_name} won no elections and shares leadership of the Persians') : clienttranslate('${player_name} won no elections and takes control of the Persians');
+                self::notifyAllPlayers("persianLeader", $msg, array(
+                    'player_id' => $persian,
+                    'player_name' => $players[$persian]['player_name'],
+                    'preserve' => ['player_id']
+                ));
+            }
+            $this->movePersianUnits($persianleaders);
+        }
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -2455,13 +2530,10 @@ class Perikles extends Table
      * Do all the elections.
      */
     function stElections() {
-        $players = self::loadPlayersBasicInfos();
         // end influence phase
         $this->setGameStateValue(INFLUENCE_PHASE, 0);
 
         foreach ($this->Cities->cities() as $cn) {
-            $city_name = $this->Cities->getNameTr($cn);
-
             $a = $this->Cities->getCandidate($cn, "a");
             $b = $this->Cities->getCandidate($cn, "b");
             $winner = 0;
@@ -2470,83 +2542,30 @@ class Perikles extends Table
                     // no candidates!
                     self::notifyAllPlayers("noElection", clienttranslate('${city_name} has no candidates; no Leader assigned'), array(
                         'i18n' => ['city_name'],
-                        'city_name' => $city_name,
+                        'city_name' => $this->Cities->getNameTr($cn),
                     ));
                 } else {
                     // B is unopposed
+                    $this->unopposedElection($b, $cn);
                     $winner = $b;
-                    self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
-                        'i18n' => ['city_name'],
-                        'player_id' => $winner,
-                        'player_name' => $players[$winner]['player_name'],
-                        'city' => $cn,
-                        'city_name' => $city_name,
-                        'cubes' => 0,
-                        'leader' => 'leader',
-                        'preserve' => ['player_id', 'city', 'leader']
-                        ));
                 }
             } elseif (empty($b)) {
                 // A is unopposed
+                $this->unopposedElection($a, $cn);
                 $winner = $a;
-                self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
-                    'i18n' => ['city_name'],
-                    'player_id' => $winner,
-                    'player_name' => $players[$winner]['player_name'],
-                    'city' => $cn,
-                    'city_name' => $city_name,
-                    'cubes' => 0,
-                    'leader' => 'leader',
-                    'preserve' => ['player_id', 'city', 'leader']
-                ));
             } else {
                 // contested election
-                $a_inf = $this->Cities->influence($a, $cn);
-                $b_inf = $this->Cities->influence($b, $cn);
-                // default
-                $winner = $a;
-                $loser_inf = $b_inf;
-                if ($a_inf < $b_inf) {
-                    $winner = $b;
-                    $loser_inf = $a_inf;
-                }
-                $this->logDebug("$a has $a_inf cubes in $cn");
-                $this->logDebug("$b has $b_inf cubes in $cn");
-                $this->logDebug("$winner loses $loser_inf cubes in $cn");
-
-                $this->Cities->changeInfluence($cn, $winner, -$loser_inf);
-                self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name}'), array(
-                    'i18n' => ['city_name'],
-                    'player_id' => $winner,
-                    'player_name' => $players[$winner]['player_name'],
-                    'city' => $cn,
-                    'city_name' => $city_name,
-                    'cubes' => $loser_inf,
-                    'leader' => 'leader',
-                    'preserve' => ['player_id', 'city', 'leader']
-                ));
+                $winner = $this->resolveElection($cn);
             }
             $this->Cities->clearCandidates($cn);
             $this->Cities->setLeader($winner, $cn);
 
-            if (!empty($winner)) {
+            if ($winner != 0) {
                 $this->moveMilitaryUnits($winner, $cn);
             }
         }
         // anyone who is not a leader of any city is a Persian leader
-        $this->Cities->assignPersianLeaders();
-        $persianleaders = $this->Cities->getPersianLeaders();
-        if (!empty($persianleaders)) {
-            foreach($persianleaders as $persian) {
-                $msg = (count($persianleaders) > 1) ? clienttranslate('${player_name} won no elections and shares leadership of the Persians') : clienttranslate('${player_name} won no elections and takes control of the Persians');
-                self::notifyAllPlayers("persianLeader", $msg, array(
-                    'player_id' => $persian,
-                    'player_name' => $players[$persian]['player_name'],
-                    'preserve' => ['player_id']
-                ));
-            }
-            $this->movePersianUnits($persianleaders);
-        }
+        $this->setPersianLeaders();
 
         // sparta leader chooses
         $sparta = $this->Cities->getLeader("sparta");
