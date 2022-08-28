@@ -1347,14 +1347,13 @@ function (dojo, declare) {
                         this.gamedatas.gamestate.args.committed = {};
                     }
                     break;
-                case 'takeDead':
-                    if (this.isCurrentPlayerActive()) {
-                        const deadpool = args.deadpool;
-                        debugger;
-                    }
-                    break;
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
+                    break;
+                case 'takeDead':
+                    const dead = args.deadpool;
+                    this.addDeadpoolChoice(dead);
+                    debugger;
                     break;
                 case 'endTurn':
                     this.resetWars();
@@ -1457,10 +1456,6 @@ function (dojo, declare) {
                         const location = args.location;
                         this.addCasualtyButtons(type, strength, cities, location);
                         break;
-                    case 'takeDead':
-                        const dead = args.deadpool;
-                        debugger;
-                        break;
                 }
             }
         },
@@ -1490,6 +1485,24 @@ function (dojo, declare) {
                     this.onSelectCasualty(c);
                 });
             }
+        },
+
+        ///////////////////////////////////////////////////
+        //// Player must choose which unit to retrieve from deadpool
+        ///////////////////////////////////////////////////
+
+        addDeadpoolChoice: function(deadpoolunits) {
+            const unit1 = deadpoolunits[0];
+            const city = unit1['city'];
+            const city_name = this.getCityNameTr(city);
+            let msg = _("You may retrieve a ${city_name} Hoplite or Trireme from the deadpool");
+            msg = msg.replace('${city_name}', city_name);
+
+            this.setDescriptionOnMyTurn(msg, {});
+
+            debugger;
+
+
         },
 
         ///////////////////////////////////////////////////
