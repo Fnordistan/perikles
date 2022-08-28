@@ -26,7 +26,7 @@ define(["dojo/_base/declare"], function (declare) {
     return declare("perikles.counter", null, {
 
         /**
-         * 
+         * Constructor for a military counter.
          * @param {string} city 
          * @param {string} type 
          * @param {string} strength 

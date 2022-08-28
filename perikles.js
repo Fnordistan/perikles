@@ -855,7 +855,8 @@ function (dojo, declare) {
         counterToPlayerBoard: function(military) {
             const counter = this.militaryToCounter(military);
             const player_id = military['location'];
-            const counterObj = $(counter.getCounterId());
+            const id = counter.getCounterId();
+            const counterObj = $(id);
             if (player_id == this.player_id) {
                 this.createMilitaryArea(player_id, counter.getCity());
                 const mil_zone = counter.getCity()+"_"+counter.getType()+"_"+player_id;
@@ -3103,6 +3104,7 @@ function (dojo, declare) {
 
             // in case of multiple Persians, just show counters moving to first
             const player_id = this.isPersianLeader(this.player_id) ? this.player_id : persianleaders[0];
+
             for (let mil of military) {
                 mil['location'] = player_id;
                 this.counterToPlayerBoard(mil);

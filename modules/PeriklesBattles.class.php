@@ -385,7 +385,7 @@ class PeriklesBattles extends APP_GameClass
   public function toDeadpool($counter) {
     $id = $counter['id'];
     $city = $counter['city'];
-    $deadpool = ($city == PERSIA) ? PERSIA : DEADPOOL;
+    $deadpool = ($city == CONTROLLED_PERSIANS) ? PERSIA : DEADPOOL;
     $this->toLocation($id, $deadpool);
   }
 
