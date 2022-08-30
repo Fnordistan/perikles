@@ -385,7 +385,7 @@ class PeriklesBattles extends APP_GameClass
   public function toDeadpool($counter) {
     $id = $counter['id'];
     $city = $counter['city'];
-    $deadpool = ($city == CONTROLLED_PERSIANS) ? PERSIA : DEADPOOL;
+    $deadpool = ($city == PERSIA) ? PERSIA : DEADPOOL;
     $this->toLocation($id, $deadpool);
   }
 
@@ -479,7 +479,7 @@ class PeriklesBattles extends APP_GameClass
       throw new BgaVisibleSystemException("no $city $type unit in deadpool"); // NOI18N
     }
     $id = $counter['id'];
-    self::DbQuery("UPDATE MILITARY SET location=$city WHERE id=$id");
+    self::DbQuery("UPDATE MILITARY SET location=\"$city\" WHERE id=$id");
     return $counter;
   }
 

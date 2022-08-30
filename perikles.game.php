@@ -444,21 +444,24 @@ class Perikles extends Table
 
         $cubect = $this->Cities->allCubesOnBoard($player_id);
         if ($cubect >= 30) {
-            throw new BgaUserException(self::_("You already have 30 cubes on the board"));
+            self::notifyAllPlayers('cubeLimit', clienttranslate('${player_name} has 30 cubes on the board and cannot add more Influence'), array(
+                'player_id' => $player_id,
+                'player_name' => $player_name,
+            ));
+        } else {
+            $this->Cities->changeInfluence($city, $player_id, $cubes);
+            $city_name = $this->Cities->getNameTr($city);
+    
+            self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} adds ${cubes} Influence to ${city_name}'), array(
+                'i18n' => ['city_name'],
+                'player_id' => $player_id,
+                'player_name' => $player_name,
+                'cubes' => $cubes,
+                'city' => $city,
+                'city_name' => $city_name,
+                'preserve' => ['city']
+            ));
         }
-
-        $this->Cities->changeInfluence($city, $player_id, $cubes);
-        $city_name = $this->Cities->getNameTr($city);
-
-        self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} adds ${cubes} Influence to ${city_name}'), array(
-            'i18n' => ['city_name'],
-            'player_id' => $player_id,
-            'player_name' => $player_name,
-            'cubes' => $cubes,
-            'city' => $city,
-            'city_name' => $city_name,
-            'preserve' => ['city']
-        ));
     }
 
     /**
@@ -2851,6 +2854,8 @@ class Perikles extends Table
         $this->Cities->clearWars();
         $this->Locations->clearBattleStatus();
         $this->returnPlayersMilitary();
+        self::notifyAllPlayers("endTurn", [], []);
+        
 
         if ($state == "nextTurn") {
             // reshuffle Influence deck and deal new cards

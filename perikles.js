@@ -2279,6 +2279,16 @@ function (dojo, declare) {
             this.createPermissionsDisplay();
         },
 
+        /**
+         * Clear any highlighted columns on CRT table.
+         */
+        clearCRT: function() {
+            const crtcols = document.getElementsByClassName("prk_crt");
+            [...crtcols].forEach(c => {
+                this.decorator.unhighlight(c);
+            });
+        },
+
         ///////////////////////////////////////////////////
         //// Component creation - create HTML elements
 
@@ -2924,6 +2934,9 @@ function (dojo, declare) {
             dojo.subscribe( 'alkibiadesMove', this, "notif_alkibiadesMove");
             this.notifqueue.setSynchronous( 'notif_alkibiadesMove', 500 );
             dojo.subscribe( 'slaveRevolt', this, "notif_slaveRevolt");
+
+            // end of turn
+            dojo.subscribe( 'endTurn', this, "notif_endTurn");
         },
 
         // Notification handlers
@@ -3428,7 +3441,7 @@ function (dojo, declare) {
             const city = notif.args.city;
             const type = notif.args.type;
             const strength = notif.args.strength;
-            const counter_id = city+'_'+type+'_'+strength+'_'+id+'_deadpool';
+            const counter_id = city+'_'+type+'_'+strength+'_deadpool';
             this.slideToObjectAndDestroy($(counter_id), city+"_military", 1000, 1500);
             new perikles.counter(city, type, strength, id).addToStack();
             this.stacks.sortStack(city);
@@ -3508,10 +3521,7 @@ function (dojo, declare) {
             for (i = 1; i <= 4; i++) {
                 dojo.place('<div id="battle_token_'+i+'" class="prk_battle_token"></div>', $('battle_tokens'));
             }
-            const crtcols = document.getElementsByClassName("prk_crt");
-            [...crtcols].forEach(c => {
-                this.decorator.unhighlight(c);
-            });
+            this.clearCRT();
         },
 
         /**
@@ -3545,6 +3555,19 @@ function (dojo, declare) {
                 this.displayScoring( statue_id, player_color, vp, scoring_delay, 250, 0 );
                 this.scoreCtrl[ player_id ].incValue( vp );
             }
+        },
+
+        /**
+         * End of turn cleanup.
+         * @param {Object} notif 
+         */
+        notif_endTurn: function(notif) {
+            // remove battle tokens
+            const tokens = document.getElementsByClassName('prk_battle_token');
+            [...tokens].forEach(token => {
+                this.fadeOutAndDestroy(token, 100);
+            });
+            this.clearCRT();
         },
 
     });
