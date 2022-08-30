@@ -630,7 +630,12 @@
 }
 
 .prk_plague_btn {
+    font-size: 1.5em;
+    font-family: 'ThrumsSerifRegular';
     border: 4px groove black;
+    width: 100px;
+    height: max-content;
+    margin: 5px;
     box-shadow: 2px 2px 15px 5px darkslategray;
 }
 
