@@ -434,10 +434,10 @@ class PeriklesBattles extends APP_GameClass
 
   /**
    * Assumes the Db has been marked, and pulls ids of all eligible units.
-   * @return {array} {id => [type,city]}
+   * @return {array} {id => [id, type, strength, city]}
    */
   public function getDeadpoolChoices() {
-    $choices = $this->game->getCollectionFromDB("SELECT id, type, city FROM MILITARY WHERE battlepos=1 AND location=\"".DEADPOOL."\"");
+    $choices = $this->game->getCollectionFromDB("SELECT id, city, type, strength FROM MILITARY WHERE battlepos=1 AND location=\"".DEADPOOL."\"");
     return $choices;
   }
 

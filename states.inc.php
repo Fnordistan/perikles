@@ -184,8 +184,8 @@ $machinestates = array(
 
     BRING_OUT_YOUR_DEAD => array(
     	"name" => "takeDead",
-    	"description" => clienttranslate('${actplayer} must choose unit(s) from the dead pool ${length}'),
-    	"descriptionmyturn" => clienttranslate('You must choose unit(s) from the dead pool ${length}'),
+    	"description" => clienttranslate('${actplayer} must choose unit(s) from the dead pool'),
+    	"descriptionmyturn" => clienttranslate('You must choose unit(s) from the dead pool'),
     	"type" => "activeplayer",
         "args" => "argsDeadPool",
     	"possibleactions" => array( "chooseDeadUnits" ),

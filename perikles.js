@@ -613,9 +613,13 @@ function (dojo, declare) {
                         log += loc_msg;
                     }
                     if (args.deadpool) {
-                        const counter = new perikles.counter(args.city, args.type, args.strength);
-                        const mil_div = counter.toLogIcon();
-                        log += mil_div;
+                        log += '<div>';
+                        for (const [id, unit] of Object.entries(args.deadpool)) {
+                            const counter = new perikles.counter(unit.city, unit.type, unit.strength);
+                            const mil_div = counter.toLogIcon();
+                            log += mil_div;
+                        }
+                        log += '</div>';
                     }
                     // a battle
                     if (args.attd1) {
@@ -1351,7 +1355,7 @@ function (dojo, declare) {
                     this.gamedatas.wars = args.args.wars;
                     break;
                 case 'takeDead':
-                    const dead = args.deadpool;
+                    const dead = args.args.deadpool;
                     this.addDeadpoolChoice(dead);
                     debugger;
                     break;
@@ -1492,6 +1496,7 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
 
         addDeadpoolChoice: function(deadpoolunits) {
+            debugger;
             const unit1 = deadpoolunits[0];
             const city = unit1['city'];
             const city_name = this.getCityNameTr(city);
