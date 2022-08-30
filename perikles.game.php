@@ -429,10 +429,13 @@ class Perikles extends Table
     function unitDescription($city, $strength, $type, $location=null) {
         $home_city = $this->Cities->getNameTr($city);
         $unit_type = $this->getUnitName($type);
-        $location_name = $this->Locations->getName($location);
-        $desc = ($location == null) ? clienttranslate("%s %s-%s") : clienttranslate("%s %s-%s at %s");
-        $unit_desc = sprintf($desc, $home_city, $unit_type, $strength, $location_name);
-        return $unit_desc;
+        if ($location == null) {
+            $desc = sprintf(clienttranslate("%s %s-%s"), $home_city, $unit_type, $strength);
+        } else {
+            $location_name = $this->Locations->getName($location);
+            $desc = sprintf(clienttranslate("%s %s-%s at %s"), $home_city, $unit_type, $strength, $location_name);
+        }
+        return $desc;
     }
 
     /**

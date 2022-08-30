@@ -734,8 +734,21 @@ class PeriklesCities extends APP_GameClass
               $open = true;
           }
           if ($open) {
+              // do I have influence in this city
               if ($this->hasInfluence($player_id, $city)) {
+                // must check for edge case: I am already candidate A and nobody else is in the city
+                if ($this->getCandidate($city, "a") == $player_id) {
+                  foreach ($this->getPlayerIds() as $candidate_id) {
+                    if ($candidate_id != $player_id) {
+                      if ($this->hasInfluence($candidate_id, $city)) {
+                        return true;
+                      }
+                    }
+                  }
+                  return false;
+                } else {
                   return true;
+                }
               }
           }
       }

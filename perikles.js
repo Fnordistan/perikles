@@ -3437,6 +3437,7 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_retrieveDeadpool: function(notif) {
+            debugger;
             const id = notif.args.id;
             const city = notif.args.city;
             const type = notif.args.type;
