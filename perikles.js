@@ -649,6 +649,7 @@ function (dojo, declare) {
                         }
                     }
                     if (args.defeats) {
+                        debugger;
                         const def_ctr = this.format_block('jstpl_defeat_log', {city: 'city', num: args.defeats} );
                         log += def_ctr;
                     }
@@ -1401,6 +1402,7 @@ function (dojo, declare) {
                     this.gamedatas.gamestate.args.committed = {};
                     break;
                 case 'takeDead':
+                    // hide dead pool if no more units
                     const deadunits = ($(DEAD_POOL)).getElementsByClassName("prk_military");
                     $(DEAD_POOL).style['display'] = (deadunits.length == 0) ? 'none' : 'block';
                     break;
@@ -1496,17 +1498,23 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
 
         addDeadpoolChoice: function(deadpoolunits) {
-            debugger;
-            const unit1 = deadpoolunits[0];
-            const city = unit1['city'];
-            const city_name = this.getCityNameTr(city);
-            let msg = _("You may retrieve a ${city_name} Hoplite or Trireme from the deadpool");
-            msg = msg.replace('${city_name}', city_name);
-
+            const cities = new Set();
+            let city_string = "";
+            let ct = Object.keys(deadpoolunits).length;
+            for (let i = 0; i < ct; i++) {
+                const unit = deadpoolunits[i];
+                const city = unit['city'];
+                cities.add(city);
+                const city_name = this.getCityNameTr(city);
+                city_string += city_name;
+                if (i < ct-1) {
+                    city_string += ", ";
+                }
+            }
+            let msg = _("You must retrieve a Hoplite or Trireme from the deadpool for ${cities}");
+            msg = msg.replace('${cities}', city_string);
             this.setDescriptionOnMyTurn(msg, {});
-
             debugger;
-
 
         },
 
@@ -3338,27 +3346,24 @@ function (dojo, declare) {
             // persians units are sent as slightly reformatted argument
             if (player_id == "persia") {
                 const persianleaders = notif.args.persianleaders;
-                player_id = this.isPersianLeader(this.player_id) ? this.player_id : persianleaders[0];
+                if (persianleaders.includes(this.player_id)) {
+                    player_id = this.player_id;
+                } else {
+                    player_id = persianleaders[0];
+                }
+                cities.add("persia");
             }
-            if (player_id == this.player_id) {
-                // moving counters from own visible board
-                const mycounters = $('mymilitary').getElementsByClassName("prk_military");
-                [...mycounters].forEach(c => {
-                    const counter_name = c.id;
-                    const [city, unit, strength, id] = counter_name.split('_');
-                    this.counterFromPlayerBoard(c, city, unit, strength, id);
-                    cities.add(city);
-                });
-            } else {
-                const counters = notif.args.counters;
-                [...counters].forEach(c => {
-                    const counter = this.militaryToCounter(c);
-                    const counter_div = counter.toDiv(0, 0);
-                    counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
-                    this.counterFromPlayerBoard(counterObj, counter['city'], counter['type'], counter['strength'], counter['id']);
-                    cities.add(counter['city']);
-                });
+            const counters = notif.args.counters;
+            if (!(counters && player_id)) {
+                debugger;
             }
+            [...counters].forEach(c => {
+                const counter = this.militaryToCounter(c);
+                const counter_div = counter.toDiv(0, 0);
+                counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
+                this.counterFromPlayerBoard(counterObj, counter['city'], counter['type'], counter['strength'], counter['id']);
+                cities.add(counter['city']);
+            });
             // reorder stacks
             for(let c of cities) {
                 this.stacks.sortStack(c);
@@ -3442,7 +3447,6 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_retrieveDeadpool: function(notif) {
-            debugger;
             const id = notif.args.id;
             const city = notif.args.city;
             const type = notif.args.type;

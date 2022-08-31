@@ -460,7 +460,7 @@ class PeriklesBattles extends APP_GameClass
    */
   private function getLowestDeadPoolUnit($city, $type) {
     $counter = null;
-    $dead = $this->game->getObjectFromDB("SELECT id, city, type, MIN(strength) FROM MILITARY WHERE type=\"$type\" AND city=\"$city\" AND location=\"".DEADPOOL."\" LIMIT 1");
+    $dead = $this->game->getObjectFromDB("SELECT id, city, type, MIN(strength) as strength FROM MILITARY WHERE type=\"$type\" AND city=\"$city\" AND location=\"".DEADPOOL."\" LIMIT 1");
     if ((!empty($dead)) && $dead['id'] != null) {
       $counter = $dead;
     }

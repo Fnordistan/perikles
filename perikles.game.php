@@ -507,23 +507,23 @@ class Perikles extends Table
     /**
      * A player claims a tile. Return military units.
      * Add tile to player's board. Send notification to move tile.
-     * 
+     * Add defeat if attacker won.
      * @param {string} player_id
      * @param {Object} tile
+     * @param {int} winner ATTACKER or DEFENDER
      */
-    function claimTile($player_id, $tile) {
+    function claimTile($player_id, $tile, $winner) {
         $players = self::loadPlayersBasicInfos();
         $persians = $this->Cities->getPersianLeaders();
         if (count($persians) > 1 && in_array($player_id, $persians)) {
             $this->persiansClaimTile($tile);
         } else {
-            $city = $tile['city'];
             $location = $tile['location'];
             $vp = $this->Locations->getVictoryPoints($location);
             $this->addVPs($player_id, $vp);
             self::notifyAllPlayers('claimTile', clienttranslate('${player_name} claims ${location_name} tile'), array(
                 'i18n' => ['location_name'],
-                'city' => $city,
+                'city' => $tile['city'],
                 'location' => $location,
                 'player_id' => $player_id,
                 'vp' => $vp,
@@ -532,6 +532,9 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'city', 'location'],
             ));
             $this->moveTile($tile, $player_id);
+        }
+        if ($winner == ATTACKER) {
+            $this->defeatCity($tile['city']);
         }
     }
 
@@ -1902,8 +1905,7 @@ class Perikles extends Table
                     'location_name' => $this->Locations->getName($location),
                     'preserve' => ['location']
                 ));
-                $this->defeatCity($city);
-                $this->claimTile($player_id, $tile);
+                $this->claimTile($player_id, $tile, ATTACKER);
             }
         }
     }
@@ -2077,7 +2079,6 @@ class Perikles extends Table
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
             ));
-            $this->defeatCity($city);
         } elseif ($loser == ATTACKER) {
             $winner = $defender;
             self::notifyAllPlayers("defenderWins", clienttranslate('Defender (${city_name}) defeats attackers at ${location_name}'), array(
@@ -2091,7 +2092,7 @@ class Perikles extends Table
         } else {
             throw new BgaVisibleSystemException("No winner found at end of battle for tile $location"); // NOI18N
         }
-        $this->claimTile($winner, $tile);
+        $this->claimTile($winner, $tile, ($loser == ATTACKER ? DEFENDER : ATTACKER));
     }
 
     /**
@@ -2731,10 +2732,7 @@ class Perikles extends Table
                 $state = "continueBattle";
             } else {
                 // unopposed side wins tile
-                if ($unopposed == ATTACKER) {
-                    $this->defeatCity($tile['city']);
-                }
-                $this->claimTile($unopposed_id, $tile);
+                $this->claimTile($unopposed_id, $tile, $unopposed);
                 $state = "nextBattle";
             }
         } else {
