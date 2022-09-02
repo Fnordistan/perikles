@@ -95,7 +95,7 @@ const jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk
 
 const jstpl_permission_btn = '<button id="${location}_${city}_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
-const jstpl_permission_icon = '<button id="${rel}_btn" type="button" class="prk_city_btn" style="pointer-events: none;" data-status=${rel} data-defender=${defender}>${relationship}</button>';
+const jstpl_permission_icon = '<button id="${rel}_btn" type="button" class="prk_city_btn" style="pointer-events: none; min-width: max-content;" data-status=${rel} data-defender=${defender}>${relationship}</button>';
 
 const jstpl_plague_btn = '<button id="${city}_plague_btn" type="button" class="prk_plague_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 

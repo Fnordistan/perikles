@@ -2541,7 +2541,7 @@ function (dojo, declare) {
             const msg = _("Leader of the controlling city may click to give permission to other cities to defend");
             const permission_banner =   '<div id="defenders_permission_banner">'+
                                             '<h2 class="prk_hdr"; style="font-size: 3em; color: white;">'+hdr+'</h2><br/>'+
-                                            '<span style="font-size: 2em;">'+msg+'</span>'+
+                                            '<span style="font-size: 2em; padding: 0.25em;">'+msg+'</span>'+
                                             '<hr style="width: 100%;"/>'+
                                             '<div id="perm_icons_row" style="display: flex; flex-direction: row; justify-content: center; align-items: center;"></div>'+
                                         '</div>';
@@ -2549,7 +2549,7 @@ function (dojo, declare) {
             const atwar = this.format_block('jstpl_permission_icon', {rel: "war", defender: "false", relationship: _("At War")});
             const ally = this.format_block('jstpl_permission_icon', {rel: "allied", defender: "false", relationship: _("Allied")});
             const neutral = this.format_block('jstpl_permission_icon', {rel: "neutral", defender: "false", relationship: _("Neutral")});
-            const defender = this.format_block('jstpl_permission_icon', {rel: "neutral", defender: "true", relationship: _("Defender")});
+            const defender = this.format_block('jstpl_permission_icon', {rel: "neutral", defender: "true", relationship: _("May Defend")});
             const legend = '<span style="font-size: 24px; color: white; vertical-align: center; margin-right: 5px;">'+_("Legend:")+'</span>';
 
             dojo.place(legend, $('perm_icons_row'));

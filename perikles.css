@@ -599,6 +599,7 @@
     width: 100px;
     height: 35px;
     margin: 2px;
+    padding: 2px;
     border: 4px ridge #767060;
 }
 
@@ -609,17 +610,20 @@
 
 .prk_city_btn[data-status="war"] {
     border: 4px ridge red;
+    color: red;
     background-color: lightgray;
 }
 
 .prk_city_btn[data-status="allied"] {
     border: 4px ridge green;
+    color: green;
     background-color: lightgray;
 }
 
 /* just means CAN be a defender, not actually one */
 .prk_city_btn[data-defender="true"] {
     pointer-events: 'none';
+    color: white;
     background-color: green !important;
 }
 
