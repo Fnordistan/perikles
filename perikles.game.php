@@ -70,6 +70,14 @@ define("CONTROLLED_PERSIANS", "_persia_"); // used to flag Persian units that wi
 
 define("DEADPOOL", "deadpool");
 
+// Polyfill for PHP 4 - PHP 7, safe to utilize with PHP 8
+if (!function_exists('str_contains')) {
+    function str_contains (string $haystack, string $needle)
+    {
+        return empty($needle) || strpos($haystack, $needle) !== false;
+    }
+}
+
 class Perikles extends Table
 {
 	function __construct( )
@@ -420,10 +428,10 @@ class Perikles extends Table
 
     /**
      * Create translateable description string of a unit
-     * @param {string} city
-     * @param {string} strength
-     * @param {string} type
-     * @param {string} location (optional)
+     * @param {string} $city
+     * @param {string} $strength
+     * @param {string} $type
+     * @param {string} $location (optional)
      * @return {string}
      */
     function unitDescription($city, $strength, $type, $location=null) {
@@ -1338,7 +1346,7 @@ class Perikles extends Table
             'preserve' => ['player_id', 'candidate_id'],
         ));
         $this->setGameStateValue(FIRST_PLAYER_BATTLE, $first_player);
-        $this->gamestate->nextState();
+        $this->gamestate->nextState("");
     }
 
     /**
@@ -1559,7 +1567,7 @@ class Perikles extends Table
         $player_id = self::getActivePlayerId();
         // chooseDeadUnits
         throw new BgaUserException("Take dead not implemented yet");
-        $this->gamestate->nextState();
+        $this->gamestate->nextState("");
     }
 
     /**
@@ -1709,7 +1717,7 @@ class Perikles extends Table
                 throw new BgaVisibleSystemException("no valid counter found for $city"); // NOI18N
             }
         }
-        $this->gamestate->nextState();
+        $this->gamestate->nextState("");
     }
 
     //////////////////////////////////////////////////////////////////
@@ -2588,7 +2596,7 @@ class Perikles extends Table
         // sparta leader chooses
         $sparta = $this->Cities->getLeader("sparta");
         $this->gamestate->changeActivePlayer($sparta);
-        $this->gamestate->nextState();
+        $this->gamestate->nextState("");
     }
 
     /**
@@ -2896,6 +2904,7 @@ class Perikles extends Table
                 if ($statues > 0) {
                     $vp = $this->Cities->victoryPoints($city);
                     $total = $statues*$vp;
+                    self::logDebug("$player_id scores $total ($vp each) for $statues statues in $city");
                     self::notifyAllPlayers("scoreStatues", clienttranslate('${player_name} scores ${total} points for ${statues} statues in ${city_name}'), array(
                         'i18n' => ['city_name'],
                         'player_id' => $player_id,
@@ -2908,12 +2917,10 @@ class Perikles extends Table
                         'preserve' => ['player_id', 'city']
                     ));
                 }
-
             }
         }
 
         // Score statues
-
         $this->gamestate->nextState("");
     }
 
