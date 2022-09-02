@@ -61,8 +61,21 @@ function (dojo, declare) {
 
             this.stacks = new perikles.stack();
             this.slaverevolt = new perikles.slaverevolt();
+            // this.currentState = null;
         },
-        
+
+        // /* @Override */
+        // showMessage: function (msg, type) {
+        //     debugger;
+        //     if (type == "error") {
+        //         // invalid commit, clear commits
+        //         if (this.currentState == "commitForces") {
+        //             this.onCancelCommit();
+        //         }
+        //     }
+        //     this.inherited(arguments);
+        // },
+
         /*
             setup:
             
@@ -92,6 +105,7 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
+            // this.currentState = gamedatas.gamestate.name;
         },
 
         /**
@@ -649,7 +663,6 @@ function (dojo, declare) {
                         }
                     }
                     if (args.defeats) {
-                        debugger;
                         const def_ctr = this.format_block('jstpl_defeat_log', {city: 'city', num: args.defeats} );
                         log += def_ctr;
                     }
@@ -1315,7 +1328,8 @@ function (dojo, declare) {
         onEnteringState: function( stateName, args )
         {
             console.log( this.player_id + ' Entering state: '+stateName );
-            
+            this.currenState = stateName;
+
             switch( stateName ) {
                 case 'chooseInitialInfluence':
                 case 'choosePlaceInfluence':
@@ -1945,6 +1959,11 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
         //// Utility methods
 
+
+        // getState: function() {
+        //     if ($('overall-content').classList.contains("gamestate_commitForces")) {
+        // },
+
         /**
          * For a city, get the current player who's leader.
          * @param {string} city 
@@ -2538,7 +2557,7 @@ function (dojo, declare) {
          */
         createPermissionsBannerHtml: function() {
             const hdr = _("Defender Permissions");
-            const msg = _("Leader of the controlling city may click to give permission to other cities to defend");
+            const msg = _("Leader of the controlling city may click neutral/allied cities to give permission to defend");
             const permission_banner =   '<div id="defenders_permission_banner">'+
                                             '<h2 class="prk_hdr"; style="font-size: 3em; color: white;">'+hdr+'</h2><br/>'+
                                             '<span style="font-size: 2em; padding: 0.25em;">'+msg+'</span>'+
@@ -3354,9 +3373,6 @@ function (dojo, declare) {
                 cities.add("persia");
             }
             const counters = notif.args.counters;
-            if (!(counters && player_id)) {
-                debugger;
-            }
             [...counters].forEach(c => {
                 const counter = this.militaryToCounter(c);
                 const counter_div = counter.toDiv(0, 0);

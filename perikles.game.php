@@ -2865,10 +2865,11 @@ class Perikles extends Table
 
         // add statues
         $this->leadersToStatues();
-        $this->Cities->clearLeaders();
         $this->Cities->clearWars();
         $this->Locations->clearBattleStatus();
         $this->returnPlayersMilitary();
+        // must happen AFTER returning military!
+        $this->Cities->clearLeaders();
         self::notifyAllPlayers("endTurn", [], []);
         
 
