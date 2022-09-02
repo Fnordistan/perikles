@@ -875,6 +875,9 @@ function (dojo, declare) {
             const player_id = military['location'];
             const id = counter.getCounterId();
             const counterObj = $(id);
+            if (counterObj == null) {
+                debugger;
+            }
             if (player_id == this.player_id) {
                 this.createMilitaryArea(player_id, counter.getCity());
                 const mil_zone = counter.getCity()+"_"+counter.getType()+"_"+player_id;
@@ -1415,6 +1418,7 @@ function (dojo, declare) {
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
                     break;
+                case 'deadPool':
                 case 'takeDead':
                     // hide dead pool if no more units
                     const deadunits = ($(DEAD_POOL)).getElementsByClassName("prk_military");

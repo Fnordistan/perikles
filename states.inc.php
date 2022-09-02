@@ -208,7 +208,7 @@ $machinestates = array(
         "args" => "argsSpecial",
     	"type" => "activeplayer",
     	"possibleactions" => array( "assignUnits", "useSpecial" ),
-    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE)
+    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE, "continueCommit" => COMMIT_FORCES)
     ),
 
     // rotate to the next location tile

@@ -1308,6 +1308,7 @@ class Perikles extends Table
             'sparta_player' => $sparta_leader,
         ));
 
+
         $state = $this->getStateName();
         $nextState = ($state == "specialTile") ? "nextPlayer" : "continueCommit";
         $this->gamestate->nextState($nextState);
