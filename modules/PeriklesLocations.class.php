@@ -268,7 +268,7 @@ class PeriklesLocations extends APP_GameClass
    */
   public function removePermission($location, $city) {
     $permissions = $this->getPermissions($location);
-    if (str_contains($permissions, $city)) {
+    if ($permissions && str_contains($permissions, $city)) {
       $permissions = str_replace($city, '', $permissions);
       self::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
     }

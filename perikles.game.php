@@ -1747,11 +1747,14 @@ class Perikles extends Table
         if ($this->Cities->isAlly($counter['city'], $city)) {
             throw new BgaUserException(sprintf(self::_("%s cannot attack a location owned by an allied city!"), $unit_desc));
         }
-        // is it allied with any of the other defenders?
+        // is it allied with any of the other defenders? Do I own any of the other defenders?
         $defenders = $this->Cities->getAllDefenders($location, $city);
         foreach($defenders as $def) {
             if ($this->Cities->isAlly($counter['city'], $def)) {
                 throw new BgaUserException(sprintf(self::_("%s cannot attack a location being defended by an allied city!"), $unit_desc));
+            }
+            if ($this->Cities->isLeader($player_id, $def)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot attack a location being defended by units you control!"), $unit_desc));
             }
         }
 
@@ -1800,6 +1803,9 @@ class Perikles extends Table
         foreach($attackers as $att) {
             if ($this->Cities->isAlly($counter['city'], $att)) {
                 throw new BgaUserException(sprintf(self::_("%s cannot defend a location being attacked by an allied city!"), $unit_desc));
+            }
+            if ($this->Cities->isLeader($player_id, $att)) {
+                throw new BgaUserException(sprintf(self::_("%s cannot defend a location being attacked by units you control!"), $unit_desc));
             }
         }
 

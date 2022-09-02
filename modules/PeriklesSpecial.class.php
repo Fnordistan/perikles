@@ -21,10 +21,12 @@ class PeriklesSpecial extends APP_GameClass
     $this->specialcards["plague"] = array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes."), "phase" => "influence_phase");
   }
 
-  /**
-   * Assign Special tile to each player at start of game.
-   */
-  public function setupNewGame() {
+   /**
+    *Assign Special tile to each player at start of game.
+    *
+    * @return void
+    */
+   public function setupNewGame() {
       $spec = array_keys($this->specialcards);
       shuffle($spec);
       //   testing
@@ -38,8 +40,9 @@ class PeriklesSpecial extends APP_GameClass
 
   /**
    * Get Special Tile label owned by player.
-   * @param {string} player_id
-   * @return {string} label
+   *
+   * @param string $player_id
+   * @return string
    */
   public function getSpecialTile($player_id) {
       $label = $this->game->getUniqueValueFromDB("SELECT special_tile FROM player WHERE player_id=$player_id");
