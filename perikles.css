@@ -623,7 +623,7 @@
     background-color: green !important;
 }
 
-.prk_city_btn:hover:not([data-status="war"]) {
+.prk_city_btn:hover:not([data-status="war"]):not([data-defender="true"]) {
     text-shadow: none;
     border: 4px ridge lightgray;
     transition: all 0.25s;
