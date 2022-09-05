@@ -369,118 +369,12 @@ class PeriklesBattles extends APP_GameClass
 
   /**
    * Set a counter's location by its id and unset battlepos.
-   * @param {id} of counter
-   * @param {string} location
-   * @param {int} position optional, defaults to 0
+   * @param string id of counter
+   * @param string location
+   * @param int position optional, defaults to 0
    */
   public function toLocation($id, $location, $position=0) {
     self::DbQuery("UPDATE MILITARY SET location=\"$location\", battlepos=$position WHERE id=$id");
-  }
-
-  /**
-   * Put a unit in the Deadpool. For Persians, in their city instead.
-   * Does not send notifications.
-   * @param {Object} counter
-   */
-  public function toDeadpool($counter) {
-    $id = $counter['id'];
-    $city = $counter['city'];
-    $deadpool = ($city == PERSIA) ? PERSIA : DEADPOOL;
-    $this->toLocation($id, $deadpool);
-  }
-
-  /**
-   * Does this city have any units in the deadpool?
-   * @param {string} city
-   * @return true if any units of city in deadpool
-   */
-  public function hasDeadPoolUnits($city) {
-    $dead = $this->game->getObjectListFromDB("SELECT id FROM MILITARY WHERE city=\"$city\" AND location=\"".DEADPOOL."\"", true);
-    return !empty($dead);
-  }
-
-  /**
-   * Get potential units to be retrieved from deadpool by city. Gets checks for weakest.
-   * @param {string} city
-   * @return {array} array, with 0,1,2 of HOPLITE and/or TRIREME if in deadpool
-   */
-  public function getDeadpoolUnits($city) {
-    $units = array();
-
-    foreach([HOPLITE, TRIREME] as $type) {
-      if ($this->inDeadpool($city, $type)) {
-        $units[] = $type;
-      }
-    }
-    return $units;  
-  }
-
-  /**
-   * Mark units in the Db that can be selected for retrieval from the Deadpool.
-   * @param {array} cities all the cities that should have alread been vetted.
-   */
-  public function setDeadpoolChoice($cities) {
-    foreach($cities as $city) {
-      foreach([HOPLITE,TRIREME] as $type) {
-        $counter = $this->getLowestDeadPoolUnit($city, $type);
-        if (empty($counter)) {
-          throw new BgaVisibleSystemException("no eligible $city $type unit in deadpool");
-        }
-        $id = $counter['id'];
-        self::DbQuery("UPDATE MILITARY SET battlepos=1 WHERE id=$id");
-      }
-    }
-  }
-
-  /**
-   * Assumes the Db has been marked, and pulls ids of all eligible units.
-   * @return {array} {id => [id, type, strength, city]}
-   */
-  public function getDeadpoolChoices() {
-    $choices = $this->game->getCollectionFromDB("SELECT id, city, type, strength FROM MILITARY WHERE battlepos=1 AND location=\"".DEADPOOL."\"");
-    return $choices;
-  }
-
-  /**
-   * Is there a unit of this type in the city?
-   * @param {string} city
-   * @param {string} type
-   * @return {bool} true if there is a city/type unit in the deadpool
-   */
-  private function inDeadpool($city, $type) {
-    $dead = $this->game->getObjectFromDB("SELECT id FROM MILITARY WHERE type=\"$type\" AND city=\"$city\" AND location=\"".DEADPOOL."\" LIMIT 1");
-    return !empty($dead);
-  }
-
-  /**
-   * Get a counter with the lowest strength by city and type in the deadpool.
-   * @param {string} city
-   * @param {string} HOPLITE or TRIREME
-   * @return NULL or one counter
-   */
-  private function getLowestDeadPoolUnit($city, $type) {
-    $counter = null;
-    $dead = $this->game->getObjectFromDB("SELECT id, city, type, MIN(strength) as strength FROM MILITARY WHERE type=\"$type\" AND city=\"$city\" AND location=\"".DEADPOOL."\" LIMIT 1");
-    if ((!empty($dead)) && $dead['id'] != null) {
-      $counter = $dead;
-    }
-    return $counter;
-  }
-
-  /**
-   * Takes one unit from the Deadpool and puts it back in the city. Assumes validity checks have already been done.
-   * @param {string} city
-   * @param {string} type HOPLITE or TRIREME
-   * @return the counter that was moved to city
-   */
-  public function fromDeadpool($city, $type) {
-    $counter = $this->getLowestDeadPoolUnit($city, $type);
-    if (empty($counter)) {
-      throw new BgaVisibleSystemException("no $city $type unit in deadpool"); // NOI18N
-    }
-    $id = $counter['id'];
-    self::DbQuery("UPDATE MILITARY SET location=\"$city\" WHERE id=$id");
-    return $counter;
   }
 
   /**
@@ -491,7 +385,7 @@ class PeriklesBattles extends APP_GameClass
    * @return {array} of counters
    */
   public function claimCountersInCity($player_id, $city) {
-    self::DbQuery("UPDATE MILITARY SET location=\"$player_id\" WHERE location=\"$city\"");
+    self::DbQuery("UPDATE MILITARY SET location=\"$player_id\", battlepos=0 WHERE location=\"$city\"");
     $units = $this->getCountersByCity($city, $player_id);
     return $units;
   }

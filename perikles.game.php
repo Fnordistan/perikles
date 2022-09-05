@@ -23,6 +23,7 @@ require_once( 'modules/PeriklesCities.class.php' );
 require_once( 'modules/PeriklesLocations.class.php' );
 require_once( 'modules/PeriklesBattles.class.php' );
 require_once( 'modules/PeriklesSpecial.class.php' );
+require_once( 'modules/PeriklesDeadpool.class.php' );
 
 //  MARTIN WALLACE'S ERRATA ON BGG: https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
 
@@ -111,6 +112,13 @@ class Perikles extends Table
             "megara_defeats" => 33,
             "sparta_defeats" => 34,
             "thebes_defeats" => 35,
+            // deadpool picks
+            "argos_deadpool" => 70,
+            "athens_deadpool" => 71,
+            "corinth_deadpool" => 72,
+            "megara_deadpool" => 73,
+            "sparta_deadpool" => 74,
+            "thebes_deadpool" => 75,
 
             ACTIVE_BATTLE => 40,
             BATTLE_ROUND => 41, // 0,1
@@ -133,6 +141,7 @@ class Perikles extends Table
         $this->Locations = new PeriklesLocations($this);
         $this->Battles = new PeriklesBattles($this);
         $this->SpecialTiles = new PeriklesSpecial($this);
+        $this->Deadpool = new PeriklesDeadpool($this);
 
         $this->influence_tiles = self::getNew("module.common.deck");
         $this->influence_tiles->init("INFLUENCE");
@@ -176,7 +185,7 @@ class Perikles extends Table
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        $city_states = ["leader", "a", "b", "defeats"];
+        $city_states = ["leader", "a", "b", "defeats", "deadpool"];
         foreach($this->Cities->cities() as $cn) {
             foreach ($city_states as $lbl) {
                 self::setGameStateInitialValue( $cn."_".$lbl, 0 );
@@ -784,17 +793,18 @@ class Perikles extends Table
     }
 
     /**
-     * Faster check, just return true if at least one unit in deadpool to be retrieved by this player.
+     * Get all cities controlled by this player that have been marked as needing a deadpool choice.
+     * @param string player_id
+     * @return array cities (may be empty)
      */
-    function hasDeadPool($player_id) {
-        foreach($this->Cities->cities() as $cn) {
-            if ($this->Cities->isLeader($player_id, $cn)) {
-                if ($this->Battles->hasDeadpoolUnits($cn)) {
-                    return true;
-                }
+    function getDeadpoolCities($player_id) {
+        $cities = array();
+        foreach($this->Cities->controlledCities($player_id) as $city) {
+            if ($this->getGameStateValue($city."_deadpool") == 1) {
+                $cities[] = $city;
             }
         }
-        return false;
+        return $cities;
     }
 
     /**
@@ -1068,6 +1078,118 @@ class Perikles extends Table
         }
     }
 
+    /**
+     * Make sure all commitment assignments are valid.
+     * @param string player_id
+     * @param string unitstr a comma-concatenateds string of units
+     * @param string cube empty string or name of city spending an extra cube
+     */
+    function validateMilitaryCommits($player_id, $unitstr, $cube) {
+        // do all the checks for whether this is a valid action
+        // can I commit extra forces from the chosen city?
+        if ($cube != "") {
+            if (!$this->Cities->canSpendInfluence($player_id, $cube)) {
+                throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->Cities->getNameTr($cube)));
+            }
+        }
+
+        $units = explode(" ", trim($unitstr));
+        // get main attackers/defenders location => player
+        $main_attacker = [];
+        $main_defender = [];
+        $myforces = array(
+            'attack' => [],
+            'defend' => [],
+        );
+        // MAKE NO CHANGES IN DB until this loop is completed!
+        foreach($units as $unit) {
+            [$id, $side, $location] = explode("_", $unit);
+            $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
+            $counter['battle'] = $location;
+            // Is this unit in my pool?
+            $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $location);
+
+            $attacker = $this->Battles->getAttacker($location);
+            $defender = $this->Battles->getDefender($location);
+            if ($attacker != null) {
+                $main_attacker[$location] = $attacker;
+            }
+            if ($defender != null) {
+                $main_defender[$location] = $defender;
+            }
+            if ($side == "attack") {
+                $this->validateAttacker($player_id, $counter, $unit_desc);
+
+                // Is there already a main attacker who is not me?
+                if ($attacker == null) {
+                    // I am now the main attacker
+                    $main_attacker[$location] = $player_id;
+                }
+                $myforces['attack'][] = $counter;
+            } else if ($side == "defend") {
+                $this->validateDefender($player_id, $counter, $unit_desc);
+
+                // is there already a main defender?
+                if ($defender == null) {
+                    // I am now the main defender
+                    $main_defender[$location] = $player_id;
+                }
+                $myforces['defend'][] = $counter;
+            }
+        }
+
+        // all units passed all tests for valid assignment
+        // did we spend an influence cube?
+        if ($cube != "" && count($units) > 2) {
+            $this->Cities->changeInfluence($cube, $player_id, -1);
+            self::notifyAllPlayers('spentInfluence', clienttranslate('${player_name} spends a ${city_name} Influence cube to send extra units'), array(
+                'i18n' => ['city_name'],
+                'candidate_id' => $player_id, // candidate because that's the notif arg
+                'player_id' => $player_id,
+                'player_name' => self::getActivePlayerName(),
+                'city' => $cube,
+                'city_name' => $this->Cities->getNameTr($cube),
+                'preserve' => ['candidate_id', 'city'],
+            ));
+        }
+        // now ship 'em off
+        foreach($myforces as $attdef => $forces) {
+            foreach($forces as $f) {
+                $battle = $f['battle'];
+                $main = $attdef == "attack" ? $main_attacker[$battle] : $main_defender[$battle];
+                if ($main == $player_id) {
+                    // I became main
+                    $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
+                    $col = $attdef == "attack" ? "attacker" : "defender";
+                    self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$battle\"");
+                } elseif ($this->Cities->isLeader($main, PERSIA) && $this->Cities->isLeader($player_id, PERSIA)) {
+                    // Sharing Persian leadership
+                    $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
+                } else {
+                    $battlepos = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
+                }
+                $this->sendToBattle($player_id, $f, $battlepos);
+            }
+        }
+    }
+
+    /**
+     * Player played their Special Tile. Flip it and mark it used.
+     */
+    function flipSpecialTile($player_id) {
+        $tile = $this->SpecialTiles->getSpecialTile($player_id);
+        $tile_name = $this->SpecialTiles->getSpecialTileName($player_id);
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
+            'i18n' => ['special_tile'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'tile' => $tile,
+            'special_tile' => $tile_name,
+        ));
+        $this->SpecialTiles->markUsed($player_id);
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -1315,23 +1437,6 @@ class Perikles extends Table
     }
 
     /**
-     * Player played their Special Tile. Flip it and mark it used.
-     */
-    function flipSpecialTile($player_id) {
-        $tile = $this->SpecialTiles->getSpecialTile($player_id);
-        $tile_name = $this->SpecialTiles->getSpecialTileName($player_id);
-        $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
-            'i18n' => ['special_tile'],
-            'player_id' => $player_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'tile' => $tile,
-            'special_tile' => $tile_name,
-        ));
-        $this->SpecialTiles->markUsed($player_id);
-    }
-
-    /**
      * Spartan player chose first player for influence phase.
      */
     function chooseNextPlayer($first_player) {
@@ -1562,16 +1667,6 @@ class Perikles extends Table
     }
 
     /**
-     * 
-     */
-    function chooseDeadUnits() {
-        $player_id = self::getActivePlayerId();
-        // chooseDeadUnits
-        throw new BgaUserException("Take dead not implemented yet");
-        $this->gamestate->nextState("");
-    }
-
-    /**
      * Send units to battle locations.
      * @param unitstr a space-delimited string id_attdef_battle (or empty)
      * @param cube empty string or cube spent for extra units
@@ -1604,98 +1699,6 @@ class Perikles extends Table
     }
 
     /**
-     * Make sure all commitment assignments are valid.
-     */
-    function validateMilitaryCommits($player_id, $unitstr, $cube) {
-        // do all the checks for whether this is a valid action
-        // can I commit extra forces from the chosen city?
-        if ($cube != "") {
-            if (!$this->Cities->canSpendInfluence($player_id, $cube)) {
-                throw new BgaUserException(sprintf(self::_("You cannot send extra units from %s"), $this->Cities->getNameTr($cube)));
-            }
-        }
-
-        $units = explode(" ", trim($unitstr));
-        // get main attackers/defenders location => player
-        $main_attacker = [];
-        $main_defender = [];
-        $myforces = array(
-            'attack' => [],
-            'defend' => [],
-        );
-        // MAKE NO CHANGES IN DB until this loop is completed!
-        foreach($units as $unit) {
-            [$id, $side, $location] = explode("_", $unit);
-            $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
-            $counter['battle'] = $location;
-            // Is this unit in my pool?
-            $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $location);
-
-            $attacker = $this->Battles->getAttacker($location);
-            $defender = $this->Battles->getDefender($location);
-            if ($attacker != null) {
-                $main_attacker[$location] = $attacker;
-            }
-            if ($defender != null) {
-                $main_defender[$location] = $defender;
-            }
-            if ($side == "attack") {
-                $this->validateAttacker($player_id, $counter, $unit_desc);
-
-                // Is there already a main attacker who is not me?
-                if ($attacker == null) {
-                    // I am now the main attacker
-                    $main_attacker[$location] = $player_id;
-                }
-                $myforces['attack'][] = $counter;
-            } else if ($side == "defend") {
-                $this->validateDefender($player_id, $counter, $unit_desc);
-
-                // is there already a main defender?
-                if ($defender == null) {
-                    // I am now the main defender
-                    $main_defender[$location] = $player_id;
-                }
-                $myforces['defend'][] = $counter;
-            }
-        }
-
-        // all units passed all tests for valid assignment
-        // did we spend an influence cube?
-        if ($cube != "" && count($units) > 2) {
-            $this->Cities->changeInfluence($cube, $player_id, -1);
-            self::notifyAllPlayers('spentInfluence', clienttranslate('${player_name} spends a ${city_name} Influence cube to send extra units'), array(
-                'i18n' => ['city_name'],
-                'candidate_id' => $player_id, // candidate because that's the notif arg
-                'player_id' => $player_id,
-                'player_name' => self::getActivePlayerName(),
-                'city' => $cube,
-                'city_name' => $this->Cities->getNameTr($cube),
-                'preserve' => ['candidate_id', 'city'],
-            ));
-        }
-        // now ship 'em off
-        foreach($myforces as $attdef => $forces) {
-            foreach($forces as $f) {
-                $battle = $f['battle'];
-                $main = $attdef == "attack" ? $main_attacker[$battle] : $main_defender[$battle];
-                if ($main == $player_id) {
-                    // I became main
-                    $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
-                    $col = $attdef == "attack" ? "attacker" : "defender";
-                    self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$battle\"");
-                } elseif ($this->Cities->isLeader($main, PERSIA) && $this->Cities->isLeader($player_id, PERSIA)) {
-                    // Sharing Persian leadership
-                    $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
-                } else {
-                    $battlepos = ALLY + ($attdef == "attack" ? ATTACKER : DEFENDER);
-                }
-                $this->sendToBattle($player_id, $f, $battlepos);
-            }
-        }
-    }
-
-    /**
      * Player chose a counter to die.
      */
     function chooseLoss($city) {
@@ -1719,6 +1722,29 @@ class Perikles extends Table
             }
         }
         $this->gamestate->nextState("");
+    }
+
+    /**
+     * Player chose a unit from the deadpool.
+     * Sets gamestate to nextPlayer if we're done, or nextPick if this player has multiple choices to make.
+     * @param string city
+     * @param string type HOPLITE|TRIREME
+     */
+    function chooseDeadpool($city, $type) {
+        $this->checkAction('chooseDeadUnits');
+        $player_id = self::getActivePlayerId();
+        // error check
+        $types = $this->Deadpool->getTypesInDeadpool($city);
+        if (count($types) == 2) {
+            $this->retrieveFromDeadpool($player_id, $city, $type);
+        } else {
+            // should not happen
+            throw new BgaUserException(sprintf(self::_("You cannot choose deadpool units from %s"), $this->Cities->getNameTr($city)));
+        }
+        // does this player have more choices to make?
+        $state = empty($this->getDeadpoolCities($player_id)) ? "nextPlayer" : "nextPick";
+
+        $this->gamestate->nextState($state);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -2119,7 +2145,7 @@ class Perikles extends Table
         if ($counter != null) {
             $id = $counter['id'];
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $counter['location']);
-            $this->Battles->toDeadpool($counter);
+            $this->Deadpool->toDeadpool($counter);
             self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to Dead Pool'), array(
                 'i18n' => ['unit'],
                 'id' => $id,
@@ -2187,24 +2213,6 @@ class Perikles extends Table
             'slot' => $tile['slot'],
             'military' => $counters
         ));
-    }
-
-    /**
-     * Get an associative array {city => array of unit types that can be picked from deadpool.
-     * There is only a choice if at a city has a choice of HOPLITE or TRIREME.
-     * @param {string} player_id
-     * @return {array} {city => [HOPLITE and/or TRIREME] or empty}
-     */
-    function getDeadPool($player_id) {
-        $mycities = $this->Cities->controlledCities($player_id);
-        $deadpool = array();
-        foreach($mycities as $city) {
-            $topick = $this->Battles->getDeadpoolUnits($city);
-            if (!empty($topick)) {
-                $deadpool[$city] = $topick;
-            }
-        }
-        return $deadpool;
     }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2298,7 +2306,14 @@ class Perikles extends Table
      * Return all the units that may be retrieved from Deadpool by the current active player.
      */
     function argsDeadPool() {
-        $deadpool = $this->Battles->getDeadpoolChoices();
+        $player_id = self::getCurrentPlayerId();
+        $cities = array();
+        foreach($this->Cities->controlledCities($player_id) as $city) {
+            if ($this->getGameStateValue($city."_deadpool") == 1) {
+                $cities[] = $city;
+            }
+        }
+        $deadpool = $this->Deadpool->getDeadpoolChoices($cities);
         return array(
             'deadpool' => $deadpool,
         );
@@ -2479,53 +2494,58 @@ class Perikles extends Table
             $this->gamestate->changeActivePlayer($first_player);
         }
 
-        $state = "nextPlayer";
+        $state = "";
         $players = self::loadPlayersBasicInfos();
         $nbr = count($players);
+        // are we done?
         if ($picked == $nbr) {
             $this->setGameStateValue(DEADPOOL_COUNTER, 0);
             $state = "startCommit";
         } else {
-            $this->incGameStateValue(DEADPOOL_COUNTER, 1);
-
             $player_id = self::getActivePlayerId();
-            // does this player have any choices to make about the deadpool?
-            $deadpool = $this->getDeadPool($player_id);
-            if (empty($deadpool)) {
-                $player_id = self::activeNextPlayer();
-                self::giveExtraTime( $player_id );
-                $state = "nextPlayer";
-            } else {
-                $choices = [];
-                foreach($deadpool as $city => $units) {
-                    if (count($units) > 1) {
-                        $choices[] = $city;
-                    } else {
-                        $this->retrieveFromDeadpool($city, $units[0]);
-                    }
-                }
-                if (!empty($choices)) {
-                    $this->Battles->setDeadpoolChoice($choices);
-                    $state = "takeDead";
+
+            $choose = false;
+            foreach($this->Cities->controlledCities($player_id) as $city) {
+                $types = $this->Deadpool->getTypesInDeadpool($city);
+                $ct = count($types);
+                if ($ct == 1) {
+                    $this->retrieveFromDeadpool($player_id, $city, $types[0]);
+                } elseif ($ct == 2) {
+                    $this->setGameStateValue($city."_deadpool", 1);
+                    $choose = true;
                 }
             }
+
+            if ($choose) {
+                $state = "takeDead";
+            } else{
+                $state = "nextPlayer";
+                $player_id = self::activeNextPlayer();
+                $this->gamestate->changeActivePlayer($player_id);
+                self::giveExtraTime( $player_id );
+            }
+            $this->incGameStateValue(DEADPOOL_COUNTER, 1);
         }
         $this->gamestate->nextState($state);
     }
 
     /**
-     * Send notification to move a unit from Deadpool back to its city stack.
-     * @param {string} city
-     * @param {string} type
+     * Send notification to move a unit from Deadpool to the owning player. Automatically picks the lowest strength.
+     * Marks this city as having been picked already.
+     * @param string player_id
+     * @param string city
+     * @param string type
      */
-    function retrieveFromDeadpool($city, $type) {
-        $counter = $this->Battles->fromDeadpool($city, $type);
+    function retrieveFromDeadpool($player_id, $city, $type) {
+        $counter = $this->Deadpool->takeFromDeadpool($player_id, $city, $type);
         $id = $counter['id'];
         $strength = $counter['strength'];
         $unit_desc = $this->unitDescription($city, $strength, $type);
+        $this->setGameStateValue($city."_deadpool", 0);
 
         self::notifyAllPlayers('retrieveDeadpool', clienttranslate('${unit} retrieved from deadpool'), array(
             'i18n' => ['unit'],
+            'player_id' => $player_id,
             'unit' => $unit_desc,
             'city' => $city,
             'id' => $id,
@@ -3004,12 +3024,14 @@ class Perikles extends Table
                     $this->gamestate->nextState( "endBattle" );
                     break;
                 case "takeDead":
-                    $deadpool = $this->getDeadPool($active_player);
-                    foreach ($deadpool as $city => $units) {
-                        $coinflip = bga_rand(0,1);
-                        $type = $units[$coinflip];
-                        $this->retrieveFromDeadpool($city, $type);
+                    // game has determined this player can choose
+                    $cities = $this->getDeadpoolCities($active_player);
+                    if (empty($cities)) {
+                        throw new BgaVisibleSystemException("zombie player $active_player has no deadpool cities to choose"); // NOI18N
                     }
+                    $types = [HOPLITE, TRIREME];
+                    $coinflip = bga_rand(0,1);
+                    $this->chooseDeadpool($cities[0], $types[$coinflip]);
                     break;
                 default:
                     $this->gamestate->nextState( "zombiePass" );

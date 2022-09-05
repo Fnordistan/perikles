@@ -132,7 +132,7 @@ define(["dojo/_base/declare"], function (declare) {
                     let toffset = -8+(i*80);
                     u.style['transform'] = "matrix(0.8, 0, 0, 0.8, "+toffset+", -4)";
                 }
-                u.style['outline'] = "solid white 3px";
+                // u.style['outline'] = "solid white 3px";
                 u.style['z-index'] = "99";
                 i++;
             });

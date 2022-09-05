@@ -92,16 +92,20 @@ define(["dojo/_base/declare"], function (declare) {
          * Create html div for a military counter.
          * @param {int} margin
          * @param {int} top
-         * @param {bool} rel make display relative?
+         * @param {bool} (optional) rel make display relative?
+         * @param {string} (optional) display 
          * @returns html div for a military counter
          */
-        toDiv: function(margin, top, rel=false) {
+        toDiv: function(margin, top, rel=false, display=null) {
             const counter_id = this.getCounterId();
             const class_id = "prk_military prk_"+this.type;
             const [xoff, yoff] = this.getOffsets();
             let style = "background-position: "+xoff+"px "+yoff+"px; margin: "+margin+"px; top: "+top+"px";
             if (rel) {
                 style += "; position: relative";
+            }
+            if (display) {
+                style += "; display: "+display;
             }
             style += ";";
             const html = '<div id=\"'+counter_id+'"\" class=\"'+class_id+'"\" style=\"'+style+'"></div>';
@@ -123,14 +127,11 @@ define(["dojo/_base/declare"], function (declare) {
 
         /**
          * Creates a military counter with position: relative.
-         * @param {string} city 
-         * @param {string} type HOPLITE or TRIREME
-         * @param {string} strength 
-         * @param {string} id tag at end of id string
+         * @param {string} (optional) display
          * @returns html div for a military counter
          */
-         toRelativeDiv: function() {
-            return this.toDiv(5, 0, true);
+         toRelativeDiv: function(display=null) {
+            return this.toDiv(5, 0, true, display);
         },
 
         /**
@@ -197,6 +198,9 @@ define(["dojo/_base/declare"], function (declare) {
             const slotid = $(location+"_tile").parentNode.id;
             const slot = slotid[slotid.length-1];
             const place = "battle_"+slot+"_"+this.getType()+"_"+this.getBattlePosition();
+            if (!$(place)) {
+                debugger;
+            }
             const stackct = $(place).childElementCount;
             // zero ids for face-down units
             if (this.getStrength() == 0) {

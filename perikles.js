@@ -64,17 +64,16 @@ function (dojo, declare) {
             // this.currentState = null;
         },
 
-        // /* @Override */
-        // showMessage: function (msg, type) {
-        //     debugger;
-        //     if (type == "error") {
-        //         // invalid commit, clear commits
-        //         if (this.currentState == "commitForces") {
-        //             this.onCancelCommit();
-        //         }
-        //     }
-        //     this.inherited(arguments);
-        // },
+        /* @Override */
+        showMessage: function (msg, type) {
+            if (type == "error") {
+                // invalid commit, clear commits
+                if (this.currentState == "commitForces") {
+                    this.onCancelCommit();
+                }
+            }
+            this.inherited(arguments);
+        },
 
         /*
             setup:
@@ -626,15 +625,6 @@ function (dojo, declare) {
                         }
                         log += loc_msg;
                     }
-                    if (args.deadpool) {
-                        log += '<div>';
-                        for (const [id, unit] of Object.entries(args.deadpool)) {
-                            const counter = new perikles.counter(unit.city, unit.type, unit.strength);
-                            const mil_div = counter.toLogIcon();
-                            log += mil_div;
-                        }
-                        log += '</div>';
-                    }
                     // a battle
                     if (args.attd1) {
                         const hit = '<span class="prk_hit">'+_("Hit")+'</span>';
@@ -649,6 +639,15 @@ function (dojo, declare) {
                         args.atthit = args.atthit ? hit : miss;
                         args.defhit = args.defhit ? hit : miss;
                     }
+                    // choose unit from deadpool
+                    if (args.deadpool) {
+                        log += '<br>';
+                        for (const [id, unit] of Object.entries(args.deadpool)) {
+                            const counter = new perikles.counter(unit.city, unit.type, unit.strength, "deadpool");
+                            const mil_div = counter.toRelativeDiv("inline-block");
+                            log += mil_div;
+                        }
+                    }
                     // assign casualties
                     if (args.casualty) {
                         const type = args.type;
@@ -657,8 +656,7 @@ function (dojo, declare) {
                         log += '<br/>';
                         for (let c of cities) {
                             counter = new perikles.counter(c, type, strength, "casualty");
-                            let mil_html = counter.toRelativeDiv();
-                            mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
+                            let mil_html = counter.toRelativeDiv("inline-block");
                             log += mil_html;
                         }
                     }
@@ -717,8 +715,7 @@ function (dojo, declare) {
                 if (id != "cube") {
                     let commit_str = (selected.side == "attack" ? attack_str : defend_str);
                     const counter = new perikles.counter(selected.city, selected.unit, selected.strength, id+"_dlg");
-                    let mil_html = counter.toRelativeDiv();
-                    mil_html = this.decorator.prependStyle(mil_html, 'display: inline-block');
+                    let mil_html = counter.toRelativeDiv("inline-block");
                     commit_str = commit_str.replace('${unit}', mil_html);
                     const tile = new perikles.locationtile(selected.location);
                     let loc_html = tile.createTile();
@@ -869,15 +866,16 @@ function (dojo, declare) {
         /**
          * Move a military token from the city to the player's board
          * @param {Object} military
+         * @param {bool} (optional) deadpool coming from deadpool (default false)
          */
-        counterToPlayerBoard: function(military) {
+        counterToPlayerBoard: function(military, deadpool=false) {
             const counter = this.militaryToCounter(military);
             const player_id = military['location'];
+            if (deadpool) {
+                counter.setId("deadpool");
+            }
             const id = counter.getCounterId();
             const counterObj = $(id);
-            if (counterObj == null) {
-                debugger;
-            }
             if (player_id == this.player_id) {
                 this.createMilitaryArea(player_id, counter.getCity());
                 const mil_zone = counter.getCity()+"_"+counter.getType()+"_"+player_id;
@@ -1372,11 +1370,6 @@ function (dojo, declare) {
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
                     break;
-                case 'takeDead':
-                    const dead = args.args.deadpool;
-                    this.addDeadpoolChoice(dead);
-                    debugger;
-                    break;
                 case 'endTurn':
                     this.resetWars();
                     this.gamedatas.permissions = {};
@@ -1418,7 +1411,6 @@ function (dojo, declare) {
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
                     break;
-                case 'deadPool':
                 case 'takeDead':
                     // hide dead pool if no more units
                     const deadunits = ($(DEAD_POOL)).getElementsByClassName("prk_military");
@@ -1473,6 +1465,10 @@ function (dojo, declare) {
                             this.addSpecialPassButton(true);
                         }
                         break;
+                    case 'takeDead':
+                        const deadpool = args.deadpool;
+                        this.addDeadpoolButtons(deadpool);
+                        break;
                     case 'takeLoss':
                         const type = args.type;
                         const cities = args.cities;
@@ -1515,25 +1511,40 @@ function (dojo, declare) {
         //// Player must choose which unit to retrieve from deadpool
         ///////////////////////////////////////////////////
 
-        addDeadpoolChoice: function(deadpoolunits) {
+        /**
+         * Put buttons to select units to retrieve from deadpool.
+         * @param {array} deadpoolunits 
+         */
+        addDeadpoolButtons: function(deadpoolunits) {
             const cities = new Set();
-            let city_string = "";
-            let ct = Object.keys(deadpoolunits).length;
-            for (let i = 0; i < ct; i++) {
-                const unit = deadpoolunits[i];
+            Object.keys(deadpoolunits).forEach(u => {
+                const unit = deadpoolunits[u];
                 const city = unit['city'];
                 cities.add(city);
+            });
+            let city_string = "";
+            const numcities = cities.size;
+            let i = 0;
+            for (let city of cities) {
                 const city_name = this.getCityNameTr(city);
                 city_string += city_name;
-                if (i < ct-1) {
+                if (i < numcities-1) {
                     city_string += ", ";
                 }
+                i++;
             }
             let msg = _("You must retrieve a Hoplite or Trireme from the deadpool for ${cities}");
             msg = msg.replace('${cities}', city_string);
             this.setDescriptionOnMyTurn(msg, {});
-            debugger;
-
+            // add listeners to the buttons
+            Object.keys(deadpoolunits).forEach(u => {
+                const unit = deadpoolunits[u];
+                const id = unit['city']+"_"+unit['type']+"_"+unit['strength']+"_deadpool";
+                const button = $(id);
+                button.addEventListener('click', () => {
+                    this.onSelectDeadpool(unit['city'], unit['type']);
+                });
+            });
         },
 
         ///////////////////////////////////////////////////
@@ -2783,6 +2794,21 @@ function (dojo, declare) {
         },
 
         /**
+         * Player chose a unit to retrieve from deadpool.
+         * @param {string} city 
+         * @param {string} type 
+         */
+        onSelectDeadpool: function(city, type) {
+            if (this.checkPossibleActions("chooseDeadUnits", true)) {
+                this.ajaxcall( "/perikles/perikles/selectdeadpool.html", {
+                    city: city,
+                    type: type,
+                    lock: true,
+                }, this, function( result ) {  }, function( is_error) { } );
+            }
+        },
+
+        /**
          * Player plays or declines to play Special Tile.
          * @param {bool} use
          */
@@ -3139,7 +3165,6 @@ function (dojo, declare) {
                 }
             });
             // subtract loser's cubes from winner's
-            console.log(player_id+" loses "+cubes+" from " + city);
             this.removeInfluenceCubes(player_id, city, cubes);
             // place Leader
             this.createLeaderCounter(player_id, city, "leader");
@@ -3463,18 +3488,17 @@ function (dojo, declare) {
         },
 
         /**
-         * Counter moved from Deadpool back to stack.
+         * Counter moved from Deadpool to player's board.
          * @param {Object} notif 
          */
         notif_retrieveDeadpool: function(notif) {
+            const player_id = notif.args.player_id;
             const id = notif.args.id;
             const city = notif.args.city;
             const type = notif.args.type;
             const strength = notif.args.strength;
-            const counter_id = city+'_'+type+'_'+strength+'_deadpool';
-            this.slideToObjectAndDestroy($(counter_id), city+"_military", 1000, 1500);
-            new perikles.counter(city, type, strength, id).addToStack();
-            this.stacks.sortStack(city);
+            const mil = {'city': city, 'type': type, 'strength': strength, 'id': id, 'location': player_id, 'battlepos': 0};
+            this.counterToPlayerBoard(mil, true);
         },
 
        /**

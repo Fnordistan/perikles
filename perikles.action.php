@@ -115,6 +115,14 @@ class action_perikles extends APP_GameAction
       self::ajaxResponse( );
     }
 
+    public function selectdeadpool() {
+      self::setAjaxMode();     
+      $city = self::getArg( "city", AT_alphanum, true );
+      $type = self::getArg( "type", AT_alphanum, true );
+      $this->game->chooseDeadpool($city, $type);
+      self::ajaxResponse( );
+   }
+
     /**
      * Player passes on a Special Tile.
      */

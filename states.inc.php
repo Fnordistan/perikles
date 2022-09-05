@@ -189,7 +189,7 @@ $machinestates = array(
     	"type" => "activeplayer",
         "args" => "argsDeadPool",
     	"possibleactions" => array( "chooseDeadUnits" ),
-    	"transitions" => array( "" => DEAD_POOL)
+    	"transitions" => array( "nextPlayer" => DEAD_POOL, "nextPick" => BRING_OUT_YOUR_DEAD )
     ),
 
     NEXT_COMMIT => array(
