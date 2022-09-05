@@ -158,11 +158,12 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Sort the military stack on a city.
-         * @param {string} city 
+         * Sort the military stack.
+         * @param {string} zone
+         * @param {bool} stack (optional, default true)
          */
-        sortStack: function(city) {
-            const stack = $(city+"_military");
+        sortStack: function(zone, isstack=true) {
+            const stack = $(zone);
             const counters = stack.children;
             const sorted_counters = this.sorted_counters(counters);
             while (stack.firstChild) {
@@ -170,7 +171,9 @@ define(["dojo/_base/declare"], function (declare) {
             }
             for (let i = 0; i < sorted_counters.length; i++) {
                 const counter = sorted_counters[i];
-                counter.style['margin'] = (i*2)+"px";
+                if (isstack) {
+                    counter.style['margin'] = (i*2)+"px";
+                }
                 dojo.place(counter, stack);
             }
         },

@@ -478,7 +478,6 @@ function (dojo, declare) {
                 } else if (counter.getLocation() == DEAD_POOL) {
                     // in the dead pool
                     this.createMilitaryArea(DEAD_POOL, counter.getCity());
-                    counter.setId(DEAD_POOL);
                     counter.placeDeadpool();
                 } else if (Object.keys(LOCATION_TILES).includes(counter.getLocation())) {
                     // sent to a battle
@@ -866,27 +865,56 @@ function (dojo, declare) {
         /**
          * Move a military token from the city to the player's board
          * @param {Object} military
-         * @param {bool} (optional) deadpool coming from deadpool (default false)
+         * @param {bool} fromDeadpool is it being moved from deadpool?
          */
-        counterToPlayerBoard: function(military, deadpool=false) {
+        counterToPlayerBoard: function(military, fromDeadpool=false) {
             const counter = this.militaryToCounter(military);
             const player_id = military['location'];
-            if (deadpool) {
-                counter.setId("deadpool");
-            }
             const id = counter.getCounterId();
             const counterObj = $(id);
             if (counterObj == null) {
                 debugger;
             }
             if (player_id == this.player_id) {
-                this.createMilitaryArea(player_id, counter.getCity());
-                const mil_zone = counter.getCity()+"_"+counter.getType()+"_"+player_id;
-                this.slideToObjectRelative(counterObj, $(mil_zone), 500, 500, null, "last");
+                const city = counter.getCity();
+                const type = counter.getType();
+                this.createMilitaryArea(player_id, city);
+                const mil_zone = city+"_"+type+"_"+player_id;
+                const onEnd = fromDeadpool ? this.deadpoolCleanup.bind(this) : null;
+                this.slideToObjectRelative(counterObj, $(mil_zone), 500, 500, onEnd, "last");
+                delete counterObj.dataset.deadpool;
+                counterObj.setAttribute("title", this.counterText(counter));
             } else {
                 this.slideToObjectAndDestroy(counterObj, $('player_board_'+player_id), 500, 500);
             }
-            counterObj.setAttribute("title", this.counterText(counter));
+        },
+
+        /**
+         * Attached to playerboard sorting.
+         * @param {Object} counter 
+         */
+        deadpoolCleanup: function(counter) {
+            const mil_zone = counter.parentNode.id;
+            this.stacks.sortStack(mil_zone, false);            
+        },
+
+        /**
+         * Remove deadpool if it's empty, or else remove empty deadpool columns.
+         */
+        clearDeadpool: function() {
+            // hide dead pool if no more units
+            const deadunits = ($(DEAD_POOL)).getElementsByClassName("prk_military");
+            $(DEAD_POOL).style['display'] = (deadunits.length == 0) ? 'none' : 'block';
+
+            if (deadunits.length > 0) {
+                const boards = $(DEAD_POOL).getElementsByClassName("prk_mil_board");
+                [...boards].forEach(b => {
+                    const bunits = b.getElementsByClassName("prk_military");
+                    if (bunits.length == 0) {
+                        b.remove();
+                    }
+                });
+            }
         },
 
         /**
@@ -1369,6 +1397,7 @@ function (dojo, declare) {
                         this.gamedatas.gamestate.args = {};
                         this.gamedatas.gamestate.args.committed = {};
                     }
+                    this.clearDeadpool();
                     break;
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
@@ -1414,15 +1443,15 @@ function (dojo, declare) {
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
                     break;
+                case 'deadPool':
                 case 'takeDead':
                     // hide dead pool if no more units
-                    const deadunits = ($(DEAD_POOL)).getElementsByClassName("prk_military");
-                    $(DEAD_POOL).style['display'] = (deadunits.length == 0) ? 'none' : 'block';
+                    this.clearDeadpool();
                     break;
                 case 'dummmy':
                     break;
             }
-        }, 
+        },
 
         // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
         //                        action status bar (ie: the HTML links in the status bar).
@@ -1503,7 +1532,7 @@ function (dojo, declare) {
             for (let c of cities ) {
                 const id = c+'_'+type+'_'+strength+'_casualty';
                 const button = $(id);
-                button.classList.add("prk_casualty_btn");
+                button.dataset.casualty = "true";
                 button.addEventListener('click', () => {
                     this.onSelectCasualty(c);
                 });
@@ -1544,8 +1573,9 @@ function (dojo, declare) {
                 const unit = deadpoolunits[u];
                 const id = unit['city']+"_"+unit['type']+"_"+unit['strength']+"_deadpool";
                 const button = $(id);
+                button.dataset.deadpool = "button";
                 button.addEventListener('click', () => {
-                    this.onSelectDeadpool(unit['city'], unit['type']);
+                    this.onSelectDeadpool(unit);
                 });
             });
         },
@@ -2798,14 +2828,13 @@ function (dojo, declare) {
 
         /**
          * Player chose a unit to retrieve from deadpool.
-         * @param {string} city 
-         * @param {string} type 
+         * @param {Object} unit 
          */
-        onSelectDeadpool: function(city, type) {
+        onSelectDeadpool: function(unit) {
             if (this.checkPossibleActions("chooseDeadUnits", true)) {
                 this.ajaxcall( "/perikles/perikles/selectdeadpool.html", {
-                    city: city,
-                    type: type,
+                    city: unit['city'],
+                    type: unit['type'],
                     lock: true,
                 }, this, function( result ) {  }, function( is_error) { } );
             }
@@ -3360,16 +3389,12 @@ function (dojo, declare) {
          */
         notif_returnMilitary: function(notif) {
             const slot = notif.args.slot;
-            // const location = notif.args.location;
             // remove the listeners
             const slot_div = $('battle_zone_'+slot);
             const stacks = slot_div.getElementsByClassName("prk_battle");
             [...stacks].forEach(s => {
                 this.makeSplayable(s, false);
             });
-            // NOT NEEDED because currently the permissions box is attached to the location tile,
-            // which already gets moved
-            // $(location+'_permissions').remove();
 
             const counters = slot_div.getElementsByClassName("prk_military");
 
@@ -3383,7 +3408,7 @@ function (dojo, declare) {
                 new perikles.counter(city, unit, strength, id).addToStack();
             });
             for (let c of cities) {
-                this.stacks.sortStack(c);
+                this.stacks.sortStack(c+"_military");
             }
         },
 
@@ -3414,7 +3439,7 @@ function (dojo, declare) {
             });
             // reorder stacks
             for(let c of cities) {
-                this.stacks.sortStack(c);
+                this.stacks.sortStack(c+"_military");
             }
             // hide military board
             $('military_board').style['display'] = 'none';
@@ -3481,7 +3506,7 @@ function (dojo, declare) {
             if (city == "persia") {
                 this.slideToObjectAndDestroy($(counter_id), 'persia_military', 1000, 1500);
                 new perikles.counter(city, type, strength, id).addToStack();
-                this.stacks.sortStack("persia");
+                this.stacks.sortStack("persia_military");
             } else {
                 this.createMilitaryArea(DEAD_POOL, city);
                 const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
@@ -3539,7 +3564,7 @@ function (dojo, declare) {
             // now move it back to Sparta
             this.slideToObjectAndDestroy(hoplite, 'sparta_military', 1000, 500);
             new perikles.counter('sparta', HOPLITE, counter['strength'], counter['id']).addToStack();
-            this.stacks.sortStack("sparta");
+            this.stacks.sortStack("sparta_military");
         },
 
         /**
@@ -3591,7 +3616,7 @@ function (dojo, declare) {
             const city = notif.args.city;
             const scoring_delay = 2000;
             const player_cubes = city+'_cubes_'+player_id;
-            const player_color = this.players[player_id].color;
+            const player_color = this.gamedatas.players[player_id].color;
             this.displayScoring( player_cubes, player_color, vp, scoring_delay, 500, 0 );
             this.scoreCtrl[ player_id ].incValue( vp );
         },
@@ -3606,7 +3631,7 @@ function (dojo, declare) {
             const statues = toint(notif.args.statues);
             const city = notif.args.city;
             const scoring_delay = 2000;
-            const player_color = this.players[player_id].color;
+            const player_color = this.gamedatas.players[player_id].color;
             for (s = 1; s <= statues; s++) {
                 const statue_id = city+'_statue_'+s;
                 this.displayScoring( statue_id, player_color, vp, scoring_delay, 250, 0 );

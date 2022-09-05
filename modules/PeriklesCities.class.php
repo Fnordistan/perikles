@@ -366,7 +366,7 @@ class PeriklesCities extends APP_GameClass
    */
   public function victoryPoints($city) {
     $defeats = $this->getDefeats($city);
-    $vp = $this->cities["vp"][$defeats];
+    $vp = $this->cities[$city]["vp"][$defeats];
     return $vp;
   }
 

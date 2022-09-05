@@ -510,6 +510,23 @@
     float: right;
 }
 
+.prk_military[data-casualty="true"] {
+    box-shadow: 3px 3px 12px 5px #8a0303;
+}
+
+.prk_military[data-casualty="true"]:hover {
+    box-shadow: inset 3px 3px 12px 5px #8a0303;
+}
+
+/* reverse blood shadow for retrieval */
+.prk_military[data-deadpool="button"] {
+    box-shadow: inset 3px 3px 12px 5px #8a0303;
+}
+
+.prk_military[data-deadpool="button"]:hover {
+    box-shadow: 3px 3px 12px 5px #8a0303;
+}
+
 .prk_hoplite {
     background-image: url(img/hoplites.jpg);
     background-size:  calc(5 * var(--military_s)) calc(7 * var(--military_l));
@@ -531,14 +548,6 @@
 /* scaling hoplite counter to a battle slot */
 .prk_trireme_battle {
     transform: matrix(0.8, 0, 0, 0.8, -8, -4);
-}
-
-.prk_casualty_btn {
-    box-shadow: 3px 3px 12px 5px #8a0303;
-}
-
-.prk_casualty_btn:hover {
-    box-shadow: inset 3px 3px 12px 5px #8a0303;
 }
 
 .prk_btn {

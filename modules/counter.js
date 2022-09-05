@@ -80,7 +80,7 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Id used for div.
+         * Id used for div. city_type_strength_id
          * @returns string
          */
         getCounterId: function() {
