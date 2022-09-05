@@ -876,6 +876,9 @@ function (dojo, declare) {
             }
             const id = counter.getCounterId();
             const counterObj = $(id);
+            if (counterObj == null) {
+                debugger;
+            }
             if (player_id == this.player_id) {
                 this.createMilitaryArea(player_id, counter.getCity());
                 const mil_zone = counter.getCity()+"_"+counter.getType()+"_"+player_id;

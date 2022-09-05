@@ -56,6 +56,10 @@ define("BATTLE_ROUND", "battle_round");
 define("LOSER", "battle_loser");
 define("FIRST_PLAYER_BATTLE", "spartan_choice");
 define("DEADPOOL_COUNTER", "deadpool_picked");
+// use these to flag city_deadpool states that have been picked already or to be picked
+define("DEADPOOL_NOPICK", 0);
+define("DEADPOOL_TOPICK", 1);
+define("DEADPOOL_PICKED", 2);
 
 // Special tiles
 define("PERIKLES", "perikles");
@@ -193,7 +197,7 @@ class Perikles extends Table
         }
         self::setGameStateInitialValue("initial_influence", 0);
         self::setGameStateInitialValue(LAST_INFLUENCE, 0);
-        self::setGameStateInitialValue(DEADPOOL_COUNTER, 0);
+        self::setGameStateInitialValue(DEADPOOL_COUNTER, -1);
         self::setGameStateInitialValue(FIRST_PLAYER_BATTLE, 0);
         self::setGameStateInitialValue(ATTACKER_TOKENS, 0);
         self::setGameStateInitialValue(DEFENDER_TOKENS, 0);
@@ -800,7 +804,7 @@ class Perikles extends Table
     function getDeadpoolCities($player_id) {
         $cities = array();
         foreach($this->Cities->controlledCities($player_id) as $city) {
-            if ($this->getGameStateValue($city."_deadpool") == 1) {
+            if ($this->getGameStateValue($city."_deadpool") == DEADPOOL_TOPICK) {
                 $cities[] = $city;
             }
         }
@@ -1736,6 +1740,7 @@ class Perikles extends Table
         // error check
         $types = $this->Deadpool->getTypesInDeadpool($city);
         if (count($types) == 2) {
+            self::debug("$player_id chose $city $type from deadpool ");
             $this->retrieveFromDeadpool($player_id, $city, $type);
         } else {
             // should not happen
@@ -1743,6 +1748,7 @@ class Perikles extends Table
         }
         // does this player have more choices to make?
         $state = empty($this->getDeadpoolCities($player_id)) ? "nextPlayer" : "nextPick";
+        self::debug("$player_id chooseDeadpool-> $state ");
 
         $this->gamestate->nextState($state);
     }
@@ -2307,12 +2313,7 @@ class Perikles extends Table
      */
     function argsDeadPool() {
         $player_id = self::getCurrentPlayerId();
-        $cities = array();
-        foreach($this->Cities->controlledCities($player_id) as $city) {
-            if ($this->getGameStateValue($city."_deadpool") == 1) {
-                $cities[] = $city;
-            }
-        }
+        $cities = $this->getDeadpoolCities($player_id);
         $deadpool = $this->Deadpool->getDeadpoolChoices($cities);
         return array(
             'deadpool' => $deadpool,
@@ -2488,44 +2489,65 @@ class Perikles extends Table
      */
     function stDeadPool() {
         // increment until each player has had their pick
-        $picked = $this->getGameStateValue(DEADPOOL_COUNTER);
-        if ($picked == 0) {
+        if ($this->getGameStateValue(DEADPOOL_COUNTER) == -1) {
+            $this->setGameStateValue(DEADPOOL_COUNTER, 0);
             $first_player = $this->getGameStateValue(FIRST_PLAYER_BATTLE);
             $this->gamestate->changeActivePlayer($first_player);
+            // initialize choices for choosing
+            foreach($this->Cities->cities() as $cn) {
+                $types = $this->Deadpool->getTypesInDeadpool($cn);
+                $ct = count($types);
+                if ($ct == 0) {
+                    $this->setGameStateValue($cn."_deadpool", DEADPOOL_NOPICK);
+                } elseif ($ct == 1) {
+                    $this->setGameStateValue($cn."_deadpool", DEADPOOL_NOPICK);
+                } elseif ($ct == 2) {
+                    $this->setGameStateValue($cn."_deadpool", DEADPOOL_TOPICK);
+                }
+                self::debug("initialized $cn to ".$this->getGameStateValue($cn."_deadpool"));
+            }
         }
 
         $state = "";
         $players = self::loadPlayersBasicInfos();
         $nbr = count($players);
         // are we done?
-        if ($picked == $nbr) {
-            $this->setGameStateValue(DEADPOOL_COUNTER, 0);
+        if ($this->getGameStateValue(DEADPOOL_COUNTER) == $nbr) {
+            // reset deadpool flagse
+            $this->setGameStateValue(DEADPOOL_COUNTER, -1);
+            foreach($this->Cities->cities() as $cn) {
+                $this->setGameStateValue($cn."_deadpool", DEADPOOL_NOPICK);
+            }
             $state = "startCommit";
         } else {
             $player_id = self::getActivePlayerId();
 
             $choose = false;
             foreach($this->Cities->controlledCities($player_id) as $city) {
-                $types = $this->Deadpool->getTypesInDeadpool($city);
-                $ct = count($types);
-                if ($ct == 1) {
-                    $this->retrieveFromDeadpool($player_id, $city, $types[0]);
-                } elseif ($ct == 2) {
-                    $this->setGameStateValue($city."_deadpool", 1);
+                $deadpool_flag = $this->getGameStateValue($city."_deadpool");
+                if ($deadpool_flag == DEADPOOL_TOPICK) {
                     $choose = true;
+                    self::debug("$player_id will choose from $city ");
+                } elseif ($deadpool_flag == DEADPOOL_NOPICK) {
+                    $types = $this->Deadpool->getTypesInDeadpool($city);
+                    if (!empty($types)) {
+                        self::debug("$player_id automatically gets unit from $city ");
+                        $this->retrieveFromDeadpool($player_id, $city, $types[0]);
+                    }
                 }
             }
 
             if ($choose) {
                 $state = "takeDead";
             } else{
+                $this->incGameStateValue(DEADPOOL_COUNTER, 1);
                 $state = "nextPlayer";
                 $player_id = self::activeNextPlayer();
                 $this->gamestate->changeActivePlayer($player_id);
                 self::giveExtraTime( $player_id );
             }
-            $this->incGameStateValue(DEADPOOL_COUNTER, 1);
         }
+        self::debug("goes to state $state with DEADPOOL_COUNTER ".$this->getGameStateValue(DEADPOOL_COUNTER));
         $this->gamestate->nextState($state);
     }
 
@@ -2541,7 +2563,8 @@ class Perikles extends Table
         $id = $counter['id'];
         $strength = $counter['strength'];
         $unit_desc = $this->unitDescription($city, $strength, $type);
-        $this->setGameStateValue($city."_deadpool", 0);
+        self::debug("$player_id retrieving $city $type from Deadpool ");
+        $this->setGameStateValue($city."_deadpool", DEADPOOL_PICKED);
 
         self::notifyAllPlayers('retrieveDeadpool', clienttranslate('${unit} retrieved from deadpool'), array(
             'i18n' => ['unit'],
