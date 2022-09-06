@@ -29,8 +29,8 @@ class PeriklesSpecial extends APP_GameClass
    public function setupNewGame() {
       $spec = array_keys($this->specialcards);
       shuffle($spec);
-      //   testing
-      $spec = ["perikles", "brasidas", "plague", "phormio", "alkibiades", "thessalanianallies", "persianfleet", "slaverevolt" ];
+     //   testing
+    //   $spec = ["perikles", "brasidas", "plague", "phormio", "alkibiades", "thessalanianallies", "persianfleet", "slaverevolt" ];
       $players = $this->game->loadPlayersBasicInfos();
       foreach (array_keys($players) as $player_id) {
           $tile = array_pop($spec);

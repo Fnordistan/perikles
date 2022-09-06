@@ -489,9 +489,9 @@ function (dojo, declare) {
                     if (player_id == this.player_id || (player_id == "_persia_" && persianleaders.includes(String(this.player_id)))) {
                         const city = counter.getCity();
                         const unit = counter.getType();
-                        this.createMilitaryArea(player_id, city);
+                        this.createMilitaryArea(this.player_id, city);
                         const counter_div = counter.toDiv(1, 0);
-                        const mil_zone = city+"_"+unit+"_"+player_id;
+                        const mil_zone = city+"_"+unit+"_"+this.player_id;
                         const counterObj = dojo.place(counter_div, $(mil_zone));
                         Object.assign(counterObj.style, {position: "relative"});
                         counterObj.setAttribute("title", this.counterText(counter));
@@ -1268,13 +1268,11 @@ function (dojo, declare) {
             // don't unselect anything if < 2
             if (len > 1) {
                 let selectable_city = null;
-                let mil_tag = this.player_id;
                 if (len > 2) {
                     if (commit_city) {
                         if (len == 4) {
                             if (city == "persia") {
                                 selectable_city = "persia";
-                                mil_tag = "_persia_";
                             } else {
                                 selectable_city = commit_city;
                             }
@@ -1290,7 +1288,7 @@ function (dojo, declare) {
                 const mymil = $(mymilitary).getElementsByClassName("prk_military");
                 [...mymil].forEach(m => this.makeSelectable(m, false));
                 if (selectable_city) {
-                    const selunits = $(selectable_city+"_mil_ctnr_"+mil_tag).getElementsByClassName("prk_military");
+                    const selunits = $(selectable_city+"_mil_ctnr_"+this.player_id).getElementsByClassName("prk_military");
                     [...selunits].forEach(s => this.makeSelectable(s));
                 }
             }
@@ -1322,12 +1320,10 @@ function (dojo, declare) {
             // readd listeners to chosen city
             // handle Persians
             let unit_city = city;
-            let mil_div = this.player_id;
             if (this.isPersianLeader(this.player_id)) {
                 unit_city = "persia";
-                mil_div = "_persia_";
             }
-            const civ_mils = $(unit_city+'_military_'+mil_div).getElementsByClassName('prk_military');
+            const civ_mils = $(unit_city+'_military_'+this.player_id).getElementsByClassName('prk_military');
             [...civ_mils].forEach(ctr => this.makeSelectable(ctr));
         },
 
@@ -2348,8 +2344,9 @@ function (dojo, declare) {
                     board.style['display'] = "none";
                 }
             }
-            if (this.isPersianLeader(this.player_id) && $('persia_military_'+this.player_id)) {
-                $('persia_military_'+this.player_id).style['display'] = "none";
+            const persia_board = $("persia_military_"+this.player_id);
+            if (persia_board && !this.isPersianLeader(this.player_id)) {
+                persia_board.style['display'] = "none";
             }
 
             const battleslots = $('location_area').getElementsByClassName("prk_battle");
@@ -2381,6 +2378,7 @@ function (dojo, declare) {
             let canSpend = false;
             let civ_btns = "";
             const is_persian = this.isPersianLeader(this.player_id);
+
             for (const city of CITIES) {
                 if (is_persian || this.isLeader(this.player_id, city)) {
                     //any cubes left?
