@@ -291,6 +291,35 @@ class PeriklesLocations extends APP_GameClass
 }
 
   /**
+   * Make a player the main attacker for a location.
+   * @param string player_id
+   * @param string location
+   */
+  public function setAttacker($player_id, $location) {
+    $this->setRole($player_id, "attacker", $location);
+  }
+
+    /**
+   * Make a player the main defender for a location.
+   * @param string player_id
+   * @param string location
+   */
+  public function setDefender($player_id, $location) {
+    $this->setRole($player_id, "defender", $location);
+  }
+
+  /**
+   * Assign an attacker or defender role to a location.
+   * @param string player_id
+   * @param string role "attacker" or "defender"
+   * @param string location
+   */
+  private function setRole($player_id, $role, $location) {
+    self::DbQuery("UPDATE LOCATION SET $role=$player_id WHERE card_type_arg=\"$location\"");  
+  }
+
+
+  /**
    * Clear all permissions, end of battle/turn.
    * @param {string} id optional for specific location (all locations if null)
    */

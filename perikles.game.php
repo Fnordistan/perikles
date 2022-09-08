@@ -1160,12 +1160,17 @@ class Perikles extends Table
         foreach($myforces as $attdef => $forces) {
             foreach($forces as $f) {
                 $battle = $f['battle'];
-                $main = $attdef == "attack" ? $main_attacker[$battle] : $main_defender[$battle];
+                $main = ($attdef == "attack") ? $main_attacker[$battle] : $main_defender[$battle];
                 if ($main == $player_id) {
                     // I became main
-                    $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
-                    $col = $attdef == "attack" ? "attacker" : "defender";
-                    self::DbQuery("UPDATE LOCATION SET $col=$player_id WHERE card_type_arg=\"$battle\"");
+                    $battlepos = MAIN;
+                    if ($attdef == "attack") {
+                        $this->Locations->setAttacker($main, $battle);
+                        $battlepos += ATTACKER;
+                    } else {
+                        $this->Locations->setDefender($main, $battle);
+                        $battlepos += DEFENDER;
+                    }
                 } elseif ($this->Cities->isLeader($main, PERSIA) && $this->Cities->isLeader($player_id, PERSIA)) {
                     // Sharing Persian leadership
                     $battlepos = MAIN + ($attdef == "attack" ? ATTACKER : DEFENDER);
@@ -1906,10 +1911,10 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("uncontested battle state reached with 0 or 2 participants"); // NOI18N
         }
 
-        $player_id = $noattacker ? $defender : $attacker;
+        $winner = $noattacker ? $defender : $attacker;
 
         // am I the defender?
-        if ($player_id ==$defender) {
+        if ($winner == $defender) {
             // there was a defender with no attacker: don't win the tile, but get two cubes
             self::notifyAllPlayers('unclaimedTile', clienttranslate('Defender wins uncontested battle at ${location_name}; no one claims the tile'), array(
                 'i18n' => ['location_name'],
@@ -1919,12 +1924,12 @@ class Perikles extends Table
             ));
             // have to check special case where Persians jointly defend an uncontested city
             $persians = $this->Cities->getPersianLeaders();
-            if (count($persians) > 1 && in_array($player_id, $persians)) {
+            if (in_array($winner, $persians)) {
                 foreach($persians as $persian) {
                     $this->addInfluenceToCity($city, $persian, 2);
                 }
             } else {
-                $this->addInfluenceToCity($city, $player_id, 2);
+                $this->addInfluenceToCity($city, $winner, 2);
             }
             $this->unclaimedTile($tile);
         } else {
@@ -1950,7 +1955,7 @@ class Perikles extends Table
                     'location_name' => $this->Locations->getName($location),
                     'preserve' => ['location']
                 ));
-                $this->claimTile($player_id, $tile, ATTACKER);
+                $this->claimTile($winner, $tile, ATTACKER);
             }
         }
     }
