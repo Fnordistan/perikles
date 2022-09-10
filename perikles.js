@@ -1439,6 +1439,10 @@ function (dojo, declare) {
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
                     break;
+                case 'resolveTile':
+                    for (let city of CITIES) {
+                        this.stacks.resetStack(city+"_military");
+                    }
                 case 'deadPool':
                 case 'takeDead':
                     // hide dead pool if no more units
@@ -3396,18 +3400,13 @@ function (dojo, declare) {
 
             const counters = slot_div.getElementsByClassName("prk_military");
 
-            const cities = new Set();
             [...counters].forEach(c => {
                 const counter_name = c.id;
                 const [city, unit, strength, id, _] = counter_name.split('_');
-                cities.add(city);
                 const city_military = city+"_military";
                 this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
                 new perikles.counter(city, unit, strength, id).addToStack();
             });
-            for (let c of cities) {
-                this.stacks.sortStack(c+"_military");
-            }
         },
 
         /**
@@ -3435,10 +3434,6 @@ function (dojo, declare) {
                 this.counterFromPlayerBoard(counterObj, counter['city'], counter['type'], counter['strength'], counter['id']);
                 cities.add(counter['city']);
             });
-            // reorder stacks
-            for(let c of cities) {
-                this.stacks.sortStack(c+"_military");
-            }
             // hide military board
             $('military_board').style['display'] = 'none';
         },

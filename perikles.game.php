@@ -2565,7 +2565,7 @@ class Perikles extends Table
 
         $this->setGameStateValue($city."_deadpool", DEADPOOL_PICKED);
 
-        self::notifyAllPlayers('retrieveDeadpool', clienttranslate('${unit} retrieved from deadpool'), array(
+        self::notifyAllPlayers('retrieveDeadpool', clienttranslate('${unit} retrieved from dead pool'), array(
             'i18n' => ['unit'],
             'player_id' => $player_id,
             'unit' => $unit_desc,

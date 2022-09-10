@@ -69,7 +69,8 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Spread out all Hoplite and Trireme counters
+         * Spread out all Hoplite and Trireme counters in a city stack
+         * @param {Element} city_mil the city stack element
          */
          spreadMilitaryUnits: function(city_mil) {
             const hoplites = [];
@@ -155,6 +156,15 @@ define(["dojo/_base/declare"], function (declare) {
                     'z-index': null
                 });
             });
+        },
+
+        /**
+         * Sorts and reattaches listener to stack.
+         * @param {string} zone 
+         */
+        resetStack: function(zone) {
+            this.sortStack(zone);
+            this.decorateMilitaryStack(zone);
         },
 
         /**
