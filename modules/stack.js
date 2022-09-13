@@ -11,6 +11,7 @@ define(["dojo/_base/declare"], function (declare) {
          */
         constructor: function () {
             this.military_zones = {};
+            this.stack_listeners = {};
         },
 
         /**
@@ -68,20 +69,14 @@ define(["dojo/_base/declare"], function (declare) {
             });
         },
 
+
         /**
          * Spread out all Hoplite and Trireme counters in a city stack
          * @param {Element} city_mil the city stack element
          */
          spreadMilitaryUnits: function(city_mil) {
-            const hoplites = [];
-            const triremes = [];
-            for (const mil of city_mil.children) {
-                if (mil.classList.contains("prk_hoplite")) {
-                    hoplites.push(mil.id);
-                } else if  (mil.classList.contains("prk_trireme")) {
-                    triremes.push(mil.id);
-                }
-            }
+            const hoplites = city_mil.getElementsByClassName("prk_hoplite");
+            const triremes = city_mil.getElementsByClassName("prk_trireme");
             let n = 0;
             // Athens spreads to left
             let athens_off = 0;
@@ -120,7 +115,7 @@ define(["dojo/_base/declare"], function (declare) {
 
         /**
          * Connected to military counters at battles.
-         * @param {*} evt 
+         * @param {Event} evt 
          */
          splayUnits: function(evt) {
             const units = evt.currentTarget.getElementsByClassName("prk_at_battle");
@@ -159,22 +154,13 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Sorts and reattaches listener to stack.
-         * @param {string} zone 
-         */
-        resetStack: function(zone) {
-            this.sortStack(zone);
-            this.decorateMilitaryStack(zone);
-        },
-
-        /**
          * Sort the military stack.
          * @param {string} zone
-         * @param {bool} stack (optional, default true)
+         * @param {bool} stack (optional, default true) flase for deadpool sorting
          */
         sortStack: function(zone, isstack=true) {
             const stack = $(zone);
-            const counters = stack.children;
+            const counters = stack.getElementsByClassName("prk_military");
             const sorted_counters = this.sorted_counters(counters);
             while (stack.firstChild) {
                 stack.removeChild(stack.firstChild);

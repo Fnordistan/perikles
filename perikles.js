@@ -1370,7 +1370,7 @@ function (dojo, declare) {
                     if (this.isCurrentPlayerActive()) {
                         for (const city of CITIES) {
                             const candidate_space = this.openCandidateSpace(city);
-                            if (candidate_space && this.hasCubeInCity(city, true)) {
+                            if (candidate_space && this.hasCubeInCity(city, true) && this.existsOtherCubesInCity(city)) {
                                 const city_div = $(city);
                                 this.decorator.highlight(city_div);
                                 this.decorator.highlight(candidate_space);
@@ -1439,10 +1439,6 @@ function (dojo, declare) {
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
                     break;
-                case 'resolveTile':
-                    for (let city of CITIES) {
-                        this.stacks.resetStack(city+"_military");
-                    }
                 case 'deadPool':
                 case 'takeDead':
                     // hide dead pool if no more units
@@ -2107,6 +2103,22 @@ function (dojo, declare) {
             // edge case: I might have just added a cube to this city but the element hasn't been placed yet
             if (this.isLastCubeAdded(player_id, city)) {
                 return true;
+            }
+            return false;
+        },
+
+        /**
+         * For checking the edge case where my cubes are the only ones in the city.
+         * @param {string} city 
+         * @return {bool} true if any other player has cubes here
+         */
+        existsOtherCubesInCity: function(city) {
+            for (const player_id in this.gamedatas.players) {
+                if (player_id != this.player_id) {
+                    if ($(city+'_cubes_'+player_id).childElementCount > 0) {
+                        return true;
+                    }
+                }
             }
             return false;
         },
@@ -3117,8 +3129,7 @@ function (dojo, declare) {
             const player_cubes = $(city+"_cubes_"+player_id);
 
             const cube_div = this.createInfluenceCube(player_id, city, c);
-            // dojo.place(cube_div, $(city+'_'+c));
-            // this.slideToObject( cube, $(city+'_'+c), 500, 0 );
+
             this.moveCube(cube_div, player_cubes, $(city+'_'+c), 500);
             const cube1 = player_cubes.firstChild;
             this.fadeOutAndDestroy( cube1.id, 250);
@@ -3193,10 +3204,14 @@ function (dojo, declare) {
             const cubes = parseInt(notif.args.cubes);
             // remove candidate cubes
             ["a", "b"].forEach(c => {
-                if ($(city+"_"+c).hasChildNodes) {
-                    const cand = $(city+"_"+c).lastElementChild;
-                    this.fadeOutAndDestroy(cand.id, 500);
+                const candidatecube = $(city+"_"+c).firstChild;
+                if (candidatecube) {
+                    this.fadeOutAndDestroy(candidatecube.id, 500);
                 }
+                // if ($(city+"_"+c).hasChildNodes) {
+                //     const cand = $(city+"_"+c).lastElementChild;
+                //     this.fadeOutAndDestroy(cand.id, 500);
+                // }
             });
             // subtract loser's cubes from winner's
             this.removeInfluenceCubes(player_id, city, cubes);
@@ -3400,13 +3415,18 @@ function (dojo, declare) {
 
             const counters = slot_div.getElementsByClassName("prk_military");
 
+            const milzones = new Set();
             [...counters].forEach(c => {
                 const counter_name = c.id;
                 const [city, unit, strength, id, _] = counter_name.split('_');
                 const city_military = city+"_military";
+                milzones.add(city_military);
                 this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
                 new perikles.counter(city, unit, strength, id).addToStack();
             });
+            for (zone of milzones) {
+                this.sortStack(zone);
+            }
         },
 
         /**
@@ -3434,6 +3454,9 @@ function (dojo, declare) {
                 this.counterFromPlayerBoard(counterObj, counter['city'], counter['type'], counter['strength'], counter['id']);
                 cities.add(counter['city']);
             });
+            for (city of cities) {
+                this.sortStack(city+'_military')
+            }
             // hide military board
             $('military_board').style['display'] = 'none';
         },
@@ -3505,6 +3528,7 @@ function (dojo, declare) {
                 const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
                 this.slideToObjectAndDestroy($(counter_id), deadpoolloc, 1000, 1500);
                 new perikles.counter(city, type, strength, id, DEAD_POOL).placeDeadpool();
+                // this.stacks.sortStack("deadpool");
             }
         },
 
