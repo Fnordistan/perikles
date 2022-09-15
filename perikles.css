@@ -100,12 +100,17 @@
     margin-bottom: 4px;
 }
 
+/* shows victory tiles */
 .prk_player_tiles {
+    background-color: antiquewhite;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: flex-start;
     gap: 4px;
+    margin-top: 15px;
+    padding-top: 5px;
+    border-top: groove lightgray 4px;
     min-height: calc(var(--scale)*var(--location_h));
 }
 
@@ -167,6 +172,7 @@
     position: relative;
     width: calc(var(--scale) * var(--special_w));
     height: calc(var(--scale) * var(--special_h));
+    margin-right: 15px;
 }
 
 .prk_special_tile[data-side="front"] {
