@@ -670,13 +670,16 @@ class Perikles extends Table
 
     /**
      * Move all military units from a battle location back to the city where it belongs
+     * @param {array} tile to return from
+     * @param {string} (optional) type HOPLITE or TRIREME (all if null)
      */
-    function returnMilitaryUnits($tile) {
+    function returnMilitaryUnits($tile, $type=null) {
         $location = $tile['location'];
-        $this->Battles->returnCounters($location);
+        $this->Battles->returnCounters($location, $type);
         self::notifyAllPlayers("returnMilitary", '', array(
             'location' => $location,
-            'slot' => $tile['slot']
+            'slot' => $tile['slot'],
+            'type' => $type ?? "",
         ));
     }
 
@@ -2725,6 +2728,9 @@ class Perikles extends Table
             } else {
                 // one side starts with a battle token
                 $loser = $this->getGameStateValue(LOSER);
+                // return the units from the first battle
+                $prevcombat = $this->Locations->getCombat($location, 1);
+                $this->returnMilitaryUnits($tile, $prevcombat);
                 $this->secondRoundReset($loser);
             }
             $state = "nextCombat";
@@ -2733,7 +2739,7 @@ class Perikles extends Table
     }
 
     /**
-     * There are forces on both sides (at least in one battle).
+     * There are forces on both sides (at least in one combat).
      * We know there is a battle to be fought.
      */
     function stCombat() {
@@ -2808,7 +2814,7 @@ class Perikles extends Table
 
     /**
      * All checks have been done, there are forces on each side, and all player actions completed.
-     * At this point, roll dice until one side wins. This is for ONE combat.
+     * At this point, roll dice until one side wins. This is for ONE combat (Hoplite or Trireme).
      */
     function stRollCombat() {
         $tile = $this->Battles->nextBattle();

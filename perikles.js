@@ -3401,19 +3401,27 @@ function (dojo, declare) {
         },
 
         /**
+         * @TODO make this per combat, so units already fought in battle#1 aren't still there.
          * Return military from a battle to cities, and clean up tile.
          * @param {Object} notif 
          */
         notif_returnMilitary: function(notif) {
             const slot = notif.args.slot;
+            // if null, then return ALL units
+            const type = notif.args.type;
             // remove the listeners
             const slot_div = $('battle_zone_'+slot);
-            const stacks = slot_div.getElementsByClassName("prk_battle");
-            [...stacks].forEach(s => {
+            let stacks = Array.from(slot_div.getElementsByClassName("prk_battle"));
+            if (type) {
+                stacks = stacks.filter(s => s.id.includes(type));
+            }
+            stacks.forEach(s => {
                 this.makeSplayable(s, false);
             });
 
-            const counters = slot_div.getElementsByClassName("prk_military");
+            const counter_type = (type) ? "prk_"+type : "prk_military";
+
+            const counters = slot_div.getElementsByClassName(counter_type);
 
             const milzones = new Set();
             [...counters].forEach(c => {

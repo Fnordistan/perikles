@@ -74,15 +74,19 @@ class PeriklesBattles extends APP_GameClass
    * As an array of [id,city,type,strength,location,battlepos] counters.
    * @param {string} location name of tile or player_id
    * @param {int} position (optional, if not set then returns all units)
+   * @param {string} type (optional) if not null, select TRIREMES or HOPLITES
    * @return array (may be empty)
    */
-  private function getCounters($location, $pos=0) {
+  private function getCounters($location, $pos=0, $type=null) {
     $counters = [];
-    if ($pos == 0) {
-      $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\"");
-    } else {
-      $counters = $this->game->getObjectListFromDB("SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\" AND battlepos=$pos");
+    $sql = "SELECT id, city, type, strength, location, battlepos FROM MILITARY WHERE location=\"$location\"";
+    if ($pos != 0) {
+      $sql .= " AND battlepos=$pos";
     }
+    if ($type != null) {
+      $sql .= " AND type=\"$type\"";
+    }
+    $counters = $this->game->getObjectListFromDB($sql);
     return $counters;
   }
 
@@ -287,10 +291,11 @@ class PeriklesBattles extends APP_GameClass
    * Return all counters from a locaton to their respective cities.
    * Only does db changes, not clientside notifications.
    * @param {string} location
+   * @param {string} (optional) type HOPLITE or TRIREME (all if null)
    * @return {array} the counters that were returned
    */
-  public function returnCounters($location) {
-    $counters = $this->getCounters($location);
+  public function returnCounters($location, $type=null) {
+    $counters = $this->getCounters($location, 0, $type);
     foreach($counters as $counter) {
       $id = $counter['id'];
       $city = $counter['city'];
