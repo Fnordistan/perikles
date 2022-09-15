@@ -330,7 +330,6 @@
 
 .prk_defeat[data-log="true"] {
     top: 0;
-    box-shadow: 3px 3px 12px 5px #8a0303;
     float: right;
 }
 
@@ -989,14 +988,14 @@
 #defenders_permission_banner {
     position: absolute;
     left: var(--map_w);
-    top: 600px;
+    top: 380px;
     display: flex;
     flex-direction: column;
     font-family: 'ThrumsSerifRegular';
     color: white;
     width: 600px;
+    margin-left: 5px;
     height: min-content;
-    margin-top: -160px;
     background: gray;
     padding: 2px;
     border: 2px solid black;

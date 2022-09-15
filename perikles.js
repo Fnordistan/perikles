@@ -2619,7 +2619,7 @@ function (dojo, declare) {
          */
         createPermissionsBannerHtml: function() {
             const hdr = _("Defender Permissions");
-            const msg = _("Leader of the controlling city may click neutral/allied cities to give permission to defend");
+            const msg = _("Leader of the owning city may click neutral/allied cities to give permission to defend");
             const permission_banner =   '<div id="defenders_permission_banner">'+
                                             '<h2 class="prk_hdr"; style="font-size: 3em; color: white;">'+hdr+'</h2><br/>'+
                                             '<span style="font-size: 2em; padding: 0.25em;">'+msg+'</span>'+
