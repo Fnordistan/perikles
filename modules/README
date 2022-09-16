@@ -5,3 +5,9 @@ It is recommended to name your files starting with a trigram of your game name.
 For example if you have a class to manage pathfinding in the game
 Tobago, it will be called TBGPathFinding.php (and the class inside be
 called TBGPathFinding) to avoid potential namespace collisions.
+
+
+TODO: 
+Military stacks after start of new turn don't all go to players' boards
+Fix moving of victory tokens during battles
+End of game - last leaders don't become statues (game.php 2970, happened with sparta)

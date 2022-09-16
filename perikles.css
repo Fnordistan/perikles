@@ -937,7 +937,7 @@
     min-width: max-content;
     min-height: calc(var(--location_h) + 10px);
     border: 3px ridge gray;
-    background-image: linear-gradient(to right, #CBA9C2, #CEE0E2);
+    background-color: antiquewhite;
 }
 
 #unclaimed_tiles {
@@ -953,7 +953,8 @@
 }
 
 #unclaimed_hdr {
-    color: white;
+    font-size: 2em;
+    color: #222222;
 }
 
 #military_board {

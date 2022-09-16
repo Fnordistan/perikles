@@ -378,6 +378,7 @@ function (dojo, declare) {
                     this.addTooltipHtml(victoryTile.id, tt, '');
                 }
             }
+            this.displayPlayerVictoryTiles();
         },
 
         /**
@@ -571,6 +572,16 @@ function (dojo, declare) {
                 }
             }
         },
+
+        /**
+         * Show or hide the player board areas holding victory tiles.
+         */
+        displayPlayerVictoryTiles: function() {
+            tilezones = document.getElementsByClassName("prk_player_tiles");
+            [...tilezones].forEach(z => {
+                z.style.display = (z.childElementCount == 0) ? 'none' : 'flex';
+            });
+       },
 
         ///////////////////////////////////////////////////
         //// Display methods
@@ -1403,6 +1414,10 @@ function (dojo, declare) {
                     this.gamedatas.permissions = {};
                     this.removePermissionButtons();
                     break;
+                // case 'resolveTile':
+                // case 'battle':
+                //     debugger;
+                //     break;
             }
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
                 this.militaryPhaseDisplay();
@@ -3025,6 +3040,7 @@ function (dojo, declare) {
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
+            this.notifqueue.setSynchronous( 'resetBattleTokens', 1500 );
 
             // permissions
             dojo.subscribe( 'givePermission', this, "notif_givePermission");
@@ -3208,10 +3224,6 @@ function (dojo, declare) {
                 if (candidatecube) {
                     this.fadeOutAndDestroy(candidatecube.id, 500);
                 }
-                // if ($(city+"_"+c).hasChildNodes) {
-                //     const cand = $(city+"_"+c).lastElementChild;
-                //     this.fadeOutAndDestroy(cand.id, 500);
-                // }
             });
             // subtract loser's cubes from winner's
             this.removeInfluenceCubes(player_id, city, cubes);
@@ -3335,6 +3347,9 @@ function (dojo, declare) {
             tile.style.margin = null;
             this.slideToObjectRelative(tile.id, 'unclaimed_tiles', 500, 0);
             this.removeTooltip(tile.id);
+            const mytile = new perikles.locationtile(loc);
+            const tt = mytile.createVictoryTileTooltip();
+            this.addTooltipHtml($(tile.id), tt, '');
         },
 
         /**
@@ -3350,7 +3365,13 @@ function (dojo, declare) {
             tile.style.margin = null;
             this.slideToObjectRelative(tile.id, player_id+'_player_tiles', 500, 0);
             this.removeTooltip(tile.id);
+            const mytile = new perikles.locationtile(loc);
+            const tt = mytile.createVictoryTileTooltip();
+            this.addTooltipHtml($(tile.id), tt, '');
+
             this.scoreCtrl[ player_id ].incValue( vp );
+            // refresh tile displays
+            this.displayPlayerVictoryTiles();
         },
 
         /**
@@ -3371,9 +3392,13 @@ function (dojo, declare) {
                 tileObj = this.makePersianVictoryTile(tileObj, i);
                 this.slideToObjectRelative(tileObj.id, persian_player+'_player_tiles', 500, 0);
                 this.removeTooltip(tileObj.id);
+                const mytile = new perikles.locationtile(location);
+                const tt = mytile.createVictoryTileTooltip();
+                this.addTooltipHtml(tileObj, tt, '');
                 this.scoreCtrl[ persian_player ].incValue( vp );
                 i++;
             });
+            this.displayPlayerVictoryTiles();
             // destroy original tile
             $(location+'_tile').remove();
         },
@@ -3615,16 +3640,30 @@ function (dojo, declare) {
 
         /**
          * Send all Battle tokens back to center for next battle.
-         * @param {Object} notif 
+         * @param {Object} notif
          */
         notif_resetBattleTokens: function(notif) {
-            // remove Attacker/Defender Battle Tokens, put them back in the middle
-            [$('attacker_battle_tokens'), $('defender_battle_tokens'), $('battle_tokens')].forEach(box => {
-                const tokens = box.getElementsByClassName('prk_battle_token');
-                [...tokens].forEach(t => {
-                    t.remove();
-                });
+            const winner = notif.args.winner;
+            const tokens = document.getElementsByClassName("prk_battle_token");
+            [...tokens].forEach(t => {
+                t.remove();
             });
+            // remove Attacker/Defender Battle Tokens, put them back in the middle
+            // [$('attacker_battle_tokens'), $('defender_battle_tokens'), $('battle_tokens')].forEach(box => {
+            //     const tokens = box.getElementsByClassName('prk_battle_token');
+            //     [...tokens].forEach(t => {
+            //         if (t.parentNode != $('battle_tokens')) {
+            //             this.slideToObjectRelative(t.id, $('battle_tokens'), 1500, 1500, null, "last");
+            //         }
+            //         t.remove();
+            //     });
+            // });
+            // let st = 1;
+            // if (winner) {
+            //     dojo.place('<div id="battle_token_1" class="prk_battle_token"></div>', $(winner+'_battle_tokens'));
+            //     st = 2;
+            // }
+            
             for (i = 1; i <= 4; i++) {
                 dojo.place('<div id="battle_token_'+i+'" class="prk_battle_token"></div>', $('battle_tokens'));
             }

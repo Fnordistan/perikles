@@ -2211,7 +2211,9 @@ class Perikles extends Table
         $winner = ($firstroundloser == ATTACKER) ? DEFENDER : ATTACKER;
         $this->setGameStateValue(ATTACKER_TOKENS, 0);
         $this->setGameStateValue(DEFENDER_TOKENS, 0);
-        self::notifyAllPlayers("resetBattleTokens", '', []);
+        self::notifyAllPlayers("resetBattleTokens", '', array(
+            'winner' => ($winner == ATTACKER) ? "attacker" : "defender",
+        ));
         $this->takeToken($winner, true);
     }
 
@@ -2923,11 +2925,20 @@ class Perikles extends Table
         
 
         if ($state == "nextTurn") {
+            $players = self::loadPlayersBasicInfos();
             // reshuffle Influence deck and deal new cards
             $this->setGameStateValue(INFLUENCE_PHASE, 1);
             $this->dealNewInfluence();
             $this->dealNewLocations();
             $this->gamestate->changeActivePlayer($athens_leader);
+            self::notifyAllPlayers("nextTurn", clienttranslate('New turn: ${city_name} leader (${player_name}) is first player'), array(
+                'i18n' => ['city_name'],
+                'player_id' => $athens_leader,
+                'player_name' => $players[$athens_leader]['player_name'],
+                'city' => 'athens',
+                'city_name' => $this->Cities->getNameTr('athens'),
+                'preserve' => ['player_id', 'city'],
+            ));
         }
 
         $this->gamestate->nextState($state);
