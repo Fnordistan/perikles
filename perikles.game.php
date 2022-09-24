@@ -2321,7 +2321,7 @@ class Perikles extends Table
      * Return all the units that may be retrieved from Deadpool by the current active player.
      */
     function argsDeadPool() {
-        $player_id = self::getCurrentPlayerId();
+        $player_id = self::getActivePlayerId();
         $cities = $this->getDeadpoolCities($player_id);
         $deadpool = $this->Deadpool->getDeadpoolChoices($cities);
         return array(
@@ -2506,12 +2506,12 @@ class Perikles extends Table
             foreach($this->Cities->cities() as $cn) {
                 $types = $this->Deadpool->getTypesInDeadpool($cn);
                 $ct = count($types);
-                if ($ct == 0) {
-                    $this->setGameStateValue($cn."_deadpool", DEADPOOL_NOPICK);
-                } elseif ($ct == 1) {
+                if ($ct == 0 || $ct == 1) {
                     $this->setGameStateValue($cn."_deadpool", DEADPOOL_NOPICK);
                 } elseif ($ct == 2) {
                     $this->setGameStateValue($cn."_deadpool", DEADPOOL_TOPICK);
+                } else {
+                    throw new BgaVisibleSystemException("Invalid deadpool count for $cn: $ct"); // NOI18N
                 }
             }
         }

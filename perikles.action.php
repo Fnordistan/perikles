@@ -39,8 +39,6 @@ class action_perikles extends APP_GameAction
       }
   	} 
   	
-  	// TODO: defines your action entry points there
-
     /**
      * When player takes an Influence tile.
      */

@@ -883,9 +883,6 @@ function (dojo, declare) {
             const player_id = military['location'];
             const id = counter.getCounterId();
             const counterObj = $(id);
-            if (counterObj == null) {
-                debugger;
-            }
             if (player_id == this.player_id) {
                 const city = counter.getCity();
                 const type = counter.getType();
@@ -1437,10 +1434,6 @@ function (dojo, declare) {
                     this.gamedatas.permissions = {};
                     this.removePermissionButtons();
                     break;
-                // case 'resolveTile':
-                // case 'battle':
-                //     debugger;
-                //     break;
             }
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
                 this.militaryPhaseDisplay();
@@ -3257,8 +3250,6 @@ function (dojo, declare) {
         },
 
         /**
-         * @TODO sometimes a facedown military counter is put back on stack!
-         * Maybe when uncontested?
          * Move military tokens to each Leader.
          * @param {Object} notif 
          */
@@ -3536,7 +3527,8 @@ function (dojo, declare) {
             const slot = notif.args.slot;
             const military = notif.args.military;
 
-            // clear the old ones. TODO: animate flipping
+            // clear the old ones.
+            // TODO: animate flipping
             const oldcounters = $('battle_zone_'+slot).getElementsByClassName("prk_military");
             [...oldcounters].forEach(c => {
                 c.remove();
@@ -3704,7 +3696,7 @@ function (dojo, declare) {
             const city = notif.args.city;
             const scoring_delay = 2000;
             const player_color = this.gamedatas.players[player_id].color;
-            for (s = 1; s <= statues; s++) {
+            for (let s = 0; s < statues; s++) {
                 const statue_id = city+'_statue_'+s;
                 this.displayScoring( statue_id, player_color, vp, scoring_delay, 250, 0 );
                 this.scoreCtrl[ player_id ].incValue( vp );

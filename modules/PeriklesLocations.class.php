@@ -28,7 +28,7 @@ class PeriklesLocations extends APP_GameClass
     $this->locations["cythera"] = array("name" => clienttranslate("Cythera"), "city" => "sparta", "rounds" => "HT", "vp" => 3, "intrinsic" => null);
     $this->locations["spartolus"] = array("name" => clienttranslate("Spartolus"), "city" => "sparta", "rounds" => "TH", "vp" => 4, "intrinsic" => "ah");
     // Megara - add "battle" suffix because otherwise gets confused with Megara/city location
-    $this->locations["megara_battle"] = array("name" => clienttranslate("Megara"), "city" => "megara", "rounds" => "TH", "vp" => 5, "intrinsic" => null);
+    $this->locations["megarabattle"] = array("name" => clienttranslate("Megara"), "city" => "megara", "rounds" => "TH", "vp" => 5, "intrinsic" => null);
     // Argos
     $this->locations["mantinea"] = array("name" => clienttranslate("Mantinea"), "city" => "argos", "rounds" => "H", "vp" => 5, "intrinsic" => null);
     // Thebes

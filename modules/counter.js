@@ -198,9 +198,6 @@ define(["dojo/_base/declare"], function (declare) {
             const slotid = $(location+"_tile").parentNode.id;
             const slot = slotid[slotid.length-1];
             const place = "battle_"+slot+"_"+this.getType()+"_"+this.getBattlePosition();
-            if (!$(place)) {
-                debugger;
-            }
             const stackct = $(place).childElementCount;
             // zero ids for face-down units
             if (this.getStrength() == 0) {

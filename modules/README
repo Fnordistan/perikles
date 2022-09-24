@@ -8,6 +8,6 @@ called TBGPathFinding) to avoid potential namespace collisions.
 
 
 TODO: 
-Military stacks after start of new turn don't all go to players' boards
+Retrieve deadpool banner sometimes wrong
 Fix moving of victory tokens during battles
 End of game - last leaders don't become statues (game.php 2970, happened with sparta)
