@@ -3060,7 +3060,7 @@ class Perikles extends Table
                         $casualty = array_pop($casualties);
                     }
                     $this->sendToDeadpool($casualty);
-                    $this->gamestate->nextState( "endBattle" );
+                    $this->gamestate->nextState( "" );
                     break;
                 case "takeDead":
                     // game has determined this player can choose
