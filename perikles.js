@@ -3689,7 +3689,6 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_scoreStatues: function(notif) {
-            debugger;
             const player_id = notif.args.player_id;
             const vp = toint(notif.args.vp);
             const statues = toint(notif.args.statues);
