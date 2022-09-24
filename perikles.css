@@ -172,7 +172,7 @@
     position: relative;
     width: calc(var(--scale) * var(--special_w));
     height: calc(var(--scale) * var(--special_h));
-    margin-right: 15px;
+    margin: 2px 15px 2px 2px;
 }
 
 .prk_special_tile[data-side="front"] {

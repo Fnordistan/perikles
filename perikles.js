@@ -978,6 +978,29 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * Moves a Location tile to a player board (or Unclaimed Tiles), scores it, removes permissions box.
+         * @param {Element} tile 
+         * @param {string} location 
+         * @param {string} toDiv destination ID
+         * @param {string} (optional) player_id or bull
+         * @param {int} vp points
+         */
+         moveAndScoreTile: function(tile, location, toDiv, player_id=null, vp=0) {
+            // clear margin before putting in box
+            tile.style.margin = null;
+            this.slideToObjectRelative(tile.id, toDiv, 500, 0);
+            this.removeTooltip(tile.id);
+            const mytile = new perikles.locationtile(location);
+            const tt = mytile.createVictoryTileTooltip();
+            this.addTooltipHtml($(tile.id), tt, '');
+            if (player_id) {
+                this.scoreCtrl[ player_id ].incValue( vp );
+            }
+            // remove the permissions box
+            $(location+'_permissions').remove();
+        },
+
         //////////////////////////////////////////////////////////////////////////////
         //// Borrowed from Tisaac
         //////////////////////////////////////////////////////////////////////////////
@@ -2611,7 +2634,7 @@ function (dojo, declare) {
          * Needs to check whether it's already there.
          */
         createPermissionsDisplay: function() {
-            if ($('defenders_permission_banner') == null) {
+            if (!$('defenders_permission_banner')) {
                 this.createPermissionsBannerHtml();
 
                 const othercities = [...CITIES];
@@ -3343,13 +3366,7 @@ function (dojo, declare) {
 
             const loc = notif.args.location;
             const tile = $(loc+'_tile');
-            // clear margin before putting in box
-            tile.style.margin = null;
-            this.slideToObjectRelative(tile.id, 'unclaimed_tiles', 500, 0);
-            this.removeTooltip(tile.id);
-            const mytile = new perikles.locationtile(loc);
-            const tt = mytile.createVictoryTileTooltip();
-            this.addTooltipHtml($(tile.id), tt, '');
+            this.moveAndScoreTile(tile, loc, 'unclaimed_tiles');
         },
 
         /**
@@ -3361,15 +3378,7 @@ function (dojo, declare) {
             const tile = $(loc+'_tile');
             const player_id = notif.args.player_id;
             const vp = toint(notif.args.vp);
-
-            tile.style.margin = null;
-            this.slideToObjectRelative(tile.id, player_id+'_player_tiles', 500, 0);
-            this.removeTooltip(tile.id);
-            const mytile = new perikles.locationtile(loc);
-            const tt = mytile.createVictoryTileTooltip();
-            this.addTooltipHtml($(tile.id), tt, '');
-
-            this.scoreCtrl[ player_id ].incValue( vp );
+            this.moveAndScoreTile(tile, loc, player_id+'_player_tiles', player_id, vp);
             // refresh tile displays
             this.displayPlayerVictoryTiles();
         },
@@ -3390,12 +3399,7 @@ function (dojo, declare) {
                 const div = tile.createTile();
                 let tileObj = dojo.place(div, $('location_'+slot));
                 tileObj = this.makePersianVictoryTile(tileObj, i);
-                this.slideToObjectRelative(tileObj.id, persian_player+'_player_tiles', 500, 0);
-                this.removeTooltip(tileObj.id);
-                const mytile = new perikles.locationtile(location);
-                const tt = mytile.createVictoryTileTooltip();
-                this.addTooltipHtml(tileObj, tt, '');
-                this.scoreCtrl[ persian_player ].incValue( vp );
+                this.moveAndScoreTile(tileObj, location, persian_player+'_player_tiles', persian_player, vp);
                 i++;
             });
             this.displayPlayerVictoryTiles();

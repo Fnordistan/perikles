@@ -4,7 +4,6 @@
  */
 
 const SPECIAL_TILE_SCALE = 0.2;
-const SPECIAL_MARGIN = "2px";
 
 const PERIKLES = "perikles";
 const PERSIANFLEET = "persianfleet";
@@ -97,7 +96,7 @@ define(["dojo/_base/declare"], function (declare) {
             if (this.used) {
                 dataset = 'data-status = "used"';
             }
-            const html = '<div id="'+this.special+'_special_tile" class="'+classes+'" '+dataset+' data-side="front" style="--scale: '+SPECIAL_TILE_SCALE+'; margin: '+SPECIAL_MARGIN+';"></div>';
+            const html = '<div id="'+this.special+'_special_tile" class="'+classes+'" '+dataset+' data-side="front" style="--scale: '+SPECIAL_TILE_SCALE+';"></div>';
             return html;
         },
 
