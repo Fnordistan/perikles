@@ -1994,7 +1994,7 @@ class Perikles extends Table
         if ($this->getGameStateValue(ATTACKER_TOKENS) == 2 && $this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             // they need to roll off until one side hits and the other doesn't
             $winner = $this->rollDice($crt);
-            while ($winner == null) {
+            while ($winner === null) {
                 $winner = $this->rollDice($crt);
             }
         } elseif ($this->getGameStateValue(ATTACKER_TOKENS) == 2) {
