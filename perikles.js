@@ -3011,6 +3011,7 @@ function (dojo, declare) {
                   your perikles.game.php file.
         */
         setupNotifications: function() {
+            // influence phase actions
             dojo.subscribe( 'influenceCardTaken', this, "notif_influenceCardTaken" );
             this.notifqueue.setSynchronous( 'influenceCardTaken', 1000 );
             dojo.subscribe( 'influenceCubes', this, "notif_addInfluenceCubes");
@@ -3028,6 +3029,7 @@ function (dojo, declare) {
             dojo.subscribe( 'spentInfluence', this, "notif_cubeRemoved");
             this.notifqueue.setSynchronous( 'spentInfluence', 500 );
             dojo.subscribe( 'newInfluence', this, "notif_newInfluence");
+            // setup
             dojo.subscribe( 'newLocations', this, "notif_newLocations");
 
             // cities and statues
@@ -3255,6 +3257,8 @@ function (dojo, declare) {
         },
 
         /**
+         * @TODO sometimes a facedown military counter is put back on stack!
+         * Maybe when uncontested?
          * Move military tokens to each Leader.
          * @param {Object} notif 
          */
@@ -3430,7 +3434,6 @@ function (dojo, declare) {
         },
 
         /**
-         * @TODO make this per combat, so units already fought in battle#1 aren't still there.
          * Return military from a battle to cities, and clean up tile.
          * @param {Object} notif 
          */

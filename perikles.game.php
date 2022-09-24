@@ -2665,9 +2665,10 @@ class Perikles extends Table
 
         // is there another tile?
         $tile = $this->Battles->nextBattle();
-        if ($tile == null) {
+        if ($tile === null) {
             $state = "endTurn";
         } else {
+            $this->revealCounters($tile);
             $location = $tile['location'];
             // are there combatants?
             $attacker = $this->Battles->getAttacker($location);
@@ -2726,9 +2727,7 @@ class Perikles extends Table
             $this->battleVictory($tile);
             $state = "endBattle";
         } else {
-            if ($round == 1) {
-                $this->revealCounters($tile);
-            } else {
+            if ($round != 1) {
                 // one side starts with a battle token
                 $loser = $this->getGameStateValue(LOSER);
                 // return the units from the first battle
