@@ -1994,6 +1994,7 @@ class Perikles extends Table
         if ($this->getGameStateValue(ATTACKER_TOKENS) == 2 && $this->getGameStateValue(DEFENDER_TOKENS) == 2) {
             // they need to roll off until one side hits and the other doesn't
             $winner = $this->rollDice($crt);
+            // important! === because WINNER = 0 which == null!
             while ($winner === null) {
                 $winner = $this->rollDice($crt);
             }
@@ -2967,8 +2968,8 @@ class Perikles extends Table
                     ));
                 }
                 // statues
-                $statues = $playerstatues[$city];
-                if ($statues > 0) {
+                if (array_key_exists($city, $playerstatues)) {
+                    $statues = $playerstatues[$city];
                     $vp = $this->Cities->victoryPoints($city);
                     $total = $statues*$vp;
 
