@@ -990,7 +990,7 @@ function (dojo, declare) {
             this.removeTooltip(tile.id);
             const mytile = new perikles.locationtile(location);
             const tt = mytile.createVictoryTileTooltip();
-            this.addTooltipHtml($(tile.id), tt, '');
+            this.addTooltipHtml(tile.id, tt, '');
             if (player_id) {
                 this.scoreCtrl[ player_id ].incValue( vp );
             }
