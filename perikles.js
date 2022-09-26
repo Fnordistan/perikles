@@ -698,11 +698,20 @@ function (dojo, declare) {
                     }
                     // choose unit from deadpool
                     if (args.deadpool) {
-                        log += '<br>';
-                        for (const [id, unit] of Object.entries(args.deadpool)) {
-                            const counter = new perikles.counter(unit.city, unit.type, unit.strength, "deadpool");
-                            const mil_div = counter.toRelativeDiv("inline-block");
-                            log += mil_div;
+                        if (args.deadpool === true) {
+                            const type = args.type;
+                            const strength = args.strength;
+                            const city = args.city;
+                            counter = new perikles.counter(city, type, strength, "deadpool_log");
+                            const mil_html = counter.toRelativeDiv("inline-block");
+                            log = mil_html+log;
+                        } else {
+                            log += '<br>';
+                            for (const [id, unit] of Object.entries(args.deadpool)) {
+                                const counter = new perikles.counter(unit.city, unit.type, unit.strength, "deadpool");
+                                const mil_div = counter.toRelativeDiv("inline-block");
+                                log += mil_div;
+                            }
                         }
                     }
                     // assign casualties
@@ -726,7 +735,10 @@ function (dojo, declare) {
                         log = mil_html+log;
                     }
                     if (args.defeats) {
-                        const def_ctr = this.format_block('jstpl_defeat', {city: 'city', num: args.defeats+'_log'} );
+                        const city = args.city;
+                        let title_str = _("${city_name} Defeat");
+                        title_str = title_str.replace('${city_name}', this.getCityNameTr(city));
+                        const def_ctr = this.format_block('jstpl_defeat', {city: city, num: args.defeats+'_log', title: title_str} );
                         log = def_ctr+log;
                     }
                     if (args.leader) {
@@ -3539,6 +3551,7 @@ function (dojo, declare) {
                 const counter = this.militaryToCounter(c);
                 const counter_div = counter.toDiv(0, 0);
                 counterObj = dojo.place(counter_div, $('overall_player_board_'+player_id));
+                // this animates moving counter from player board and actually puts object in city stack
                 this.counterFromPlayerBoard(counterObj, counter['city'], counter['type'], counter['strength'], counter['id']);
                 cities.add(counter['city']);
             });
@@ -3771,7 +3784,11 @@ function (dojo, declare) {
                 this.fadeOutAndDestroy(token, 100);
             });
             this.clearCRT();
+            // all military counters on my board should be deleted
+            const my_counters = $('military_board').getElementsByClassName("prk_military");
+            [...my_counters].forEach(counter => {
+                counter.remove();
+            });
         },
-
     });
 });
