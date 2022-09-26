@@ -490,8 +490,7 @@ function (dojo, declare) {
             const player = this.gamedatas.players[player_id];
             const color = player.color;
             const id = player_id+"_"+city+"_"+tag;
-            const cube_tpl = (tag == "log") ?  'jstpl_cube_log' : 'jstpl_cube';
-            const cube = this.format_block(cube_tpl, {id: id, color: color});
+            const cube = this.format_block('jstpl_cube', {id: id, color: color});
             return cube;
         },
 
@@ -712,7 +711,7 @@ function (dojo, declare) {
                         }
                     }
                     if (args.defeats) {
-                        const def_ctr = this.format_block('jstpl_defeat_log', {city: 'city', num: args.defeats} );
+                        const def_ctr = this.format_block('jstpl_defeat', {city: 'city', num: args.defeats+'_log'} );
                         log = def_ctr+log;
                     }
                     if (args.leader) {

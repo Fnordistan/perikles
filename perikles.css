@@ -91,6 +91,15 @@
     overflow:hidden;
 }
 
+.log :is(.prk_cube, .prk_leader, .prk_statue, .prk_defeat, .prk_military) {
+    top: 0;
+    float: right;
+}
+
+.log .prk_military {
+    transform: scale(0.7);
+}
+
 .prk_player_infl {
     display: flex;
     flex-direction: row;
@@ -375,11 +384,6 @@
     background-position: calc(-9 * var(--counter_scale) * var(--counter_w)) 0;
 }
 
-.prk_cube, .prk_leader, .prk_statue, .prk_defeat, .prk_military [data-log="true"] {
-    top: 0;
-    float: right;
-}
-
 .prk_influence_slot {
     position: absolute;
     width: calc(var(--boardscale) * 38px);
@@ -498,10 +502,6 @@
 
 .prk_military[data-deadpool="true"] {
     opacity: 0.75;
-}
-
-.prk_military[data-log="true"] {
-    transform: scale(0.7);
 }
 
 .prk_military[data-casualty="true"] {

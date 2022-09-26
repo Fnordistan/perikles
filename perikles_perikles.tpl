@@ -83,15 +83,11 @@ const jstpl_influence_back = '<div id="cardback_${id}" class="prk_influence_tile
 
 const jstpl_defeat = '<div id="${city}_defeat_${num}" class="prk_defeat" title="${title}"></div>';
 
-const jstpl_defeat_log = '<div id="${city}_defeat_${num}_log" class="prk_defeat" data-log="true"></div>';
-
 const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_player_counter prk_${type}" style="bottom: calc(${num}*22px); left: calc(${num}*6px);"></div>';
 
-const jstpl_leader_log = '<div id="${city}_${type}_log" class="prk_player_counter prk_${type}" data-color="${color}" data-log="true"></div>';
+const jstpl_leader_log = '<div id="${city}_${type}_log" class="prk_player_counter prk_${type}" data-color="${color}"></div>';
 
 const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: #${color};"></div>';
-
-const jstpl_cube_log = '<div id="${id}" class="prk_cube" style="background-color: #${color};" data-log="true"></div>';
 
 const jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
