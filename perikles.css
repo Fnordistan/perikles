@@ -91,7 +91,7 @@
     overflow:hidden;
 }
 
-.log :is(.prk_cube, .prk_leader, .prk_statue, .prk_defeat, .prk_military) {
+.log :is(.prk_cube, .prk_leader, .prk_statue, .prk_defeat, .prk_military, .prk_battle_token) {
     top: 0;
     float: right;
 }

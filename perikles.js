@@ -602,7 +602,8 @@ function (dojo, declare) {
             let tok = 1;
             for (let [box, count] of Object.entries(tokens)) {
                 for (let i = 0; i < count; i++) {
-                    dojo.place('<div id="battle_token_'+tok+'" class="prk_battle_token"></div>', $(box));
+                    const token = this.format_block('jstpl_battle_token', {id: tok});
+                    dojo.place(token, $(box));
                     tok++;
                 }
             }
@@ -652,10 +653,16 @@ function (dojo, declare) {
                         args.special_tile = '<span class="prk_special_log">'+args.special_tile+'</span>';
                     }
                     if (args.cubes && !args.leader) {
-                        const cube = this.createInfluenceCube(args.player_id, args.city, "log");
-                        log = cube + log;
+                        for (let i = 0; i < args.cubes; i++) {
+                            const cube = this.createInfluenceCube(args.player_id, args.city, "log");
+                            log = cube + log;
+                        }
                     }
-                    if (args.location) {
+                    if (args.token) {
+                        const token = this.format_block('jstpl_battle_token', {id: 'log'});
+                        log = token + log;
+                    }
+                    if (args.location && !args.casualty_log) {
                         const tile = new perikles.locationtile(args.location);
                         const tile_div = tile.createIcon();
                         let loc_msg = tile_div;
@@ -709,6 +716,14 @@ function (dojo, declare) {
                             let mil_html = counter.toRelativeDiv("inline-block");
                             log += mil_html;
                         }
+                    }
+                    if (args.casualty_log) {
+                        const type = args.type;
+                        const strength = args.strength;
+                        const city = args.city;
+                        counter = new perikles.counter(city, type, strength, "casualty_log");
+                        const mil_html = counter.toRelativeDiv("inline-block");
+                        log = mil_html+log;
                     }
                     if (args.defeats) {
                         const def_ctr = this.format_block('jstpl_defeat', {city: 'city', num: args.defeats+'_log'} );
@@ -3706,7 +3721,8 @@ function (dojo, declare) {
             // }
             
             for (i = 1; i <= 4; i++) {
-                dojo.place('<div id="battle_token_'+i+'" class="prk_battle_token"></div>', $('battle_tokens'));
+                const token = this.format_block('jstpl_battle_token', {id: i})
+                dojo.place(token, $('battle_tokens'));
             }
             this.clearCRT();
         },

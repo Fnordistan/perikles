@@ -2082,6 +2082,8 @@ class Perikles extends Table
             'i18n' => ['winner'],
             'side' => $side,
             'winner' => $role,
+            'token' => true,
+            'preserve' => ['token']
         ));
         if ($this->getGameStateValue($token) > 1) {
             throw new BgaVisibleSystemException("$role already has 2 Battle Tokens"); // NOI18N
@@ -2167,7 +2169,8 @@ class Perikles extends Table
                 'strength' => $counter['strength'],
                 'type' => $counter['type'],
                 'location' => $counter['location'],
-                'preserve' => ['location'],
+                'casualty_log' => True,
+                'preserve' => ['casualty', 'type', 'city', 'strength'],
             ));
         }
     }
