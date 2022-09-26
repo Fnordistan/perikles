@@ -984,7 +984,7 @@
 #defenders_permission_banner {
     position: absolute;
     left: var(--map_w);
-    top: 380px;
+    bottom: 852px;
     display: flex;
     flex-direction: column;
     font-family: 'ThrumsSerifRegular';
