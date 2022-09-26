@@ -736,20 +736,16 @@ function (dojo, declare) {
                     }
                     if (args.defeats) {
                         const city = args.city;
-                        let title_str = _("${city_name} Defeat");
-                        title_str = title_str.replace('${city_name}', this.getCityNameTr(city));
-                        const def_ctr = this.format_block('jstpl_defeat', {city: city, num: args.defeats+'_log', title: title_str} );
+                        const def_ctr = this.createDefeatCounter(city, args.defeats+'_log');
                         log = def_ctr+log;
                     }
                     if (args.leader) {
-                        // log = '<div data-log="left">'+log+'</div><div data-log="right">';
                         const leader = args.leader;
                         const player_id = args.player_id;
                         const city = args.city;
                         const color = this.decorator.playerColor(player_id);
                         const ldr_ctr = this.format_block('jstpl_leader_log', {city: city, type: leader, color: color});
                         log = ldr_ctr+log;
-                        // log += ldr_ctr+'</div>';
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.decorator.spanYou(this.player_id));
@@ -1029,6 +1025,19 @@ function (dojo, declare) {
         },
 
         /**
+         * Create the HTML div for a Defeat counter.
+         * @param {string} city 
+         * @param {int} num 
+         * @returns 
+         */
+        createDefeatCounter: function(city, num) {
+            let title_str = _("${city_name} Defeat");
+            title_str = title_str.replace('${city_name}', this.getCityNameTr(city));
+            const def_ctr = this.format_block('jstpl_defeat', {city: city, num: num, title: title_str} );
+            return def_ctr;
+        },
+
+        /**
          * Add a defeat counter to a city. Checks to make sure not more than 4
          * (should only be possible with athens and sparta).
          * @param {string} city
@@ -1036,9 +1045,7 @@ function (dojo, declare) {
          */
         addDefeatCounter: function(city, num) {
             if (num <= 4) {
-                let title_str = _("${city_name} Defeat");
-                title_str = title_str.replace('${city_name}', this.getCityNameTr(city));
-                const def_ctr = this.format_block('jstpl_defeat', {city: city, num: num, title: title_str} );
+                defeat_ctr = this.createDefeatCounter(city, num);
                 const def_div = $(city+'_defeat_slot_'+num);
                 dojo.place(def_ctr, def_div);
             }
