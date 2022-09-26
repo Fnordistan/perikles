@@ -483,7 +483,7 @@ class Perikles extends Table
                 'cubes' => $cubes,
                 'city' => $city,
                 'city_name' => $city_name,
-                'preserve' => ['city']
+                'preserve' => ['city', 'cubes', 'player_id']
             ));
         }
     }
@@ -569,7 +569,7 @@ class Perikles extends Table
         $num_persians = count($persians);
         // sanity check
         if ($num_persians < 2) {
-            throw new BgaVisibleSystemException("should be multiple Persian leaders in this state");
+            throw new BgaVisibleSystemException("should be multiple Persian leaders in this state"); // NOI18N
         }
         $id = $tile['id'];
         $location = $tile['location'];

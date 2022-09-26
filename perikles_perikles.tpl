@@ -91,6 +91,8 @@ const jstpl_leader_log = '<div id="${city}_${type}_log" class="prk_player_counte
 
 const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: #${color};"></div>';
 
+const jstpl_cube_log = '<div id="${id}" class="prk_cube" style="background-color: #${color};" data-log="true"></div>';
+
 const jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
 const jstpl_permission_btn = '<button id="${location}_${city}_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';

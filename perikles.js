@@ -89,6 +89,10 @@ function (dojo, declare) {
         */
         
         setup: function( gamedatas ) {
+            if (!this._notif_uid_to_log_id) {
+                this._notif_uid_to_log_id = {};
+            }
+
             this.decorator = new perikles.decorator(gamedatas.players);
             this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
@@ -105,7 +109,38 @@ function (dojo, declare) {
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
             // this.currentState = gamedatas.gamestate.name;
-        },
+            dojo.connect(this.notifqueue, 'addToLog', () => {
+                this.addLogClass();
+            });
+          },
+
+          /**
+           * More Tisaac cleverness, adds name of notification to each log box
+           */
+          onPlaceLogOnChannel(msg) {
+            var currentLogId = this.notifqueue.next_log_id;
+            var res = this.inherited(arguments);
+            this._notif_uid_to_log_id[msg.uid] = currentLogId;
+            this._last_notif = {
+              logId: currentLogId,
+              msg,
+            };
+            return res;
+          },
+      
+          addLogClass() {
+            if (this._last_notif == null) return;
+      
+            let notif = this._last_notif;
+            if ($('log_' + notif.logId)) {
+              let type = notif.msg.type;
+              if (type == 'history_history') {
+                type = notif.msg.args.originalType;
+              }
+              $('log_' + notif.logId).classList.add('notif_' + type);
+            }
+          },
+
 
         /**
          * Set up special tiles
@@ -455,7 +490,8 @@ function (dojo, declare) {
             const player = this.gamedatas.players[player_id];
             const color = player.color;
             const id = player_id+"_"+city+"_"+tag;
-            const cube = this.format_block('jstpl_cube', {id: id, color: color});
+            const cube_tpl = (tag == "log") ?  'jstpl_cube_log' : 'jstpl_cube';
+            const cube = this.format_block(cube_tpl, {id: id, color: color});
             return cube;
         },
 
@@ -591,6 +627,7 @@ function (dojo, declare) {
             try {
                 if (log && args && !args.processed) {
                     args.processed = true;
+
                     if (args.player_name && args.player_id) {
                         args.player_name = this.decorator.spanPlayerName(args.player_id);
                     }
@@ -614,6 +651,10 @@ function (dojo, declare) {
                     }
                     if (args.special_tile) {
                         args.special_tile = '<span class="prk_special_log">'+args.special_tile+'</span>';
+                    }
+                    if (args.cubes && !args.leader) {
+                        const cube = this.createInfluenceCube(args.player_id, args.city, "log");
+                        log = cube + log;
                     }
                     if (args.location) {
                         const tile = new perikles.locationtile(args.location);
@@ -672,15 +713,17 @@ function (dojo, declare) {
                     }
                     if (args.defeats) {
                         const def_ctr = this.format_block('jstpl_defeat_log', {city: 'city', num: args.defeats} );
-                        log += def_ctr;
+                        log = def_ctr+log;
                     }
                     if (args.leader) {
+                        // log = '<div data-log="left">'+log+'</div><div data-log="right">';
                         const leader = args.leader;
                         const player_id = args.player_id;
                         const city = args.city;
                         const color = this.decorator.playerColor(player_id);
                         const ldr_ctr = this.format_block('jstpl_leader_log', {city: city, type: leader, color: color});
-                        log += ldr_ctr;
+                        log = ldr_ctr+log;
+                        // log += ldr_ctr+'</div>';
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.decorator.spanYou(this.player_id));
@@ -1411,7 +1454,7 @@ function (dojo, declare) {
                     break;
                 case 'assassinate':
                     if (this.isCurrentPlayerActive()) {
-                        let cubes = document.getElementsByClassName("prk_cube");
+                        let cubes = $('perikles_map').getElementsByClassName("prk_cube");
                         [...cubes].forEach( c => c.dataset.action = "remove");
                     }
                     break;
