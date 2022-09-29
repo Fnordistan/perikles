@@ -225,8 +225,6 @@ class Perikles extends Table
             self::initStat( 'player', "special_tile", $special, $player_id);
         }
 
-        self::initStat( 'player', 'special_tile', self::getGameStateValue(SUPER_EVENT) );
-
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
 
