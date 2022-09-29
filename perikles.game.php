@@ -1097,7 +1097,7 @@ class Perikles extends Table
                     'player_name' => $players[$persian]['player_name'],
                     'preserve' => ['player_id']
                 ));
-                $this->game->incStat(1, "persian_leader", $persian);
+                self::incStat(1, "persian_leader", $persian);
             }
             $this->movePersianUnits($persianleaders);
         }
