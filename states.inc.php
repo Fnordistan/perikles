@@ -169,7 +169,8 @@ $machinestates = array(
         "name" => "spartanChoice",
     	"description" => clienttranslate('Spartan Leader ${actplayer} must choose the first player to commit forces'),
     	"descriptionmyturn" => clienttranslate('You must choose the first player to commit forces'),
-    	"type" => "activeplayer",
+        "updateGameProgression" => true,   
+        "type" => "activeplayer",
     	"possibleactions" => array( "chooseNextPlayer" ),
     	"transitions" => array( "" => DEAD_POOL)
     ),
@@ -227,6 +228,7 @@ $machinestates = array(
         "name" => "resolveTile",
         "description" => "",
         "type" => "game",
+        "updateGameProgression" => true,   
         "action" => "stResolveTile",
         "transitions" => array( "nextCombat" => NEXT_COMBAT, "endBattle" => NEXT_BATTLE_TILE )
     ),

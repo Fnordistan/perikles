@@ -7,18 +7,18 @@ class PeriklesSpecial extends APP_GameClass
 {
   private $game;
   private $specialcards = [];
-  
+
   public function __construct($game)
   {
     $this->game = $game;
-    $this->specialcards["perikles"] = array('name' => clienttranslate("Perikles"), "description" => clienttranslate("Place two cubes in Athens."), "phase" => "influence_phase");
-    $this->specialcards["persianfleet"] = array('name' => clienttranslate("Persian Fleet"), "description" => clienttranslate("Start trireme combat with one victory marker."), "phase" => TRIREME."_battle");
-    $this->specialcards["slaverevolt"] = array('name' => clienttranslate("Slave Revolt"), "description" => clienttranslate("Remove one Spartan hoplite counter from the board or from the controlling player."), "phase" => "commit_phase");
-    $this->specialcards["brasidas"] = array('name' => clienttranslate("Brasidas"), "description" => clienttranslate("Double value of all Spartan hoplites in one battle."), "phase" => HOPLITE."_battle");
-    $this->specialcards["thessalanianallies"] = array('name' => clienttranslate("Thessalanian Allies"), "description" => clienttranslate("Start hoplite combat with one victory marker."), "phase" => HOPLITE."_battle");
-    $this->specialcards["alkibiades"] = array('name' => clienttranslate("Alkibiades"), "description" => clienttranslate("Move any two cubes from any city or cities to any other city or cities."), "phase" => "influence_phase");
-    $this->specialcards["phormio"] = array('name' => clienttranslate("Phormio"), "description" => clienttranslate("Double value of all Athenian triremes in one battle."), "phase" => TRIREME."_battle");
-    $this->specialcards["plague"] = array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes."), "phase" => "influence_phase");
+    $this->specialcards["perikles"] = array('name' => clienttranslate("Perikles"), "description" => clienttranslate("Place two cubes in Athens."), "phase" => "influence_phase", "index" => 0);
+    $this->specialcards["persianfleet"] = array('name' => clienttranslate("Persian Fleet"), "description" => clienttranslate("Start trireme combat with one victory marker."), "phase" => TRIREME."_battle", "index" => 1);
+    $this->specialcards["slaverevolt"] = array('name' => clienttranslate("Slave Revolt"), "description" => clienttranslate("Remove one Spartan hoplite counter from the board or from the controlling player."), "phase" => "commit_phase", "index" => 2);
+    $this->specialcards["brasidas"] = array('name' => clienttranslate("Brasidas"), "description" => clienttranslate("Double value of all Spartan hoplites in one battle."), "phase" => HOPLITE."_battle", "index" => 3);
+    $this->specialcards["thessalanianallies"] = array('name' => clienttranslate("Thessalanian Allies"), "description" => clienttranslate("Start hoplite combat with one victory marker."), "phase" => HOPLITE."_battle", "index" => 4);
+    $this->specialcards["alkibiades"] = array('name' => clienttranslate("Alkibiades"), "description" => clienttranslate("Move any two cubes from any city or cities to any other city or cities."), "phase" => "influence_phase", "index" => 5);
+    $this->specialcards["phormio"] = array('name' => clienttranslate("Phormio"), "description" => clienttranslate("Double value of all Athenian triremes in one battle."), "phase" => TRIREME."_battle", "index" => 6);
+    $this->specialcards["plague"] = array('name' => clienttranslate("Plague"), "description" => clienttranslate("Select a city. All players must remove half, rounded down, of their cubes."), "phase" => "influence_phase", "index" => 7);
   }
 
    /**
@@ -57,6 +57,14 @@ class PeriklesSpecial extends APP_GameClass
   public function getSpecialTileName($player_id) {
     $special = $this->getSpecialTile($player_id);
     return $this->specialcards[$special]['name'];
+  }
+
+  /**
+   * For stats purposes - get 0-indexed int value of player's card
+   */
+  public function getSpecialTileIndex($player_id) {
+    $special = $this->getSpecialTile($player_id);
+    return $this->specialcards[$special]['index'];
   }
 
  /**

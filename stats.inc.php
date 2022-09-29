@@ -90,6 +90,35 @@ $stats_type = array(
             "name" => totranslate("Thebes Statues"),
             "type" => "int"
         ),
+        "persian_leader" => array(
+            "id"=> 16,
+            "name" => totranslate("Persian Leader"),
+            "type" => "int"
+        ),
+        "victory_tiles" => array(
+            "id"=> 17,
+            "name" => totranslate("Victory Tiles"),
+            "type" => "int"
+        ),
+        "special_tile" => array(
+            "id"=> 18,
+            "name" => totranslate("Special Tile"),
+            "type" => "int"
+        ),
+    ),
+
+    "value_labels" => array(
+		18 => array( 
+			0 => totranslate("Perikles"),
+			1 => totranslate("Persian Fleet"), 
+			2 => totranslate("Slave Revolt"), 
+			3 => totranslate("Brasidas"), 
+			4 => totranslate("Thessalanian Allies"), 
+			5 => totranslate("Alkibiades"), 
+			6 => totranslate("Phormio"), 
+			7 => totranslate("Plague"),
+        )
     )
+
 
 );

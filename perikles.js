@@ -1045,9 +1045,9 @@ function (dojo, declare) {
          */
         addDefeatCounter: function(city, num) {
             if (num <= 4) {
-                defeat_ctr = this.createDefeatCounter(city, num);
+                const defeat_ctr = this.createDefeatCounter(city, num);
                 const def_div = $(city+'_defeat_slot_'+num);
-                dojo.place(def_ctr, def_div);
+                dojo.place(defeat_ctr, def_div);
             }
         },
 

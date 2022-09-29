@@ -178,6 +178,8 @@ class Perikles extends Table
                 $statues = $cn."_statues";
                 self::initStat( 'player', $statues, 0, $player_id);
             }
+            self::initStat( 'player', "persian_leader", 0, $player_id);
+            self::initStat( 'player', "victory_tiles", 0, $player_id);
         }
         self::initStat('table', 'turns_number', 0);
 
@@ -218,6 +220,12 @@ class Perikles extends Table
         $this->Locations->setupNewGame();
 
         $this->SpecialTiles->setupNewGame();
+        foreach( $players as $player_id => $player ) {
+            $special = $this->SpecialTiles->getSpecialTileIndex($player_id);
+            self::initStat( 'player', "special_tile", $special, $player_id);
+        }
+
+        self::initStat( 'player', 'special_tile', self::getGameStateValue(SUPER_EVENT) );
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -367,8 +375,17 @@ class Perikles extends Table
     */
     function getGameProgression()
     {
+        // base 30% * turns (0/30/60)
         $turn = self::getStat('turns_number');
-        $p = ($turn / 3.0) * 100;
+        $p = $turn * 30;
+        // are we in the commit phase?
+        if ($this->getStateName()== "spartanChoice") {
+            $p +=15;
+        }
+        $tileslot = $this->getGameStateValue(ACTIVE_BATTLE);
+        if ($tileslot != 0) {
+            $p += (15+($tileslot*2));
+        }
         return $p;
     }
 
@@ -553,6 +570,7 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'city', 'location'],
             ));
             $this->moveTile($tile, $player_id);
+            self::incStat(1, "victory_tiles", $player_id);
         }
         if ($winner == ATTACKER) {
             $this->defeatCity($tile['city']);
@@ -583,6 +601,7 @@ class Perikles extends Table
         $sql = "UPDATE LOCATION SET ";
         foreach ($persians as $persia_leader) {
             $this->addVPs($persia_leader, $vp);
+            self::incStat(1, "victory_tiles", $persia_leader);
             $dbcol = PERSIA.$i;
             $sql .= "$dbcol=$persia_leader";
             if ($i < $num_persians) {
@@ -1080,6 +1099,7 @@ class Perikles extends Table
                     'player_name' => $players[$persian]['player_name'],
                     'preserve' => ['player_id']
                 ));
+                $this->game->incStat(1, "persian_leader", $persian);
             }
             $this->movePersianUnits($persianleaders);
         }
