@@ -679,8 +679,11 @@ function (dojo, declare) {
                                 loc_msg += mil_div+'<div class="prk_battle_icon prk_sword"></div>'+tile_div;
                             }
                             loc_msg += '</div>';
+                            log += loc_msg;
+                        } else {
+                            // float to right
+                            log = loc_msg+log;
                         }
-                        log += loc_msg;
                     }
                     // a battle
                     if (args.attd1) {

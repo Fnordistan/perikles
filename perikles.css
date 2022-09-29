@@ -340,6 +340,7 @@
     width: calc(var(--counter_scale) * var(--counter_w));
     height: calc(var(--counter_scale) * var(--counter_h));
     top: 5px;
+    margin: 1px;
     background-position: calc(-10 * var(--counter_scale) * var(--counter_w)) 0;
     box-shadow: 3px 3px 12px 5px #8a0303;
 }

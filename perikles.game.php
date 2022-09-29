@@ -2188,7 +2188,7 @@ class Perikles extends Table
                 'type' => $counter['type'],
                 'location' => $counter['location'],
                 'casualty_log' => True,
-                'preserve' => ['casualty', 'type', 'city', 'strength'],
+                'preserve' => ['casualty_log', 'type', 'city', 'strength'],
             ));
         }
     }
@@ -2798,8 +2798,11 @@ class Perikles extends Table
         }
 
         if ($unopposed !== null) {
-            $unopposed_id = ($unopposed == ATTACKER) ? $attacker : $defender;
-            $unopposed_role = ($unopposed == ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
+            $unopposed_id = ($unopposed === ATTACKER) ? $attacker : $defender;
+            $unopposed_role = ($unopposed === ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
+            self::dump("unopposed", $unopposed);
+            self::dump("unopposed_id", $unopposed_id);
+            self::dump("unopposed_role", $unopposed_role);
             self::notifyAllPlayers("freeToken", clienttranslate('${player_name} (${side}) wins ${combat_type} battle at ${location_name} unopposed'), array(
                 'i18n' => ['combat_type', 'side', 'location_name'],
                 'player_id' => $unopposed_id,
