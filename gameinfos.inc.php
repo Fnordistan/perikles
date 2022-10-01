@@ -65,7 +65,10 @@ $gameinfos = array(
 // Note: if you are NOT using any tie breaker, leave the empty string.
 //
 // Example: 'tie_breaker_description' => totranslate( "Number of remaining cards in hand" ),
-'tie_breaker_description' => totranslate("Most victory points on location tiles, then most statues"),
+'tie_breaker_description' => totranslate("Most victory points on Location tiles, then most statues"),
+
+// location tile VPs x100 and number of statues x1 in player_score_aux
+'tie_breaker_split' => array( 100, 1 ),
 
 // If in the game, all losers are equal (no score to rank them or explicit in the rules that losers are not ranked between them), set this to true 
 // The game end result will display "Winner" for the 1st player and "Loser" for all other players

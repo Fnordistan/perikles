@@ -409,6 +409,35 @@ class Perikles extends Table
     }
 
     /**
+     * Convenience function to get VP total for player.
+     * @param {string} player_id
+     * @param {int} VP for player_id
+     */
+    function getVPs($player_id) {
+        $vp = $this->getUniqueValueFromDB("SELECT player_score from player WHERE player_id=$player_id");
+        return $vp;
+    }
+
+    /**
+     * for adding to the tie-breaking aux score
+     * @param {string} player_id
+     * @param {int} vp
+     */
+    function addAuxVPs($player_id, $vp) {
+        self::DbQuery( "UPDATE player SET player_score_aux=player_score_aux+$vp WHERE player_id=$player_id" );
+    }
+
+    /**
+     * Convenience function to get Aux VP total for player.
+     * @param {string} player_id
+     * @param {int} aux VP for player_id
+     */
+    function getAuxVPs($player_id) {
+        $auxvp = $this->getUniqueValueFromDB("SELECT player_score_aux from player WHERE player_id=$player_id");
+        return $auxvp;
+    }
+
+    /**
      * Returns true if this player has at least once Influence tile of this city
      */
     function hasCityInfluenceTile($player_id, $city) {
@@ -2975,26 +3004,19 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
 
         foreach(array_keys($players) as $player_id) {
+            // basic player_score_aux is points in location tiles (current VPs)
+            $currentscore = $this->getVPs($player_id);
+            $this->addAuxVPs($player_id, $currentscore*100 );
+
             $playerstatues = $this->Cities->getStatues($player_id);
             foreach($this->Cities->cities() as $city) {
-                // 1 point per cube
-                $cubes = $this->Cities->cubesInCity($player_id, $city);
-                if ($cubes > 0) {
-                    self::notifyAllPlayers("scoreCubes", clienttranslate('${player_name} scores ${vp} cubes in ${city_name}'), array(
-                        'i18n' => ['city_name'],
-                        'player_id' => $player_id,
-                        'player_name' => $players[$player_id]['player_name'],
-                        'city' => $city,
-                        'city_name' => $this->Cities->getNameTr($city),
-                        'vp' => $cubes,
-                        'preserve' => ['player_id', 'city']
-                    ));
-                }
                 // statues
                 if (array_key_exists($city, $playerstatues)) {
                     $statues = $playerstatues[$city];
                     $vp = $this->Cities->victoryPoints($city);
                     $total = $statues*$vp;
+                    $this->addVPs($player_id, $total);
+                    $this->addAuxVPs($player_id, $statues);
 
                     self::notifyAllPlayers("scoreStatues", clienttranslate('${player_name} scores ${total} points for ${statues} statues in ${city_name}'), array(
                         'i18n' => ['city_name'],
@@ -3008,21 +3030,92 @@ class Perikles extends Table
                         'preserve' => ['player_id', 'city']
                     ));
                 }
+                // 1 point per cube
+                $cubes = $this->Cities->cubesInCity($player_id, $city);
+                if ($cubes > 0) {
+                    self::notifyAllPlayers("scoreCubes", clienttranslate('${player_name} scores ${vp} cubes in ${city_name}'), array(
+                        'i18n' => ['city_name'],
+                        'player_id' => $player_id,
+                        'player_name' => $players[$player_id]['player_name'],
+                        'city' => $city,
+                        'city_name' => $this->Cities->getNameTr($city),
+                        'vp' => $cubes,
+                        'preserve' => ['player_id', 'city']
+                    ));
+                    $this->addVPs($player_id, $cubes);
+                }
             }
         }
+
+        // In the case of a tie the tied player who scored the most victory points
+        // on Location tiles wins. If there is still a tie then the tied player with the
+        // most statues wins.
+        $winners = $this->getWinners();
+        $winner_name = "";
+        // tie with all tie-breakers? Should never happen but just in case...
+        if (count($winners) > 1) {
+            $winner_names = [];
+            foreach($winners as $winner) {
+                $winner_names[] = $players[$winner]['player_name'];
+            }
+            $and = clienttranslate("and");
+            $winner_name = implode($and, $winner_names);
+        } else {
+            $winner_name = $players[$winners[0]]['player_name'];
+        }
+
+        $winnerstring = clienttranslate("Congratulations ${winner_name}! You are master of the Peloponnese!");
+
+        $this->notifyAllPlayers( "tableWindow", '', array(
+            'id' => 'finalScoring',
+            'title' => $winnerstring,
+            'table' => $score_table,
+            'header' => array('str' => $winnerstring, 'args' => array('winner_name' => $winner_name)),
+        ) );
+
 
         // Score statues
         $this->gamestate->nextState("");
     }
 
-    function stDebug() {
-        $player = self::getActivePlayerName();
-        throw new BgaVisibleSystemException("$player in stDebug");
+    /**
+     * Get list of player_id(s) who won.
+     * @return {array} player_ids, should almost always be one player
+     */
+    function getWinners() {
+        $players = self::loadPlayersBasicInfos();
+        $max = -1;
+        $winners = [];
+        foreach(array_keys($players) as $player_id) {
+            $vp = $this->getVPs($player_id);
+            if ($vp > $max) {
+                $winners = [$player_id];
+            } elseif ($vp == $max) {
+                $winners[] = $player_id;
+            }
+        }
+        if (count($winners) > 1) {
+            $max = -1;
+            foreach($winners as $tied) {
+                $aux = $this->getAuxVps($tied);
+                if ($aux > $max) {
+                    $winners = [$tied];
+                } elseif ($aux == $max) {
+                    $winners[] = $tied;
+                }
+            }
+        }
+        return $winners;
     }
 
-    function logDebug($msg) {
-        self::notifyAllPlayers("debug", $msg, []);
-    }
+    // function stDebug() {
+    //     $player = self::getActivePlayerName();
+    //     throw new BgaVisibleSystemException("$player in stDebug");
+    // }
+
+    // function logDebug($msg) {
+    //     self::notifyAllPlayers("debug", $msg, []);
+    // }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie

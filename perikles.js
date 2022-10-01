@@ -3649,6 +3649,7 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_retrieveDeadpool: function(notif) {
+            debugger;
             const player_id = notif.args.player_id;
             const id = notif.args.id;
             const city = notif.args.city;
@@ -3761,7 +3762,7 @@ function (dojo, declare) {
             const scoring_delay = 2000;
             const player_cubes = city+'_cubes_'+player_id;
             const player_color = this.gamedatas.players[player_id].color;
-            this.displayScoring( player_cubes, player_color, vp, scoring_delay, 500, 0 );
+            this.displayScoring( player_cubes, player_color, vp, scoring_delay );
             this.scoreCtrl[ player_id ].incValue( vp );
         },
 
@@ -3778,7 +3779,7 @@ function (dojo, declare) {
             const player_color = this.gamedatas.players[player_id].color;
             for (let s = 0; s < statues; s++) {
                 const statue_id = city+'_statue_'+s;
-                this.displayScoring( statue_id, player_color, vp, scoring_delay, 250, 0 );
+                this.displayScoring( statue_id, player_color, vp, scoring_delay );
                 this.scoreCtrl[ player_id ].incValue( vp );
             }
         },
