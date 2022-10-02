@@ -2265,7 +2265,6 @@ class Perikles extends Table
         self::notifyAllPlayers("resetBattleTokens", '', array(
             'winner' => ($winner == ATTACKER) ? "attacker" : "defender",
         ));
-        $this->takeToken($winner, true);
     }
 
     /**
@@ -2577,6 +2576,8 @@ class Perikles extends Table
                 $this->setGameStateValue($cn."_deadpool", DEADPOOL_NOPICK);
             }
             $state = "startCommit";
+            // place four tokens only right at the start
+            self::notifyAllPlayers("beginBattlePhase", '', []);
         } else {
             $player_id = self::getActivePlayerId();
 
@@ -3094,7 +3095,7 @@ class Perikles extends Table
         }
 
         $winnerstring = clienttranslate("Congratulations ${winner_name}! You are master of the Peloponnese!");
-        $this->notifyAllPlayers( "tableWindow", '', array(
+        self::notifyAllPlayers( "tableWindow", '', array(
             'id' => 'finalScoring',
             'title' => $winnerstring,
             'table' => $score_table,

@@ -61,6 +61,7 @@ function (dojo, declare) {
 
             this.stacks = new perikles.stack();
             this.slaverevolt = new perikles.slaverevolt();
+            this.battletokens = new perikles.battletokens();
             // this.currentState = null;
         },
 
@@ -102,44 +103,45 @@ function (dojo, declare) {
             this.setupLeaders(gamedatas.leaders);
             this.setupStatues(gamedatas.statues);
             this.setupMilitary(gamedatas.military, gamedatas.persianleaders);
-            this.setupBattleTokens(gamedatas.battletokens);
+            this.setupTokens(gamedatas.battletokens);
             this.setupDefeats(gamedatas.defeats);
             this.setupCities();
 
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
-            // this.currentState = gamedatas.gamestate.name;
-            dojo.connect(this.notifqueue, 'addToLog', () => {
-                this.addLogClass();
-            });
+            // // this.currentState = gamedatas.gamestate.name;
+            // dojo.connect(this.notifqueue, 'addToLog', () => {
+            //     this.addLogClass();
+            // });
           },
 
-          /**
-           * More Tisaac cleverness, adds name of notification to each log box
-           */
-          onPlaceLogOnChannel(msg) {
-            var currentLogId = this.notifqueue.next_log_id;
-            var res = this.inherited(arguments);
-            this._notif_uid_to_log_id[msg.uid] = currentLogId;
-            this._last_notif = {
-              logId: currentLogId,
-              msg,
-            };
-            return res;
-          },
+        //   /**
+        //    * More Tisaac cleverness, adds name of notification to each log box
+        //    */
+        //   onPlaceLogOnChannel(msg) {
+        //     var currentLogId = this.notifqueue.next_log_id;
+        //     var res = this.inherited(arguments);
+        //     this._notif_uid_to_log_id[msg.uid] = currentLogId;
+        //     this._last_notif = {
+        //       logId: currentLogId,
+        //       msg,
+        //     };
+        //     return res;
+        //   },
       
-          addLogClass() {
-            if (this._last_notif == null) return;
+        //   addLogClass() {
+        //     if (this._last_notif == null) return;
       
-            let notif = this._last_notif;
-            if ($('log_' + notif.logId)) {
-              let type = notif.msg.type;
-              if (type == 'history_history') {
-                type = notif.msg.args.originalType;
-              }
-              $('log_' + notif.logId).classList.add('notif_' + type);
-            }
-          },
+        //     let notif = this._last_notif;
+        //     if ($('log_' + notif.logId)) {
+        //       let type = notif.msg.type;
+        //       if (type == 'history_history') {
+        //         type = notif.msg.args.originalType;
+        //       }
+        //       $('log_' + notif.logId).classList.add('notif_' + type);
+        //     }
+        //   },
 
 
         /**
@@ -495,6 +497,58 @@ function (dojo, declare) {
         },
 
         /**
+         * Set up battle tokens in their boxes given current state.
+         * @param {Object} tokens {box id => num tokens}
+         */
+         setupTokens: function(tokens) {
+            let i = 0;
+            for (let [box, count] of Object.entries(tokens)) {
+                for (let n = 0; n < count; n++) {
+                    const token = this.format_block('jstpl_battle_token', {id: i++});
+                    dojo.place(token, $(box));
+                }
+            }
+        },
+
+        /**
+         * For start of a combat. Place four new tokens in the center battle_tokens box.
+         */
+        initializeBattleTokens: function() {
+            for (let i = 0; i < 4; i++) {
+                const token = this.format_block('jstpl_battle_token', {id: i});
+                dojo.place(token, $('battle_tokens'));
+            }
+        },
+
+        /**
+         * Move tokens from attacker/defender boxes back to center. Keep one if we have a victory from previous round.
+         * @param {string} (optional) winner "attacker" or "defender" or null
+         */
+        returnBattleTokens(winner=null) {
+            let keep1 = null;
+            if (winner != null) {
+                keep1 = winner;
+            }
+
+            const attacker_tokens = $('attacker_battle_tokens').getElementsByClassName("prk_battle_token");
+            [...attacker_tokens].forEach(t => {
+                if (keep1 == "attacker") {
+                    keep1 = null;
+                } else {
+                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500 );
+                }
+            });
+            const defender_tokens = $('defender_battle_tokens').getElementsByClassName("prk_battle_token");
+            [...defender_tokens].forEach(t => {
+                if (keep1 == "defender") {
+                    keep1 = null;
+                } else {
+                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500 );
+                }
+            });
+        },
+
+        /**
          * Place all military counters
          * @param {Object} military 
          */
@@ -595,21 +649,6 @@ function (dojo, declare) {
         },
 
         /**
-         * Place Battle Tokens and highlight CRT during a battle.
-         * @param {array} tokens 
-         */
-        setupBattleTokens: function(tokens) {
-            let tok = 1;
-            for (let [box, count] of Object.entries(tokens)) {
-                for (let i = 0; i < count; i++) {
-                    const token = this.format_block('jstpl_battle_token', {id: tok});
-                    dojo.place(token, $(box));
-                    tok++;
-                }
-            }
-        },
-
-        /**
          * Show or hide the player board areas holding victory tiles.
          */
         displayPlayerVictoryTiles: function() {
@@ -659,7 +698,7 @@ function (dojo, declare) {
                         }
                     }
                     if (args.token) {
-                        const token = this.format_block('jstpl_battle_token', {id: 'log'});
+                        const token = this.format_block('jstpl_battle_token', {id: "log"});
                         log = token + log;
                     }
                     if (args.location && !args.casualty_log) {
@@ -3119,6 +3158,7 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'sendBattle', 1000 );
 
             // battles
+            dojo.subscribe("beginBattlePhase", this, this.initializeBattleTokens());
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
             this.notifqueue.setSynchronous( 'unclaimedTile', 1500 );
             dojo.subscribe( 'claimTile', this, "notif_claimTile");
@@ -3719,35 +3759,13 @@ function (dojo, declare) {
         },
 
         /**
-         * Send all Battle tokens back to center for next battle.
+         * Send Battle tokens back to center for next battle.
+         * Leave one if there was a previous winner.
          * @param {Object} notif
          */
         notif_resetBattleTokens: function(notif) {
             const winner = notif.args.winner;
-            const tokens = document.getElementsByClassName("prk_battle_token");
-            [...tokens].forEach(t => {
-                t.remove();
-            });
-            // remove Attacker/Defender Battle Tokens, put them back in the middle
-            // [$('attacker_battle_tokens'), $('defender_battle_tokens'), $('battle_tokens')].forEach(box => {
-            //     const tokens = box.getElementsByClassName('prk_battle_token');
-            //     [...tokens].forEach(t => {
-            //         if (t.parentNode != $('battle_tokens')) {
-            //             this.slideToObjectRelative(t.id, $('battle_tokens'), 1500, 1500, null, "last");
-            //         }
-            //         t.remove();
-            //     });
-            // });
-            // let st = 1;
-            // if (winner) {
-            //     dojo.place('<div id="battle_token_1" class="prk_battle_token"></div>', $(winner+'_battle_tokens'));
-            //     st = 2;
-            // }
-            
-            for (i = 1; i <= 4; i++) {
-                const token = this.format_block('jstpl_battle_token', {id: i})
-                dojo.place(token, $('battle_tokens'));
-            }
+            this.returnBattleTokens(winner);
             this.clearCRT();
         },
 
@@ -3790,7 +3808,7 @@ function (dojo, declare) {
          */
         notif_endTurn: function(notif) {
             // remove battle tokens
-            const tokens = document.getElementsByClassName('prk_battle_token');
+            const tokens = $('perikles_map').getElementsByClassName('prk_battle_token');
             [...tokens].forEach(token => {
                 this.fadeOutAndDestroy(token, 100);
             });
