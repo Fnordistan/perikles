@@ -3003,18 +3003,36 @@ class Perikles extends Table
     function stScoring() {
         $players = self::loadPlayersBasicInfos();
 
+        // start constructing the score table
+        $score_table = array();
+        $player_row = array("");
+        $vp_tiles_row = array(clienttranslate("VPs from Location Tiles"));
+        $vp_statues_row = array(clienttranslate("VPs from Statues"));
+        $vp_cubes_row = array(clienttranslate("VPs from Influence cubes"));
+        $vp_total_row = array(clienttranslate("Total VPs"));
+
         foreach(array_keys($players) as $player_id) {
             // basic player_score_aux is points in location tiles (current VPs)
             $currentscore = $this->getVPs($player_id);
             $this->addAuxVPs($player_id, $currentscore*100 );
 
+            $player_row[] = array(
+                'str' => '${player_name}',
+                'args' => array( 'player_name' => $players[$player_id]['player_name'] ),
+                'type' => 'header'
+            );
+            $vp_tiles_row[] = $currentscore;
+
             $playerstatues = $this->Cities->getStatues($player_id);
+            $statue_vps = 0;
+            $cube_vps = 0;
             foreach($this->Cities->cities() as $city) {
                 // statues
                 if (array_key_exists($city, $playerstatues)) {
                     $statues = $playerstatues[$city];
                     $vp = $this->Cities->victoryPoints($city);
                     $total = $statues*$vp;
+                    $statue_vps += $total;
                     $this->addVPs($player_id, $total);
                     $this->addAuxVPs($player_id, $statues);
 
@@ -3032,6 +3050,7 @@ class Perikles extends Table
                 }
                 // 1 point per cube
                 $cubes = $this->Cities->cubesInCity($player_id, $city);
+                $cube_vps += $cubes;
                 if ($cubes > 0) {
                     self::notifyAllPlayers("scoreCubes", clienttranslate('${player_name} scores ${vp} cubes in ${city_name}'), array(
                         'i18n' => ['city_name'],
@@ -3045,7 +3064,17 @@ class Perikles extends Table
                     $this->addVPs($player_id, $cubes);
                 }
             }
+            $vp_statues_row[] = $statue_vps;
+            $vp_cubes_row[] = $cube_vps;
+            $vp_total_row[] = $this->getVPs($player_id);
         }
+
+        // now add completed rows to table
+        $score_table[] = $player_row;
+        $score_table[] = $vp_tiles_row;
+        $score_table[] = $vp_statues_row;
+        $score_table[] = $vp_cubes_row;
+        $score_table[] = $vp_total_row;
 
         // In the case of a tie the tied player who scored the most victory points
         // on Location tiles wins. If there is still a tie then the tied player with the
@@ -3065,14 +3094,12 @@ class Perikles extends Table
         }
 
         $winnerstring = clienttranslate("Congratulations ${winner_name}! You are master of the Peloponnese!");
-
         $this->notifyAllPlayers( "tableWindow", '', array(
             'id' => 'finalScoring',
             'title' => $winnerstring,
             'table' => $score_table,
             'header' => array('str' => $winnerstring, 'args' => array('winner_name' => $winner_name)),
         ) );
-
 
         // Score statues
         $this->gamestate->nextState("");
