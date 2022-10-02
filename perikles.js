@@ -61,7 +61,6 @@ function (dojo, declare) {
 
             this.stacks = new perikles.stack();
             this.slaverevolt = new perikles.slaverevolt();
-            this.battletokens = new perikles.battletokens();
             // this.currentState = null;
         },
 
@@ -511,12 +510,15 @@ function (dojo, declare) {
         },
 
         /**
-         * For start of a combat. Place four new tokens in the center battle_tokens box.
+         * For start of a combat. If tokens are not already present, place four new tokens in the center battle_tokens box.
          */
         initializeBattleTokens: function() {
-            for (let i = 0; i < 4; i++) {
-                const token = this.format_block('jstpl_battle_token', {id: i});
-                dojo.place(token, $('battle_tokens'));
+            const tokens = $('perikles_map').getElementsByClassName("prk_battle_token");
+            if (tokens.length == 0) {
+                for (let i = 0; i < 4; i++) {
+                    const token = this.format_block('jstpl_battle_token', {id: i});
+                    dojo.place(token, $('battle_tokens'));
+                }
             }
         },
 
@@ -533,17 +535,21 @@ function (dojo, declare) {
             const attacker_tokens = $('attacker_battle_tokens').getElementsByClassName("prk_battle_token");
             [...attacker_tokens].forEach(t => {
                 if (keep1 == "attacker") {
+                    console.log("keeping attacker token");
                     keep1 = null;
                 } else {
-                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500 );
+                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
+                    console.log("returning attacker token to center");
                 }
             });
             const defender_tokens = $('defender_battle_tokens').getElementsByClassName("prk_battle_token");
             [...defender_tokens].forEach(t => {
                 if (keep1 == "defender") {
+                    console.log("keeping defender token");
                     keep1 = null;
                 } else {
-                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500 );
+                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
+                    console.log("returning defender token to center");
                 }
             });
         },
@@ -712,10 +718,10 @@ function (dojo, declare) {
                             const mil_div = counter.toLogIcon();
                             if (toint(args.battlepos) > 2) {
                                 // defender
-                                loc_msg += tile_div+'<div class="prk_battle_icon prk_shield"></div>'+mil_div;
+                                loc_msg += tile_div+'<span style="font-size:2em;">&#8678;</span>'+mil_div;
                             } else {
                                 // attacker
-                                loc_msg += mil_div+'<div class="prk_battle_icon prk_sword"></div>'+tile_div;
+                                loc_msg += mil_div+'<span style="font-size:2em;">&#8680;</span>'+tile_div;
                             }
                             loc_msg += '</div>';
                             log += loc_msg;
@@ -726,8 +732,8 @@ function (dojo, declare) {
                     }
                     // a battle
                     if (args.attd1) {
-                        const hit = '<span class="prk_hit">'+_("Hit")+'</span>';
-                        const miss = '<span class="prk_miss">'+_("Miss")+'</span>';
+                        const hit = '<span class="prk_hit">'+_("Success")+'</span>';
+                        const miss = '<span class="prk_miss">'+_("Failure")+'</span>';
                         args.attd1 = this.diceIcon(args.attd1, "attacker");
                         args.attd2 = this.diceIcon(args.attd2, "attacker");
                         args.defd1 = this.diceIcon(args.defd1, "defender");
@@ -3158,7 +3164,6 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'sendBattle', 1000 );
 
             // battles
-            dojo.subscribe("beginBattlePhase", this, this.initializeBattleTokens());
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
             this.notifqueue.setSynchronous( 'unclaimedTile', 1500 );
             dojo.subscribe( 'claimTile', this, "notif_claimTile");
@@ -3172,8 +3177,8 @@ function (dojo, declare) {
             dojo.subscribe( 'toDeadpool', this, "notif_toDeadpool");
             this.notifqueue.setSynchronous( 'toDeadpool', 1000 );
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
-            dojo.subscribe( 'crtOdds', this, "notif_crtOdds");
-            this.notifqueue.setSynchronous( 'crtOdds', 1500 );
+            dojo.subscribe( 'rollBattle', this, "notif_rollBattle");
+            this.notifqueue.setSynchronous( 'rollBattle', 1500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
@@ -3741,8 +3746,14 @@ function (dojo, declare) {
          * Highlight the odds column for this battle.
          * @param {Object} notif 
          */
-        notif_crtOdds: function(notif) {
+         notif_rollBattle: function(notif) {
             const crt = notif.args.crt;
+            const type = notif.args.type;
+            const slot = notif.args.slot;
+            const counters = $('battle_zone_'+slot).getElementsByClassName("prk_"+type);
+            [...counters].forEach(c => {
+                c.dataset.highlight = "true";
+            });
             const crt_col = $('crt_'+crt);
             this.decorator.highlight(crt_col);
         },
@@ -3755,18 +3766,25 @@ function (dojo, declare) {
             // "attacker" or "defender"
             const side = notif.args.side;
             const token = $('battle_tokens').lastChild;
-            this.slideToObjectRelative(token.id, $(side+'_battle_tokens'), 1500, 1500, null, "last");
+            console.log("took token for "+side)
+            this.slideToObjectRelative(token.id, side+'_battle_tokens', 1000, 500, null, "last");
         },
 
         /**
          * Send Battle tokens back to center for next battle.
          * Leave one if there was a previous winner.
+         * Also clear CRT and battle highlighting.
          * @param {Object} notif
          */
         notif_resetBattleTokens: function(notif) {
+            this.initializeBattleTokens();
             const winner = notif.args.winner;
             this.returnBattleTokens(winner);
             this.clearCRT();
+            const counters = $('location_area').getElementsByClassName("prk_military");
+            [...counters].forEach(c => {
+                delete c.dataset.highlight;
+            });
         },
 
         /**

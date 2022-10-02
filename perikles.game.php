@@ -2013,17 +2013,20 @@ class Perikles extends Table
     /**
      * Resolve a single round - Hoplite or Trireme battle. Roll until one side wins.
      * @param {string} location
+     * @param {int} slot
      * @param {string} type HOPLITE or TRIREME
      * @param {int} attstr
      * @param {int} defstr
      * @return {int} ATTACKER or DEFENDER
      */
-    function rollBattle($location, $type, $attstr, $defstr) {
+    function rollBattle($location, $slot, $type, $attstr, $defstr) {
         $crt = $this->Battles->getCRTColumn($attstr, $defstr);
         // highlight CRT Column
         $unit = $this->getUnitName($type);
-        self::notifyAllPlayers('crtOdds', clienttranslate('${unit_type} battle at ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column'), array(
+        self::notifyAllPlayers('rollBattle', clienttranslate('${unit_type} battle at ${location_name}: attacker strength ${att} vs. defender strength ${def}, rolling in the ${odds} column'), array(
             'i18n' => ['unit_type', 'location_name'],
+            'type' => $type,
+            'slot' => $slot,
             'unit_type' => $unit,
             'location' => $location,
             'location_name' => $this->Locations->getName($location),
@@ -2031,7 +2034,7 @@ class Perikles extends Table
             'def' => $defstr,
             'crt' => $crt,
             'odds' => $this->Battles->getOdds($crt),
-            'preserve' => ['location']
+            'preserve' => ['type', 'slot', 'location']
         ));
         $winner = null;
         while ($this->getGameStateValue(ATTACKER_TOKENS) < 2 && $this->getGameStateValue(DEFENDER_TOKENS) < 2) {
@@ -2073,7 +2076,7 @@ class Perikles extends Table
         $defd1 = bga_rand(1,6);
         $defd2 = bga_rand(1,6);
         $defhit = (($defd1 + $defd2) >= $defender_tn) ? True : False;
-        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal} (${atthit}), Defender rolls ${defd1} ${defd2} ${deftotal} (${defhit})'), array(
+        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal}: ${atthit}! Defender rolls ${defd1} ${defd2} ${deftotal}: ${defhit}!'), array(
             'attd1' => $attd1,
             'attd2' => $attd2,
             'defd1' => $defd1,
@@ -2576,8 +2579,6 @@ class Perikles extends Table
                 $this->setGameStateValue($cn."_deadpool", DEADPOOL_NOPICK);
             }
             $state = "startCommit";
-            // place four tokens only right at the start
-            self::notifyAllPlayers("beginBattlePhase", '', []);
         } else {
             $player_id = self::getActivePlayerId();
 
@@ -2855,8 +2856,6 @@ class Perikles extends Table
                 $state = "nextBattle";
             }
         } else {
-            // there are combatants on both sides
-            // before battle Special Tiles can come into play
             $specialplayers = $this->specialBattleTilePlayers($combat);
             if (empty($specialplayers)) {
                 $state = "combat";
@@ -2875,6 +2874,7 @@ class Perikles extends Table
     function stRollCombat() {
         $tile = $this->Battles->nextBattle();
         $location = $tile['location'];
+        $slot = $tile['slot'];
         $round = $this->getGameStateValue(BATTLE_ROUND);
         $type = $this->Locations->getCombat($location, $round);
         $bonus = (($this->getGameStateValue(BRASIDAS) == 1) || ($this->getGameStateValue(PHORMIO) == 1));
@@ -2911,7 +2911,7 @@ class Perikles extends Table
             // shouldn't happen!
             throw new BgaVisibleSystemException("no combat strength found at $location!"); // NOI18N
         }
-        $winner = $this->rollBattle($location, $type, $attstrength, $defstrength);
+        $winner = $this->rollBattle($location, $slot, $type, $attstrength, $defstrength);
 
         $winningside = null;
         if ($winner == ATTACKER) {
