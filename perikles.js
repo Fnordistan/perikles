@@ -400,6 +400,8 @@ function (dojo, declare) {
                     this.createUnclaimedTilesBox();
                     const tileObj = dojo.place(tile_div, $("unclaimed_tiles"));
                     tileObj.style.margin = null;
+                    const tt = tile.createVictoryTileTooltip();
+                    this.addTooltipHtml(tileObj.id, tt, '');
                 } else if (place.startsWith("persia")) {
                     // this is the special case where a tile was claimed by multiple players sharing Persian control
                     const n = toint(place.slice(-1));
@@ -1719,7 +1721,7 @@ function (dojo, declare) {
                 }
                 i++;
             }
-            let msg = _("You must retrieve a Hoplite or Trireme from the deadpool for ${cities}");
+            let msg = _("You must retrieve a Hoplite or Trireme from the dead pool for ${cities}");
             msg = msg.replace('${cities}', city_string);
             this.setDescriptionOnMyTurn(msg, {});
             // add listeners to the buttons
@@ -3697,7 +3699,6 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_retrieveDeadpool: function(notif) {
-            debugger;
             const player_id = notif.args.player_id;
             const id = notif.args.id;
             const city = notif.args.city;
