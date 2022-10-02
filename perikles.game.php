@@ -1554,7 +1554,7 @@ class Perikles extends Table
         $slot = $influence_card['slot'];
         $this->setGameStateValue(LAST_INFLUENCE, $slot);
 
-        self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} took ${shards}-Shard ${city_name} tile ${inf_type}'), array(
+        self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} takes ${shards}-Shard ${city_name} tile ${inf_type}'), array(
             'i18n' => ['city_name', 'inf_type'],
             'player_name' => $players[$player_id]['player_name'],
             'player_id' => $player_id,
@@ -1657,7 +1657,7 @@ class Perikles extends Table
                 throw new BgaVisibleSystemException("Missing cube at $city $cube"); // NO18N
             }
             $this->Cities->clearCandidate($city, "a");
-            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removed ${candidate_name}\'s Candidate ${candidate} in ${city_name}'), array(
+            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removes ${candidate_name}\'s Candidate ${candidate} in ${city_name}'), array(
                 'i18n' => ['city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
@@ -1696,7 +1696,7 @@ class Perikles extends Table
                 throw new BgaVisibleSystemException("Missing cube at $city $cube"); // NOI18N
             }
             $this->Cities->clearCandidate($city, "b");
-            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removed ${candidate_name}\'s Candidate ${candidate} in ${city_name}'), array(
+            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removes ${candidate_name}\'s Candidate ${candidate} in ${city_name}'), array(
                 'i18n' => ['city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
@@ -1709,7 +1709,7 @@ class Perikles extends Table
             ));
         } else {
             $this->Cities->changeInfluence($city, $target_id, -1);
-            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removed one of ${candidate_name}\'s Influence cubes in ${city_name}'), array(
+            self::notifyAllPlayers("cubeRemoved", clienttranslate('${player_name} removes one of ${candidate_name}\'s Influence cubes in ${city_name}'), array(
                 'i18n' => ['city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
@@ -2127,14 +2127,22 @@ class Perikles extends Table
         } else {
             throw new BgaVisibleSystemException("Invalid side to take Token: $winner"); // NOI18N
         }
-        $msg = $bIsRound2 ? clienttranslate('${winner} starts second round with Battle Token') : clienttranslate('${winner} gains a Battle Token');
-        self::notifyAllPlayers("takeToken", $msg, array(
-            'i18n' => ['winner'],
-            'side' => $side,
-            'winner' => $role,
-            'token' => true,
-            'preserve' => ['token']
-        ));
+        if ($bIsRound2) {
+            self::notifyAllPlayers("round2", clienttranslate('${winner} starts second round with Battle Token'), array(
+                'i18n' => ['winner'],
+                'winner' => $role,
+                'token' => true,
+                'preserve' => ['token']
+            ));
+        } else {
+            self::notifyAllPlayers("takeToken", clienttranslate('${winner} gains a Battle Token'), array(
+                'i18n' => ['winner'],
+                'side' => $side,
+                'winner' => $role,
+                'token' => true,
+                'preserve' => ['token']
+            ));
+        }
         if ($this->getGameStateValue($token) > 1) {
             throw new BgaVisibleSystemException("$role already has 2 Battle Tokens"); // NOI18N
         } else {
@@ -2265,6 +2273,7 @@ class Perikles extends Table
         $winner = ($firstroundloser == ATTACKER) ? DEFENDER : ATTACKER;
         $this->setGameStateValue(ATTACKER_TOKENS, 0);
         $this->setGameStateValue(DEFENDER_TOKENS, 0);
+        $this->takeToken($winner, true);
         self::notifyAllPlayers("resetBattleTokens", '', array(
             'winner' => ($winner == ATTACKER) ? "attacker" : "defender",
         ));

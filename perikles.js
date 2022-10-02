@@ -41,6 +41,9 @@ const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0
 
 const DEAD_POOL = "deadpool";
 
+const LEFT_ARROW = '<span style="font-size:2em;">&#8678;</span>';
+const RIGHT_ARROW = '<span style="font-size:2em;">&#8680;</span>';
+
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
@@ -718,10 +721,10 @@ function (dojo, declare) {
                             const mil_div = counter.toLogIcon();
                             if (toint(args.battlepos) > 2) {
                                 // defender
-                                loc_msg += tile_div+'<span style="font-size:2em;">&#8678;</span>'+mil_div;
+                                loc_msg += tile_div+LEFT_ARROW+mil_div;
                             } else {
                                 // attacker
-                                loc_msg += mil_div+'<span style="font-size:2em;">&#8680;</span>'+tile_div;
+                                loc_msg += mil_div+RIGHT_ARROW+tile_div;
                             }
                             loc_msg += '</div>';
                             log += loc_msg;
@@ -3766,7 +3769,6 @@ function (dojo, declare) {
             // "attacker" or "defender"
             const side = notif.args.side;
             const token = $('battle_tokens').lastChild;
-            console.log("took token for "+side)
             this.slideToObjectRelative(token.id, side+'_battle_tokens', 1000, 500, null, "last");
         },
 
