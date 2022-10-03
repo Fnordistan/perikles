@@ -543,13 +543,15 @@ class Perikles extends Table
 
         $descriptors = $this->influenceTileDescriptors($newtile);
         $city_name = $descriptors[0];
+        $msg = clienttranslate('New Influence tile: ${shards}-Shard ${city_name} tile');
+        $i18n = ['city_name'];
         $inf_type = $descriptors[2];
         if (!empty($inf_type)) {
-            $inf_type = "(".$inf_type.")";
+            $msg = clienttranslate('New Influence tile: ${shards}-Shard ${city_name} tile (${inf_type})');
+            $i18n[] = ['inf_type'];
         }
-
-        self::notifyAllPlayers("influenceCardDrawn", clienttranslate('New Influence tile: ${shards}-Shard ${city_name} tile ${inf_type}'), array(
-            'i18n' => ['city_name', 'inf_type'],
+        self::notifyAllPlayers("influenceCardDrawn", $msg, array(
+            'i18n' => $i18n,
             'city' => $newtile['city'],
             'city_name' => $city_name,
             'shards' => $descriptors[1],
@@ -1547,16 +1549,19 @@ class Perikles extends Table
         $this->influence_tiles->insertCardOnExtremePosition($influence_id, $player_id, true);
         $players = self::loadPlayersBasicInfos();
 
+        $msg = clienttranslate('${player_name} takes ${shards}-Shard ${city_name} tile');
+        $i18n = ['city_name'];
         $inf_type = $descriptors[2];
         if (!empty($inf_type)) {
-            $inf_type = "(".$inf_type.")";
+            $i18n[] = 'inf_type';
+            $msg = clienttranslate('${player_name} takes ${shards}-Shard ${city_name} tile (${inf_type})');
         }
 
         $slot = $influence_card['slot'];
         $this->setGameStateValue(LAST_INFLUENCE, $slot);
 
-        self::notifyAllPlayers("influenceCardTaken", clienttranslate('${player_name} takes ${shards}-Shard ${city_name} tile ${inf_type}'), array(
-            'i18n' => ['city_name', 'inf_type'],
+        self::notifyAllPlayers("influenceCardTaken", $msg, array(
+            'i18n' => $i18n,
             'player_name' => $players[$player_id]['player_name'],
             'player_id' => $player_id,
             'city' => $city,
@@ -3104,13 +3109,12 @@ class Perikles extends Table
             $winner_name = $players[$winners[0]]['player_name'];
         }
 
-        $winnerstring = clienttranslate("Congratulations ${winner_name}! You are master of the Peloponnese!");
-        $header = clienttranslate("Winner: ${winner_name}");
+        $winnerstring = clienttranslate('Congratulations ${winner_name}! You are master of the Peloponnese!');
         self::notifyAllPlayers( "tableWindow", '', array(
             'id' => 'finalScoring',
-            'title' => $winnerstring,
+            'title' => clienttranslate("Game Over"),
+            'header' => array('str' => $winnerstring, 'args' => array('winner_name' => $winner_name)),
             'table' => $score_table,
-            'footer' => array('str' => $header, 'args' => array('winner_name' => $winner_name)),
         ) );
 
         // Score statues
