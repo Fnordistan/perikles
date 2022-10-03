@@ -1245,6 +1245,7 @@ class Perikles extends Table
             'player_name' => $players[$player_id]['player_name'],
             'tile' => $tile,
             'special_tile' => $tile_name,
+            'preserve' => ['tile', 'player_id']
         ));
         $this->SpecialTiles->markUsed($player_id);
     }
@@ -3104,11 +3105,12 @@ class Perikles extends Table
         }
 
         $winnerstring = clienttranslate("Congratulations ${winner_name}! You are master of the Peloponnese!");
+        $header = clienttranslate("Winner: ${winner_name}");
         self::notifyAllPlayers( "tableWindow", '', array(
             'id' => 'finalScoring',
             'title' => $winnerstring,
             'table' => $score_table,
-            'header' => array('str' => $winnerstring, 'args' => array('winner_name' => $winner_name)),
+            'footer' => array('str' => $header, 'args' => array('winner_name' => $winner_name)),
         ) );
 
         // Score statues

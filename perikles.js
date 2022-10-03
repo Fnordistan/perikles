@@ -700,7 +700,10 @@ function (dojo, declare) {
                         args.city_name2 = this.spanCityName(args.city2);
                     }
                     if (args.special_tile) {
+                        const specialtile = new perikles.specialtile(args.player_id, args.tile, false);
+                        const specialhtml = specialtile.getLogDiv();
                         args.special_tile = '<span class="prk_special_log">'+args.special_tile+'</span>';
+                        log = specialhtml + log;
                     }
                     if (args.cubes && !args.leader) {
                         for (let i = 0; i < args.cubes; i++) {

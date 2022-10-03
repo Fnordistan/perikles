@@ -87,14 +87,27 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Generate HTML for a card for logs.
+         * @returns {html} div
+         */
+        getLogDiv: function() {
+            const html = this.frontDiv(true);
+            return html;
+        },
+
+        /**
          * Show the front of a card.
+         * @param {bool} bLog true if this is for log display
          * @returns {html} div 
          */
-        frontDiv: function() {
+        frontDiv: function(bLog=false) {
             let classes = "prk_special_tile "+this.special;
             let dataset = "";
             if (this.used) {
-                dataset = 'data-status = "used"';
+                dataset += ' data-status = "used"';
+            }
+            if (bLog) {
+                dataset += ' data-log = "true"';
             }
             const html = '<div id="'+this.special+'_special_tile" class="'+classes+'" '+dataset+' data-side="front" style="--scale: '+SPECIAL_TILE_SCALE+';"></div>';
             return html;

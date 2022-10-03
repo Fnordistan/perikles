@@ -200,6 +200,10 @@
     transform: rotate(180deg);
 }
 
+.prk_special_tile[data-log="true"] {
+    float: right;
+}
+
 .prk_special_tile_tt {
     background-image: url(img/special_tiles.jpg);
     background-size: calc(var(--scale) * var(--special_sprites_w)) calc(var(--scale) * var(--special_sprites_h));
@@ -222,7 +226,6 @@
 
 .prk_special_log {
     font-family: 'Bodoni Moda';
-    font-size: medium;
     font-weight: bold;
 }
 
