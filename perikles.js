@@ -540,21 +540,17 @@ function (dojo, declare) {
             const attacker_tokens = $('attacker_battle_tokens').getElementsByClassName("prk_battle_token");
             [...attacker_tokens].forEach(t => {
                 if (keep1 == "attacker") {
-                    console.log("keeping attacker token");
                     keep1 = null;
                 } else {
                     this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
-                    console.log("returning attacker token to center");
                 }
             });
             const defender_tokens = $('defender_battle_tokens').getElementsByClassName("prk_battle_token");
             [...defender_tokens].forEach(t => {
                 if (keep1 == "defender") {
-                    console.log("keeping defender token");
                     keep1 = null;
                 } else {
                     this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
-                    console.log("returning defender token to center");
                 }
             });
         },
@@ -1126,8 +1122,12 @@ function (dojo, declare) {
             if (player_id) {
                 this.scoreCtrl[ player_id ].incValue( vp );
             }
-            // remove the permissions box
-            $(location+'_permissions').remove();
+            // remove the permissions box if it wasn't already
+            // (may be already moved with multiple Persian players claiming a tile)
+            const perm_box = $(location+'_permissions');
+            if (perm_box) {
+                perm_box.remove();
+            } 
         },
 
         //////////////////////////////////////////////////////////////////////////////
@@ -1518,7 +1518,6 @@ function (dojo, declare) {
         //
         onEnteringState: function( stateName, args )
         {
-            console.log( this.player_id + ' Entering state: '+stateName );
             this.currenState = stateName;
 
             switch( stateName ) {
@@ -1577,7 +1576,6 @@ function (dojo, declare) {
         //
         onLeavingState: function( stateName )
         {
-            console.log( 'Leaving state: '+stateName );
             
             switch( stateName ) {
                 case 'chooseInitialInfluence':
@@ -1617,7 +1615,6 @@ function (dojo, declare) {
         //        
         onUpdateActionButtons: function( stateName, args )
         {
-            console.log( 'onUpdateActionButtons: '+stateName );
                       
             if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
