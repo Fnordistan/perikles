@@ -695,28 +695,29 @@ function (dojo, declare) {
                     if (args.city_name2 && args.city2) {
                         args.city_name2 = this.spanCityName(args.city2);
                     }
-                    if (args.special_tile) {
+                    if (args.special_tile && args.icon) {
                         const specialtile = new perikles.specialtile(args.player_id, args.tile, false);
                         const specialhtml = specialtile.getLogDiv();
                         args.special_tile = '<span class="prk_special_log">'+args.special_tile+'</span>';
-                        log = specialhtml + log;
+                        args.icon = specialhtml;
                     }
-                    if (args.cubes && !args.leader) {
+                    if (args.cubes && args.icon && !args.leader) {
+                        let cubeicon = "";
                         for (let i = 0; i < args.cubes; i++) {
                             const cube = this.createInfluenceCube(args.player_id, args.city, "log");
-                            log = cube + log;
+                            cubeicon += cube;
                         }
+                        args.icon = cubeicon;
                     }
-                    if (args.token) {
+                    if (args.token && args.icon) {
                         const token = this.format_block('jstpl_battle_token', {id: "log"});
-                        log = token + log;
+                        args.icon = token;
                     }
-                    if (args.location && !args.casualty_log) {
+                    if (args.location && args.icon && !args.casualty_log) {
                         const tile = new perikles.locationtile(args.location);
                         const tile_div = tile.createIcon();
                         let loc_msg = tile_div;
                         if (args.battlepos && args.type) {
-                            // loc_msg = '<div style="display: flex; flex-direction: row;">';
                             loc_msg = '<div style="display: flex; flex-direction: row; align-items: center;">';
                             const counter = new perikles.counter(args.city, args.type, 0);
                             const mil_div = counter.toLogIcon();
@@ -728,11 +729,8 @@ function (dojo, declare) {
                                 loc_msg += mil_div+RIGHT_ARROW+tile_div;
                             }
                             loc_msg += '</div>';
-                            log += loc_msg;
-                        } else {
-                            // float to right
-                            log = loc_msg+log;
                         }
+                        args.icon = loc_msg;
                     }
                     // a battle
                     if (args.attd1) {
@@ -750,14 +748,16 @@ function (dojo, declare) {
                     }
                     // choose unit from deadpool
                     if (args.deadpool) {
-                        if (args.deadpool === true) {
+                        // for log message showing unit was chosen
+                        if (args.deadpool === true && args.icon) {
                             const type = args.type;
                             const strength = args.strength;
                             const city = args.city;
                             counter = new perikles.counter(city, type, strength, "deadpool_log");
                             const mil_html = counter.toRelativeDiv("inline-block");
-                            log = mil_html+log;
+                            args.icon = mil_html;
                         } else {
+                            // here it's displaying in the titlebar units to be chosen
                             log += '<br>';
                             for (const [id, unit] of Object.entries(args.deadpool)) {
                                 const counter = new perikles.counter(unit.city, unit.type, unit.strength, "deadpool");
@@ -778,26 +778,26 @@ function (dojo, declare) {
                             log += mil_html;
                         }
                     }
-                    if (args.casualty_log) {
+                    if (args.casualty_log && args.icon) {
                         const type = args.type;
                         const strength = args.strength;
                         const city = args.city;
                         counter = new perikles.counter(city, type, strength, "casualty_log");
                         const mil_html = counter.toRelativeDiv("inline-block");
-                        log = mil_html+log;
+                        args.icon = mil_html;
                     }
-                    if (args.defeats) {
+                    if (args.defeats && args.icon) {
                         const city = args.city;
                         const def_ctr = this.createDefeatCounter(city, args.defeats+'_log');
-                        log = def_ctr+log;
+                        args.icon = def_ctr;
                     }
-                    if (args.leader) {
+                    if (args.leader && args.icon) {
                         const leader = args.leader;
                         const player_id = args.player_id;
                         const city = args.city;
                         const color = this.decorator.playerColor(player_id);
                         const ldr_ctr = this.format_block('jstpl_leader_log', {city: city, type: leader, color: color});
-                        log = ldr_ctr+log;
+                        args.icon = ldr_ctr;
                     }
                     if (!this.isSpectator) {
                         log = log.replace("You", this.decorator.spanYou(this.player_id));

@@ -520,14 +520,15 @@ class Perikles extends Table
             $this->Cities->changeInfluence($city, $player_id, $cubes);
             $city_name = $this->Cities->getNameTr($city);
     
-            self::notifyAllPlayers('influenceCubes', clienttranslate('${player_name} adds ${cubes} Influence to ${city_name}'), array(
+            self::notifyAllPlayers('influenceCubes', clienttranslate('${icon} ${player_name} adds ${cubes} Influence to ${city_name}'), array(
                 'i18n' => ['city_name'],
                 'player_id' => $player_id,
                 'player_name' => $player_name,
+                'icon' => true,
                 'cubes' => $cubes,
                 'city' => $city,
                 'city_name' => $city_name,
-                'preserve' => ['city', 'cubes', 'player_id']
+                'preserve' => ['city', 'player_id']
             ));
         }
     }
@@ -588,9 +589,10 @@ class Perikles extends Table
             $location = $tile['location'];
             $vp = $this->Locations->getVictoryPoints($location);
             $this->addVPs($player_id, $vp);
-            self::notifyAllPlayers('claimTile', clienttranslate('${player_name} claims ${location_name} tile'), array(
+            self::notifyAllPlayers('claimTile', clienttranslate('${icon} ${player_name} claims ${location_name} tile'), array(
                 'i18n' => ['location_name'],
                 'city' => $tile['city'],
+                'icon' => true,
                 'location' => $location,
                 'player_id' => $player_id,
                 'vp' => $vp,
@@ -643,9 +645,10 @@ class Perikles extends Table
 
         $slot = $tile['slot'];
         $city = $tile['city'];
-        self::notifyAllPlayers('claimTilePersians', clienttranslate('Persian players jointly claim ${location_name} tile'), array(
+        self::notifyAllPlayers('claimTilePersians', clienttranslate('${icon} Persian players jointly claim ${location_name} tile'), array(
             'i18n' => ['location_name'],
             'city' => $city,
+            'icon' => true,
             'location' => $location,
             'location_name' => $this->Locations->getName($location),
             'persians' => $persians,
@@ -665,11 +668,12 @@ class Perikles extends Table
         $defeats = $this->Cities->addDefeat($city);
         $num = $this->ordinals[$defeats];
 
-        self::notifyAllPlayers('cityDefeat', clienttranslate('${city_name} suffers ${num} defeat'), array(
+        self::notifyAllPlayers('cityDefeat', clienttranslate('${icon} ${city_name} suffers ${num} defeat'), array(
             'i18n' => ['city_name', 'num'],
             'city' => $city,
             'num' => $num,
             'city_name' => $this->Cities->getNameTr($city),
+            'icon' => true,
             'defeats' => $defeats,
             'preserve' => ['city', 'defeats'],
         ));
@@ -741,12 +745,13 @@ class Perikles extends Table
             $leader = $this->Cities->getLeader($cn);
             if (!empty($leader)) {
                 $statues = $this->Cities->addStatue($leader, $cn);
-                self::notifyAllPlayers("addStatue", clienttranslate('Statue to ${player_name} erected in ${city_name}'), array(
+                self::notifyAllPlayers("addStatue", clienttranslate('${icon} Statue to ${player_name} erected in ${city_name}'), array(
                     'i18n' => ['city_name'],
                     'city' => $cn,
                     'city_name' => $this->Cities->getNameTr($cn),
                     'player_id' => $leader,
                     'statues' => $statues,
+                    'icon' => true,
                     'leader' => 'statue',
                     'player_name' => $players[$leader]['player_name'],
                     'preserve' => ['player_id', 'city', 'statue'],
@@ -807,7 +812,7 @@ class Perikles extends Table
                 }
             }
 
-            self::notifyPlayer($pid, "sendBattle", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole}'), array(
+            self::notifyPlayer($pid, "sendBattle", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole} ${icon}'), array(
                 'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
@@ -819,6 +824,7 @@ class Perikles extends Table
                 'city_name' => $this->Cities->getNameTr($counter['city']),
                 'battlepos' => $battlepos,
                 'battlerole' => $role,
+                'icon' => true,
                 'location' => $location,
                 'wars' => $this->Cities->getCityRelationships(),
                 'slot' => $slot,
@@ -1065,13 +1071,14 @@ class Perikles extends Table
      */
     function unopposedElection($winner, $city) {
         $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name} unopposed'), array(
+        self::notifyAllPlayers("election", clienttranslate('${icon} ${player_name} becomes Leader of ${city_name} unopposed'), array(
             'i18n' => ['city_name'],
             'player_id' => $winner,
             'player_name' => $players[$winner]['player_name'],
             'city' => $city,
             'city_name' => $this->Cities->getNameTr($city),
             'cubes' => 0,
+            'icon' => true,
             'leader' => 'leader',
             'preserve' => ['player_id', 'city', 'leader']
             ));
@@ -1099,13 +1106,14 @@ class Perikles extends Table
 
         $this->Cities->changeInfluence($city, $winner, -$loser_inf);
 
-        self::notifyAllPlayers("election", clienttranslate('${player_name} becomes Leader of ${city_name}'), array(
+        self::notifyAllPlayers("election", clienttranslate('${icon} ${player_name} becomes Leader of ${city_name}'), array(
             'i18n' => ['city_name'],
             'player_id' => $winner,
             'player_name' => $players[$winner]['player_name'],
             'city' => $city,
             'city_name' => $this->Cities->getNameTr($city),
             'cubes' => $loser_inf,
+            'icon' => true,
             'leader' => 'leader',
             'preserve' => ['player_id', 'city', 'leader']
         ));
@@ -1241,13 +1249,14 @@ class Perikles extends Table
         $tile = $this->SpecialTiles->getSpecialTile($player_id);
         $tile_name = $this->SpecialTiles->getSpecialTileName($player_id);
         $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers("playSpecial", clienttranslate('${player_name} uses Special tile ${special_tile}'), array(
+        self::notifyAllPlayers("playSpecial", clienttranslate('${icon} ${player_name} uses Special tile ${special_tile}'), array(
             'i18n' => ['special_tile'],
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
             'tile' => $tile,
+            'icon' => true,
             'special_tile' => $tile_name,
-            'preserve' => ['tile', 'player_id']
+            'preserve' => ['player_id', 'tile']
         ));
         $this->SpecialTiles->markUsed($player_id);
     }
@@ -2134,17 +2143,19 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("Invalid side to take Token: $winner"); // NOI18N
         }
         if ($bIsRound2) {
-            self::notifyAllPlayers("round2", clienttranslate('${winner} starts second round with Battle Token'), array(
+            self::notifyAllPlayers("round2", clienttranslate('${icon} ${winner} starts second round with Battle Token'), array(
                 'i18n' => ['winner'],
                 'winner' => $role,
+                'icon' => true,
                 'token' => true,
                 'preserve' => ['token']
             ));
         } else {
-            self::notifyAllPlayers("takeToken", clienttranslate('${winner} gains a Battle Token'), array(
+            self::notifyAllPlayers("takeToken", clienttranslate('${icon} ${winner} gains a Battle Token'), array(
                 'i18n' => ['winner'],
                 'side' => $side,
                 'winner' => $role,
+                'icon' => true,
                 'token' => true,
                 'preserve' => ['token']
             ));
@@ -2191,20 +2202,22 @@ class Perikles extends Table
         $loser = $this->getGameStateValue(LOSER);
         if ($loser == DEFENDER) {
             $winner = $attacker;
-            self::notifyAllPlayers("attackerWins", clienttranslate('Attacker defeats ${city_name} at ${location_name}'), array(
+            self::notifyAllPlayers("attackerWins", clienttranslate('${icon} Attacker defeats ${city_name} at ${location_name}'), array(
                 'i18n' => ['city_name'],
                 'city' => $city,
                 'city_name' => $city_name,
+                'icon' => true,
                 'location' => $location,
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
             ));
         } elseif ($loser == ATTACKER) {
             $winner = $defender;
-            self::notifyAllPlayers("defenderWins", clienttranslate('Defender (${city_name}) defeats attackers at ${location_name}'), array(
+            self::notifyAllPlayers("defenderWins", clienttranslate('${icon} Defender (${city_name}) defeats attackers at ${location_name}'), array(
                 'i18n' => ['city_name'],
                 'city' => $city,
                 'city_name' => $city_name,
+                'icon' => true,
                 'location' => $location,
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
@@ -2225,7 +2238,7 @@ class Perikles extends Table
             $id = $counter['id'];
             $unit_desc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $counter['location']);
             $this->Deadpool->toDeadpool($counter);
-            self::notifyAllPlayers('toDeadpool', clienttranslate('Losing side takes one casualty: ${unit} is sent to Dead Pool'), array(
+            self::notifyAllPlayers('toDeadpool', clienttranslate('${icon} Losing side takes one casualty: ${unit} is sent to Dead Pool'), array(
                 'i18n' => ['unit'],
                 'id' => $id,
                 'unit' => $unit_desc,
@@ -2233,6 +2246,7 @@ class Perikles extends Table
                 'strength' => $counter['strength'],
                 'type' => $counter['type'],
                 'location' => $counter['location'],
+                'icon' => true,
                 'casualty_log' => True,
                 'preserve' => ['casualty_log', 'type', 'city', 'strength'],
             ));
@@ -2638,7 +2652,7 @@ class Perikles extends Table
 
         $this->setGameStateValue($city."_deadpool", DEADPOOL_PICKED);
 
-        self::notifyAllPlayers('retrieveDeadpool', clienttranslate('${unit} retrieved from dead pool'), array(
+        self::notifyAllPlayers('retrieveDeadpool', clienttranslate('${icon} ${unit} retrieved from dead pool'), array(
             'i18n' => ['unit'],
             'player_id' => $player_id,
             'unit' => $unit_desc,
@@ -2646,6 +2660,7 @@ class Perikles extends Table
             'id' => $id,
             'strength' => $strength,
             'type' => $type,
+            'icon' => true,
             'deadpool' => true,
             'preserve' => ['city', 'type', 'strength', 'deadpool'],
         ));
@@ -2849,13 +2864,14 @@ class Perikles extends Table
             self::dump("unopposed", $unopposed);
             self::dump("unopposed_id", $unopposed_id);
             self::dump("unopposed_role", $unopposed_role);
-            self::notifyAllPlayers("freeToken", clienttranslate('${player_name} (${side}) wins ${combat_type} battle at ${location_name} unopposed'), array(
+            self::notifyAllPlayers("freeToken", clienttranslate('${icon} ${player_name} (${side}) wins ${combat_type} battle at ${location_name} unopposed'), array(
                 'i18n' => ['combat_type', 'side', 'location_name'],
                 'player_id' => $unopposed_id,
                 'player_name' => $players[$unopposed_id]['player_name'],
                 'type' => $combat,
                 'side' => $unopposed_role,
                 'combat_type' => $this->getUnitName($combat),
+                'icon' => true,
                 'location' => $location,
                 'location_name' => $this->Locations->getName($location),
                 'preserve' => ['player_id', 'location']
@@ -2938,10 +2954,11 @@ class Perikles extends Table
             $loser = ATTACKER;
             $loser_id = $this->Battles->getAttacker($location);
         }
-        self::notifyAllPlayers("combatWinner", clienttranslate('${winner} wins ${type} battle at ${location_name}'), array(
+        self::notifyAllPlayers("combatWinner", clienttranslate('${icon} ${winner} wins ${type} battle at ${location_name}'), array(
             'i18n' => ['winner', 'type', 'location_name'],
             'winner' => $winningside,
             'type' => $this->getUnitName($type),
+            'icon' => true,
             'location' => $location,
             'location_name' => $this->Locations->getName($location),
             'preserve' => ['location']
