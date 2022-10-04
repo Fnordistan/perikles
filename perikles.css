@@ -934,7 +934,7 @@
 
 #unclaimed {
     height: fit-content;
-    min-width: max-content;
+    max-width: 240px;
     min-height: calc(var(--location_h) + 10px);
     border: 3px ridge gray;
     background-color: antiquewhite;
@@ -942,6 +942,7 @@
 
 #unclaimed_tiles {
     display: flex;
+    flex-wrap: wrap;
     flex-direction: columns;
     margin: 5px 0;
     width: 100%;
