@@ -2989,7 +2989,7 @@ function (dojo, declare) {
                 $('autopass_special').checked = (isEnabled == 1);
             }
         },
-        
+
         /**
          * Action to take an Influence card.
          * @param {string} id

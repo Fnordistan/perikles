@@ -588,7 +588,7 @@ class Perikles extends Table
      * @param {string} id
      */
     function unclaimedTile($tile) {
-        self::incStat(1, 'unclaimed_tile');
+        self::incStat(1, 'unclaimed_tiles');
         $this->moveTile($tile, UNCLAIMED);
     }
 
@@ -2250,7 +2250,7 @@ class Perikles extends Table
                 'preserve' => ['city', 'location'],
             ));
             self::incStat(1, "battles_won_attacker", $attacker);
-            self::incStat(1, "battles_loser_defender", $defender);
+            self::incStat(1, "battles_lost_defender", $defender);
         } elseif ($loser == ATTACKER) {
             $winner = $defender;
             self::notifyAllPlayers("defenderWins", clienttranslate('${icon} Defender (${city_name}) defeats attackers at ${location_name}'), array(

@@ -1010,12 +1010,14 @@
     position: absolute;
     left: var(--map_w);
     top: 0px;
-    margin: 2px;
+    margin: 5px 15px;
+    border: solid 1px gray;
     padding: 5px;
     font-family: 'ThrumsSerifRegular';
+    font-size: 1.5em;
 }
 
 #player_options > h2 {
     font-family: 'Bodoni Moda';
-    font-size: 2em;
+    font-size: 1.5em;
 }

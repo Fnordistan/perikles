@@ -67,7 +67,7 @@
             <div id="crt_{COL}" class="prk_crt" style="top: {CRTY}px; left: {CRTX}px;"></div>
         <!-- END CRT_BLOCK -->
     </div>
-    <div id="player_options">
+    <div id="player_options" class="whiteblock">
         <h2>{PLAYER_OPTIONS}</h2>
         <label>{AUTOPASS}
             <input id="autopass_special" type="checkbox">
