@@ -167,6 +167,7 @@ function (dojo, declare) {
                     check.setAttribute("checked", "checked");
                 }
                 dojo.connect(check, 'onchange', this, 'changePreference');
+                this.addTooltip('autopass_help', _("If not checked, the game will pause whenever you are eligible to play your Special Tile. This might reveal information to other players about which Special Tile you have."), '');
             }
         },
 
@@ -3547,6 +3548,7 @@ function (dojo, declare) {
             spec.dataset.status = "used";
             if (this.player_id == player_id) {
                 this.removeActionButtons();
+                $('player_options').style["display"] = "none";
             }
         },
 

@@ -69,11 +69,11 @@
     </div>
     <div id="player_options" class="whiteblock">
         <h2>{PLAYER_OPTIONS}</h2>
-        <label>{AUTOPASS}
+        <hr/>
+        <label class="prk_player_opt">{AUTOPASS}
             <input id="autopass_special" type="checkbox">
-            <span class="checkmark"></span>
-        </label>
-          
+            <span class="prk_checkmark"></span>
+        </label><i id="autopass_help" class="fa fa-question-circle-o fa-lg"></i>
     </div>
     <div id="deadpool">
         <h2 class="prk_hdr">{DEADPOOL}</h2>
