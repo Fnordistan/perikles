@@ -117,12 +117,17 @@ define(["dojo/_base/declare"], function (declare) {
         /**
          * Create location tile html.
          * @param {int} m margin optional
+         * @param {string} tag optional append to id
          * @returns {string} html div
          */
-         createTile: function(m=0) {
+         createTile: function(m=0, tag=null) {
             const xoff = -1 * (this.y()-1) * TILE_WIDTH * TILE_SCALE;
             const yoff = -1 * (this.x()-1) * TILE_HEIGHT * TILE_SCALE;
-            const html = '<div id="'+this.location+'_tile" class="prk_location_tile" style="background-position: '+xoff+'px '+yoff+'px; margin: '+m+'px;"></div>'
+            let id = this.location+'_tile';
+            if (tag != null) {
+                id += '_'+tag;
+            }
+            const html = '<div id="'+id+'" class="prk_location_tile" style="background-position: '+xoff+'px '+yoff+'px; margin: '+m+'px;"></div>'
             return html;
         },
 
@@ -238,6 +243,24 @@ define(["dojo/_base/declare"], function (declare) {
                desc = bonusstr;
             }
             return desc;
+        },
+
+        /**
+         * Get all military counters assigned to the battle zones on one side of a Location Tile.
+         * @param {string} side attacker or defender
+         * @returns array of counters on the given side of the location tile
+         */
+        getUnits: function(side) {
+            units = [];
+            const parent = $(this.location+'_tile').parentNode.parentNode;
+            const battlezones = parent.getElementsByClassName("prk_battle");
+            [...battlezones].forEach(z => {
+                if (z.dataset.side == side) {
+                    counters = z.getElementsByClassName("prk_military");
+                    units = [...units, ...counters];
+                }
+            });
+            return units;
         },
 
         /**

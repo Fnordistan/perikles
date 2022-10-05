@@ -915,7 +915,7 @@ function (dojo, declare) {
                     let mil_html = counter.toRelativeDiv("inline-block");
                     commit_str = commit_str.replace('${unit}', mil_html);
                     const tile = new perikles.locationtile(selected.location);
-                    let loc_html = tile.createTile();
+                    let loc_html = tile.createTile(0, "commit_"+counter.getId());
                     loc_html = this.decorator.prependStyle(loc_html, 'display: inline-block');
                     commit_str = commit_str.replace('${location}', loc_html);
 
@@ -2436,7 +2436,7 @@ function (dojo, declare) {
             this.commitDlg.setMaxWidth( 720 );
             const html = '<div id="CommitDialogDiv" style="display: flex; flex-direction: column; top: 50px;">\
                             <div style="display: flex; flex-direction: row; align-items: center;">'
-                            +unitc + this.createLocationTileIcons(city)+
+                            +unitc + this.createLocationTileIcons(city, unit)+
                             '</div>\
                             <div id="commit_text" style="margin: 2px; padding: 2px; text-align: center; color: #fff; background-color: #4992D2; display: none;"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
@@ -2460,8 +2460,13 @@ function (dojo, declare) {
                     let location = dlg.getAttribute("data-location");
                     let sendto = dlg.getAttribute("data-side");
                     if (location && sendto) {
-                        this.onSendUnit(id, city, unit, strength, sendto, location);
-                        this.commitDlg.destroy();
+                        const errmsg = this.checkEligibleToSend(city, unit, sendto, location);
+                        if (errmsg == null) {
+                            this.onSendUnit(id, city, unit, strength, sendto, location);
+                            this.commitDlg.destroy();
+                        } else {
+                            banner_txt = '<span style="color: white; font-size: larger; font-weight: bold;">'+errmsg+'</span>';
+                        }
                     } else {
                         banner_txt = '<span style="color: white; font-size: larger; font-weight: bold;">'+_("You must select a location")+'</span>';
                     }
@@ -2485,7 +2490,38 @@ function (dojo, declare) {
         },
 
         /**
-         * Check whether player can attack a city
+         * Check whether this unit can be sent to the given location. Does some pre-checks before we check on the server side.
+         * @param {string} city 
+         * @param {string} unit HOPLITE or TRIREME
+         * @param {string} side attacker or defender
+         * @param {string} location to send to
+         * @returns null if it's okay to send, otherwise an error message to display
+         */
+        checkEligibleToSend: function(city, unit, side, location) {
+            const tile = new perikles.locationtile(location);
+            // are we sending a trireme to a land battle?
+            if (unit == TRIREME && tile.getRounds() == "H") {
+                return _("Trireme cannot be sent to a Hoplites-only battle!");
+            }
+            // are any units of my cities on the other side?
+            const other = (side == "attack") ? "defender" : "attacker";
+            const opposing = tile.getUnits(other);
+            for (let c of opposing) {
+                const opposing_city = c.id.split("_")[0];
+                if (opposing_city == "persia") {
+                    if (this.isPersianLeader(this.player_id)) {
+                        return _("Units from the same city cannot fight on opposite sides!");
+                    }
+                } else if (this.isLeader(this.player_id, opposing_city)) {
+                    return _("Cities under your control cannot fight on opposite sides of the same battle!");
+                }
+            }
+            return null;
+        },
+
+        /**
+         * Check whether player can attack a city, only based on whether they are the leader.
+         * Doesn't do other checks, like allied status.
          * @param {string} city 
          * @returns true if it's okay to attack
          */
@@ -2649,9 +2685,10 @@ function (dojo, declare) {
         /**
          * Create the div containing all the location tiles that go in a Commit Forces dialog.
          * @param unit_city city the unit is from
+         * @param unit_type TRIREME or HOPLITE
          * @returns html
          */
-        createLocationTileIcons: function(unit_city) {
+        createLocationTileIcons: function(unit_city, unit_type) {
             let loc_html = '<div style="display: flex; flex-direction: column; margin: 10px;">';
             const location_tiles = $('location_area').getElementsByClassName("prk_location_tile");
             [...location_tiles].forEach(loc => {
@@ -2660,14 +2697,18 @@ function (dojo, declare) {
                 const tile = new perikles.locationtile(battle);
                 // can't attack own city
                 const battle_city = tile.getCity();
-                if (unit_city != battle_city && this.canAttack(battle_city)) {
+                if (unit_city != battle_city && this.canAttack(battle_city) && this.checkEligibleToSend(unit_city, unit_type, "attack", battle) == null) {
                     loc_html += '<div id="attack_'+battle+'" class="prk_battle_icon prk_sword"></div>';
                 } else {
                     loc_html += '<div class="prk_blank_icon"></div>';
                 }
                 const loc_tile = tile.createTile(1);
                 loc_html += loc_tile;
-                loc_html += '<div id="defend_'+battle+'" class="prk_battle_icon prk_shield"></div>';
+                if (this.checkEligibleToSend(unit_city, unit_type, "defend", battle) == null) {
+                    loc_html += '<div id="defend_'+battle+'" class="prk_battle_icon prk_shield"></div>';
+                } else {
+                    loc_html += '<div class="prk_blank_icon"></div>';
+                }
                 loc_html += '</div>';
             });
             loc_html += '</div>';
