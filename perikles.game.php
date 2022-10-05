@@ -1905,7 +1905,7 @@ class Perikles extends Table
 
         // are we sending a trireme to a land battle?
         if ($this->Locations->isLandBattle($location) && $counter['type'] == TRIREME) {
-            throw new BgaUserException(sprintf(self::_("%s cannot be sent to a land battle"), $unit_desc));
+            throw new BgaUserException(sprintf(self::_("%s cannot be sent to a Hoplites-only battle"), $unit_desc));
         }
         // passed all checks. Declare war with all defenders.
         foreach($defenders as $def) {
@@ -1922,7 +1922,10 @@ class Perikles extends Table
      */
     private function validateDefender($player_id, $counter, $unit_desc) {
         if ($counter['location'] != $player_id) {
-            throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
+            // is this a Persian?
+            if (!($counter['location'] == CONTROLLED_PERSIANS && $this->Cities->isLeader($player_id, PERSIA))) {
+                throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
+            }
         }
 
         $location = $counter['battle'];
