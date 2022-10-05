@@ -27,7 +27,7 @@ const INFLUENCE_PILE = "influence_slot_0";
 
 const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 
-const PLAYER_INF_MARGIN = "2px";
+const PREF_AUTO_PASS = 100;
 
 // permission buttons get displayed here
 const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveTile', 'battle', 'rollcombat', 'specialBattleTile', 'takeLoss'];
@@ -112,6 +112,12 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
+            // for player to specify options for play/pass special tiles
+            this.setupPlayerOptions(gamedatas.specialtiles[this.player_id]);
+            if (!this.isReadOnly()) {
+                this.setupPreference();
+            }
+
             // // this.currentState = gamedatas.gamestate.name;
             // dojo.connect(this.notifqueue, 'addToLog', () => {
             //     this.addLogClass();
@@ -145,6 +151,69 @@ function (dojo, declare) {
         //     }
         //   },
 
+        /**
+         * Allow setting autopass for Special Tile  if it hasn't been used yet.
+         * @param {Object} myspecialtile
+         */
+        setupPlayerOptions: function(myspecialtile) {
+            const panel = $('player_options');
+            if (myspecialtile['used']) {
+                panel.style["display"] = "none";
+            } else {
+                const pass_pref = this.prefs[PREF_AUTO_PASS].value;
+
+                const check = $("autopass_special");
+                if (pass_pref == 1) {
+                    check.setAttribute("checked", "checked");
+                }
+                dojo.connect(check, 'onchange', this, 'changePreference');
+            }
+        },
+
+        /**
+         * Initialize preference values.
+         */
+         setupPreference: function() {
+            // set preference for autoplay
+            this.onPreferenceChanged(PREF_AUTO_PASS, this.prefs[PREF_AUTO_PASS].value);
+
+            dojo.query('.preference_control').on('change', (e) => {
+                const match = e.target.id.match(/^preference_control_(\d+)$/);
+                if (match) {
+                    const pref = match[1];
+                    if (pref == PREF_AUTO_PASS) {
+                        const newValue = e.target.value;
+                        this.prefs[pref].value = newValue;
+                        this.onPreferenceChanged(pref, newValue);
+                    }
+                }
+            });
+        },
+
+        /**
+         * Called by clicking preference checkboxes, sets player pref.
+         * @param {Object} check
+         */
+         changePreference: function(check) {
+            const newpref = check.target.checked ? 1 : 0;
+            this.setPreferenceValue(PREF_AUTO_PASS, newpref);
+        },
+
+        /*
+        * Preference polyfill. Called by both checkbox and the player preference menu.
+        */
+        setPreferenceValue: function(number, newValue) {
+            var optionSel = 'option[value="' + newValue + '"]';
+            dojo.query('#preference_control_' + number + ' > ' + optionSel + ', #preference_fontrol_' + number + ' > ' + optionSel).attr('selected', true);
+            var select = $('preference_control_' + number);
+            if (dojo.isIE) {
+                select.fireEvent('onchange');
+            } else {
+                var event = document.createEvent('HTMLEvents');
+                event.initEvent('change', false, true);
+                select.dispatchEvent(event);
+            }
+        },
 
         /**
          * Set up special tiles
@@ -235,7 +304,7 @@ function (dojo, declare) {
             const city = tile['city'];
             const xoff = -1 * INFLUENCE_COL[tile['type']] * INFLUENCE_SCALE * this.influence_w;
             const yoff = -1 * INFLUENCE_ROW[city] * INFLUENCE_SCALE * this.influence_h;
-            const card_div = this.format_block('jstpl_influence_tile', {id: id, city: city, x: xoff, y: yoff, margin: PLAYER_INF_MARGIN});
+            const card_div = this.format_block('jstpl_influence_tile', {id: id, city: city, x: xoff, y: yoff});
             return card_div;
         },
 
@@ -2895,8 +2964,31 @@ function (dojo, declare) {
             }
         },
 
+        /**
+         * Do not send preference changes if any of these pertain.
+         * @returns true if we're replaying or not active player
+         */
+         isReadOnly: function() {
+            return this.isSpectator || typeof g_replayFrom != 'undefined' || g_archive_mode;
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
+
+        /**
+         * Connected to player preference action
+         * @param {string} pref 
+         * @param {int} isEnabled 
+         */
+         onPreferenceChanged: function(pref, isEnabled) {
+            if (pref == PREF_AUTO_PASS && !this.isReadOnly()) {
+                this.ajaxcall( "/perikles/perikles/actChangePref.html", { 
+                    pref: PREF_AUTO_PASS,
+                    value: isEnabled
+                }, this, function( result ) {  }, function( is_error) { } );
+                $('autopass_special').checked = (isEnabled == 1);
+            }
+        },
         
         /**
          * Action to take an Influence card.

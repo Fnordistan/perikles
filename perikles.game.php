@@ -27,6 +27,9 @@ require_once( 'modules/PeriklesDeadpool.class.php' );
 
 //  MARTIN WALLACE'S ERRATA ON BGG: https://boardgamegeek.com/thread/1109420/collection-all-martin-wallace-errata-clarification
 
+// player preferences
+define("AUTOPASS", 100);
+
 define("INFLUENCE", "influence");
 define("CANDIDATE", "candidate");
 define("ASSASSIN", "assassin");
@@ -170,8 +173,7 @@ class Perikles extends Table
         // Create players
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
         $values = array();
-        foreach( $players as $player_id => $player )
-        {
+        foreach( $players as $player_id => $player ) {
             $color = array_shift( $default_colors );
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
             foreach($this->Cities->cities() as $cn) {
@@ -182,6 +184,10 @@ class Perikles extends Table
             foreach($player_stats as $stat) {
                 self::initStat( 'player', $stat, 0, $player_id);
             }
+
+            // get autopass pref
+            $autopass = $this->player_preferences[$player_id][AUTOPASS] ?? 0;
+            self::DbQuery("UPDATE player SET special_tile_pass=$autopass WHERE player_id=$player_id");
         }
         self::initStat('table', 'turns_number', 0);
         self::initStat('table', 'unclaimed_tiles', 0);
@@ -400,6 +406,16 @@ class Perikles extends Table
     function getStateName() {
         $state = $this->gamestate->state();
         return $state['name'];
+    }
+
+    /**
+     * Has this player say autopass to true?
+     * @param {string} player_id
+     * @return {bool} true if player_id will pass during Special Tile phase
+     */
+    function isAutopass($player_id) {
+        $pass = $this->getUniqueValueFromDB("SELECT special_tile_pass FROM player WHERE player_id=$player_id");
+        return ($pass == 1);
     }
 
     /**
@@ -1270,6 +1286,19 @@ class Perikles extends Table
 //////////// 
 
     /**
+     * When players change player prefs.
+     * @param {pref} preference option
+     * @param {value} 1 or 0
+     */
+    function changePreference($pref, $value) {
+        if ($pref == AUTOPASS) {
+            $player_id = self::getCurrentPlayerId();
+            self::DbQuery("UPDATE player SET special_tile_pass=$value WHERE player_id=$player_id");
+            self::notifyPlayer( $player_id, "preferenceChanged", "", array() );
+        }
+    }
+
+    /**
      * A player clicked pass on a Special Tile Button.
      * Zombie can provide player id.
      * @param {string} player_id (optional)
@@ -1602,7 +1631,9 @@ class Perikles extends Table
         if ($this->getGameStateValue(INFLUENCE_PHASE) == 0) {
             $state = "nextPlayerInitial";
         } elseif ($this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE)) {
-            $state = "useSpecial";
+            if (!$this->isAutopass($player_id)) {
+                $state = "useSpecial";
+            }
         }
         $this->gamestate->nextState($state);
     }
@@ -1655,7 +1686,7 @@ class Perikles extends Table
             'candidate' => $c,
             'preserve' => ['player_id', 'candidate_id', 'city'],
         ) );
-        $canusespecial = ($this->getGameStateValue(INFLUENCE_PHASE) == 1) && $this->SpecialTiles->canPlaySpecial($actingplayer, INFLUENCE_PHASE);
+        $canusespecial = ($this->getGameStateValue(INFLUENCE_PHASE) == 1) && $this->SpecialTiles->canPlaySpecial($actingplayer, INFLUENCE_PHASE) && !$this->isAutopass($actingplayer);
         $state = $canusespecial ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
@@ -1739,7 +1770,8 @@ class Perikles extends Table
                 'preserve' => ['player_id', 'candidate_id', 'city']
             ));
         }
-        $state = $this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE) ? "useSpecial" : "nextPlayer";
+        $usespecial = $this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE) && !$this->isAutopass($player_id);
+        $state = $usespecial ? "useSpecial" : "nextPlayer";
 
         $this->gamestate->nextState($state);
     }
@@ -1759,7 +1791,7 @@ class Perikles extends Table
             $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
         $state = "nextPlayer";
-        if ($this->SpecialTiles->canPlaySpecial($player_id, COMMIT_PHASE)) {
+        if ($this->SpecialTiles->canPlaySpecial($player_id, COMMIT_PHASE) && !$this->isAutopass($player_id)) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -2184,7 +2216,9 @@ class Perikles extends Table
             foreach ($specialplayers as $pid) {
                 $special = $this->SpecialTiles->getSpecialTile($pid);
                 if ($this->Battles->mayUseBattleSpecial($special)) {
-                    $specialtileplayers[] = $pid;
+                    if (!$this->isAutopass($pid)) {
+                        $specialtileplayers[] = $pid;
+                    }
                 }
             }
         }
@@ -2691,7 +2725,7 @@ class Perikles extends Table
             $state = "assassinate";
         } else if ($type == 'candidate') {
             $state = "candidate";
-        } else if ($this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE)) {
+        } else if ($this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE) && !$this->isAutopass($player_id)) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState( $state );

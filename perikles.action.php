@@ -197,4 +197,16 @@ class action_perikles extends APP_GameAction
       $this->game->giveDefendPermission($location, $defender, $bDefend);
       self::ajaxResponse( );
     }
+
+    /**
+     * Player changes player preferences.
+     */
+    public function actChangePref() {
+      self::setAjaxMode();
+      $pref = self::getArg('pref', AT_posint, true);
+      $value = self::getArg('value', AT_posint, true);
+      $this->game->changePreference($pref, $value);
+      self::ajaxResponse();
+    }    
+
 }

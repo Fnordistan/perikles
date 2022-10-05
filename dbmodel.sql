@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS `WARS` (
 -- custom entries to player table
 ALTER TABLE `player` ADD `special_tile` varchar(18) NOT NULL COMMENT 'label for Special Tile';
 ALTER TABLE `player` ADD `special_tile_used` BOOLEAN NOT NULL DEFAULT 0;
+ALTER TABLE `player` ADD `special_tile_pass` BOOLEAN NOT NULL DEFAULT 0;
 ALTER TABLE `player` ADD `argos` TINYINT UNSIGNED NOT NULL DEFAULT 0;
 ALTER TABLE `player` ADD `athens` TINYINT UNSIGNED NOT NULL DEFAULT 0;
 ALTER TABLE `player` ADD `corinth` TINYINT UNSIGNED NOT NULL DEFAULT 0;

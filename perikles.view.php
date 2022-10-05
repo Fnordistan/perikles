@@ -37,6 +37,8 @@ class view_perikles_perikles extends game_view
       $this->tpl['PERSIA_Y'] = 888;
       $this->tpl['DEADPOOL'] = self::_("Dead Pool");
       $this->tpl['MILITARY'] = self::_("My Military Units");
+      $this->tpl['PLAYER_OPTIONS'] = self::_("Player Options");
+      $this->tpl['AUTOPASS'] = self::_("Special Tile: Automatically pass");
 
       // Get players & players number
         $players = $this->game->loadPlayersBasicInfos();

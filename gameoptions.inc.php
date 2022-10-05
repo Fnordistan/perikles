@@ -56,3 +56,14 @@ $game_options = array(
 );
 
 
+$game_preferences = array(
+    100 => array(
+        'name' => totranslate('Automatically pass during Special Tile phase (do not use Special Tile)'),
+        'needReload' => false,
+        'values' => array(
+            1 => array( 'name' => totranslate( "Yes" )),
+            0 => array( 'name' => totranslate( "No" )),
+        ),
+        'default' => 0
+    )
+);

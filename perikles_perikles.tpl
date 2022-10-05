@@ -67,6 +67,14 @@
             <div id="crt_{COL}" class="prk_crt" style="top: {CRTY}px; left: {CRTX}px;"></div>
         <!-- END CRT_BLOCK -->
     </div>
+    <div id="player_options">
+        <h2>{PLAYER_OPTIONS}</h2>
+        <label>{AUTOPASS}
+            <input id="autopass_special" type="checkbox">
+            <span class="checkmark"></span>
+        </label>
+          
+    </div>
     <div id="deadpool">
         <h2 class="prk_hdr">{DEADPOOL}</h2>
         <div id="deadpool_ctnr"></div>
@@ -77,7 +85,7 @@
 
 // Javascript HTML templates
 
-const jstpl_influence_tile = '<div id="${city}_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; margin: ${margin}; outline: 2px groove var(--color_${city});"></div>';
+const jstpl_influence_tile = '<div id="${city}_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; margin: 2px; outline: 2px groove var(--color_${city});"></div>';
 
 const jstpl_influence_back = '<div id="cardback_${id}" class="prk_influence_tile" style="background-position: ${x}px ${y}px; position: absolute; margin: -${m}px ${m}px; outline: 1px gray ridge;"></div>';
 

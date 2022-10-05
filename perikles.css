@@ -1005,3 +1005,17 @@
     padding: 2px;
     border: 2px solid black;
 }
+
+#player_options {
+    position: absolute;
+    left: var(--map_w);
+    top: 0px;
+    margin: 2px;
+    padding: 5px;
+    font-family: 'ThrumsSerifRegular';
+}
+
+#player_options > h2 {
+    font-family: 'Bodoni Moda';
+    font-size: 2em;
+}
