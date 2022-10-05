@@ -178,10 +178,13 @@ class Perikles extends Table
                 $statues = $cn."_statues";
                 self::initStat( 'player', $statues, 0, $player_id);
             }
-            self::initStat( 'player', "persian_leader", 0, $player_id);
-            self::initStat( 'player', "victory_tiles", 0, $player_id);
+            $player_stats = array("persian_leader", "victory_tiles", "victory_tile_points", "statue_points", "cube_points", "battles_won_attacker", "battles_won_defender","battles_lost_attacker", "battles_lost_defender");
+            foreach($player_stats as $stat) {
+                self::initStat( 'player', $stat, 0, $player_id);
+            }
         }
         self::initStat('table', 'turns_number', 0);
+        self::initStat('table', 'unclaimed_tiles', 0);
 
         $sql .= implode(',', $values );
         self::DbQuery( $sql );
@@ -569,6 +572,7 @@ class Perikles extends Table
      * @param {string} id
      */
     function unclaimedTile($tile) {
+        self::incStat(1, 'unclaimed_tile');
         $this->moveTile($tile, UNCLAIMED);
     }
 
@@ -2211,6 +2215,8 @@ class Perikles extends Table
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
             ));
+            self::incStat(1, "battles_won_attacker", $attacker);
+            self::incStat(1, "battles_loser_defender", $defender);
         } elseif ($loser == ATTACKER) {
             $winner = $defender;
             self::notifyAllPlayers("defenderWins", clienttranslate('${icon} Defender (${city_name}) defeats attackers at ${location_name}'), array(
@@ -2222,6 +2228,8 @@ class Perikles extends Table
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
             ));
+            self::incStat(1, "battles_lost_attacker", $attacker);
+            self::incStat(1, "battles_won_defender", $defender);
         } else {
             throw new BgaVisibleSystemException("No winner found at end of battle for tile $location"); // NOI18N
         }
@@ -3048,6 +3056,7 @@ class Perikles extends Table
             // basic player_score_aux is points in location tiles (current VPs)
             $currentscore = $this->getVPs($player_id);
             $this->addAuxVPs($player_id, $currentscore*100 );
+            self::incStat($currentscore, "victory_tile_points", $player_id);
 
             $player_row[] = array(
                 'str' => '${player_name}',
@@ -3068,6 +3077,7 @@ class Perikles extends Table
                     $statue_vps += $total;
                     $this->addVPs($player_id, $total);
                     $this->addAuxVPs($player_id, $statues);
+                    self::incStat($total, "statue_points", $player_id);
 
                     self::notifyAllPlayers("scoreStatues", clienttranslate('${player_name} scores ${total} points for ${statues} statues in ${city_name}'), array(
                         'i18n' => ['city_name'],
@@ -3095,6 +3105,7 @@ class Perikles extends Table
                         'preserve' => ['player_id', 'city']
                     ));
                     $this->addVPs($player_id, $cubes);
+                    self::incStat($cubes, "cube_points", $player_id);
                 }
             }
             $vp_statues_row[] = $statue_vps;

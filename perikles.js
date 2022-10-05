@@ -893,7 +893,7 @@ function (dojo, declare) {
         diceIcon: function(val, side) {
             const roll = toint(val);
             const xoff = -33 * (roll-1);
-            let die_icon = this.format_block('jstpl_die', {x: xoff, side: side});
+            const die_icon = this.format_block('jstpl_die', {x: xoff, side: side});
             return die_icon;
         },
 

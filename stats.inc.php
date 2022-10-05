@@ -52,10 +52,16 @@ $stats_type = array(
     // Statistics global to table
     "table" => array(
 
-        "turns_number" => array("id"=> 10,
-                    "name" => totranslate("Number of turns"),
-                    "type" => "int" ),
-
+        "turns_number" => array(
+            "id"=> 10,
+            "name" => totranslate("Number of turns"),
+            "type" => "int"
+        ),
+        "unclaimed_tiles" => array(
+            "id"=> 11,
+            "name" => totranslate("Unclaimed Tiles"),
+            "type" => "int"
+        ),
     ),
     
     // Statistics existing for each player
@@ -97,11 +103,46 @@ $stats_type = array(
         ),
         "victory_tiles" => array(
             "id"=> 17,
-            "name" => totranslate("Victory Tiles"),
+            "name" => totranslate("Claimed Location Tiles"),
+            "type" => "int"
+        ),
+        "victory_tile_points" => array(
+            "id"=> 18,
+            "name" => totranslate("VPs from Location Tiles"),
+            "type" => "int"
+        ),
+        "statue_points" => array(
+            "id"=> 19,
+            "name" => totranslate("VPs from Statues"),
+            "type" => "int"
+        ),
+        "cube_points" => array(
+            "id"=> 20,
+            "name" => totranslate("VPs from Cubes"),
+            "type" => "int"
+        ),
+        "battles_won_attacker" => array(
+            "id"=> 21,
+            "name" => totranslate("Battles won (as Main Attacker)"),
+            "type" => "int"
+        ),
+        "battles_won_defender" => array(
+            "id"=> 22,
+            "name" => totranslate("Battles won (as Main Defender)"),
+            "type" => "int"
+        ),
+        "battles_lost_attacker" => array(
+            "id"=> 23,
+            "name" => totranslate("Battles lost (as Main Attacker)"),
+            "type" => "int"
+        ),
+        "battles_lost_defender" => array(
+            "id"=> 24,
+            "name" => totranslate("Battles lost (as Main Defender)"),
             "type" => "int"
         ),
         "special_tile" => array(
-            "id"=> 18,
+            "id"=> 25,
             "name" => totranslate("Special Tile"),
             "type" => "int"
         ),
