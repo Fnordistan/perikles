@@ -149,7 +149,7 @@ $stats_type = array(
     ),
 
     "value_labels" => array(
-		18 => array( 
+		25 => array( 
 			0 => totranslate("Perikles"),
 			1 => totranslate("Persian Fleet"), 
 			2 => totranslate("Slave Revolt"), 

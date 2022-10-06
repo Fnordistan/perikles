@@ -1017,7 +1017,7 @@
     min-height: fit-content;
     margin: 5px;
     border: 3px ridge #1E131B;
-    background-color: lightgrey;
+    background-color: #eee;
     max-width: var(--map_w);
     overflow: auto;
     display: none;

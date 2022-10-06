@@ -3026,7 +3026,8 @@ function (dojo, declare) {
             if (pref == PREF_AUTO_PASS && !this.isReadOnly()) {
                 this.ajaxcall( "/perikles/perikles/actChangePref.html", { 
                     pref: PREF_AUTO_PASS,
-                    value: isEnabled
+                    value: isEnabled,
+                    lock: true,
                 }, this, function( result ) {  }, function( is_error) { } );
                 $('autopass_special').checked = (isEnabled == 1);
             }
