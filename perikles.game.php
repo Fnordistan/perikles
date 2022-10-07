@@ -2156,7 +2156,6 @@ class Perikles extends Table
         } elseif ($defhit && !$atthit) {
             $winner = DEFENDER;
         }
-        // $this->logDebug("Attacker hit=$atthit, Defenderhit=$defhit, winner=$winner");
         return $winner;
     }
 
@@ -3089,6 +3088,7 @@ class Perikles extends Table
         $vp_cubes_row = array(clienttranslate("VPs from Influence cubes"));
         $vp_total_row = array(clienttranslate("Total VPs"));
 
+        $scoring_inc = 0;
         foreach(array_keys($players) as $player_id) {
             // basic player_score_aux is points in location tiles (current VPs)
             $currentscore = $this->getVPs($player_id);
@@ -3124,9 +3124,11 @@ class Perikles extends Table
                         'city_name' => $this->Cities->getNameTr($city),
                         'total' => $total,
                         'vp' => $vp, // per statue
+                        'scoring_delay' => $scoring_inc,
                         'statues' => $statues,
                         'preserve' => ['player_id', 'city']
                     ));
+                    $scoring_inc += $statues;
                 }
                 // 1 point per cube
                 $cubes = $this->Cities->cubesInCity($player_id, $city);
@@ -3139,8 +3141,10 @@ class Perikles extends Table
                         'city' => $city,
                         'city_name' => $this->Cities->getNameTr($city),
                         'vp' => $cubes,
+                        'scoring_delay' => $scoring_inc,
                         'preserve' => ['player_id', 'city']
                     ));
+                    $scoring_inc++;
                     $this->addVPs($player_id, $cubes);
                     self::incStat($cubes, "cube_points", $player_id);
                 }
@@ -3168,18 +3172,19 @@ class Perikles extends Table
             foreach($winners as $winner) {
                 $winner_names[] = $players[$winner]['player_name'];
             }
-            $and = clienttranslate("and");
-            $winner_name = implode($and, $winner_names);
+            $winner_name = implode(',', $winner_names);
         } else {
-            $winner_name = $players[$winners[0]]['player_name'];
+            $winner = $winners[0];
+            $winner_name = $players[$winner]['player_name'];
         }
 
         $winnerstring = clienttranslate('Congratulations ${winner_name}! You are master of the Peloponnese!');
         self::notifyAllPlayers( "tableWindow", '', array(
             'id' => 'finalScoring',
-            'title' => clienttranslate("Game Over"),
+            'title' => clienttranslate("The Peloponnesian War has ended!"),
             'header' => array('str' => $winnerstring, 'args' => array('winner_name' => $winner_name)),
             'table' => $score_table,
+            'closing' => clienttranslate("Game Over")
         ) );
 
         // Score statues
@@ -3197,6 +3202,7 @@ class Perikles extends Table
         foreach(array_keys($players) as $player_id) {
             $vp = $this->getVPs($player_id);
             if ($vp > $max) {
+                $max = $vp;
                 $winners = [$player_id];
             } elseif ($vp == $max) {
                 $winners[] = $player_id;
@@ -3205,8 +3211,9 @@ class Perikles extends Table
         if (count($winners) > 1) {
             $max = -1;
             foreach($winners as $tied) {
-                $aux = $this->getAuxVps($tied);
+                $aux = $this->getAuxVPs($tied);
                 if ($aux > $max) {
+                    $max = $aux;
                     $winners = [$tied];
                 } elseif ($aux == $max) {
                     $winners[] = $tied;

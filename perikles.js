@@ -29,6 +29,8 @@ const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 
 const PREF_AUTO_PASS = 100;
 
+const SCORING_ANIMATION = 2000;
+
 // permission buttons get displayed here
 const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveTile', 'battle', 'rollcombat', 'specialBattleTile', 'takeLoss'];
 
@@ -830,7 +832,7 @@ function (dojo, declare) {
                             // here it's displaying in the titlebar units to be chosen
                             log += '<br>';
                             for (const [id, unit] of Object.entries(args.deadpool)) {
-                                const counter = new perikles.counter(unit.city, unit.type, unit.strength, "deadpool");
+                                const counter = new perikles.counter(unit.city, unit.type, unit.strength, "deadpool_select");
                                 const mil_div = counter.toRelativeDiv("inline-block");
                                 log += mil_div;
                             }
@@ -843,7 +845,7 @@ function (dojo, declare) {
                         const cities = args.cities;
                         log += '<br/>';
                         for (let c of cities) {
-                            counter = new perikles.counter(c, type, strength, "casualty");
+                            counter = new perikles.counter(c, type, strength, "casualty_select");
                             let mil_html = counter.toRelativeDiv("inline-block");
                             log += mil_html;
                         }
@@ -1040,8 +1042,9 @@ function (dojo, declare) {
             const city_mil = city+'_military_'+id;
             if (!document.getElementById(city_mil)) {
                 const mil_div = this.format_block('jstpl_military_area', {city: city, id: id, cityname: this.getCityNameTr(city)});
-                const zone = (id == DEAD_POOL) ? 'deadpool_ctnr' : 'mymilitary';
-                dojo.place(mil_div, $(zone));
+                const zone_id = (id == DEAD_POOL) ? 'deadpool_ctnr' : 'mymilitary';
+                const zone = $(zone_id);
+                dojo.place(mil_div, zone);
             }
             return city_mil;
         },
@@ -1098,7 +1101,7 @@ function (dojo, declare) {
          */
         clearDeadpool: function() {
             // hide dead pool if no more units
-            const deadunits = ($(DEAD_POOL)).getElementsByClassName("prk_military");
+            const deadunits = $(DEAD_POOL).getElementsByClassName("prk_military");
             $(DEAD_POOL).style['display'] = (deadunits.length == 0) ? 'none' : 'block';
 
             if (deadunits.length > 0) {
@@ -1135,11 +1138,11 @@ function (dojo, declare) {
             // move from city to battle
             const battlepos = "battle_"+slot+"_"+counter.getType()+"_"+counter.getBattlePosition();
             const stackct = $(battlepos).childElementCount;
-            let newId = counter.getId();
-            if (newId == 0) {
-                newId = stackct;
+            const id = counter.getId();
+            // for facedown counters
+            if (id == 0) {
+                counter.setId(stackct+"_"+counter.getLocation());
             }
-            counter.setId(newId+"_"+counter.getLocation());
             const counter_html = counter.toBattleDiv(stackct);
             const milzone = $(counter.getCity()+"_military");
             const counterObj = dojo.place(counter_html, milzone);
@@ -1756,7 +1759,7 @@ function (dojo, declare) {
             this.setDescriptionOnMyTurn(msg, {'casualty': true, 'type': type, 'strength': strength, 'cities': cities});
             // add listeners to the buttons
             for (let c of cities ) {
-                const id = c+'_'+type+'_'+strength+'_casualty';
+                const id = [c, type, strength, 'casualty_select'].join("_");
                 const button = $(id);
                 button.dataset.casualty = "true";
                 button.addEventListener('click', () => {
@@ -1797,7 +1800,7 @@ function (dojo, declare) {
             // add listeners to the buttons
             Object.keys(deadpoolunits).forEach(u => {
                 const unit = deadpoolunits[u];
-                const id = unit['city']+"_"+unit['type']+"_"+unit['strength']+"_deadpool";
+                const id = [unit['city'], unit['type'], unit['strength'], "deadpool_select"].join("_");
                 const button = $(id);
                 button.dataset.deadpool = "button";
                 button.addEventListener('click', () => {
@@ -3714,7 +3717,7 @@ function (dojo, declare) {
             const milzones = new Set();
             [...counters].forEach(c => {
                 const counter_name = c.id;
-                const [city, unit, strength, id, _] = counter_name.split('_');
+                const [city, unit, strength, id] = counter_name.split('_');
                 const city_military = city+"_military";
                 milzones.add(city_military);
                 this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
@@ -3814,19 +3817,20 @@ function (dojo, declare) {
             const city = notif.args.city;
             const type = notif.args.type;
             const strength = notif.args.strength;
-            const location = notif.args.location;
-            const counter_id = city+'_'+type+'_'+strength+'_'+id+'_'+location;
+            const counter_id = [city, type, strength, id].join("_");
+            const counter = $(counter_id);
             // Persians just go back to Persian stack
             if (city == "persia") {
-                this.slideToObjectAndDestroy($(counter_id), 'persia_military', 1000, 1500);
+                this.slideToObjectAndDestroy(counter, 'persia_military', 1000, 1500);
                 new perikles.counter(city, type, strength, id).addToStack();
                 this.stacks.sortStack("persia_military");
             } else {
                 this.createMilitaryArea(DEAD_POOL, city);
                 const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
-                this.slideToObjectAndDestroy($(counter_id), deadpoolloc, 1000, 1500);
+                // create the Hoplite/Trireme zone if not already there
+                this.slideToObjectAndDestroy(counter, deadpoolloc, 1000, 1500);
                 new perikles.counter(city, type, strength, id, DEAD_POOL).placeDeadpool();
-                // this.stacks.sortStack("deadpool");
+                this.stacks.sortStack([city, type, DEAD_POOL].join("_"));
             }
         },
 
@@ -3852,8 +3856,8 @@ function (dojo, declare) {
             const counter = notif.args.military;
             const location = notif.args.return_from;
             const sparta_player = notif.args.sparta_player;
-            const counter_id = "sparta_hoplite_"+counter['strength']+"_"+counter.id;
-            
+            const counter_id = ["sparta_hoplite", counter['strength'], counter.id].join("_");
+
             let hoplite = null;
             if (location == "sparta") {
                 // comes from player's pool
@@ -3865,12 +3869,12 @@ function (dojo, declare) {
                     const tempcounter = new perikles.counter('sparta', HOPLITE, counter["strength"], counter["id"]);
                     const counter_div = tempcounter.toDiv(0, 0);
                     hoplite = dojo.place(counter_div, $('overall_player_board_'+sparta_player));
-            }
+                }
             } else {
                 // comes from a battle tile
                 if (this.player_id == sparta_player) {
                     // get correct counter
-                    hoplite = $(counter_id+'_'+location);
+                    hoplite = $(counter_id);
                 } else {
                     // "flip" the top Hoplite counter
                     hoplite = $('sparta_hoplite_0_0_'+location);
@@ -3934,10 +3938,10 @@ function (dojo, declare) {
             const player_id = notif.args.player_id;
             const vp = toint(notif.args.vp);
             const city = notif.args.city;
-            const scoring_delay = 2000;
+            const scoring_delay = toint(notif.args.scoring_delay);
             const player_cubes = city+'_cubes_'+player_id;
             const player_color = this.gamedatas.players[player_id].color;
-            this.displayScoring( player_cubes, player_color, vp, scoring_delay );
+            this.displayScoring( player_cubes, player_color, vp, scoring_delay*SCORING_ANIMATION );
             this.scoreCtrl[ player_id ].incValue( vp );
         },
 
@@ -3950,11 +3954,11 @@ function (dojo, declare) {
             const vp = toint(notif.args.vp);
             const statues = toint(notif.args.statues);
             const city = notif.args.city;
-            const scoring_delay = 2000;
+            const scoring_delay = toint(notif.args.scoring_delay);
             const player_color = this.gamedatas.players[player_id].color;
             for (let s = 0; s < statues; s++) {
                 const statue_id = city+'_statue_'+s;
-                this.displayScoring( statue_id, player_color, vp, scoring_delay );
+                this.displayScoring( statue_id, player_color, vp, s*scoring_delay*SCORING_ANIMATION );
                 this.scoreCtrl[ player_id ].incValue( vp );
             }
         },

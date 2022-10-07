@@ -156,7 +156,7 @@ define(["dojo/_base/declare"], function (declare) {
         /**
          * Sort the military stack.
          * @param {string} zone
-         * @param {bool} stack (optional, default true) flase for deadpool sorting
+         * @param {bool} stack (optional, default true) false for deadpool sorting
          */
         sortStack: function(zone, isstack=true) {
             const stack = $(zone);

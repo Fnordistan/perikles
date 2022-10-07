@@ -80,11 +80,11 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Id used for div. city_type_strength_id
+         * Id used for div. Should always be: "city"_"type"_"strength"_"id"
          * @returns string
          */
         getCounterId: function() {
-            const counter_id = this.city+"_"+this.type+"_"+this.strength+"_"+this.id;
+            const counter_id = [this.city, this.type, this.strength, this.id].join("_");
             return counter_id;
         },
 
@@ -197,13 +197,12 @@ define(["dojo/_base/declare"], function (declare) {
             const location = this.getLocation();
             const slotid = $(location+"_tile").parentNode.id;
             const slot = slotid[slotid.length-1];
-            const place = "battle_"+slot+"_"+this.getType()+"_"+this.getBattlePosition();
+            const place = ["battle", slot, this.getType(), this.getBattlePosition()].join("_");
             const stackct = $(place).childElementCount;
             // zero ids for face-down units
             if (this.getStrength() == 0) {
-                this.setId(stackct);
+                this.setId(stackct+"_"+location);
             }
-            this.setId(this.getId()+"_"+location);
             const battlecounter = this.toBattleDiv(stackct);
             dojo.place(battlecounter, $(place));
         },
@@ -216,7 +215,7 @@ define(["dojo/_base/declare"], function (declare) {
         placeDeadpool: function() {
             $(DEAD_POOL).style['display'] = 'block';
             const counter_div = this.toRelativeDiv();
-            const deadpool_zone = this.city+'_'+this.type+'_'+DEAD_POOL;
+            const deadpool_zone = [this.city, this.type, DEAD_POOL].join("_");
             const unit = dojo.place(counter_div, $(deadpool_zone));
             unit.dataset.deadpool = "true";
         },

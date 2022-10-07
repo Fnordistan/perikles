@@ -103,7 +103,7 @@ $stats_type = array(
         ),
         "victory_tiles" => array(
             "id"=> 17,
-            "name" => totranslate("Claimed Location Tiles"),
+            "name" => totranslate("Location Tiles"),
             "type" => "int"
         ),
         "victory_tile_points" => array(
@@ -123,22 +123,22 @@ $stats_type = array(
         ),
         "battles_won_attacker" => array(
             "id"=> 21,
-            "name" => totranslate("Battles won (as Main Attacker)"),
+            "name" => totranslate("Battles won (Attacker)"),
             "type" => "int"
         ),
         "battles_won_defender" => array(
             "id"=> 22,
-            "name" => totranslate("Battles won (as Main Defender)"),
+            "name" => totranslate("Battles won (Defender)"),
             "type" => "int"
         ),
         "battles_lost_attacker" => array(
             "id"=> 23,
-            "name" => totranslate("Battles lost (as Main Attacker)"),
+            "name" => totranslate("Battles lost (Attacker)"),
             "type" => "int"
         ),
         "battles_lost_defender" => array(
             "id"=> 24,
-            "name" => totranslate("Battles lost (as Main Defender)"),
+            "name" => totranslate("Battles lost (Defender)"),
             "type" => "int"
         ),
         "special_tile" => array(
