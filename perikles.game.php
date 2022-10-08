@@ -703,7 +703,6 @@ class Perikles extends Table
      * First return all military.
      * Then move a tile either to a player board or unclaimed pile.
      * Does not send notification.
-     * Send notification.
      */
     function moveTile($tile, $destination) {
         $id = $tile['id'];
@@ -747,11 +746,18 @@ class Perikles extends Table
      */
     function returnMilitaryUnits($tile, $type=null) {
         $location = $tile['location'];
-        $this->Battles->returnCounters($location, $type);
+        $returned = $this->Battles->returnCounters($location, $type);
+        // need to send units who are in deadpool because of async
+        $ids = [];
+        foreach($returned as $r) {
+            $ids[] = $r['id'];
+        }
+
         self::notifyAllPlayers("returnMilitary", '', array(
             'location' => $location,
             'slot' => $tile['slot'],
             'type' => $type ?? "",
+            'ids' => $ids,
         ));
     }
 

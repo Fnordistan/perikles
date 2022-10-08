@@ -3709,6 +3709,8 @@ function (dojo, declare) {
             const slot = notif.args.slot;
             // if null, then return ALL units
             const type = notif.args.type;
+            // filter to make sure we don't asynchronously send units to deadpool and stacks
+            const ids = notif.args.ids;
             // remove the listeners
             const slot_div = $('battle_zone_'+slot);
             let stacks = Array.from(slot_div.getElementsByClassName("prk_battle"));
@@ -3722,15 +3724,19 @@ function (dojo, declare) {
             const counter_type = (type) ? "prk_"+type : "prk_military";
 
             const counters = slot_div.getElementsByClassName(counter_type);
-
             const milzones = new Set();
             [...counters].forEach(c => {
                 const counter_name = c.id;
                 const [city, unit, strength, id] = counter_name.split('_');
-                const city_military = city+"_military";
-                milzones.add(city_military);
-                this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
-                new perikles.counter(city, unit, strength, id).addToStack();
+                if (ids.includes(id)){
+                    const city_military = city+"_military";
+                    milzones.add(city_military);
+                    this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
+                    new perikles.counter(city, unit, strength, id).addToStack();
+                } else {
+                    // this is a counter sent to deadpool
+                    c.remove();
+                }
             });
             for (zone of milzones) {
                 this.sortStack(zone);
@@ -3835,11 +3841,11 @@ function (dojo, declare) {
                 this.stacks.sortStack("persia_military");
             } else {
                 this.createMilitaryArea(DEAD_POOL, city);
-                const deadpoolloc =  city+'_'+type+'_'+DEAD_POOL;
+                const deadpoolloc =  [city, type, DEAD_POOL].join("_");
                 // create the Hoplite/Trireme zone if not already there
                 this.slideToObjectAndDestroy(counter, deadpoolloc, 1000, 1500);
                 new perikles.counter(city, type, strength, id, DEAD_POOL).placeDeadpool();
-                this.stacks.sortStack([city, type, DEAD_POOL].join("_"));
+                this.stacks.sortStack([city, type, DEAD_POOL].join("_"), false);
             }
         },
 

@@ -288,7 +288,7 @@ class PeriklesBattles extends APP_GameClass
   }
 
   /**
-   * Return all counters from a locaton to their respective cities.
+   * Return all counters from a location to their respective cities.
    * Only does db changes, not clientside notifications.
    * @param {string} location
    * @param {string} (optional) type HOPLITE or TRIREME (all if null)
