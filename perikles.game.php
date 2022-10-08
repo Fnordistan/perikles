@@ -1526,12 +1526,15 @@ class Perikles extends Table
         $this->Battles->toLocation($id, "sparta");
 
         // this will flip the counter, and move it to Sparta
-        self::notifyAllPlayers("slaveRevolt", clienttranslate('Hoplite counter returned to Sparta from ${location_name}'), array(
+        self::notifyAllPlayers("slaveRevolt", clienttranslate('${icon} Hoplite-${strength} counter returned to Sparta from ${location_name}'), array(
             'i18n' => ['location_name'],
             'military' => $counter,
+            'strength' => $counter['strength'],
+            'icon' =>true,
             'return_from' => $revoltlocation, // may be sparta or a battle name, don't use location because of format-string recursive
             'location_name' => $location_name,
             'sparta_player' => $sparta_leader,
+            'preserve' => ['return_from'],
         ));
 
 

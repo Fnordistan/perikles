@@ -818,6 +818,13 @@ function (dojo, declare) {
                         args.atthit = args.atthit ? hit : miss;
                         args.defhit = args.defhit ? hit : miss;
                     }
+                    // for slave revolt, show Hoplite counter
+                    if (args.return_from && args.icon) {
+                        const strength = args.strength;
+                        counter = new perikles.counter("sparta", HOPLITE, strength, "slaverevolt_log");
+                        const mil_html = counter.toRelativeDiv("inline-block");
+                        args.icon = mil_html;
+                    }
                     // choose unit from deadpool
                     if (args.deadpool) {
                         // for log message showing unit was chosen
@@ -858,11 +865,13 @@ function (dojo, declare) {
                         const mil_html = counter.toRelativeDiv("inline-block");
                         args.icon = mil_html;
                     }
+                    // defeat counter
                     if (args.defeats && args.icon) {
                         const city = args.city;
                         const def_ctr = this.createDefeatCounter(city, args.defeats+'_log');
                         args.icon = def_ctr;
                     }
+                    // leader/statue counters
                     if (args.leader && args.icon) {
                         const leader = args.leader;
                         const player_id = args.player_id;
