@@ -24,4 +24,7 @@ $this->ordinals = array(
         2 => clienttranslate("second"),
         3 => clienttranslate("third"),
         4 => clienttranslate("fourth"),
+        5 => clienttranslate("fifth"),
+        6 => clienttranslate("sixth"),
+        7 => clienttranslate("seventh"),
 );
