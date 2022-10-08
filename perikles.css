@@ -939,6 +939,11 @@
     transform: rotate(45deg);
 }
 
+.prk_help {
+    font-size: 2em;
+    padding: 0.25em;
+}
+
 /* IDs for unique elements */
 
 #periklesboard {

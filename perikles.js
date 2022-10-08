@@ -169,7 +169,9 @@ function (dojo, declare) {
                     check.setAttribute("checked", "checked");
                 }
                 dojo.connect(check, 'onchange', this, 'changePreference');
-                this.addTooltip('autopass_help', _("If not checked, the game will pause whenever you are eligible to play your Special Tile. This might reveal information to other players about which Special Tile you have."), '');
+                const msg = _("If not checked, the game will pause whenever you are eligible to play your Special Tile. This might reveal information to other players about which Special Tile you have.");
+                const tthtml = '<span class="prk_help">'+msg+'</span>';
+                this.addTooltipHtml('autopass_help', tthtml, '');
             }
         },
 
@@ -2924,7 +2926,7 @@ function (dojo, declare) {
             dojo.place(neutral, $('perm_icons_row'));
             dojo.place(defender, $('perm_icons_row'));
 
-            const helphtml = '<span style="font-size: 2em; padding: 0.25em;">'+msg+'</span>';
+            const helphtml = '<span class="prk_help">'+msg+'</span>';
 
             this.addTooltipHtml('permissions_help', helphtml, '');
         },
