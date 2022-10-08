@@ -2251,8 +2251,12 @@ class Perikles extends Table
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
             ));
-            self::incStat(1, "battles_won_attacker", $attacker);
-            self::incStat(1, "battles_lost_defender", $defender);
+            if ($attacker != null) {
+                self::incStat(1, "battles_won_attacker", $attacker);
+            }
+            if ($defender != null) {
+                self::incStat(1, "battles_lost_defender", $defender);
+            }
         } elseif ($loser == ATTACKER) {
             $winner = $defender;
             self::notifyAllPlayers("defenderWins", clienttranslate('${icon} Defender (${city_name}) defeats attackers at ${location_name}'), array(
@@ -2264,12 +2268,26 @@ class Perikles extends Table
                 'location_name' => $location_name,
                 'preserve' => ['city', 'location'],
             ));
-            self::incStat(1, "battles_lost_attacker", $attacker);
-            self::incStat(1, "battles_won_defender", $defender);
+            if ($attacker != null) {
+                self::incStat(1, "battles_lost_attacker", $attacker);
+            }
+            if ($defender != null) {
+                self::incStat(1, "battles_won_defender", $defender);
+            }
         } else {
             throw new BgaVisibleSystemException("No winner found at end of battle for tile $location"); // NOI18N
         }
-        $this->claimTile($winner, $tile, ($loser == ATTACKER ? DEFENDER : ATTACKER));
+        if ($winner == null) {
+            // in the unusual case of defending militia beating an attacker
+            self::notifyAllPlayers('unclaimedTile', clienttranslate('Winner didn\'t send any units; no one claims the tile'), array(
+                'i18n' => ['location_name'],
+                'location' => $location,
+                'location_name' => $location_name,
+            ));
+            $this->unclaimedTile($tile);
+        } else {
+            $this->claimTile($winner, $tile, ($loser == ATTACKER ? DEFENDER : ATTACKER));
+        }
     }
 
     /**

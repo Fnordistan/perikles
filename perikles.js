@@ -1077,7 +1077,7 @@ function (dojo, declare) {
                 const city = counter.getCity();
                 const type = counter.getType();
                 this.createMilitaryArea(player_id, city);
-                const mil_zone = city+"_"+type+"_"+player_id;
+                const mil_zone = [city, type, player_id].join("_");
                 const onEnd = fromDeadpool ? this.deadpoolCleanup.bind(this) : null;
                 this.slideToObjectRelative(counterObj, $(mil_zone), 500, 500, onEnd, "last");
                 delete counterObj.dataset.deadpool;

@@ -456,8 +456,6 @@ class PeriklesCities extends APP_GameClass
     return $this->game->getGameStateValue($city."_leader");
   }
 
-
-
   /**
    * Get all cities controlled by a player.
    * @param player_id
