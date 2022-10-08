@@ -1049,6 +1049,15 @@
  margin-left: 4px;
 }
 
+#permissions_panel {
+    position: absolute;
+    left: var(--map_w);
+    top: 480px;
+    width: 600px;
+    height: 990px;
+    z-index: -1;
+}
+
 #defenders_permission_banner {
     position: absolute;
     left: var(--map_w);
@@ -1057,8 +1066,8 @@
     flex-direction: column;
     font-family: 'ThrumsSerifRegular';
     color: white;
+    margin: 5px;
     width: 600px;
-    margin-left: 5px;
     height: min-content;
     background: gray;
     padding: 2px;

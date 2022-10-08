@@ -2903,13 +2903,15 @@ function (dojo, declare) {
         createPermissionsBannerHtml: function() {
             const hdr = _("Defender Permissions");
             const msg = _("Leader of the owning city may click neutral/allied cities to give permission to defend");
-            const permission_banner =   '<div id="defenders_permission_banner">'+
-                                            '<h2 class="prk_hdr"; style="font-size: 3em; color: white;">'+hdr+'</h2><br/>'+
-                                            '<span style="font-size: 2em; padding: 0.25em;">'+msg+'</span>'+
-                                            '<hr style="width: 100%;"/>'+
-                                            '<div id="perm_icons_row" style="display: flex; flex-direction: row; justify-content: center; align-items: center;"></div>'+
+            const permission_banner = '<div id="defenders_permission_banner">'+
+                                                '<h2 class="prk_hdr"; style="font-size: 3em; color: white;">'+hdr+' <i id="permissions_help" class="fa fa-question-circle-o"></i></h2><br/>'+
+                                                '<hr style="width: 100%;"/>'+
+                                                '<div id="perm_icons_row" style="display: flex; flex-direction: row; justify-content: center; align-items: center;"></div>'+
                                         '</div>';
             dojo.place(permission_banner, $('perikles_map'));
+            const permissions_panel = '<div id="permissions_panel" class="whiteblock"></div>';
+            dojo.place(permissions_panel, $('perikles_map'));
+
             const atwar = this.format_block('jstpl_permission_icon', {rel: "war", defender: "false", relationship: _("At War")});
             const ally = this.format_block('jstpl_permission_icon', {rel: "allied", defender: "false", relationship: _("Allied")});
             const neutral = this.format_block('jstpl_permission_icon', {rel: "neutral", defender: "false", relationship: _("Neutral")});
@@ -2921,6 +2923,10 @@ function (dojo, declare) {
             dojo.place(ally, $('perm_icons_row'));
             dojo.place(neutral, $('perm_icons_row'));
             dojo.place(defender, $('perm_icons_row'));
+
+            const helphtml = '<span style="font-size: 2em; padding: 0.25em;">'+msg+'</span>';
+
+            this.addTooltipHtml('permissions_help', helphtml, '');
         },
 
         /**
@@ -2995,6 +3001,7 @@ function (dojo, declare) {
          */
         removePermissionButtons: function() {
             $('defenders_permission_banner').remove();
+            $('permissions_panel').remove();
             const permboxes = document.getElementsByClassName('prk_permission_box');
             [...permboxes].forEach(p => {
                 p.remove();
