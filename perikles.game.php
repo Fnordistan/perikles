@@ -3196,7 +3196,7 @@ class Perikles extends Table
             $winner_name = $players[$winner]['player_name'];
         }
 
-        $winnerstring = clienttranslate('Congratulations ${winner_name}! You are master of the Peloponnese!');
+        $winnerstring = clienttranslate('${winner_name} is master of the Peloponnese!');
         self::notifyAllPlayers( "tableWindow", '', array(
             'id' => 'finalScoring',
             'title' => clienttranslate("The Peloponnesian War has ended!"),
