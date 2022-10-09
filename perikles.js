@@ -3345,9 +3345,8 @@ function (dojo, declare) {
             dojo.subscribe( 'rollBattle', this, "notif_rollBattle");
             this.notifqueue.setSynchronous( 'rollBattle', 1500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
-            // round2 also sends token
-            dojo.subscribe( 'round2', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
+            dojo.subscribe( 'round2', this, "notif_round2reset");
             this.notifqueue.setSynchronous( 'round2', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
             this.notifqueue.setSynchronous( 'resetBattleTokens', 1500 );
@@ -3939,6 +3938,16 @@ function (dojo, declare) {
          */
         notif_takeToken: function(notif) {
             // "attacker" or "defender"
+            const side = notif.args.side;
+            const token = $('battle_tokens').lastChild;
+            this.slideToObjectRelative(token.id, side+'_battle_tokens', 1000, 500, null, "last");
+        },
+
+        /**
+         * Send Battle tokens back to center for next battle, then start with one.
+         * @param {Object} notif 
+         */
+        notif_round2reset: function(notif) {
             const side = notif.args.side;
             const token = $('battle_tokens').lastChild;
             this.slideToObjectRelative(token.id, side+'_battle_tokens', 1000, 500, null, "last");

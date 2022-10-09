@@ -322,7 +322,7 @@ class PeriklesCities extends APP_GameClass
     $def = $city."_defeats";
     $defeats = $this->game->getGameStateValue($def);
     if ($lim) {
-      $max = count($this->cities[$city]["vp"]);
+      $max = count($this->cities[$city]["vp"])-1;
       $defeats = min($defeats, $max);
     }
     return $defeats;
