@@ -2195,6 +2195,7 @@ class Perikles extends Table
                 'winner' => $role,
                 'icon' => true,
                 'token' => true,
+                'side' => $side,
                 'preserve' => ['token']
             ));
         } else {

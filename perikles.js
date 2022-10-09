@@ -3345,7 +3345,10 @@ function (dojo, declare) {
             dojo.subscribe( 'rollBattle', this, "notif_rollBattle");
             this.notifqueue.setSynchronous( 'rollBattle', 1500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
+            // round2 also sends token
+            dojo.subscribe( 'round2', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
+            this.notifqueue.setSynchronous( 'round2', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
             this.notifqueue.setSynchronous( 'resetBattleTokens', 1500 );
 
