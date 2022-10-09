@@ -807,6 +807,10 @@ function (dojo, declare) {
                         args.icon = loc_msg;
                     }
                     // a battle
+                    if (args.crt) {
+                        args.att = '<span class="prk_special_log">'+args.att+'</span>';
+                        args.def = '<span class="prk_special_log">'+args.def+'</span>';
+                    }
                     if (args.attd1) {
                         const hit = '<span class="prk_hit">'+_("Success")+'</span>';
                         const miss = '<span class="prk_miss">'+_("Failure")+'</span>';

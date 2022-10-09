@@ -315,16 +315,21 @@ class PeriklesCities extends APP_GameClass
   /**
    * Get number of defeats for a city.
    * @param {string} city
+   * @param {bool} (optional) lim don't allow results more than number of tokens (defalts to true)
    * @return {integer} defeats (0 or more)
    */
-  public function getDefeats($city) {
+  public function getDefeats($city, $lim=true) {
     $def = $city."_defeats";
     $defeats = $this->game->getGameStateValue($def);
+    if ($lim) {
+      $max = count($this->cities[$city]["vp"]);
+      $defeats = min($defeats, $max);
+    }
     return $defeats;
   }
 
     /**
-     * Return associative array (city => #defeats)
+     * Return associative array (city => #defeats), filtered to make sure we don't exceed its limits.
      * @return array
      */
   public function getAllDefeats() {
@@ -343,7 +348,7 @@ class PeriklesCities extends APP_GameClass
   public function addDefeat($city) {
     $def = $city."_defeats";
     $this->game->incGameStateValue($def, 1);
-    return $this->getDefeats($city);
+    return $this->getDefeats($city, false);
   }
 
   /**

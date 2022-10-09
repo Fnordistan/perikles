@@ -2097,7 +2097,7 @@ class Perikles extends Table
             'def' => $defstr,
             'crt' => $crt,
             'odds' => $this->Battles->getOdds($crt),
-            'preserve' => ['type', 'slot', 'location']
+            'preserve' => ['type', 'slot', 'location', 'crt']
         ));
         $winner = null;
         while ($this->getGameStateValue(ATTACKER_TOKENS) < 2 && $this->getGameStateValue(DEFENDER_TOKENS) < 2) {
