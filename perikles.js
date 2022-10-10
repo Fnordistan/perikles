@@ -2659,8 +2659,8 @@ function (dojo, declare) {
             // hide previously displayed boards that we are no longer leader of
             for (let city of CITIES) {
                 const board = $(city+"_military_"+this.player_id);
-                if (board && !this.isLeader(this.player_id, city)) {
-                    board.style['display'] = "none";
+                if (board) {
+                    board.style['display'] = this.isLeader(this.player_id, city) ? "block" : "none";
                 }
             }
             const persia_board = $("persia_military_"+this.player_id);
