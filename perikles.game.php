@@ -3191,6 +3191,7 @@ class Perikles extends Table
                     self::incStat($cubes, "cube_points", $player_id);
                 }
             }
+
             $vp_statues_row[] = $statue_vps;
             $vp_cubes_row[] = $cube_vps;
             $vp_total_row[] = $this->getVPs($player_id);
