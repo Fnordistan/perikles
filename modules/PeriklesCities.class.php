@@ -313,16 +313,16 @@ class PeriklesCities extends APP_GameClass
   }
 
   /**
-   * Get number of defeats for a city.
+   * Get number of defeats for a city. Normally cannot be more than the total number of defeats possible for scoring.
    * @param {string} city
-   * @param {bool} (optional) lim don't allow results more than number of tokens (defalts to true)
+   * @param {bool} (optional) if false, can return total number > 4
    * @return {integer} defeats (0 or more)
    */
   public function getDefeats($city, $lim=true) {
     $def = $city."_defeats";
     $defeats = $this->game->getGameStateValue($def);
     if ($lim) {
-      $max = count($this->cities[$city]["vp"])-1;
+      $max = count($this->cities[$city]["vp"]);
       $defeats = min($defeats, $max);
     }
     return $defeats;
@@ -370,8 +370,11 @@ class PeriklesCities extends APP_GameClass
    * @return {int} vp value
    */
   public function victoryPoints($city) {
+    $vp = 0;
     $defeats = $this->getDefeats($city);
-    $vp = $this->cities[$city]["vp"][$defeats];
+    if ($defeats < count($this->cities[$city]["vp"])) {
+        $vp = $this->cities[$city]["vp"][$defeats];
+    }
     return $vp;
   }
 

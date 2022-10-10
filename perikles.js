@@ -612,21 +612,40 @@ function (dojo, declare) {
             }
 
             const attacker_tokens = $('attacker_battle_tokens').getElementsByClassName("prk_battle_token");
-            [...attacker_tokens].forEach(t => {
-                if (keep1 == "attacker") {
-                    keep1 = null;
-                } else {
-                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
-                }
-            });
+            if (attacker_tokens.length == 0 && keep1 == "attacker") {
+                // attacker gets a starting token but there isn't one already in the attacker box
+                this.moveTokenToBattleSide(keep1);
+            } else {
+                [...attacker_tokens].forEach(t => {
+                    if (keep1 == "attacker") {
+                        keep1 = null;
+                    } else {
+                        this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
+                    }
+                });
+            }
             const defender_tokens = $('defender_battle_tokens').getElementsByClassName("prk_battle_token");
-            [...defender_tokens].forEach(t => {
-                if (keep1 == "defender") {
-                    keep1 = null;
-                } else {
-                    this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
-                }
-            });
+            if (defender_tokens.length == 0 && keep1 == "defender") {
+                // defender gets a starting token but there isn't one already in the attacker box
+                this.moveTokenToBattleSide(keep1);
+            } else {
+                [...defender_tokens].forEach(t => {
+                    if (keep1 == "defender") {
+                        keep1 = null;
+                    } else {
+                        this.slideToObjectRelative( t.id, 'battle_tokens', 1000, 500, null, "last" );
+                    }
+                });
+            }
+        },
+
+        /**
+         * Move one Battle Token from center box to attacker or defender.
+         * @param {string} side attacker or defender
+         */
+        moveTokenToBattleSide: function(side) {
+            const token = $('battle_tokens').lastChild;
+            this.slideToObjectRelative(token.id, side+'_battle_tokens', 1000, 500, null, "last");
         },
 
         /**
@@ -3346,8 +3365,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'rollBattle', 1500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
-            dojo.subscribe( 'round2', this, "notif_round2reset");
-            this.notifqueue.setSynchronous( 'round2', 1500 );
+            // dojo.subscribe( 'round2', this, "notif_round2reset");
+            // this.notifqueue.setSynchronous( 'round2', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
             this.notifqueue.setSynchronous( 'resetBattleTokens', 1500 );
 
@@ -3492,11 +3511,11 @@ function (dojo, declare) {
         notif_candidatePromoted: function(notif) {
             const city = notif.args.city;
             const candidate_id = notif.args.candidate_id;
-            const fromcube = candidate_id+"_"+city+"_b";
+            const fromcube = [candidate_id, city, "b"].join("_");
             const to_div = $(city+"_a");
             this.slideToObjectRelative(fromcube, to_div, 1000, 1000, null, "last");
             // need to rename the cube
-            $(fromcube).id = candidate_id+"_"+city+"_a";
+            $(fromcube).id = [candidate_id, city, "a"].join("_");
         },
 
         /**
@@ -3511,7 +3530,7 @@ function (dojo, declare) {
             const cube1 = player_cubes.firstChild;
             this.fadeOutAndDestroy( cube1.id, 250);
 
-            const from_div = $(fromcity+'_cubes_'+owner);
+            const from_div = player_cubes;
             const to_div = $(tocity+'_cubes_'+owner);
             const i = to_div.childElementCount+1;
             const cube = this.createInfluenceCube(owner, tocity, i);
@@ -3742,12 +3761,19 @@ function (dojo, declare) {
             const milzones = new Set();
             [...counters].forEach(c => {
                 const counter_name = c.id;
-                const [city, unit, strength, id] = counter_name.split('_');
-                if (ids.includes(id)){
+                const [city, _1, _2, id] = counter_name.split('_');
+                if (ids.includes(id)) {
                     const city_military = city+"_military";
                     milzones.add(city_military);
-                    this.slideToObjectAndDestroy(c, city_military, 1000, 1500);
-                    new perikles.counter(city, unit, strength, id).addToStack();
+
+                    const slider = this.slideToObject(counter_name, city_military, 1000, 1500);
+                    dojo.connect(slider, 'onEnd', (counter) => {
+                        const [city, unit, strength, id] = counter.id.split('_');
+                        counter.remove();
+                        new perikles.counter(city, unit, strength, id).addToStack();
+                        this.stacks.sortStack(city+"_military");
+                    });
+                    slider.play();
                 } else {
                     // this is a counter sent to deadpool
                     c.remove();
@@ -3801,8 +3827,16 @@ function (dojo, declare) {
          */
          counterFromPlayerBoard: function(counter, city, type, strength, id) {
             const city_military = city+"_military";
-            this.slideToObjectAndDestroy(counter, city_military, 1000, 1500);
-            new perikles.counter(city, type, strength, id).addToStack();
+            // this.slideToObjectAndDestroy(counter, city_military, 1000, 1500);
+
+            const slider = this.slideToObject(counter, city_military, 1000, 1500);
+            dojo.connect(slider, 'onEnd', (counter) => {
+                // const counter = $(counter_id);
+                counter.remove();
+                new perikles.counter(city, type, strength, id).addToStack();
+                this.stacks.sortStack(city_military);
+            });
+            slider.play();
         },
 
         /**
@@ -3848,20 +3882,29 @@ function (dojo, declare) {
             const type = notif.args.type;
             const strength = notif.args.strength;
             const counter_id = [city, type, strength, id].join("_");
-            const counter = $(counter_id);
             // Persians just go back to Persian stack
-            if (city == "persia") {
-                this.slideToObjectAndDestroy(counter, 'persia_military', 1000, 1500);
-                new perikles.counter(city, type, strength, id).addToStack();
-                this.stacks.sortStack("persia_military");
+            const bPersian = (city == "persia");
+            let to_loc = "";
+            if (bPersian) {
+                to_loc = "persia_military";
             } else {
+                to_loc = [city, type, DEAD_POOL].join("_")
                 this.createMilitaryArea(DEAD_POOL, city);
-                const deadpoolloc =  [city, type, DEAD_POOL].join("_");
-                // create the Hoplite/Trireme zone if not already there
-                this.slideToObjectAndDestroy(counter, deadpoolloc, 1000, 1500);
-                new perikles.counter(city, type, strength, id, DEAD_POOL).placeDeadpool();
-                this.stacks.sortStack([city, type, DEAD_POOL].join("_"), false);
             }
+
+            const slider = this.slideToObject(counter_id, to_loc, 1000, 1500);
+            dojo.connect(slider, 'onEnd', (counter_id) => {
+                const counter = $(counter_id);
+                counter.remove();
+                if (bPersian) {
+                    new perikles.counter(city, type, strength, id).addToStack();
+                    this.stacks.sortStack("persia_military");
+                } else {
+                    new perikles.counter(city, type, strength, id, DEAD_POOL).placeDeadpool();
+                    this.stacks.sortStack([city, type, DEAD_POOL].join("_"), false);
+                }
+            });
+            slider.play();
         },
 
         /**
@@ -3939,18 +3982,7 @@ function (dojo, declare) {
         notif_takeToken: function(notif) {
             // "attacker" or "defender"
             const side = notif.args.side;
-            const token = $('battle_tokens').lastChild;
-            this.slideToObjectRelative(token.id, side+'_battle_tokens', 1000, 500, null, "last");
-        },
-
-        /**
-         * Send Battle tokens back to center for next battle, then start with one.
-         * @param {Object} notif 
-         */
-        notif_round2reset: function(notif) {
-            const side = notif.args.side;
-            const token = $('battle_tokens').lastChild;
-            this.slideToObjectRelative(token.id, side+'_battle_tokens', 1000, 500, null, "last");
+            this.moveTokenToBattleSide(side);
         },
 
         /**
