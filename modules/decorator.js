@@ -67,11 +67,15 @@ define(["dojo/_base/declare"], function (declare) {
         /**
          * Customized player colors per player_id
          * @param {string} player_id 
+         * @return color, or null if checked for a non-player
          */
          playerColor: function(player_id) {
+            let color = null;
             const player = this.players[player_id];
-            const color = player.color;
-            return PLAYER_COLORS[color];
+            if (player) {
+                color = PLAYER_COLORS[player.color];
+            }
+            return color;
         },
 
         /**

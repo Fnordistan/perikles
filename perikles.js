@@ -115,7 +115,11 @@ function (dojo, declare) {
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
             // for player to specify options for play/pass special tiles
-            this.setupPlayerOptions(gamedatas.specialtiles[this.player_id]);
+            if (this.isSpectator) {
+                $('player_options').style["display"] = "none";
+            } else {
+                this.setupPlayerOptions(gamedatas.specialtiles[this.player_id]);
+            }
             if (!this.isReadOnly()) {
                 this.setupPreference();
             }
@@ -2655,7 +2659,7 @@ function (dojo, declare) {
          * Attach event listeners to stacks and permissions buttons if we're in the military stage.
          */
         militaryPhaseDisplay: function() {
-            $('military_board').style['display'] = 'block';
+            $('military_board').style['display'] = this.isSpectator ? "none" : 'block';
             // hide previously displayed boards that we are no longer leader of
             for (let city of CITIES) {
                 const board = $(city+"_military_"+this.player_id);
@@ -3345,7 +3349,10 @@ function (dojo, declare) {
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
             this.notifqueue.setSynchronous( 'takePersians', 1000 );
             dojo.subscribe( 'sendBattle', this, "notif_sendBattle");
+            // ignore the message to sent to everyone about your own units
+            this.notifqueue.setIgnoreNotificationCheck( 'sendBattle', (notif) => (notif.args.id == 0 && notif.args.owners.includes(this.player_id)) );
             this.notifqueue.setSynchronous( 'sendBattle', 1000 );
+
 
             // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
@@ -3571,7 +3578,7 @@ function (dojo, declare) {
         },
 
         /**
-         * Move Persian military tokens to leader. This may happen for more than one player.
+         * Move Persian military tokens to leader.
          * @param {Object} notif 
          */
          notif_takePersians: function(notif) {

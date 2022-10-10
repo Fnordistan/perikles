@@ -728,15 +728,10 @@ class Perikles extends Table
      */
     function movePersianUnits($persianleaders) {
         $persianunits = $this->Battles->claimPersians();
-        // need to send individual notifications to each player
-        // because Persian stacks may be shared
-        $players = self::loadPlayersBasicInfos();
-        foreach (array_keys($players) as $player_id) {
-            self::notifyPlayer($player_id, "takePersians", '', array(
-                'military' => $persianunits,
-                'persianleaders' => $persianleaders
-            ));
-        }
+        self::notifyAllPlayers("takePersians", '', array(
+            'military' => $persianunits,
+            'persianleaders' => $persianleaders
+        ));
     }
 
     /**
@@ -813,51 +808,70 @@ class Perikles extends Table
 
     /**
      * Assumes all checks have been done. Send a military unit to a battle location.
+     * @param {string} player_id sending player
+     * @param {array} mil the counter
+     * @param {int} battlepos MAIN/ALLY+ATTACKER/DEFENDER
      */
     function sendToBattle($player_id, $mil, $battlepos) {
-
         $id = $mil['id'];
         $location = $mil['battle'];
-        $players = self::loadPlayersBasicInfos();
         $counter = $this->Battles->getCounter($id);
 
+        // send to location in Db
         $this->Battles->toLocation($id, $location, $battlepos);
 
         $role = $this->getRoleName($battlepos);
         $slot = self::getUniqueValueFromDB("SELECT card_location_arg from LOCATION WHERE card_type_arg=\"$location\"");
 
+        $players = self::loadPlayersBasicInfos();
+        $owning_players = [];
         foreach (array_keys($players) as $pid) {
-            $is_mine = false;
-            // if this is not our counter, id becomes 0 to client side
-            if ($player_id == $pid) {
-                $is_mine = true;
-            } elseif ($counter['city'] == PERSIA) {
-                // check in case Persians are under shared control
-                if ($this->Cities->isLeader($player_id, PERSIA) && $this->Cities->isLeader($pid, PERSIA)) {
-                    $is_mine = true;
+            // don't accidentally add Persian player twice
+            if (!in_array($pid, $owning_players)) {
+                if ($player_id == $pid) {
+                    $owning_players[] = $pid;
+                } elseif ($counter['city'] == PERSIA) {
+                    // check in case Persians are under shared control
+                    if ($this->Cities->isLeader($player_id, PERSIA) && $this->Cities->isLeader($pid, PERSIA)) {
+                        $owning_players[] = $pid;
+                    }
                 }
             }
-
-            self::notifyPlayer($pid, "sendBattle", clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole} ${icon}'), array(
-                'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
-                'player_id' => $player_id,
-                'player_name' => $players[$player_id]['player_name'],
-                'id' => $is_mine ? $id : 0,
-                'type' => $counter['type'],
-                'unit_type' => $this->getUnitName($counter['type']),
-                'strength' => $is_mine ? $counter['strength'] : 0,
-                'city' => $counter['city'],
-                'city_name' => $this->Cities->getNameTr($counter['city']),
-                'battlepos' => $battlepos,
-                'battlerole' => $role,
-                'icon' => true,
-                'location' => $location,
-                'wars' => $this->Cities->getCityRelationships(),
-                'slot' => $slot,
-                'location_name' => $this->Locations->getName($location),
-                'preserve' => ['city', 'location', 'battlepos', 'type'],
-            ));
         }
+
+        // default to owning players shows id and strength
+        $notif_args = array(
+            'i18n' => ['location_name', 'battlerole', 'unit_type', 'city_name'],
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'id' => $id,
+            'type' => $counter['type'],
+            'unit_type' => $this->getUnitName($counter['type']),
+            'strength' => $counter['strength'],
+            'city' => $counter['city'],
+            'city_name' => $this->Cities->getNameTr($counter['city']),
+            'battlepos' => $battlepos,
+            'battlerole' => $role,
+            'icon' => true,
+            'location' => $location,
+            'wars' => $this->Cities->getCityRelationships(),
+            'slot' => $slot,
+            'owners' => $owning_players,
+            'location_name' => $this->Locations->getName($location),
+            'preserve' => ['city', 'location', 'battlepos', 'type'],
+        );
+
+        $msg = clienttranslate('${player_name} sends ${city_name} ${unit_type} to ${location_name} as ${battlerole} ${icon}');
+        // send this to the owners
+        foreach($owning_players as $pid) {
+            self::notifyPlayer($pid, "sendBattle", $msg, $notif_args);
+        }
+        // now replace id and strength with 0 for everyone else
+        $notif_args['id'] = 0;
+        $notif_args['strength'] = 0;
+
+        // send this to everyone except the owners - the owning players will have this filtered out client-side
+        self::notifyAllPlayers("sendBattle", $msg, $notif_args);
     }
 
     /**
