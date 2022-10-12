@@ -1323,10 +1323,12 @@ class Perikles extends Table
      * Zombie can provide player id.
      * @param {string} player_id (optional)
      */
-    function specialTilePass($player_id=null) {
+    function specialTilePass($player_id=null, $zombiePlayer=null) {
         // validity check
-        $this->checkAction('useSpecial');
-        $player_id ??= self::getCurrentPlayerId();
+        if ($zombiePlayer !== null) {
+            $this->checkAction('useSpecial');
+        }
+        $player_id ??= $zombiePlayer ?? self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id);
 
         // after playing tile, or if passed
@@ -1348,8 +1350,11 @@ class Perikles extends Table
      * @param {bool} use true if use, false if pass
      * @param {string} side (optional, only for PERSIANFLEET and THESSALANIANALLIES)
      */
-    function useSpecialBattleTile($player_id, $use, $side=null) {
-        $this->checkAction('useSpecialBattle');
+    function useSpecialBattleTile($player_id, $use, $side=null, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('useSpecialBattle');
+        }
+        $player_id = $zombiePlayer ?? $player_id;
         if ($use) {
             $battle = $this->getGameStateValue(ACTIVE_BATTLE);
             $location = $this->Locations->getBattleTile($battle);
@@ -1393,9 +1398,11 @@ class Perikles extends Table
     /**
      * Play Perikles Special tile.
      */
-    function playPerikles() {
-        $this->checkAction('useSpecial');
-        $player_id = self::getCurrentPlayerId();
+    function playPerikles($zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('useSpecial');
+        }
+        $player_id = $zombiePlayer ?? self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id);
         $this->flipSpecialTile($player_id);
         $this->addInfluenceToCity('athens', $player_id, 2);
@@ -1407,9 +1414,11 @@ class Perikles extends Table
     /**
      * Play the Alkibiades Special tile
      */
-    function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2) {
-        $this->checkAction('useSpecial');
-        $player_id = self::getCurrentPlayerId();
+    function playAlkibiades($owner1, $from_city1, $to_city1, $owner2, $from_city2, $to_city2, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('useSpecial');
+        }
+        $player_id = $zombiePlayer ?? self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, ALKIBIADES);
 
         // check players have influence
@@ -1461,9 +1470,11 @@ class Perikles extends Table
     /**
      * Play Plague special tile.
      */
-    function playPlague($city) {
-        $this->checkAction('useSpecial');
-        $player_id = self::getCurrentPlayerId();
+    function playPlague($city, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('useSpecial');
+        }
+        $player_id = $zombiePlayer ?? self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, PLAGUE);
 
         $this->flipSpecialTile($player_id);
@@ -1502,15 +1513,17 @@ class Perikles extends Table
      * Player selected Slave Revolt
      * @param {string} revoltlocation "sparta" or a tile location
      */
-    function playSlaveRevolt($revoltlocation) {
-        $this->checkAction('useSpecial');
+    function playSlaveRevolt($revoltlocation, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('useSpecial');
+        }
         // sanity check - there is a Sparta leader
         $sparta_leader = $this->Cities->getLeader("sparta");
         if (empty($sparta_leader)) {
             throw new BgaVisibleSystemException("No Sparta Leader!"); // NOI18N
         }
 
-        $player_id = self::getCurrentPlayerId();
+        $player_id = $zombiePlayer ?? self::getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, SLAVEREVOLT);
 
         $location = "";
@@ -1566,11 +1579,13 @@ class Perikles extends Table
     /**
      * Spartan player chose first player for influence phase.
      */
-    function chooseNextPlayer($first_player) {
-        $this->checkAction('chooseNextPlayer');
+    function chooseNextPlayer($first_player, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('chooseNextPlayer');
+        }
         $players = self::loadPlayersBasicInfos();
 
-        $player_id = self::getActivePlayerId();
+        $player_id = $zombiePlayer ?? self::getActivePlayerId();
         self::notifyAllPlayers("spartanChoice", clienttranslate('${player_name} chooses ${candidate_name} to commit forces first'), array(
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
@@ -1585,15 +1600,17 @@ class Perikles extends Table
     /**
      * Player chose an Influence tile
      */
-    function takeInfluence($influence_id) {
-        $this->checkAction( 'takeInfluence' );
+    function takeInfluence($influence_id, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction( 'takeInfluence' );
+        }
         $influence_card = self::getObjectFromDB("SELECT card_id id, card_type city, card_type_arg type, card_location location, card_location_arg slot FROM INFLUENCE WHERE card_id=$influence_id");
 
         // is it on the board?
         if ($influence_card['location'] != BOARD) {
             throw new BgaUserException(self::_("This card is not selectable"));
         }
-        $player_id = self::getActivePlayerId();
+        $player_id = $zombiePlayer ?? self::getActivePlayerId();
         // has this player already selected a card from this city?
         $descriptors = $this->influenceTileDescriptors($influence_card);
 
@@ -1646,9 +1663,11 @@ class Perikles extends Table
     /**
      * Player chose a city with an Any card.
      */
-    function placeAnyCube($city) {
-        $this->checkAction( 'placeAnyCube' );
-        $player_id = self::getActivePlayerId();
+    function placeAnyCube($city, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction( 'placeAnyCube' );
+        }
+        $player_id = $zombiePlayer ?? self::getActivePlayerId();
         $this->addInfluenceToCity($city, $player_id, 1);
         $state = "nextPlayer";
         if ($this->getGameStateValue(INFLUENCE_PHASE) == 0) {
@@ -1664,9 +1683,11 @@ class Perikles extends Table
     /**
      * Player is selecting a candidate for a city.
      */
-    function proposeCandidate($city, $candidate_id) {
-        $this->checkAction('proposeCandidate');
-        $actingplayer = self::getActivePlayerId();
+    function proposeCandidate($city, $candidate_id, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('proposeCandidate');
+        }
+        $actingplayer = $zombiePlayer ?? self::getActivePlayerId();
         $city_name = $this->Cities->getNameTr($city);
         // player must have a cube in the city
         if (!$this->Cities->hasInfluence($actingplayer, $city)) {
@@ -1719,9 +1740,11 @@ class Perikles extends Table
      * Player chose a cube to remove.
      * $cube is a, b, or a number
      */
-    function chooseRemoveCube($target_id, $city, $cube) {
-        $this->checkAction('chooseRemoveCube');
-        $player_id = self::getActivePlayerId();
+    function chooseRemoveCube($target_id, $city, $cube, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('chooseRemoveCube');
+        }
+        $player_id = $zombiePlayer ?? self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
         $city_name = $this->Cities->getNameTr($city);
         if ($cube == "a") {
@@ -1804,9 +1827,11 @@ class Perikles extends Table
      * @param unitstr a space-delimited string id_attdef_battle (or empty)
      * @param cube empty string or cube spent for extra units
      */
-    function assignUnits($unitstr, $cube) {
-        $this->checkAction('assignUnits');
-        $player_id = self::getActivePlayerId();
+    function assignUnits($unitstr, $cube, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('assignUnits');
+        }
+        $player_id = $zombiePlayer ?? self::getActivePlayerId();
 
         if (trim($unitstr) == "") {
             $this->noCommitUnits($player_id);
@@ -1863,9 +1888,11 @@ class Perikles extends Table
      * @param string city
      * @param string type HOPLITE|TRIREME
      */
-    function chooseDeadpool($city, $type) {
-        $this->checkAction('chooseDeadUnits');
-        $player_id = self::getActivePlayerId();
+    function chooseDeadpool($city, $type, $zombiePlayer=null) {
+        if ($zombiePlayer !== null) {
+            $this->checkAction('chooseDeadUnits');
+        }
+        $player_id = $zombiePlayer ?? self::getActivePlayerId();
         // error check
         $types = $this->Deadpool->getTypesInDeadpool($city);
         if (count($types) == 2) {
@@ -3278,6 +3305,25 @@ class Perikles extends Table
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
 ////////////
+
+    function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
+        // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
+        for ($cycle = 0; $cycle < $numCycles; $cycle++) {
+            $state = $this->gamestate->state();
+            $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
+
+            // You can remove the notification if you find it too noisy
+            self::notifyAllPlayers('notifyZombie', '<u>ZombieTest cycle ${cycle} for ${statename}</u>', [
+                'cycle'     => $cycle+1,
+                'statename' => $state['name']
+            ]);
+
+            // Make each active player take a zombie turn
+            foreach ($activePlayers as $key => $playerId) {
+                self::zombieTurn($state, (int)$playerId);
+            }
+        }
+    }
 
     /*
         zombieTurn:
