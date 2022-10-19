@@ -116,10 +116,10 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
+            this.setupPreference();
+
             if (!this.isReadOnly()) {
                 this.setupPlayerOptions(gamedatas.specialtiles[this.player_id]);
-                // for player to specify options for play/pass special tiles
-                this.setupPreference();
             }
 
             // // this.currentState = gamedatas.gamestate.name;
