@@ -114,13 +114,9 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
-            // for player to specify options for play/pass special tiles
-            if (this.isSpectator) {
-                $('player_options').style["display"] = "none";
-            } else {
-                this.setupPlayerOptions(gamedatas.specialtiles[this.player_id]);
-            }
             if (!this.isReadOnly()) {
+                this.setupPlayerOptions(gamedatas.specialtiles[this.player_id]);
+                // for player to specify options for play/pass special tiles
                 this.setupPreference();
             }
 
@@ -3600,6 +3596,7 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_sendBattle: function(notif) {
+            debugger;
             const player_id = notif.args.player_id;
             const id = notif.args.id; // 0 if face-down
             const city = notif.args.city;
