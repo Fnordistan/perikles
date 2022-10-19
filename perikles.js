@@ -27,7 +27,9 @@ const INFLUENCE_PILE = "influence_slot_0";
 
 const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 
+// player preferences
 const PREF_AUTO_PASS = 100;
+const PREF_LOG_FONT = 101;
 
 const SCORING_ANIMATION = 2000;
 
@@ -179,6 +181,9 @@ function (dojo, declare) {
          * Initialize preference values.
          */
          setupPreference: function() {
+            // when refreshed, make sure doesn't change
+            this.changeLogFontSize(this.prefs[PREF_LOG_FONT].value);
+
             // set preference for autoplay
             this.onPreferenceChanged(PREF_AUTO_PASS, this.prefs[PREF_AUTO_PASS].value);
 
@@ -186,7 +191,7 @@ function (dojo, declare) {
                 const match = e.target.id.match(/^preference_control_(\d+)$/);
                 if (match) {
                     const pref = match[1];
-                    if (pref == PREF_AUTO_PASS) {
+                    if (pref == PREF_AUTO_PASS || pref == PREF_LOG_FONT) {
                         const newValue = e.target.value;
                         this.prefs[pref].value = newValue;
                         this.onPreferenceChanged(pref, newValue);
@@ -3064,17 +3069,31 @@ function (dojo, declare) {
         /**
          * Connected to player preference action
          * @param {string} pref 
-         * @param {int} isEnabled 
+         * @param {int} newVal 
          */
-         onPreferenceChanged: function(pref, isEnabled) {
+         onPreferenceChanged: function(pref, newVal) {
             if (pref == PREF_AUTO_PASS && !this.isReadOnly()) {
                 this.ajaxcall( "/perikles/perikles/actChangePref.html", { 
-                    pref: PREF_AUTO_PASS,
-                    value: isEnabled,
+                    pref: pref,
+                    value: newVal,
                     lock: true,
                 }, this, function( result ) {  }, function( is_error) { } );
-                $('autopass_special').checked = (isEnabled == 1);
+                $('autopass_special').checked = (newVal == 1);
+            } else if (pref == PREF_LOG_FONT) {
+                this.changeLogFontSize(newVal);
             }
+        },
+
+        /**
+         * Change the size of log font.
+         * @param {int} sz 0 for 1em, 1 for 1.5em
+         */
+        changeLogFontSize: function(sz) {
+            const fontsize = (sz == 0) ? "1em" : "1.5em";
+            console.log("received " + sz + ": changing to "+fontsize);
+            // Get the root element
+            const r = document.querySelector(':root');
+            r.style.setProperty('--log-font', fontsize);
         },
 
         /**
@@ -3148,7 +3167,6 @@ function (dojo, declare) {
                     lock: true 
                 }, this, function( result ) {  }, function( is_error) { } );
             }
-
         },
 
         /**

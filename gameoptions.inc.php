@@ -65,5 +65,14 @@ $game_preferences = array(
             0 => array( 'name' => totranslate( "No" )),
         ),
         'default' => 0
-    )
+    ),
+    101 => array(
+        'name' => totranslate('Game log: Font size'),
+        'needReload' => false,
+        'values' => array(
+            0 => array( 'name' => totranslate( "Normal" )),
+            1 => array( 'name' => totranslate( "Large" )),
+        ),
+        'default' => 0
+    ),
 );

@@ -84,6 +84,8 @@
     /* Military tiles */
     --military_l: 100px;
     --military_s: 62px;
+    /* log size */
+    --log-font: 1em;
 }
 
 .spectatorMode #player_options {
@@ -91,8 +93,8 @@
 }
 
 .log .roundedbox {
-    font-size: 1.5em;
-    overflow:hidden;
+    font-size: var(--log-font);
+    overflow: hidden;
 }
 
 .log :is(.prk_cube, .prk_leader, .prk_statue, .prk_defeat, .prk_military, .prk_battle_token) {
