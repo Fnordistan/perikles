@@ -130,9 +130,10 @@ const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;" 
 
 const jstpl_player_options = '<div id="player_options">'+
                                 '<label class="prk_player_opt">${text}'+
-                                '<input id="autopass_special" type="checkbox">'+
-                                '<span class="prk_checkmark"></span>'+
-                                '</label><i id="autopass_help" class="fa fa-question-circle-o fa-lg"></i>'+
+                                    '<input id="autopass_special" type="checkbox">'+
+                                    '<span class="prk_checkmark"></span>'+
+                                '</label>'+
+                                '<i id="autopass_help" class="fa fa-question-circle-o fa-lg"></i>'+
                             '</div>';
 
 </script>  
