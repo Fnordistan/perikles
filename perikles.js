@@ -937,8 +937,12 @@ function (dojo, declare) {
                     counters++;
                 }
             }
-            // option to spend Influence cube
-            if (counters >= 2) {
+            if (counters < 2) {
+                let commit_string = _("${num}/2 units assigned");
+                commit_string = commit_string.replace('${num}', counters);
+                commit_log = commit_string+'<br/>'+commit_log;
+            } else {
+                // option to spend Influence cube
                 commit_log += '<hr/>';
                 if (commit_city) {
                     let city_commit = _("Additional unit(s) committed from ${city}");
@@ -1542,9 +1546,15 @@ function (dojo, declare) {
          * Player clicks "Commit Forces" button.
          */
         onCommitForces: function() {
+            // existing units available?
+            const myunits = $('mymilitary').getElementsByClassName("prk_military");
             const sz = Object.keys(this.gamedatas.gamestate.args.committed).length;
-            if (sz == 0) {
+            if (sz == 0 && myunits.length > 0) {
                 this.confirmationDialog( _("You have not selected any forces"), dojo.hitch( this, function() {
+                    this.commitForces() 
+                }));
+            } else if (sz == 1 && myunits.length > 0) {
+                this.confirmationDialog( _("You are only sending 1 unit; you may send up to 2"), dojo.hitch( this, function() {
                     this.commitForces() 
                 }));
             } else {
