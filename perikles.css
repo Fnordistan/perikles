@@ -86,6 +86,8 @@
     --military_s: 62px;
     /* log size */
     --log-font: 1em;
+    /* permission panel */
+    --permission_w: 600px;
 }
 
 .spectatorMode #player_options {
@@ -602,7 +604,8 @@
 .prk_permission_box {
     display: flex;
     flex-direction: column;
-    width: max-content;
+    width: var(--permission_w);
+    margin: 0 5px;
     padding: 2px 2px 42px;
     transform: translateX(300px);
 }
@@ -1074,7 +1077,7 @@
     position: absolute;
     left: var(--map_w);
     top: 480px;
-    width: 600px;
+    width: var(--permission_w);
     height: 990px;
     z-index: -1;
 }
@@ -1088,7 +1091,7 @@
     font-family: 'ThrumsSerifRegular';
     color: white;
     margin: 5px;
-    width: 600px;
+    width: var(--permission_w);
     height: min-content;
     background: gray;
     padding: 2px;

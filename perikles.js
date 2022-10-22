@@ -3372,7 +3372,9 @@ function (dojo, declare) {
             dojo.subscribe( 'addStatue', this, "notif_addStatue" );
             dojo.subscribe( 'cityDefeat', this, "notif_cityDefeat");
             dojo.subscribe( 'scoreCubes', this, "notif_scoreCubes" );
+            this.notifqueue.setSynchronous( 'scoreCubes', 500 );
             dojo.subscribe( 'scoreStatues', this, "notif_scoreStatues" );
+            this.notifqueue.setSynchronous( 'scoreStatues', 500 );
 
             // pre-battle/commits
             dojo.subscribe( 'takeMilitary', this, "notif_takeMilitary");
@@ -3403,8 +3405,6 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'rollBattle', 1500 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
-            // dojo.subscribe( 'round2', this, "notif_round2reset");
-            // this.notifqueue.setSynchronous( 'round2', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
             this.notifqueue.setSynchronous( 'resetBattleTokens', 1500 );
 
