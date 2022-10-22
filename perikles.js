@@ -30,6 +30,7 @@ const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 // player preferences
 const PREF_AUTO_PASS = 100;
 const PREF_LOG_FONT = 101;
+const PREF_CONFIRM_DIALOG = 102;
 
 const SCORING_ANIMATION = 2000;
 
@@ -116,54 +117,22 @@ function (dojo, declare) {
 
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
-            this.setupPreference();
 
             if (!this.isReadOnly()) {
                 this.setupPlayerOptions(gamedatas.specialtiles[this.player_id]);
             }
 
-            // // this.currentState = gamedatas.gamestate.name;
-            // dojo.connect(this.notifqueue, 'addToLog', () => {
-            //     this.addLogClass();
-            // });
+            this.setupPreference();
           },
-
-        //   /**
-        //    * More Tisaac cleverness, adds name of notification to each log box
-        //    */
-        //   onPlaceLogOnChannel(msg) {
-        //     var currentLogId = this.notifqueue.next_log_id;
-        //     var res = this.inherited(arguments);
-        //     this._notif_uid_to_log_id[msg.uid] = currentLogId;
-        //     this._last_notif = {
-        //       logId: currentLogId,
-        //       msg,
-        //     };
-        //     return res;
-        //   },
-      
-        //   addLogClass() {
-        //     if (this._last_notif == null) return;
-      
-        //     let notif = this._last_notif;
-        //     if ($('log_' + notif.logId)) {
-        //       let type = notif.msg.type;
-        //       if (type == 'history_history') {
-        //         type = notif.msg.args.originalType;
-        //       }
-        //       $('log_' + notif.logId).classList.add('notif_' + type);
-        //     }
-        //   },
 
         /**
          * Allow setting autopass for Special Tile  if it hasn't been used yet.
          * @param {Object} myspecialtile
          */
         setupPlayerOptions: function(myspecialtile) {
-            const panel = $('player_options');
-            if (myspecialtile['used']) {
-                panel.style["display"] = "none";
-            } else {
+            if (!myspecialtile['used']) {
+                const panel_html = this.format_block('jstpl_player_options', {text: _('Special Tile: Automatically pass')});
+                dojo.place(panel_html, $('player_board_'+this.player_id));
                 const pass_pref = this.prefs[PREF_AUTO_PASS].value;
 
                 const check = $("autopass_special");
@@ -190,8 +159,8 @@ function (dojo, declare) {
             dojo.query('.preference_control').on('change', (e) => {
                 const match = e.target.id.match(/^preference_control_(\d+)$/);
                 if (match) {
-                    const pref = match[1];
-                    if (pref == PREF_AUTO_PASS || pref == PREF_LOG_FONT) {
+                    const pref = toint(match[1]);
+                    if ([PREF_AUTO_PASS, PREF_LOG_FONT, PREF_CONFIRM_DIALOG].includes(pref)) {
                         const newValue = e.target.value;
                         this.prefs[pref].value = newValue;
                         this.onPreferenceChanged(pref, newValue);
@@ -3078,7 +3047,9 @@ function (dojo, declare) {
                     value: newVal,
                     lock: true,
                 }, this, function( result ) {  }, function( is_error) { } );
-                $('autopass_special').checked = (newVal == 1);
+                if ($('autopass_special')) {
+                    $('autopass_special').checked = (newVal == 1);
+                }
             } else if (pref == PREF_LOG_FONT) {
                 this.changeLogFontSize(newVal);
             }
@@ -3124,11 +3095,28 @@ function (dojo, declare) {
         },
 
         /**
-         * Action to assign a Candidate to a city from a player
+         * Wrap actual method in a check for confirmation.
          * @param {string} city 
          * @param {string} player_id 
          */
         proposeCandidate: function(city, player_id) {
+            if (this.prefs[PREF_CONFIRM_DIALOG].value == 1) {
+                let removedlg = _("Propose ${player_id} as candidate in ${city}?");
+                removedlg = removedlg.replace('${player_id}', this.decorator.spanPlayerName(player_id));
+                removedlg = removedlg.replace('${city}', this.getCityNameTr(city));
+                this.confirmationDialog( removedlg, () => {this._proposeCandidate(city, player_id)}, function() { return; });
+            } else {
+                // no confirmation
+                this._proposeCandidate(city, player_id);
+            }
+        },
+
+        /**
+         * Action to assign a Candidate to a city from a player
+         * @param {string} city 
+         * @param {string} player_id 
+         */
+        _proposeCandidate: function(city, player_id) {
             if (this.checkAction("proposeCandidate", true)) {
                 this.ajaxcall( "/perikles/perikles/selectcandidate.html", { 
                     city: city,
@@ -3139,12 +3127,30 @@ function (dojo, declare) {
         },
 
         /**
-         * Action to remove a cube.
+         * Wrap actual removal action in a check for confirmation dialog.
          * @param {string} player_id 
          * @param {string} city 
          * @param {string} c 
          */
         removeCube: function(player_id, city, c) {
+            if (this.prefs[PREF_CONFIRM_DIALOG].value == 1) {
+                let removedlg = _("Remove ${player_id}'s cube in ${city}?");
+                removedlg = removedlg.replace('${player_id}', this.decorator.spanPlayerName(player_id));
+                removedlg = removedlg.replace('${city}', this.getCityNameTr(city));
+                this.confirmationDialog( removedlg, () => {this._removeCube(player_id, city, c)}, function() { return; });
+            } else {
+                // no confirmation
+                this._removeCube(player_id, city, c);
+            }
+        },
+
+        /**
+         * Action to remove a cube.
+         * @param {string} player_id 
+         * @param {string} city 
+         * @param {string} c 
+         */
+        _removeCube: function(player_id, city, c) {
             if (this.checkAction("chooseRemoveCube", true)) {
                 this.ajaxcall( "/perikles/perikles/removecube.html", { 
                     player: player_id,
@@ -3614,7 +3620,6 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_sendBattle: function(notif) {
-            debugger;
             const player_id = notif.args.player_id;
             const id = notif.args.id; // 0 if face-down
             const city = notif.args.city;
@@ -3658,7 +3663,7 @@ function (dojo, declare) {
             spec.dataset.status = "used";
             if (this.player_id == player_id) {
                 this.removeActionButtons();
-                $('player_options').style["display"] = "none";
+                $('player_options').remove();
             }
         },
 

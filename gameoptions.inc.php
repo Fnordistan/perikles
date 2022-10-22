@@ -75,4 +75,14 @@ $game_preferences = array(
         ),
         'default' => 0
     ),
+    102 => array(
+        'name' => totranslate('Confirmation dialogs'),
+        'needReload' => false,
+        'values' => array(
+            0 => array( 'name' => totranslate('No')),
+            1 => array( 'name' => totranslate('Yes')),
+        ),
+        'default' => 0
+    )
+    
 );

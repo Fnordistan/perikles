@@ -894,7 +894,6 @@
 
 /* Hide the browser's default checkbox */
 .prk_player_opt input {
-    position: absolute;
     opacity: 0;
     cursor: pointer;
     height: 0;
@@ -904,8 +903,8 @@
 /* Create a custom checkbox */
 .prk_checkmark {
     position: absolute;
-    height: 25px;
-    width: 25px;
+    height: 1em;
+    width: 1em;
     background-color: #eee;
     border: solid 2px lightgray;
 }
@@ -934,10 +933,10 @@
 
 /* Style the checkmark/indicator */
 .prk_player_opt .prk_checkmark:after {
-    left: 9px;
-    top: 5px;
-    width: 5px;
-    height: 10px;
+    left: 2px;
+    top: 2px;
+    width: 0.5em;
+    height: 0.5em;
     border: solid white;
     border-width: 0 3px 3px 0;
     -webkit-transform: rotate(45deg);
@@ -1086,21 +1085,19 @@
 }
 
 #player_options {
-    position: absolute;
-    left: var(--map_w);
     top: 0px;
-    margin: 5px 15px;
+    margin: 5px 5px;
     border: solid 1px gray;
     padding: 5px;
     font-family: 'ThrumsSerifRegular';
-    font-size: 1.5em;
+    font-size: 1em;
     max-width: fit-content;
 }
 
 #player_options > h2 {
     text-align: center;
     font-family: 'Bodoni Moda';
-    font-size: 1.5em;
+    font-size: 1em;
 }
 
 #player_options > i {

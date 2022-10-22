@@ -31,19 +31,17 @@ class action_perikles extends APP_GameAction
   	    {
             $this->view = "common_notifwindow";
   	        $this->viewArgs['table'] = self::getArg( "table", AT_posint, true );
-  	    }
-  	    else
-  	    {
+  	    } else {
             $this->view = "perikles_perikles";
             self::trace( "Complete reinitialization of board game" );
       }
-  	} 
-  	
+  	}
+
     /**
      * When player takes an Influence tile.
      */
     public function takeinfluence() {
-        self::setAjaxMode();     
+        self::setAjaxMode();
         $influence_id = self::getArg( "id", AT_posint, true );
         $this->game->takeInfluence($influence_id);
         self::ajaxResponse( );

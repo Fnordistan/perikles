@@ -67,14 +67,14 @@
             <div id="crt_{COL}" class="prk_crt" style="top: {CRTY}px; left: {CRTX}px;"></div>
         <!-- END CRT_BLOCK -->
     </div>
-    <div id="player_options" class="whiteblock">
+    <!-- <div id="player_options" class="whiteblock">
         <h2>{PLAYER_OPTIONS}</h2>
         <hr/>
         <label class="prk_player_opt">{AUTOPASS}
             <input id="autopass_special" type="checkbox">
             <span class="prk_checkmark"></span>
         </label><i id="autopass_help" class="fa fa-question-circle-o fa-lg"></i>
-    </div>
+    </div> -->
     <div id="deadpool">
         <h2 class="prk_hdr">{DEADPOOL}</h2>
         <div id="deadpool_ctnr"></div>
@@ -135,6 +135,13 @@ const jstpl_battle_token = '<div id="battle_token_${id}" class="prk_battle_token
 const jstpl_victory_tiles = '<div id="${id}_player_tiles" class="prk_player_tiles" style="--scale: ${scale};"></div>';
 
 const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;" data-side="${side}"></div>';
+
+const jstpl_player_options = '<div id="player_options">'+
+                                '<label class="prk_player_opt">${text}'+
+                                '<input id="autopass_special" type="checkbox">'+
+                                '<span class="prk_checkmark"></span>'+
+                                '</label><i id="autopass_help" class="fa fa-question-circle-o fa-lg"></i>'+
+                            '</div>';
 
 </script>  
 
