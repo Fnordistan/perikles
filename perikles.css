@@ -269,6 +269,37 @@
     float: right;
 }
 
+.prk_location_tooltip {
+    display: flex;
+    flex-direction: row;
+}
+
+.prk_location_tt_inner {
+    flex: 1;
+    border: 3px ridge darkgray;
+}
+
+.prk_location_tt_inner > h1 {
+    text-align: center;
+    font-family: Bodoni Moda;
+}
+
+.prk_location_tt_inner > h2 {
+    padding: 5px;
+}
+
+.prk_location_vp_text {
+    width: 100%;
+    background-color: #ccc;
+    text-align: center;
+    font-weight: bold;
+    padding: 5px 0;
+}
+
+.prk_location_militia_text {
+    width: 100%;
+}
+
 /* spans in log messages */
 .prk_hit {
     font-family: 'Bodoni Moda';

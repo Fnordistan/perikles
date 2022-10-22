@@ -153,18 +153,19 @@ define(["dojo/_base/declare"], function (declare) {
             desc += '<br/>';
             let vpstr = _("${vp} Victory Points");
             vpstr = vpstr.replace('${vp}', this.vp);
-            desc += vpstr;
+            desc += '<div class="prk_location_vp_text">'+vpstr+'<div>';
             const x = -1 * (this.y()-1) * TILE_WIDTH * TILE_SCALE;
             const y = -1 * (this.x()-1) * TILE_HEIGHT * TILE_SCALE;
 
             let defendingcity = _("Defender: ${cityname}");
             defendingcity = defendingcity.replace('${cityname}', cityName);
-            const tt = '<div style="display: flex; flex-direction: row;">\
+            const tt = '<div class="prk_location_tooltip">\
                                 <div class="prk_location_tile" style="background-position: '+x+'px '+y+'px; margin: 5px;"></div>\
-                                <div style="flex: 1;">\
-                                    <h1 style="font-family: Bodoni Moda;">'+this.getNameTr()+'</h1>\
-                                    <h2>'+defendingcity+'</h2>\
-                                    <span style="font-size: 22px;">'+desc+'</span>\
+                                <div class="prk_location_tt_inner">\
+                                    <h1>'+this.getNameTr()+'</h1>\
+                                    <hr\>\
+                                    <h2 style="background-color: var(--color_'+this.city+');">'+defendingcity+'</h2>\
+                                    <div>'+desc+'</div>\
                                 </div>\
                             </div>';
             return tt;
@@ -179,11 +180,12 @@ define(["dojo/_base/declare"], function (declare) {
             const x = -1 * (this.y()-1) * TILE_WIDTH * TILE_SCALE;
             const y = -1 * (this.x()-1) * TILE_HEIGHT * TILE_SCALE;
 
-            const tt = '<div style="display: flex; flex-direction: row;">\
+            const tt = '<div class="prk_location_tooltip">\
                                 <div class="prk_location_tile" style="background-position: '+x+'px '+y+'px; margin: 5px;"></div>\
-                                <div style="flex: 1;">\
-                                    <h1 style="font-family: Bodoni Moda;">'+this.getNameTr()+'</h1>\
-                                    <span style="font-size: 22px;">'+vpstr+'</span>\
+                                <div class="prk_location_tt_inner">\
+                                    <h1>'+this.getNameTr()+'</h1>\
+                                    <hr\>\
+                                    <div class="prk_location_vp_text">'+vpstr+'</div>\
                                 </div>\
                             </div>';
             return tt;
@@ -209,38 +211,47 @@ define(["dojo/_base/declare"], function (declare) {
         /**
          * Translated string describing location tile native attackers/defenders.
          * @param {string} intrinsic 
+         * @return span html or empty string
          */
          createBonusDescription: function() {
             let desc = "";
             if (this.intrinsic != null) {
                 const attacker = _("Attacker");
                 const defender = _("Defender");
+                const attackcolor = '#CEADC2';
+                const defendcolor = '#DAE3EA';
                 const both = _("Hoplites and Triremes");
                 const hoplite = _("Hoplites");
                 let bonusstr = _("${combatant} adds 1 to ${unit} strength");
                 let combatant = "";
                 let units = "";
+                let color = "";
                 switch (this.intrinsic) {
                     case "ah":
                         combatant = attacker;
                         units = hoplite;
+                        color = attackcolor;
                         break;
                     case "dh":
                         combatant = defender;
                         units = hoplite;
+                        color = defendcolor;
                         break;
                     case "aht":
                         combatant = attacker;
                         units = both;
+                        color = attackcolor;
                         break;
                     case "dht":
                         combatant = defender;
                         units = both;
+                        color = defendcolor;
                         break;
                }
                bonusstr = bonusstr.replace('${combatant}', combatant);
                bonusstr = bonusstr.replace('${unit}', units);
                desc = bonusstr;
+               desc = '<div class="prk_location_militia_text" style="background-color: '+color+';">'+desc+'</div>';
             }
             return desc;
         },
