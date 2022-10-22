@@ -2947,9 +2947,10 @@ function (dojo, declare) {
             const location = tile.id.split("_")[0];
             const controlling_city = new perikles.locationtile(location).getCity();
             const controlling_player = this.getLeader(controlling_city);
-            const bb_div = '<div id="'+location+'_permissions" class="prk_permission_box"></div>';
-            const button_box = dojo.place(bb_div, tile);
-
+            
+            const bb_div = this.format_block('jstpl_permission_box', {location: location, player_name: this.decorator.spanPlayerName(controlling_player), player_color: this.decorator.playerColor(controlling_player)});;
+            dojo.place(bb_div, tile);
+            const button_box = $(location+'_permissions');
             const wars = this.gamedatas.wars;
             for (let city of cities) {
                 // display all other cities NOT controlled by the same player

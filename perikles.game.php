@@ -766,7 +766,7 @@ class Perikles extends Table
             $leader = $this->Cities->getLeader($cn);
             if (!empty($leader)) {
                 $statues = $this->Cities->addStatue($leader, $cn);
-                self::notifyAllPlayers("addStatue", clienttranslate('${icon} Statue to ${player_name} erected in ${city_name}'), array(
+                self::notifyAllPlayers("addStatue", clienttranslate('${icon}Statue to ${player_name} erected in ${city_name}'), array(
                     'i18n' => ['city_name'],
                     'city' => $cn,
                     'city_name' => $this->Cities->getNameTr($cn),
@@ -775,7 +775,7 @@ class Perikles extends Table
                     'icon' => true,
                     'leader' => 'statue',
                     'player_name' => $players[$leader]['player_name'],
-                    'preserve' => ['player_id', 'city', 'statue'],
+                    'preserve' => ['player_id', 'city', 'leader'],
                 ));
             }
         }
@@ -3291,24 +3291,24 @@ class Perikles extends Table
 //////////// Zombie
 ////////////
 
-    // function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
-    //     // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
-    //     for ($cycle = 0; $cycle < $numCycles; $cycle++) {
-    //         $state = $this->gamestate->state();
-    //         $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
+    function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
+        // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
+        for ($cycle = 0; $cycle < $numCycles; $cycle++) {
+            $state = $this->gamestate->state();
+            $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
 
-    //         // You can remove the notification if you find it too noisy
-    //         self::notifyAllPlayers('notifyZombie', '<u>ZombieTest cycle ${cycle} for ${statename}</u>', [
-    //             'cycle'     => $cycle+1,
-    //             'statename' => $state['name']
-    //         ]);
+            // You can remove the notification if you find it too noisy
+            self::notifyAllPlayers('notifyZombie', '<u>ZombieTest cycle ${cycle} for ${statename}</u>', [
+                'cycle'     => $cycle+1,
+                'statename' => $state['name']
+            ]);
 
-    //         // Make each active player take a zombie turn
-    //         foreach ($activePlayers as $key=>$playerId) {
-    //             self::zombieTurn($state, (int)$playerId);
-    //         }
-    //     }
-    // }
+            // Make each active player take a zombie turn
+            foreach ($activePlayers as $key=>$playerId) {
+                self::zombieTurn($state, (int)$playerId);
+            }
+        }
+    }
 
     /*
         zombieTurn:

@@ -85,7 +85,7 @@ const jstpl_defeat = '<div id="${city}_defeat_${num}" class="prk_defeat" title="
 
 const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_player_counter prk_${type}" style="bottom: calc(${num}*22px); left: calc(${num}*6px);"></div>';
 
-const jstpl_leader_log = '<div id="${city}_${type}_log" class="prk_player_counter prk_${type}" data-color="${color}"></div>';
+const jstpl_leader_log = '<div class="prk_player_counter prk_${type}" data-color="${color}"></div>';
 
 const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: #${color};"></div>';
 
@@ -128,8 +128,13 @@ const jstpl_victory_tiles = '<div id="${id}_player_tiles" class="prk_player_tile
 
 const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;" data-side="${side}"></div>';
 
+const jstpl_permission_box = '<div id=""${location}_permissions_wrapper" class="prk_permission_box" style="background-color: ${player_color};">'+
+                                '<div id="${location}_permissions" class="prk_permission_row"></div>'+
+                                '<span>Controlling Player: ${player_name}</span>'+
+                            '</div>';
+
 const jstpl_player_options = '<div id="player_options">'+
-                                '<label class="prk_player_opt">${text}'+
+                                '<label class="prk_player_opt"><span>${text}</span>'+
                                     '<input id="autopass_special" type="checkbox">'+
                                     '<span class="prk_checkmark"></span>'+
                                 '</label>'+
