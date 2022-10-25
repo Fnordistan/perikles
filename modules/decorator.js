@@ -85,9 +85,7 @@ define(["dojo/_base/declare"], function (declare) {
          */
          colorBg: function(player) {
             let color_bg = "";
-            if (player.color_back) {
-                color_bg = "background-color:#"+player.color_back+";";
-            } else if (player.color == "FFF") {
+            if (player.color == "FFF") {
                 color_bg = WHITE_OUTLINE;
             }
             return color_bg;
