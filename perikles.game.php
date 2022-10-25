@@ -2385,16 +2385,22 @@ class Perikles extends Table
 
     /**
      * Set up for second round of a battle.
-     * @param {int} ATTACKER or DEFENDER
+     * @param {int} ATTACKER or DEFENDER (-1 for case of empty first battle)
      */
     function secondRoundReset($firstroundloser) {
-        $winner = ($firstroundloser == ATTACKER) ? DEFENDER : ATTACKER;
         $this->setGameStateValue(ATTACKER_TOKENS, 0);
         $this->setGameStateValue(DEFENDER_TOKENS, 0);
-        $this->takeToken($winner, true);
-        self::notifyAllPlayers("resetBattleTokens", '', array(
-            'winner' => ($winner == ATTACKER) ? "attacker" : "defender",
-        ));
+        if ($firstroundloser == -1) {
+            self::notifyAllPlayers("resetBattleTokens", '', array(
+                'winner' => null,
+            ));
+        } else {
+            $winner = ($firstroundloser == ATTACKER) ? DEFENDER : ATTACKER;
+            $this->takeToken($winner, true);
+            self::notifyAllPlayers("resetBattleTokens", '', array(
+                'winner' => ($winner == ATTACKER) ? "attacker" : "defender",
+            ));
+        }
     }
 
     /**
@@ -2940,11 +2946,16 @@ class Perikles extends Table
         $combat = $this->Locations->getCombat($location, $round);
         $attackers = $this->Battles->getAttackingCounters($location, $combat);
         $defenders = $this->Battles->getDefendingCounters($location, $combat);
+
         $players = self::loadPlayersBasicInfos();
         // is this round a one-sided battle?
         $unopposed = null;
+
         if (empty($attackers) || empty($defenders)) {
-            if (empty($attackers)) {
+            if (empty($attackers) && empty($defenders)) {
+                // the first round has no combatants, skip to next round
+                $unopposed = -1;
+            } elseif (empty($attackers)) {
                 // attacker brought nothing to this round
                 $unopposed = DEFENDER;
             } elseif (empty($defenders)) {
@@ -2957,26 +2968,39 @@ class Perikles extends Table
         }
 
         if ($unopposed !== null) {
-            $unopposed_id = ($unopposed === ATTACKER) ? $attacker : $defender;
-            $unopposed_role = ($unopposed === ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
-            self::dump("unopposed", $unopposed);
-            self::dump("unopposed_id", $unopposed_id);
-            self::dump("unopposed_role", $unopposed_role);
-            self::notifyAllPlayers("freeToken", clienttranslate('${icon} ${player_name} (${side}) wins ${combat_type} battle at ${location_name} unopposed'), array(
-                'i18n' => ['combat_type', 'side', 'location_name'],
-                'player_id' => $unopposed_id,
-                'player_name' => $players[$unopposed_id]['player_name'],
-                'type' => $combat,
-                'side' => $unopposed_role,
-                'combat_type' => $this->getUnitName($combat),
-                'icon' => true,
-                'location' => $location,
-                'location_name' => $this->Locations->getName($location),
-                'preserve' => ['player_id', 'location']
-            ));
+            if ($unopposed == -1) {
+                self::notifyAllPlayers("nonbattle", clienttranslate('${icon} No ${combat_type} battle at ${location_name}'), array(
+                    'i18n' => ['combat_type', 'location_name'],
+                    'combat_type' => $this->getUnitName($combat),
+                    'icon' => true,
+                    'location' => $location,
+                    'location_name' => $this->Locations->getName($location),
+                    'preserve' => ['location']
+                ));
+            } else {
+                $unopposed_id = ($unopposed === ATTACKER) ? $attacker : $defender;
+                $unopposed_role = ($unopposed === ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
+    
+                self::notifyAllPlayers("freeToken", clienttranslate('${icon} ${player_name} (${side}) wins ${combat_type} battle at ${location_name} unopposed'), array(
+                    'i18n' => ['combat_type', 'side', 'location_name'],
+                    'player_id' => $unopposed_id,
+                    'player_name' => $players[$unopposed_id]['player_name'],
+                    'type' => $combat,
+                    'side' => $unopposed_role,
+                    'combat_type' => $this->getUnitName($combat),
+                    'icon' => true,
+                    'location' => $location,
+                    'location_name' => $this->Locations->getName($location),
+                    'preserve' => ['player_id', 'location']
+                ));
+            }
 
             if ($round == 1) {
-                $loser = ($unopposed == ATTACKER) ? DEFENDER : ATTACKER;
+                if ($unopposed == -1) {
+                    $loser = -1;
+                } else {
+                    $loser = ($unopposed == ATTACKER) ? DEFENDER : ATTACKER;
+                }
                 $this->setGameStateValue(LOSER, $loser);
                 $state = "continueBattle";
             } else {
@@ -3291,24 +3315,24 @@ class Perikles extends Table
 //////////// Zombie
 ////////////
 
-    // function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
-    //     // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
-    //     for ($cycle = 0; $cycle < $numCycles; $cycle++) {
-    //         $state = $this->gamestate->state();
-    //         $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
+    function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
+        // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
+        for ($cycle = 0; $cycle < $numCycles; $cycle++) {
+            $state = $this->gamestate->state();
+            $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
 
-    //         // You can remove the notification if you find it too noisy
-    //         self::notifyAllPlayers('notifyZombie', '<u>ZombieTest cycle ${cycle} for ${statename}</u>', [
-    //             'cycle'     => $cycle+1,
-    //             'statename' => $state['name']
-    //         ]);
+            // You can remove the notification if you find it too noisy
+            self::notifyAllPlayers('notifyZombie', '<u>ZombieTest cycle ${cycle} for ${statename}</u>', [
+                'cycle'     => $cycle+1,
+                'statename' => $state['name']
+            ]);
 
-    //         // Make each active player take a zombie turn
-    //         foreach ($activePlayers as $key=>$playerId) {
-    //             self::zombieTurn($state, (int)$playerId);
-    //         }
-    //     }
-    // }
+            // Make each active player take a zombie turn
+            foreach ($activePlayers as $key=>$playerId) {
+                self::zombieTurn($state, (int)$playerId);
+            }
+        }
+    }
 
     /*
         zombieTurn:

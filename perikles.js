@@ -741,7 +741,7 @@ function (dojo, declare) {
                 if (log && args && !args.processed) {
                     args.processed = true;
 
-                    if (args.player_name && args.player_id) {
+                    if (args.player_name && args.player_id && this.gamedatas.players[args.player_id]) {
                         args.player_name = this.decorator.spanPlayerName(args.player_id);
                     }
                     if (args.actplayer) {
@@ -749,12 +749,6 @@ function (dojo, declare) {
                     }
                     if (args.candidate_name && args.candidate_id) {
                         args.candidate_name  = this.decorator.spanPlayerName(args.candidate_id);
-                    }
-                    if (args.attacker_name && args.attacker) {
-                        args.attacker_name = this.decorator.spanPlayerName(args.attacker);
-                    }
-                    if (args.defender_name && args.defender) {
-                        args.defender_name = this.decorator.spanPlayerName(args.defender);
                     }
                     if (args.city_name && args.city) {
                         args.city_name = this.spanCityName(args.city);
