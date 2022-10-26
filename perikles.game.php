@@ -2391,6 +2391,7 @@ class Perikles extends Table
         $this->setGameStateValue(ATTACKER_TOKENS, 0);
         $this->setGameStateValue(DEFENDER_TOKENS, 0);
         if ($firstroundloser == -1) {
+            // there was no battle in the first round
             self::notifyAllPlayers("resetBattleTokens", '', array(
                 'winner' => null,
             ));
@@ -2914,7 +2915,7 @@ class Perikles extends Table
             $state = "endBattle";
         } else {
             if ($round != 1) {
-                // one side starts with a battle token
+                // if there was a previous battle, one side starts with a battle token
                 $loser = $this->getGameStateValue(LOSER);
                 // return the units from the first battle
                 $prevcombat = $this->Locations->getCombat($location, 1);
@@ -2950,11 +2951,12 @@ class Perikles extends Table
         $players = self::loadPlayersBasicInfos();
         // is this round a one-sided battle?
         $unopposed = null;
+        $nocombatants = false;
 
         if (empty($attackers) || empty($defenders)) {
             if (empty($attackers) && empty($defenders)) {
                 // the first round has no combatants, skip to next round
-                $unopposed = -1;
+                $nocombatants = true;
             } elseif (empty($attackers)) {
                 // attacker brought nothing to this round
                 $unopposed = DEFENDER;
@@ -2967,17 +2969,18 @@ class Perikles extends Table
             }
         }
 
-        if ($unopposed !== null) {
-            if ($unopposed == -1) {
-                self::notifyAllPlayers("nonbattle", clienttranslate('${icon} No ${combat_type} battle at ${location_name}'), array(
-                    'i18n' => ['combat_type', 'location_name'],
-                    'combat_type' => $this->getUnitName($combat),
-                    'icon' => true,
-                    'location' => $location,
-                    'location_name' => $this->Locations->getName($location),
-                    'preserve' => ['location']
-                ));
-            } else {
+        if ($nocombatants) {
+            self::notifyAllPlayers("nonbattle", clienttranslate('${icon} No ${combat_type} battle at ${location_name}'), array(
+                'i18n' => ['combat_type', 'location_name'],
+                'combat_type' => $this->getUnitName($combat),
+                'icon' => true,
+                'location' => $location,
+                'location_name' => $this->Locations->getName($location),
+                'preserve' => ['location']
+            ));
+            $state = "nextBattle";
+        } else {
+            if ($unopposed !== null) {
                 $unopposed_id = ($unopposed === ATTACKER) ? $attacker : $defender;
                 $unopposed_role = ($unopposed === ATTACKER) ? clienttranslate('Attacker') : clienttranslate('Defender');
     
@@ -2993,30 +2996,27 @@ class Perikles extends Table
                     'location_name' => $this->Locations->getName($location),
                     'preserve' => ['player_id', 'location']
                 ));
-            }
-
-            if ($round == 1) {
-                if ($unopposed == -1) {
-                    $loser = -1;
-                } else {
+    
+                if ($round == 1) {
                     $loser = ($unopposed == ATTACKER) ? DEFENDER : ATTACKER;
+                    $this->setGameStateValue(LOSER, $loser);
+                    $state = "continueBattle";
+                } else {
+                    // unopposed side wins tile
+                    $this->claimTile($unopposed_id, $tile, $unopposed);
+                    $state = "nextBattle";
                 }
-                $this->setGameStateValue(LOSER, $loser);
-                $state = "continueBattle";
             } else {
-                // unopposed side wins tile
-                $this->claimTile($unopposed_id, $tile, $unopposed);
-                $state = "nextBattle";
-            }
-        } else {
-            $specialplayers = $this->specialBattleTilePlayers($combat);
-            if (empty($specialplayers)) {
-                $state = "combat";
-            } else {
-                $this->gamestate->setPlayersMultiactive( $specialplayers, "combat", true );
-                $state = "useSpecial";
+                $specialplayers = $this->specialBattleTilePlayers($combat);
+                if (empty($specialplayers)) {
+                    $state = "combat";
+                } else {
+                    $this->gamestate->setPlayersMultiactive( $specialplayers, "combat", true );
+                    $state = "useSpecial";
+                }
             }
         }
+
         $this->gamestate->nextState($state);
     }
 
