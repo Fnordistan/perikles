@@ -2465,13 +2465,14 @@ class Perikles extends Table
     function argsSpecialBattle() {
         $tile = $this->Battles->nextBattle();
         $location = $tile['location'];
-        $round = $this->getGameStateValue('battle_round');
+        $round = $this->getGameStateValue(BATTLE_ROUND);
         $combat = $this->Locations->getCombat($location, $round);
         $players = $this->specialBattleTilePlayers($combat);
         $private = array();
         foreach ($players as $player_id) {
             $private[$player_id] = array('special' => true, 'location' => $location);
         }
+
         return array(
             '_private' => $private,
             'i18n' => ['battle_location'],
@@ -2852,6 +2853,7 @@ class Perikles extends Table
 
         // is there another tile?
         $tile = $this->Battles->nextBattle();
+
         if ($tile === null) {
             $state = "endTurn";
         } else {
@@ -2904,11 +2906,11 @@ class Perikles extends Table
         $slot = $tile['slot'];
 
         $this->setGameStateValue(ACTIVE_BATTLE, $slot);
-        // initialized to 0 in stNextLocationTile, so this makes it either 1 or 2
-        $this->incGameStateValue(BATTLE_ROUND, 1);
-        $round = $this->getGameStateValue(BATTLE_ROUND);
+        // if incremented past number of rounds at this location, battle is over
+        $round = $this->incGameStateValue(BATTLE_ROUND, 1);
 
         $combat = $this->Locations->getCombat($location, $round);
+
         if ($combat == null) {
             // there should be a winner and we have already done losses
             $this->battleVictory($tile);
@@ -2917,13 +2919,17 @@ class Perikles extends Table
             if ($round != 1) {
                 // if there was a previous battle, one side starts with a battle token
                 $loser = $this->getGameStateValue(LOSER);
+
+        
                 // return the units from the first battle
                 $prevcombat = $this->Locations->getCombat($location, 1);
                 $this->returnMilitaryUnits($tile, $prevcombat);
+
                 $this->secondRoundReset($loser);
             }
             $state = "nextCombat";
         }
+
         $this->gamestate->nextState($state);
     }
 
@@ -2943,7 +2949,7 @@ class Perikles extends Table
         $attacker = $tile['attacker'];
         $defender = $tile['defender'];
         // do we have combatants on both sides for this round?
-        $round = $this->getGameStateValue('battle_round');
+        $round = $this->getGameStateValue(BATTLE_ROUND);
         $combat = $this->Locations->getCombat($location, $round);
         $attackers = $this->Battles->getAttackingCounters($location, $combat);
         $defenders = $this->Battles->getDefendingCounters($location, $combat);
@@ -2955,7 +2961,7 @@ class Perikles extends Table
 
         if (empty($attackers) || empty($defenders)) {
             if (empty($attackers) && empty($defenders)) {
-                // the first round has no combatants, skip to next round
+                // no combatants, no battle
                 $nocombatants = true;
             } elseif (empty($attackers)) {
                 // attacker brought nothing to this round
@@ -2978,7 +2984,20 @@ class Perikles extends Table
                 'location_name' => $this->Locations->getName($location),
                 'preserve' => ['location']
             ));
-            $state = "nextBattle";
+            // if this was round 1, go on to round 2. Otherwise, unclaimed tile and go to next
+            if ($round == 1) {
+                $state = "continueBattle";
+            } else {
+                self::notifyAllPlayers('unclaimedTile', clienttranslate('No combatants in second round of battle at ${location_name}; no one claims tile'), array(
+                    'i18n' => ['location_name'],
+                    'icon' => true,
+                    'location' => $location,
+                    'location_name' => $this->Locations->getName($location),
+                    'preserve' => ['location']
+                ));
+                $this->unclaimedTile($tile);
+                $state = "nextBattle";
+            }
         } else {
             if ($unopposed !== null) {
                 $unopposed_id = ($unopposed === ATTACKER) ? $attacker : $defender;
@@ -3028,6 +3047,7 @@ class Perikles extends Table
         $tile = $this->Battles->nextBattle();
         $location = $tile['location'];
         $slot = $tile['slot'];
+
         $round = $this->getGameStateValue(BATTLE_ROUND);
         $type = $this->Locations->getCombat($location, $round);
         $bonus = (($this->getGameStateValue(BRASIDAS) == 1) || ($this->getGameStateValue(PHORMIO) == 1));
@@ -3064,10 +3084,11 @@ class Perikles extends Table
             // shouldn't happen!
             throw new BgaVisibleSystemException("no combat strength found at $location!"); // NOI18N
         }
+
         $winner = $this->rollBattle($location, $slot, $type, $attstrength, $defstrength);
 
         $winningside = null;
-        if ($winner == ATTACKER) {
+        if ($winner === ATTACKER) {
             $winningside = clienttranslate('Attacker');
             $loser = DEFENDER;
             $loser_id = $this->Battles->getDefender($location);
@@ -3316,19 +3337,30 @@ class Perikles extends Table
 ////////////
 
     // function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
+    //     $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
+    //     // put the player who called it first
+    //     $asZombies = array();
+    //     foreach( array_values($activePlayers) as $playerId) {
+    //         if ($playerId == self::getActivePlayerId()) {
+    //             array_unshift($asZombies, $playerId);
+    //         } else {
+    //             array_push($asZombies, $playerId);
+    //         }
+    //     }
+
     //     // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
     //     for ($cycle = 0; $cycle < $numCycles; $cycle++) {
     //         $state = $this->gamestate->state();
-    //         $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
 
     //         // You can remove the notification if you find it too noisy
-    //         self::notifyAllPlayers('notifyZombie', '<u>ZombieTest cycle ${cycle} for ${statename}</u>', [
+    //         self::notifyAllPlayers('notifyZombie', '<u>ZombieTest turn ${cycle}/$numCycles for ${statename}</u>', [
     //             'cycle'     => $cycle+1,
+    //             'numCycles'     => $numCycles,
     //             'statename' => $state['name']
     //         ]);
 
     //         // Make each active player take a zombie turn
-    //         foreach ($activePlayers as $key=>$playerId) {
+    //         foreach ($asZombies as $playerId) {
     //             self::zombieTurn($state, (int)$playerId);
     //         }
     //     }
@@ -3604,5 +3636,41 @@ class Perikles extends Table
 //
 
 
-    }    
+    }
+
+	// public function LoadDebug()
+	// {
+	// 	// These are the id's from the BGAtable I need to debug.
+	// 	// you can get them by running this query : SELECT JSON_ARRAYAGG(`player_id`) FROM `player`
+	// 	$ids = [
+	// 		84417312,
+	// 		84410939,
+	// 		84403562,
+	// 		84828357,
+	// 		84404277
+	// 	];
+
+	// 	// Id of the first player in BGA Studio
+	// 	$sid = 2307217;
+
+	// 	foreach ($ids as $id) {
+	// 		// basic tables
+	// 		self::DbQuery("UPDATE player SET player_id='$sid' WHERE player_id = '$id'" );
+	// 		self::DbQuery("UPDATE global SET global_value='$sid' WHERE global_value = '$id'" );
+	// 		self::DbQuery("UPDATE stats SET stats_player_id='$sid' WHERE stats_player_id = '$id'" );
+
+	// 		// 'other' game specific tables. example:
+	// 		// tables specific to your schema that use player_ids
+	// 		self::DbQuery("UPDATE INFLUENCE SET card_location='$sid' WHERE card_location='$id'" );
+    //         foreach(["card_location", "attacker", "defender", "persia1", "persia2", "persia3", "persia4"] as $locarg) {
+    //             self::DbQuery("UPDATE LOCATION SET $locarg='$sid' WHERE $locarg='$id'" );
+    //         }
+    //         self::DbQuery("UPDATE MILITARY SET location='$sid' WHERE location='$id'" );
+    //         // clear autopass
+    //         self::DbQuery("UPDATE player SET special_tile_pass=0");
+
+	// 		++$sid;
+	// 	}
+	// }
+
 }

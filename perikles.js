@@ -1700,7 +1700,6 @@ function (dojo, declare) {
         //        
         onUpdateActionButtons: function( stateName, args )
         {
-                      
             if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
                     case 'takeInfluence':
@@ -3066,7 +3065,6 @@ function (dojo, declare) {
          */
         changeLogFontSize: function(sz) {
             const fontsize = (sz == 0) ? "1em" : "1.5em";
-            console.log("received " + sz + ": changing to "+fontsize);
             // Get the root element
             const r = document.querySelector(':root');
             r.style.setProperty('--log-font', fontsize);
