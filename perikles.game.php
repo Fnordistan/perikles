@@ -2168,12 +2168,15 @@ class Perikles extends Table
         $defd1 = bga_rand(1,6);
         $defd2 = bga_rand(1,6);
         $defhit = (($defd1 + $defd2) >= $defender_tn) ? True : False;
-        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} ${atttotal}: ${atthit}! Defender rolls ${defd1} ${defd2} ${deftotal}: ${defhit}!'), array(
+        self::notifyAllPlayers("diceRoll", clienttranslate('Attacker rolls ${attd1} ${attd2} [${atttotal} vs. ${atttarget}]: ${atthit}! ${crtroll} Defender rolls ${defd1} ${defd2} [${deftotal} vs. ${deftarget}]: ${defhit}!'), array(
+            'crtroll' => true,
             'attd1' => $attd1,
             'attd2' => $attd2,
             'defd1' => $defd1,
             'defd2' => $defd2,
             'atthit' => $atthit,
+            'atttarget' => $attacker_tn,
+            'deftarget' => $defender_tn,
             'atttotal' => $attd1+$attd2,
             'deftotal' => $defd1+$defd2,
             'defhit' => $defhit,
@@ -3339,25 +3342,25 @@ class Perikles extends Table
 //////////// Zombie
 ////////////
 
-    function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
-        // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
-        for ($cycle = 0; $cycle < $numCycles; $cycle++) {
-            $state = $this->gamestate->state();
-            $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
+    // function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
+    //     // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
+    //     for ($cycle = 0; $cycle < $numCycles; $cycle++) {
+    //         $state = $this->gamestate->state();
+    //         $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
 
-            // You can remove the notification if you find it too noisy
-            self::notifyAllPlayers('notifyZombie', '<u>ZombieTest turn ${cycle}/$numCycles for ${statename}</u>', [
-                'cycle'     => $cycle+1,
-                'numCycles'     => $numCycles,
-                'statename' => $state['name']
-            ]);
+    //         // You can remove the notification if you find it too noisy
+    //         self::notifyAllPlayers('notifyZombie', '<u>ZombieTest turn ${cycle}/$numCycles for ${statename}</u>', [
+    //             'cycle'     => $cycle+1,
+    //             'numCycles'     => $numCycles,
+    //             'statename' => $state['name']
+    //         ]);
 
-            // Make each active player take a zombie turn
-            foreach ($activePlayers as $playerId) {
-                self::zombieTurn($state, (int)$playerId);
-            }
-        }
-    }
+    //         // Make each active player take a zombie turn
+    //         foreach ($activePlayers as $playerId) {
+    //             self::zombieTurn($state, (int)$playerId);
+    //         }
+    //     }
+    // }
 
     /*
         zombieTurn:

@@ -798,15 +798,18 @@ function (dojo, declare) {
                         args.att = '<span class="prk_special_log">'+args.att+'</span>';
                         args.def = '<span class="prk_special_log">'+args.def+'</span>';
                     }
-                    if (args.attd1) {
+                    if (args.crtroll) {
+                        args.crtroll = '<br/>';
                         const hit = '<span class="prk_hit">'+_("Success")+'</span>';
                         const miss = '<span class="prk_miss">'+_("Failure")+'</span>';
                         args.attd1 = this.diceIcon(args.attd1, "attacker");
                         args.attd2 = this.diceIcon(args.attd2, "attacker");
                         args.defd1 = this.diceIcon(args.defd1, "defender");
                         args.defd2 = this.diceIcon(args.defd2, "defender");
-                        args.atttotal = '<span class="prk_dicetotal">['+args.atttotal+']</span>';
-                        args.deftotal = '<span class="prk_dicetotal">['+args.deftotal+']</span>';
+                        args.atttotal = '<span class="prk_dicetotal">'+args.atttotal+'</span>';
+                        args.deftotal = '<span class="prk_dicetotal">'+args.deftotal+'</span>';
+                        args.atttarget = '<span class="prk_dicetotal">'+args.atttarget+'</span>';
+                        args.deftarget = '<span class="prk_dicetotal">'+args.deftarget+'</span>';
                         args.atttotal = '<span>'+args.atttotal+'</span>';
                         args.atthit = args.atthit ? hit : miss;
                         args.defhit = args.defhit ? hit : miss;
