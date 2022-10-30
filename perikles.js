@@ -903,6 +903,7 @@ function (dojo, declare) {
         /**
          * Show all the units that have been assigned to send to battles and display in commit dialog.
          * @param {Object} committed Object from args
+         * @returns html div
          */
         createCommittedUnits: function(committed) {
             let commit_log = "";
@@ -1603,7 +1604,8 @@ function (dojo, declare) {
         //
         onEnteringState: function( stateName, args )
         {
-            this.currenState = stateName;
+            this.currentState = stateName;
+            console.log("onEnteringState: " + stateName);
 
             switch( stateName ) {
                 case 'chooseInitialInfluence':
@@ -1700,6 +1702,7 @@ function (dojo, declare) {
         //        
         onUpdateActionButtons: function( stateName, args )
         {
+            console.log("onUpdateActionButtons: " + stateName);
             if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
                     case 'takeInfluence':
@@ -2435,7 +2438,7 @@ function (dojo, declare) {
          * Button to assign a unit to a battle.
          * @param {Object} evt event
          */
-        assignUnit: function(evt) {
+         assignUnit: function(evt) {
             const selectedUnit = evt.currentTarget;
 
             this.commitDlg = new ebg.popindialog();
@@ -2476,7 +2479,10 @@ function (dojo, declare) {
                     if (location && sendto) {
                         const errmsg = this.checkEligibleToSend(city, unit, sendto, location);
                         if (errmsg == null) {
-                            this.onSendUnit(id, city, unit, strength, sendto, location);
+                            new Promise((resolve,reject) => {
+                                this.onSendUnit(id, city, unit, strength, sendto, location);
+                                resolve();
+                            }).then(this.addCommitLocationTooltips());
                             this.commitDlg.destroy();
                         } else {
                             banner_txt = '<span style="color: white; font-size: larger; font-weight: bold;">'+errmsg+'</span>';
@@ -2501,6 +2507,19 @@ function (dojo, declare) {
                 }
             };
             this.toggleAssignmentCancelButton(true);
+        },
+
+        /**
+         * Put tooltips on the location tiles in commit dialog.
+         */
+         addCommitLocationTooltips: function() {
+            const locations = $('maintitlebar_content').getElementsByClassName("prk_location_tile");
+            [...locations].forEach(loc => {
+                const location = loc.id.split("_")[0];
+                const tile = new perikles.locationtile(location);
+                const tt = tile.createTooltip(this.getCityNameTr(tile.getCity()));
+                this.addTooltipHtml(loc.id, tt, '');
+            });
         },
 
         /**

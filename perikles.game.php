@@ -1502,15 +1502,18 @@ class Perikles extends Table
      * Player selected Slave Revolt
      * @param {string} revoltlocation "sparta" or a tile location
      */
-    function playSlaveRevolt($revoltlocation) {
-        $this->checkAction('useSpecial');
+    function playSlaveRevolt($revoltlocation, $zombiePlayerId = null) {
+        if ($zombiePlayerId !== null) {
+            $this->checkAction('useSpecial');
+        }
         // sanity check - there is a Sparta leader
         $sparta_leader = $this->Cities->getLeader("sparta");
         if (empty($sparta_leader)) {
             throw new BgaVisibleSystemException("No Sparta Leader!"); // NOI18N
         }
 
-        $player_id = self::getCurrentPlayerId();
+        // current not active because can be used outside current turn
+        $player_id = $zombiePlayerId ?? $this->getCurrentPlayerId();
         $this->SpecialTiles->checkSpecialTile($player_id, SLAVEREVOLT);
 
         $location = "";
@@ -2204,11 +2207,11 @@ class Perikles extends Table
         $token = "";
         $role = "";
         $side = "";
-        if ($winner == ATTACKER) {
+        if ($winner === ATTACKER) {
             $side = "attacker";
             $token = ATTACKER_TOKENS;
             $role = clienttranslate('Attacker');
-        } elseif ($winner == DEFENDER) {
+        } elseif ($winner === DEFENDER) {
             $side = "defender";
             $token = DEFENDER_TOKENS;
             $role = clienttranslate('Defender');
@@ -3328,43 +3331,33 @@ class Perikles extends Table
     //     throw new BgaVisibleSystemException("$player in stDebug");
     // }
 
-    // function logDebug($msg) {
-    //     self::notifyAllPlayers("debug", $msg, []);
-    // }
+    function logDebug($msg) {
+        self::notifyAllPlayers("debug", $msg, []);
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie
 ////////////
 
-    // function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
-    //     $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
-    //     // put the player who called it first
-    //     $asZombies = array();
-    //     foreach( array_values($activePlayers) as $playerId) {
-    //         if ($playerId == self::getActivePlayerId()) {
-    //             array_unshift($asZombies, $playerId);
-    //         } else {
-    //             array_push($asZombies, $playerId);
-    //         }
-    //     }
+    function callZombie($numCycles = 1) { // Runs zombieTurn() on all active players
+        // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
+        for ($cycle = 0; $cycle < $numCycles; $cycle++) {
+            $state = $this->gamestate->state();
+            $activePlayers = $this->gamestate->getActivePlayerList(); // this works in both active and multiactive states
 
-    //     // Note: isMultiactiveState() doesn't work during this! It crashes without yielding an error.
-    //     for ($cycle = 0; $cycle < $numCycles; $cycle++) {
-    //         $state = $this->gamestate->state();
+            // You can remove the notification if you find it too noisy
+            self::notifyAllPlayers('notifyZombie', '<u>ZombieTest turn ${cycle}/$numCycles for ${statename}</u>', [
+                'cycle'     => $cycle+1,
+                'numCycles'     => $numCycles,
+                'statename' => $state['name']
+            ]);
 
-    //         // You can remove the notification if you find it too noisy
-    //         self::notifyAllPlayers('notifyZombie', '<u>ZombieTest turn ${cycle}/$numCycles for ${statename}</u>', [
-    //             'cycle'     => $cycle+1,
-    //             'numCycles'     => $numCycles,
-    //             'statename' => $state['name']
-    //         ]);
-
-    //         // Make each active player take a zombie turn
-    //         foreach ($asZombies as $playerId) {
-    //             self::zombieTurn($state, (int)$playerId);
-    //         }
-    //     }
-    // }
+            // Make each active player take a zombie turn
+            foreach ($activePlayers as $playerId) {
+                self::zombieTurn($state, (int)$playerId);
+            }
+        }
+    }
 
     /*
         zombieTurn:
@@ -3385,14 +3378,14 @@ class Perikles extends Table
         // if ($state['type'] == "activeplayer") {
             switch ($statename) {
                 case 'chooseInitialInfluence':
-                    $this->placeRandomInfluenceCube();
+                    $this->placeRandomInfluenceCube($active_player);
                     break;
                 case 'takeInfluence':
                     $tile = $this->chooseRandomTile($active_player);
-                    $this->takeInfluence($tile['id']);
+                    $this->takeInfluence($tile['id'], $active_player);
                     break;
                 case 'choosePlaceInfluence':
-                    $this->placeRandomInfluenceCube();
+                    $this->placeRandomInfluenceCube($active_player);
                     break;
                 case 'proposeCandidates':
                     // should have already checked that it's possible
@@ -3403,7 +3396,7 @@ class Perikles extends Table
                     break;
                 case 'spartanChoice':
                     $firstplayer = $this->chooseRandomPlayer();
-                    $this->chooseNextPlayer($firstplayer);
+                    $this->chooseNextPlayer($firstplayer, $active_player);
                     break;
                 case 'commitForces':
                     $this->sendRandomUnits($active_player);
@@ -3445,11 +3438,11 @@ class Perikles extends Table
     /**
      * Choose a random city to place a cube in.
      */
-    function placeRandomInfluenceCube() {
+    function placeRandomInfluenceCube($active_player) {
         $cities = $this->Cities->cities();
         shuffle($cities);
         $city = $cities[0];
-        $this->placeAnyCube($city);
+        $this->placeAnyCube($city, $active_player);
     }
 
     /**
@@ -3492,7 +3485,7 @@ class Perikles extends Table
                 if (empty($a)) {
                     foreach (array_keys($players) as $candidate_id) {
                         if ($this->Cities->influence($candidate_id, $cn) > 0) {
-                            $this->proposeCandidate($cn, $candidate_id);
+                            $this->proposeCandidate($cn, $candidate_id, $player_id);
                             return;
                         }
                     }
@@ -3503,7 +3496,7 @@ class Perikles extends Table
                     }
                     foreach (array_keys($players) as $candidate_id) {
                         if ($candidate_id != $a && $this->Cities->influence($candidate_id, $cn) > 0) {
-                            $this->proposeCandidate($cn, $candidate_id);
+                            $this->proposeCandidate($cn, $candidate_id, $player_id);
                             return;
                         }
                     }
@@ -3536,10 +3529,10 @@ class Perikles extends Table
             $killcube = array_pop($toremove);
             if ($killcube == "a" || $killcube == "b") {
                 $target = $this->Cities->getCandidate($cn, $killcube);
-                $this->chooseRemoveCube($target, $cn, $killcube);
+                $this->chooseRemoveCube($target, $cn, $killcube, $player_id);
                 break;
             } else {
-                $this->chooseRemoveCube($killcube, $cn, 1);
+                $this->chooseRemoveCube($killcube, $cn, 1, $player_id);
                 break;
             }
         }
@@ -3592,7 +3585,7 @@ class Perikles extends Table
             $assignment .= $unitstr." ";
         }
 
-        $this->assignUnits($assignment, "");
+        $this->assignUnits($assignment, "", $player_id);
     }
     
 ///////////////////////////////////////////////////////////////////////////////////:

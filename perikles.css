@@ -856,7 +856,7 @@
     height: 50px;
     margin: 5px;
     transition: transform 0.5s;
-    box-shadow: 15px 15px 15px 5px rgba(110, 2, 2, 0.4);
+    /* box-shadow: 15px 15px 15px 5px rgba(110, 2, 2, 0.4); */
 }
 
 .prk_blank_icon {
@@ -867,7 +867,7 @@
 
 .prk_battle_icon:hover {
     cursor: pointer;
-    box-shadow: 5px 5px 5px 0px rgba(110, 2, 2, 0.4);
+    /* box-shadow: 5px 5px 5px 0px rgba(110, 2, 2, 0.4); */
 }
 
 .prk_sword {
