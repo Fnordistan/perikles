@@ -12,6 +12,15 @@ const PLAYER_COLORS = {
     "FFF" : "white",
 }
 
+// map the default colors to colorblind equivalent
+const COLORBLIND_COLORS = {
+    "red" : "D55E00",
+    "green" : "009E73",
+    "black" : "000",
+    "orange" : "F0E442",
+    "white" : "FFF",
+}
+
 define(["dojo/_base/declare"], function (declare) {
     return declare("perikles.decorator", null, {
         
@@ -44,10 +53,15 @@ define(["dojo/_base/declare"], function (declare) {
 
         /**
          * From BGA Cookbook. Return "You" in this player's color
+         * @param {int} player_id
+         * @param {bool} cb colorblind option
          */
-         spanYou: function(player_id) {
+         spanYou: function(player_id, cb=false) {
             const player = this.players[player_id]; 
-            const color = player.color;
+            let color = player.color;
+            if (cb) {
+                color = this.toColorBlind(color);
+            }
             const color_bg = this.colorBg(player);
             const you = "<span style=\"font-weight:bold;color:#" + color + ";" + color_bg + "\">" + __("lang_mainsite", "You") + "</span>";
             return you;
@@ -55,19 +69,24 @@ define(["dojo/_base/declare"], function (declare) {
 
         /**
          * Create span with player's name in color.
-         * @param {int} player 
+         * @param {int} player_id
+         * @param {bool} cb colorblind option
          */
-         spanPlayerName: function(player_id) {
+         spanPlayerName: function(player_id, cb=false) {
             const player = this.players[player_id];
             const color_bg = this.colorBg(player);
-            const pname = "<span style=\"font-weight:bold;color:#" + player.color + ";" + color_bg + "\">" + player.name + "</span>";
+            let color = player.color;
+            if (cb) {
+                color = this.toColorBlind(color);
+            }
+            const pname = "<span style=\"font-weight:bold;color:#" + color + ";" + color_bg + "\">" + player.name + "</span>";
             return pname;
         },
 
         /**
          * Customized player colors per player_id
          * @param {string} player_id 
-         * @return color, or null if checked for a non-player
+         * @return color as name, or null if checked for a non-player
          */
          playerColor: function(player_id) {
             let color = null;
@@ -76,6 +95,16 @@ define(["dojo/_base/declare"], function (declare) {
                 color = PLAYER_COLORS[player.color];
             }
             return color;
+        },
+
+        /**
+         * Expects one of the player color hex strings and returns colorblind alternative.
+         * @param {string} player_color value of player.color
+         * @returns colorblind equivalent as hex string
+         */
+        toColorBlind: function(player_color) {
+            const color = PLAYER_COLORS[player_color];
+            return COLORBLIND_COLORS[color];
         },
 
         /**

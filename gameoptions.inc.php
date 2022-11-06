@@ -83,6 +83,14 @@ $game_preferences = array(
             1 => array( 'name' => totranslate('Yes')),
         ),
         'default' => 0
+    ),
+    103 => array(
+        'name' => totranslate('Colorblind-friendly'),
+        'needReload' => true,
+        'values' => array(
+            0 => array( 'name' => totranslate('No'), 'tmdisplay' => totranslate('Default colors')),
+            1 => array( 'name' => totranslate('Yes'), 'tmdisplay' => totranslate('Colorblind-friendly colors')),
+        ),
+        'default' => 0
     )
-    
 );

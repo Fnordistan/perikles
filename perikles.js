@@ -31,7 +31,7 @@ const COMMIT_INFLUENCE_CUBES = "commit_influence_cubes";
 const PREF_AUTO_PASS = 100;
 const PREF_LOG_FONT = 101;
 const PREF_CONFIRM_DIALOG = 102;
-
+const PREF_COLORBLIND = 103;
 const SCORING_ANIMATION = 2000;
 
 // permission buttons get displayed here
@@ -222,7 +222,7 @@ function (dojo, declare) {
                     ttext = specialtile.createSpecialTileTooltip();
                 } else {
                     ttext = _("${player_name}'s Special tile");
-                    const player_name = this.decorator.spanPlayerName(player_id);
+                    const player_name = this.decorator.spanPlayerName(player_id, this.isColorblind());
                     ttext = ttext.replace('${player_name}', player_name);
                 }
                 this.addTooltip(tile.id, ttext, '');
@@ -528,7 +528,7 @@ function (dojo, declare) {
             const leader = dojo.place(leaderhtml, counter_zone);
             leader.dataset.color = this.decorator.playerColor(player_id);
 
-            tt = tt.replace('${player_name}', this.decorator.spanPlayerName(player_id));
+            tt = tt.replace('${player_name}', this.decorator.spanPlayerName(player_id, this.isColorblind()));
             tt = tt.replace('${city_name}', this.getCityNameTr(city));
             this.addTooltip(leader.id, tt, '');
         },
@@ -541,8 +541,7 @@ function (dojo, declare) {
          * @returns html for colored influence cube
          */
         createInfluenceCube: function(player_id, city, tag) {
-            const player = this.gamedatas.players[player_id];
-            const color = player.color;
+            const color = this.getPlayerColor(player_id);
             const id = player_id+"_"+city+"_"+tag;
             const cube = this.format_block('jstpl_cube', {id: id, color: color});
             return cube;
@@ -742,13 +741,13 @@ function (dojo, declare) {
                     args.processed = true;
 
                     if (args.player_name && args.player_id && this.gamedatas.players[args.player_id]) {
-                        args.player_name = this.decorator.spanPlayerName(args.player_id);
+                        args.player_name = this.decorator.spanPlayerName(args.player_id, this.isColorblind());
                     }
                     if (args.actplayer) {
                         args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF;'+WHITE_OUTLINE);
                     }
                     if (args.candidate_name && args.candidate_id) {
-                        args.candidate_name  = this.decorator.spanPlayerName(args.candidate_id);
+                        args.candidate_name  = this.decorator.spanPlayerName(args.candidate_id, this.isColorblind());
                     }
                     if (args.city_name && args.city) {
                         args.city_name = this.spanCityName(args.city);
@@ -877,7 +876,7 @@ function (dojo, declare) {
                         args.icon = ldr_ctr;
                     }
                     if (!this.isSpectator) {
-                        log = log.replace("You", this.decorator.spanYou(this.player_id));
+                        log = log.replace("You", this.decorator.spanYou(this.player_id), this.isColorblind());
 
                         if (args.committed) {
                             const commit_log = this.createCommittedUnits(args.committed);
@@ -1017,7 +1016,7 @@ function (dojo, declare) {
  
             let title = "";
             if (this.isCurrentPlayerActive() && text !== null) {
-                tpl.you = this.decorator.spanYou(this.player_id);
+                tpl.you = this.decorator.spanYou(this.player_id, this.isColorblind());
             }
             if (text !== null) {
                 title = this.format_string_recursive(text, tpl);
@@ -1036,7 +1035,7 @@ function (dojo, declare) {
             const text = this.gamedatas.gamestate.olddescriptionmyturn;
             if (text) {
                 const player_id = (this.gamedatas.gamestate.name == "specialBattleTile") ? this.getCurrentPlayerId() :this. getActivePlayerId();
-                const acting = this.decorator.spanPlayerName(player_id);
+                const acting = this.decorator.spanPlayerName(player_id, this.isColorblind());
                 this.setDescriptionOnMyTurn(text, {actplayer: acting});
             }
         },
@@ -1715,7 +1714,7 @@ function (dojo, declare) {
                         break;
                     case 'spartanChoice':
                         for (player_id in this.gamedatas.players) {
-                            this.addActionButton( 'choose_'+player_id, this.decorator.spanPlayerName(player_id), 'choosePlayer', null, false, 'gray' );
+                            this.addActionButton( 'choose_'+player_id, this.decorator.spanPlayerName(player_id, this.isColorblind()), 'choosePlayer', null, false, 'gray' );
                         }
                         break;
                     case 'commitForces':
@@ -2110,7 +2109,7 @@ function (dojo, declare) {
                     const from_city_name = this.spanCityName(fromcity);
                     const to_city_name = this.spanCityName(tocity);
 
-                    movestr = movestr.replace('${player_name}', this.decorator.spanPlayerName(player_id));
+                    movestr = movestr.replace('${player_name}', this.decorator.spanPlayerName(player_id, this.isColorblind()));
                     movestr = movestr.replace('${from_city}', from_city_name);
                     movestr = movestr.replace('${to_city}', to_city_name);
 
@@ -2823,7 +2822,7 @@ function (dojo, declare) {
             let html = '<div id="slaverevolt_div">';
             const sparta_leader = this.getLeader("sparta");
             if (sparta_leader) {
-                const spartabtn = this.slaverevolt.createSpartaLeaderButton(this.decorator.spanPlayerName(sparta_leader));
+                const spartabtn = this.slaverevolt.createSpartaLeaderButton(this.decorator.spanPlayerName(sparta_leader, this.isColorblind()));
                 html += spartabtn;
                 const locations = this.slaverevolt.getSpartanHopliteLocations();
                 for (const stack of locations) {
@@ -2892,6 +2891,27 @@ function (dojo, declare) {
                                     '</div>';
                 dojo.place(unclaimed_div, $('player_boards'));
             }
+        },
+
+        /**
+         * Wrapper to check against colorblind preferences.
+         * @param {string} player_id 
+         * @returns player color as hex string
+         */
+        getPlayerColor: function(player_id) {
+            let color = this.gamedatas.players[player_id].color
+            if (this.isColorblind()) {
+                color = this.decorator.toColorBlind(color);
+            }
+            return '#'+color;
+        },
+
+        /**
+         * Is colorblind setting set?
+         * @returns {bool} true if colorblind
+         */
+        isColorblind: function() {
+            return (this.prefs[PREF_COLORBLIND].value == 1);
         },
 
         ////////////////////////////////////////////////////////////////
@@ -2963,7 +2983,8 @@ function (dojo, declare) {
             const controlling_city = new perikles.locationtile(location).getCity();
             const controlling_player = this.getLeader(controlling_city);
             
-            const bb_div = this.format_block('jstpl_permission_box', {location: location, player_name: this.decorator.spanPlayerName(controlling_player), player_color: this.decorator.playerColor(controlling_player)});;
+            const color = this.getPlayerColor(controlling_player);
+            const bb_div = this.format_block('jstpl_permission_box', {location: location, player_name: this.decorator.spanPlayerName(controlling_player, this.isColorblind()), player_color: color});;
             dojo.place(bb_div, tile);
             const button_box = $(location+'_permissions');
             const wars = this.gamedatas.wars;
@@ -3143,7 +3164,7 @@ function (dojo, declare) {
         proposeCandidate: function(city, player_id) {
             if (this.prefs[PREF_CONFIRM_DIALOG].value == 1) {
                 let removedlg = _("Propose ${player_id} as candidate in ${city}?");
-                removedlg = removedlg.replace('${player_id}', this.decorator.spanPlayerName(player_id));
+                removedlg = removedlg.replace('${player_id}', this.decorator.spanPlayerName(player_id, this.isColorblind()));
                 removedlg = removedlg.replace('${city}', this.getCityNameTr(city));
                 this.confirmationDialog( removedlg, () => {this._proposeCandidate(city, player_id)}, function() { return; });
             } else {
@@ -3176,7 +3197,7 @@ function (dojo, declare) {
         removeCube: function(player_id, city, c) {
             if (this.prefs[PREF_CONFIRM_DIALOG].value == 1) {
                 let removedlg = _("Remove ${player_id}'s cube in ${city}?");
-                removedlg = removedlg.replace('${player_id}', this.decorator.spanPlayerName(player_id));
+                removedlg = removedlg.replace('${player_id}', this.decorator.spanPlayerName(player_id, this.isColorblind()));
                 removedlg = removedlg.replace('${city}', this.getCityNameTr(city));
                 this.confirmationDialog( removedlg, () => {this._removeCube(player_id, city, c)}, function() { return; });
             } else {
@@ -4080,7 +4101,7 @@ function (dojo, declare) {
             const city = notif.args.city;
             const scoring_delay = toint(notif.args.scoring_delay);
             const player_cubes = city+'_cubes_'+player_id;
-            const player_color = this.gamedatas.players[player_id].color;
+            const player_color = this.getPlayerColor(player_id);
             this.displayScoring( player_cubes, player_color, vp, scoring_delay*SCORING_ANIMATION );
             this.scoreCtrl[ player_id ].incValue( vp );
         },
@@ -4095,7 +4116,7 @@ function (dojo, declare) {
             const statues = toint(notif.args.statues);
             const city = notif.args.city;
             const scoring_delay = toint(notif.args.scoring_delay);
-            const player_color = this.gamedatas.players[player_id].color;
+            const player_color = this.getPlayerColor(player_id);
             for (let s = 0; s < statues; s++) {
                 const statue_id = city+'_statue_'+s;
                 this.displayScoring( statue_id, player_color, vp, s*scoring_delay*SCORING_ANIMATION );

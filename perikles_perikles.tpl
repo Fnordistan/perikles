@@ -87,7 +87,7 @@ const jstpl_leader = '<div id="${city}_${type}_${num}" class="prk_player_counter
 
 const jstpl_leader_log = '<div class="prk_player_counter prk_${type}" data-color="${color}"></div>';
 
-const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: #${color};"></div>';
+const jstpl_cube = '<div id="${id}" class="prk_cube" style="background-color: ${color};"></div>';
 
 const jstpl_city_btn = '<button id="${city}_commit_btn" type="button" class="prk_city_btn" style="background-color: var(--color_${city});">${city_name}</button>';
 
