@@ -3106,11 +3106,27 @@ function (dojo, declare) {
             }
         },
 
+
+        /**
+         * Wrap actual method in a check for confirmation.
+         * @param {string} city 
+         */
+        placeInfluenceCube: function(city) {
+            if (this.prefs[PREF_CONFIRM_DIALOG].value == 1) {
+                let add_dlg = _("Add cube to ${city}?");
+                add_dlg = add_dlg.replace('${city}', this.getCityNameTr(city));
+                this.confirmationDialog( add_dlg, () => {this._placeInfluenceCube(city)}, function() { return; });
+            } else {
+                // no confirmation
+                this._placeInfluenceCube(city);
+            }
+        },
+
         /**
          * Action to place an Influence cube on a city.
          * @param {string} city 
          */
-        placeInfluenceCube: function(city) {
+        _placeInfluenceCube: function(city) {
             if (this.checkAction("placeAnyCube", true)) {
                 this.ajaxcall( "/perikles/perikles/placecube.html", { 
                     city: city,
