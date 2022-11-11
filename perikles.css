@@ -942,7 +942,6 @@
     width: var(--dice_dim);
     height: var(--dice_dim);
     z-index: 2;
-    perspective: 600px;
 }
 
 .prk_dice_box[data-result="hit"] {
