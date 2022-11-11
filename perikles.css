@@ -915,29 +915,7 @@
     grid-template-columns: repeat(auto-fit,  minmax(10px, max-content));
 }
 
-.prk_dice_box {
-    position: absolute;
-    width: var(--dice_dim);
-    height: var(--dice_dim);
-    perspective: 600px;
-}
-
-.prk_dice_cube {
-    width: var(--dice_dim);
-    height: var(--dice_dim);
-    /* place above defeat counters */
-    z-index: 2;
-    transform-style: preserve-3d;
-}
-
-.prk_dice_cube[data-result="hit"] {
-    box-shadow: 3px 3px 12px 5px red;
-}
-
-.prk_dice_cube[data-result="miss"] {
-    box-shadow: 3px 3px 12px 5px yellow;
-}
-
+/* log icons */
 .prk_dice {
     display: inline-block;
     background-image: url(img/dice.png);
@@ -958,13 +936,42 @@
     font-weight: 700;
 }
 
+/* container for die */
+.prk_dice_box {
+    position: absolute;
+    width: var(--dice_dim);
+    height: var(--dice_dim);
+    perspective: 600px;
+}
+
+.prk_dice_box[data-result="hit"] {
+    box-shadow: 3px 3px 12px 5px red;
+}
+
+.prk_dice_box[data-result="miss"] {
+    box-shadow: 3px 3px 12px 5px yellow;
+}
+
+/* Holder of all die faces */
+.prk_dice_cube {
+    width: var(--dice_dim);
+    height: var(--dice_dim);
+    /* place above defeat counters */
+    z-index: 2;
+    transform-style: preserve-3d;
+}
+
+/* left die */
 .prk_die_1 {
     transition: transform 1.5s ease-out;
 }
+
+/* left right */
 .prk_die_2 {
     transition: transform 1.25s ease-out;
 }
 
+/* while rolling */
 .prk_die_1[data-roll="1"] {
     transform: rotateX(360deg) rotateY(720deg) rotateZ(360deg);
 }
@@ -1002,6 +1009,7 @@
     transform: rotateX(-360deg) rotateY(-900deg) rotateZ(-360deg);
 }
 
+/* display faces */
 .prk_die_face {
     position: absolute;
     background-image: url(img/dice.png);

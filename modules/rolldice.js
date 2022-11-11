@@ -32,14 +32,12 @@ define(["dojo/_base/declare"], function (declare) {
         placeDice: function() {
             // check they aren't already placed
             if (!$('attacker-die-1')) {
-                const adie1 = this.getDiv(1, "attacker");
-                const adie2 = this.getDiv(2, "attacker");
-                const ddie1 = this.getDiv(1, "defender");
-                const ddie2 = this.getDiv(2, "defender");
-                dojo.place(adie1, $('attacker_dice1'));
-                dojo.place(adie2, $('attacker_dice2'));
-                dojo.place(ddie1, $('defender_dice1'));
-                dojo.place(ddie2, $('defender_dice2'));
+                ["attacker", "defender"].forEach(side => {
+                    [1, 2].forEach(n => {
+                        const die = this.getDiv(n, side);
+                        dojo.place(die, $(side+'_dicebox-'+n));
+                    });
+                });
             }
         },
 
@@ -59,19 +57,19 @@ define(["dojo/_base/declare"], function (declare) {
          * @param {string} hit true or false
          */
         highlightResult: function(side, hit) {
-            const result = (hit) ? "hit" : "miss";
-            $(side+"-die-1").dataset.result = result;
-            $(side+"-die-2").dataset.result = result;
+            const result = hit ? "hit" : "miss";
+            $(side+"_dicebox-1").dataset.result = result;
+            $(side+"_dicebox-2").dataset.result = result;
         },
 
         /**
          * Clear results after a roll
          */
         clearResultHighlights: function() {
-            delete $("attacker-die-1").dataset.result;
-            delete $("attacker-die-2").dataset.result;
-            delete $("defender-die-1").dataset.result;
-            delete $("defender-die-2").dataset.result;
+            ["attacker", "defender"].forEach(s => {
+                delete $(s+"_dicebox-1").dataset.result;
+                delete $(s+"_dicebox-2").dataset.result;
+            });
         },
 
         /**
@@ -81,9 +79,10 @@ define(["dojo/_base/declare"], function (declare) {
          * @param {int} val2 
          */
         rollDice: function (side, val1, val2) {
-            [$(side+"-die-1"), $(side+"-die-2")].forEach(die => {
+            ["1", "2"].forEach(n => {
+                const diecube = $(side+"-die-"+n);
                 ["prk_die_1", "prk_die_2"].forEach(f => {
-                    die.classList.toggle(f);
+                    diecube.classList.toggle(f);
                 });
             });
             $(side+"-die-1").dataset.roll = val1;

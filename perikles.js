@@ -4085,14 +4085,10 @@ function (dojo, declare) {
             const defd2 = toint(notif.args.defender_2);
             const atthit = notif.args.attacker_result;
             const defhit = notif.args.defender_result;
-            new Promise((resolve, reject) => {
-                this.dice.rollDice("attacker", attd1, attd2);
-                resolve();
-            }).then(this.dice.highlightResult("attacker", atthit));
-            new Promise((resolve, reject) => {
-                this.dice.rollDice("defender", defd1, defd2);
-                resolve();
-            }).then(this.dice.highlightResult("defender", defhit));
+            this.dice.rollDice("attacker", attd1, attd2);
+            this.dice.highlightResult("attacker", atthit);
+            this.dice.rollDice("defender", defd1, defd2);
+            this.dice.highlightResult("defender", defhit);
         },
 
         /**
