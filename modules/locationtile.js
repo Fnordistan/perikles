@@ -164,7 +164,7 @@ define(["dojo/_base/declare"], function (declare) {
                                 <div class="prk_location_tt_inner">\
                                     <h1>'+this.getNameTr()+'</h1>\
                                     <hr\>\
-                                    <h2 style="background-color: var(--color_'+this.city+');">'+defendingcity+'</h2>\
+                                    <div style="background-color: var(--color_'+this.city+');"><h2>'+defendingcity+'</h2></div>\
                                     <div>'+desc+'</div>\
                                 </div>\
                             </div>';
