@@ -941,6 +941,7 @@
     position: absolute;
     width: var(--dice_dim);
     height: var(--dice_dim);
+    z-index: 2;
     perspective: 600px;
 }
 
@@ -957,7 +958,6 @@
     width: var(--dice_dim);
     height: var(--dice_dim);
     /* place above defeat counters */
-    z-index: 2;
     transform-style: preserve-3d;
 }
 

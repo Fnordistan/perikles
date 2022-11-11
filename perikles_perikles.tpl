@@ -132,7 +132,7 @@ const jstpl_victory_tiles = '<div id="${id}_player_tiles" class="prk_player_tile
 
 const jstpl_die = '<div class="prk_dice" style="background-position: ${x}px 0;" data-side="${side}"></div>';
 
-const jstpl_permission_box = '<div id=""${location}_permissions_wrapper" class="prk_permission_box" style="background-color: ${player_color};">'+
+const jstpl_permission_box = '<div id="${location}_permissions_wrapper" class="prk_permission_box" style="background-color: ${player_color};">'+
                                 '<div id="${location}_permissions" class="prk_permission_row"></div>'+
                                 '<span>Controlling Player: ${player_name}</span>'+
                             '</div>';

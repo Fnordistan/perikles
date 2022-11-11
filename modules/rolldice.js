@@ -34,8 +34,8 @@ define(["dojo/_base/declare"], function (declare) {
             if (!$('attacker-die-1')) {
                 ["attacker", "defender"].forEach(side => {
                     [1, 2].forEach(n => {
-                        const die = this.getDiv(n, side);
-                        dojo.place(die, $(side+'_dicebox-'+n));
+                        const diehtml = this.getDiv(n, side);
+                        dojo.place(diehtml, $(side+'_dicebox-'+n));
                     });
                 });
             }

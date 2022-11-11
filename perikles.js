@@ -1215,6 +1215,15 @@ function (dojo, declare) {
             } 
         },
 
+        /**
+         * Clear effects after a tile has been resolved
+         * @param {string} location 
+         */
+        postBattle: function(location) {
+            this.dice.clearResultHighlights();
+            $(location+'_permissions_wrapper').remove();
+        },
+
         //////////////////////////////////////////////////////////////////////////////
         //// Borrowed from Tisaac
         //////////////////////////////////////////////////////////////////////////////
@@ -3771,6 +3780,7 @@ function (dojo, declare) {
             const loc = notif.args.location;
             const tile = $(loc+'_tile');
             this.moveAndScoreTile(tile, loc, 'unclaimed_tiles');
+            this.postBattle(loc);
         },
 
         /**
@@ -3785,6 +3795,7 @@ function (dojo, declare) {
             this.moveAndScoreTile(tile, loc, player_id+'_player_tiles', player_id, vp);
             // refresh tile displays
             this.displayPlayerVictoryTiles();
+            this.postBattle(loc);
         },
 
         /**
@@ -3807,6 +3818,7 @@ function (dojo, declare) {
                 i++;
             });
             this.displayPlayerVictoryTiles();
+            this.postBattle(location);
             // destroy original tile
             $(location+'_tile').remove();
         },
@@ -4085,10 +4097,15 @@ function (dojo, declare) {
             const defd2 = toint(notif.args.defender_2);
             const atthit = notif.args.attacker_result;
             const defhit = notif.args.defender_result;
+            $('attacker-die-1').addEventListener('transitionend', () => {
+                this.highlightResult("attacker", atthit);
+            });
             this.dice.rollDice("attacker", attd1, attd2);
-            this.dice.highlightResult("attacker", atthit);
+
+            $('defender-die-1').addEventListener('transitionend', () => {
+                this.highlightResult("defender", defhit);
+            });
             this.dice.rollDice("defender", defd1, defd2);
-            this.dice.highlightResult("defender", defhit);
         },
 
         /**
