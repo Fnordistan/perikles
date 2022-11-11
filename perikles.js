@@ -60,9 +60,10 @@ define([
     g_gamethemeurl + "modules/counter.js",
     g_gamethemeurl + "modules/locationtile.js",
     g_gamethemeurl + "modules/decorator.js",
+    g_gamethemeurl + "modules/rolldice.js",
 ],
 function (dojo, declare) {
-    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades, perikles.slaverevolt, perikles.stack, perikles.counter, perikles.decorator], {
+    return declare("bgagame.perikles", [ebg.core.gamegui, perikles.alkibiades, perikles.slaverevolt, perikles.stack, perikles.counter, perikles.decorator, perikles.dice], {
         constructor: function(){
             this.influence_h = 199;
             this.influence_w = 128;
@@ -102,6 +103,8 @@ function (dojo, declare) {
             }
 
             this.decorator = new perikles.decorator(gamedatas.players);
+            this.dice = new perikles.dice();
+
             this.setupSpecialTiles(gamedatas.players, gamedatas.specialtiles);
             this.setupInfluenceTiles(gamedatas.influencetiles, parseInt(gamedatas.decksize));
             this.setupInfluenceCubes(gamedatas.influencecubes);
@@ -123,7 +126,7 @@ function (dojo, declare) {
             }
 
             this.setupPreference();
-          },
+        },
 
         /**
          * Allow setting autopass for Special Tile  if it hasn't been used yet.
@@ -1649,10 +1652,14 @@ function (dojo, declare) {
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
                     break;
+                case 'rollcombat':
+                    this.dice.placeDice();
+                    break;
                 case 'endTurn':
                     this.resetWars();
                     this.gamedatas.permissions = {};
                     this.removePermissionButtons();
+                    this.dice.removeDice();
                     break;
             }
             if (MILITARY_DISPLAY_STATES.includes(stateName)) {
@@ -3454,6 +3461,8 @@ function (dojo, declare) {
             dojo.subscribe( 'revealCounters', this, "notif_revealCounters");
             dojo.subscribe( 'rollBattle', this, "notif_rollBattle");
             this.notifqueue.setSynchronous( 'rollBattle', 1500 );
+            dojo.subscribe( 'diceRoll', this, "notif_dieRoll");
+            this.notifqueue.setSynchronous( 'diceRoll', 3000 );
             dojo.subscribe( 'takeToken', this, "notif_takeToken");
             this.notifqueue.setSynchronous( 'takeToken', 1500 );
             dojo.subscribe( 'resetBattleTokens', this, "notif_resetBattleTokens");
@@ -4062,6 +4071,28 @@ function (dojo, declare) {
             });
             const crt_col = $('crt_'+crt);
             this.decorator.highlight(crt_col);
+        },
+
+        /**
+         * Animate rolling dice
+         * @param {Object} notif 
+         */
+        notif_dieRoll: function(notif) {
+            this.dice.clearResultHighlights();
+            const attd1 = toint(notif.args.attacker_1);
+            const attd2 = toint(notif.args.attacker_2);
+            const defd1 = toint(notif.args.defender_1);
+            const defd2 = toint(notif.args.defender_2);
+            const atthit = notif.args.attacker_result;
+            const defhit = notif.args.defender_result;
+            new Promise((resolve, reject) => {
+                this.dice.rollDice("attacker", attd1, attd2);
+                resolve();
+            }).then(this.dice.highlightResult("attacker", atthit));
+            new Promise((resolve, reject) => {
+                this.dice.rollDice("defender", defd1, defd2);
+                resolve();
+            }).then(this.dice.highlightResult("defender", defhit));
         },
 
         /**

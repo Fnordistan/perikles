@@ -2175,6 +2175,13 @@ class Perikles extends Table
             'defd1' => $defd1,
             'defd2' => $defd2,
             'atthit' => $atthit,
+            // have to insert these as seperate values because client side reformats args above to html
+            'attacker_1' => $attd1,
+            'attacker_2' => $attd2,
+            'defender_1' => $defd1,
+            'defender_2' => $defd2,
+            'attacker_result' => $atthit,
+            'defender_result' => $defhit,
             'atttarget' => $attacker_tn,
             'deftarget' => $defender_tn,
             'atttotal' => $attd1+$attd2,

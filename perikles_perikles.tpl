@@ -26,6 +26,10 @@
             <div id="influence_slot_{i}" class="prk_influence_slot" style="top: {T}px; left: {L}px;"></div>
             <!-- END INFLUENCE_TILES_BLOCK -->
         </div>
+        <div id="attacker_dice1" class="prk_dice_box" style="left: 832px; top: 515px;"></div>
+        <div id="attacker_dice2" class="prk_dice_box" style="left: 902px; top: 515px;"></div>
+        <div id="defender_dice1" class="prk_dice_box" style="left: 1110px; top: 515px;"></div>
+        <div id="defender_dice2" class="prk_dice_box" style="left: 1180px; top: 515px;"></div>
         <div id="attacker_battle_tokens" class="prk_token_box" style="width: 188px; left: 802px; top: 586px;"></div>
         <div id="battle_tokens" class="prk_token_box" style="width: 70px; left: 1001px; top: 586px;"></div>
         <div id="defender_battle_tokens" class="prk_token_box" style="width: 188px; left: 1080px; top: 586px;"></div>
