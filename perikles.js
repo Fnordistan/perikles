@@ -664,6 +664,11 @@ function (dojo, declare) {
                     }
                 }
             }
+            // reinitialize tooltips
+            this.setCityStackTooltip("persia");
+            for (const city of CITIES) {
+                this.setCityStackTooltip(city);
+            }
         },
 
         /**
@@ -689,7 +694,6 @@ function (dojo, declare) {
         createStack: function(city) {
             const stack = city+"_military";
             this.stacks.decorateMilitaryStack(stack);
-            this.setCityStackTooltip(city);
         },
 
         /**
