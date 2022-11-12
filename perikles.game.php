@@ -839,6 +839,7 @@ class Perikles extends Table
                 }
             }
         }
+        $nonowningplayers = array_diff(array_keys($players), $owning_players);
 
         // default to owning players shows id and strength
         $notif_args = array(
@@ -870,9 +871,9 @@ class Perikles extends Table
         // now replace id and strength with 0 for everyone else
         $notif_args['id'] = 0;
         $notif_args['strength'] = 0;
-
-        // send this to everyone except the owners - the owning players will have this filtered out client-side
-        self::notifyAllPlayers("sendBattle", $msg, $notif_args);
+        foreach($nonowningplayers as $npid) {
+            self::notifyPlayer($npid, "sendBattle", $msg, $notif_args);
+        }
     }
 
     /**
@@ -1005,7 +1006,7 @@ class Perikles extends Table
      * @param {string} city being given permission
      * @param {bool} bDefend give/retract permission
      */
-    function giveDefendPermission($location, $city, $bDefend) {
+    function setDefendPermission($location, $city, $bDefend) {
         // make sure assigner owns it
         $assigner = self::getCurrentPlayerId();
 
@@ -1017,13 +1018,28 @@ class Perikles extends Table
             throw new BgaUserException(sprintf(self::_("You are the Leader of %s!"), $this->Cities->getNameTr($city)));
         }
 
-        $players = self::loadPlayersBasicInfos();
-        $this->Locations->addPermission($location, $city);
+        if ($bDefend) {
+            // cannot give permission to a city at war
+            if ($this->Cities->atWar($controlling_city, $city)) {
+                throw new BgaUserException(self::_("You cannot give permission to defend a location to a city at war with that location's controlling city"));
+            }
+        } else {
+            // cannot revoke permission if there are already defenders there
+            $defenders = $this->Cities->getAllDefenders($location, $controlling_city);
+            if (in_array($city, $defenders)) {
+                throw new BgaUserException(self::_("You cannot revoke permissions from a city that has already placed defenders at this location"));
+            }
+        }     
+        $this->Locations->setPermission($location, $city, $bDefend);
 
-        self::notifyAllPlayers('givePermission', clienttranslate('${player_name} gives ${city_name} permission to send forces to ${location_name}'), array(
-            'i18n' => ['location_name', 'city_name'],
+        $permission = $bDefend ? clienttranslate("gives") : clienttranslate("revokes");
+
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers('givePermission', clienttranslate('${player_name} ${gives_or_revokes} permission for ${city_name} to defend ${location_name}'), array(
+            'i18n' => ['location_name', 'city_name', 'gives_or_revokes'],
             'player_id' => $assigner,
             'player_name' =>  $players[$assigner]['player_name'],
+            'gives_or_revokes' => $permission,
             'location' => $location,
             'location_name' => $this->Locations->getName($location),
             'city' => $city,

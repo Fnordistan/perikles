@@ -249,11 +249,25 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Set/revoke permission for a city to defend a location.
+   * @param {string} location
+   * @param {string} city
+   * @param {bool} bPermit true to give permission, false to revoke
+   */
+  public function setPermission($location, $city, $bPermit) {
+    if ($bPermit) {
+      $this->addPermission($location, $city);
+    } else {
+      $this->removePermission($location, $city);
+    }
+  }
+
+  /**
    * Add a new city to the list of permissions to defend a location.
    * @param {string} location
    * @param {string} city
    */
-  public function addPermission($location, $city) {
+  private function addPermission($location, $city) {
     $permissions = $this->getPermissions($location);
     if ($permissions == null) {
       $permissions = $city;
@@ -264,9 +278,11 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
-   * Remove permission from a city to defend a location.
+   * Remove permission from a city to defend a location. Does not check defenders were already there, must be done in game.php.
+   * @param {string} location
+   * @param {string} city
    */
-  public function removePermission($location, $city) {
+  private function removePermission($location, $city) {
     $permissions = $this->getPermissions($location);
     if ($permissions && str_contains($permissions, $city)) {
       $permissions = str_replace($city, '', $permissions);

@@ -210,6 +210,7 @@ class PeriklesCities extends APP_GameClass
    * Get a list of all cities defending at a battle tile.
    * @param {string} location
    * @param {string} city owner of location
+   * @return {array} of defending cities
    */
   public function getAllDefenders($location, $city) {
     $defenders = $this->getCitiesOnSide($location, DEFENDER);
