@@ -718,6 +718,7 @@ class Perikles extends Table
         $units = $this->Battles->claimCountersInCity($player_id, $city);
         // send notification that moves units from city stack to player's military zone
         self::notifyAllPlayers("takeMilitary", '', array(
+            'city' => $city,
             'military' => $units,
         ));
     }

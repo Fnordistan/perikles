@@ -3,6 +3,16 @@
  * Represents military stacks.
  */
 
+const STARTING_COUNTERS = {
+    "persia": {"h2" : 2, "h3" : 4, "t2" : 2, "t3" : 2},
+    "athens": {"h1" : 2, "h2" : 2, "h3" : 2, "t1" : 2, "t2" : 2, "t3" : 2, "t4" : 2},
+    "sparta": {"h1" : 2, "h2" : 3, "h3" : 3, "h4" : 2, "t1" : 1, "t2" : 2, "t3" : 1},
+    "argos": {"h1" : 2, "h2" : 2, "h3" : 2, "t1" : 1, "t2" : 1, "t3" : 1},
+    "corinth": {"h1" : 1, "h2" : 3, "h3" : 1, "t1" : 2, "t2" : 2, "t3" : 1},
+    "thebes": {"h1" : 2, "h2" : 3, "h3" : 2, "t1" : 1, "t2" : 1},
+    "megara": {"h1" : 1, "h2" : 1, "t1" : 1, "t2" : 1, "t3" : 1}
+};
+
 define(["dojo/_base/declare"], function (declare) {
     return declare("perikles.stack", null, {
         
@@ -187,6 +197,26 @@ define(["dojo/_base/declare"], function (declare) {
                 return a_id - b_id;
             });
             return sortbyunit;
+        },
+
+        /**
+         * For tooltip over an empty stack.
+         * @param {string} city 
+         */
+        showStartingForces: function(city) {
+            const startcounters = STARTING_COUNTERS[city];
+            // this will be replaced by the calling function
+            let html = '<div class="prk_citystack_tooltip"><h2>'+_('${city_name}')+'</h2>';
+            html += '<h3>'+_("Starting forces")+'</h3>';
+            for (let [unit, num] of Object.entries(startcounters)) {
+                const type = (unit[0] == "h") ? HOPLITE : TRIREME;
+                const vpad = (type == HOPLITE) ? '1em' : '0.5em';
+                const strength = unit[1];
+                const counter = new perikles.counter(city, type, strength, "startingtt");
+                html += '<div>'+counter.toLogIcon()+'<span style="padding: '+vpad+' 2px;"> &times; '+num+'</span></div>';
+            }
+
+            return html;
         },
 
     })

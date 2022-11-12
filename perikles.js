@@ -689,9 +689,21 @@ function (dojo, declare) {
         createStack: function(city) {
             const stack = city+"_military";
             this.stacks.decorateMilitaryStack(stack);
+            this.setCityStackTooltip(city);
+        },
+
+        /**
+         * set tooltip for a city stack, depending on whether there is a stack there or not.
+         * @param {string} city 
+         */
+        setCityStackTooltip: function(city) {
+            const stack = city+"_military";
+            // get rid of previous tooltip
+            this.removeTooltip(stack);
+            const empty = !$(stack).hasChildNodes();
             const city_name = this.getCityNameTr(city);
-            let tt = _("${city} military: click to inspect stack");
-            tt = tt.replace('${city}', city_name);
+            let tt = empty ? this.stacks.showStartingForces(city) : _("${city_name} military: click to inspect stack");
+            tt = tt.replace('${city_name}', city_name);
             this.addTooltip(stack, tt, '');
         },
 
@@ -3671,10 +3683,13 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_takeMilitary: function(notif) {
+            const city = notif.args.city;
             const military = notif.args.military;
             for (const mil of military) {
                 this.counterToPlayerBoard(mil);
             }
+            // reset tooltip
+            this.setCityStackTooltip(city);
         },
 
         /**
@@ -3692,6 +3707,7 @@ function (dojo, declare) {
                 mil['location'] = player_id;
                 this.counterToPlayerBoard(mil);
             }
+            this.setCityStackTooltip("persia");
         },
 
         /**
@@ -3921,7 +3937,8 @@ function (dojo, declare) {
                 cities.add(counter['city']);
             });
             for (city of cities) {
-                this.sortStack(city+'_military')
+                this.sortStack(city+'_military');
+                this.setCityStackTooltip(city);
             }
             // hide military board
             $('military_board').style['display'] = 'none';
