@@ -802,10 +802,10 @@ function (dojo, declare) {
                             const mil_div = counter.toLogIcon();
                             if (toint(args.battlepos) > 2) {
                                 // defender
-                                loc_msg += tile_div+LEFT_ARROW+mil_div;
+                                loc_msg += tile_div + LEFT_ARROW + mil_div;
                             } else {
                                 // attacker
-                                loc_msg += mil_div+RIGHT_ARROW+tile_div;
+                                loc_msg += mil_div + RIGHT_ARROW + tile_div;
                             }
                             loc_msg += '</div>';
                         }
@@ -2928,14 +2928,18 @@ function (dojo, declare) {
         /**
          * Wrapper to check against colorblind preferences.
          * @param {string} player_id 
-         * @returns player color as hex string
+         * @param {bool} bHex (optional, default: True) put '#' before hex string
+         * @returns player color as hex string with '#' prepended
          */
-        getPlayerColor: function(player_id) {
+        getPlayerColor: function(player_id, bHex=true) {
             let color = this.gamedatas.players[player_id].color
             if (this.isColorblind()) {
                 color = this.decorator.toColorBlind(color);
             }
-            return '#'+color;
+            if (bHex) {
+                color = '#'+color;
+            }
+            return color;
         },
 
         /**
@@ -3087,19 +3091,18 @@ function (dojo, declare) {
         },
 
         /**
-         * Binded to a button for a City to display/grant permissions to a battle tile location.
+         * Bound to a button for a City to display/grant permissions to a battle tile location.
          * Assumes data-status and data-defender has been set
-         * @param {Event} evt 
+         * @param {Event} evt
          */
         onClickPermissionButton: function(evt) {
             const button = evt.currentTarget;
             // cannot change permissions on a city at war
             if (button.dataset.status != "war") {
+                // it's neutral or allied, we can enable defense
                 const [location,city,_] = button.id.split("_");
-                if (button.dataset.defender != "true") {
-                    // it's neutral or allied, we can enable defense
-                    this.setDefenderPermissions(location, city, true);
-                }
+                const toggle = !(button.dataset.defender == "true");
+                this.setDefenderPermissions(location, city, toggle);
             }
         },
 
@@ -3409,7 +3412,7 @@ function (dojo, declare) {
          * @param {string} city granted permission to defend
          * @param {bool} bDefend true to give, false to revoke
          */
-        setDefenderPermissions: function(location, city, bDefend=true) {
+        setDefenderPermissions: function(location, city, bDefend) {
             this.ajaxcall( "/perikles/perikles/setdefender.html", {
                 location: location,
                 defender: city,
@@ -3466,9 +3469,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'takePersians', 1000 );
             dojo.subscribe( 'sendBattle', this, "notif_sendBattle");
             // ignore the message to sent to everyone about your own units
-            this.notifqueue.setIgnoreNotificationCheck( 'sendBattle', (notif) => (notif.args.id == 0 && notif.args.owners.includes(this.player_id)) );
+            // this.notifqueue.setIgnoreNotificationCheck( 'sendBattle', (notif) => (notif.args.id == 0 && notif.args.owners.includes(this.player_id)) );
             this.notifqueue.setSynchronous( 'sendBattle', 1000 );
-
 
             // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
@@ -3942,7 +3944,6 @@ function (dojo, declare) {
             });
             for (city of cities) {
                 this.sortStack(city+'_military');
-                this.setCityStackTooltip(city);
             }
             // hide military board
             $('military_board').style['display'] = 'none';
@@ -3971,7 +3972,7 @@ function (dojo, declare) {
         },
 
         /**
-         * Someone sent permission to defend.
+         * Someone sent or revoked permission to defend.
          * Need to update gamedatas.permissions
          * @param {Object} notif 
          */
@@ -4166,7 +4167,7 @@ function (dojo, declare) {
             const city = notif.args.city;
             const scoring_delay = toint(notif.args.scoring_delay);
             const player_cubes = city+'_cubes_'+player_id;
-            const player_color = this.getPlayerColor(player_id);
+            const player_color = this.getPlayerColor(player_id, false);
             this.displayScoring( player_cubes, player_color, vp, scoring_delay*SCORING_ANIMATION );
             this.scoreCtrl[ player_id ].incValue( vp );
         },
@@ -4181,7 +4182,7 @@ function (dojo, declare) {
             const statues = toint(notif.args.statues);
             const city = notif.args.city;
             const scoring_delay = toint(notif.args.scoring_delay);
-            const player_color = this.getPlayerColor(player_id);
+            const player_color = this.getPlayerColor(player_id, false);
             for (let s = 0; s < statues; s++) {
                 const statue_id = city+'_statue_'+s;
                 this.displayScoring( statue_id, player_color, vp, s*scoring_delay*SCORING_ANIMATION );
@@ -4205,6 +4206,11 @@ function (dojo, declare) {
             [...my_counters].forEach(counter => {
                 counter.remove();
             });
+            // reset city stacks
+            for (let city of CITIES) {
+                this.setCityStackTooltip(city);
+            }
+            this.setCityStackTooltip("persia");
         },
     });
 });

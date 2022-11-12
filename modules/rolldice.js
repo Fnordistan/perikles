@@ -1,3 +1,8 @@
+/**
+ * For simulating d6 rolls.
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
+ * Perikles implementation : © <David Edelstein> <david.edelstein@gmail.com>
+ */
 
 const DICE_HTML = '<div id="${side}-die-${die}" class="prk_dice_cube prk_die_${die}">\
                         <div class="prk_die_face" data-face="1" data-side="${side}"></div>\
@@ -19,6 +24,12 @@ define(["dojo/_base/declare"], function (declare) {
         constructor: function () {
         },
 
+        /**
+         * Create the HTML block representing a dice cube.
+         * @param {string} die 1 or 2
+         * @param {string} rollingside attacker/defender
+         * @returns HTML div
+         */
         getDiv: function(die, rollingside) {
             html = DICE_HTML;
             html = html.replaceAll('${die}', die);
@@ -33,7 +44,7 @@ define(["dojo/_base/declare"], function (declare) {
             // check they aren't already placed
             if (!$('attacker-die-1')) {
                 ["attacker", "defender"].forEach(side => {
-                    [1, 2].forEach(n => {
+                    ["1", "2"].forEach(n => {
                         const diehtml = this.getDiv(n, side);
                         dojo.place(diehtml, $(side+'_dicebox-'+n));
                     });

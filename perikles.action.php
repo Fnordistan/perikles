@@ -192,7 +192,7 @@ class action_perikles extends APP_GameAction
       $location = self::getArg( "location", AT_alphanum, true );
       $defender = self::getArg( "defender", AT_alphanum, true );
       $bDefend =  self::getArg( "defend", AT_bool, true );
-      $this->game->giveDefendPermission($location, $defender, $bDefend);
+      $this->game->setDefendPermission($location, $defender, $bDefend);
       self::ajaxResponse( );
     }
 
