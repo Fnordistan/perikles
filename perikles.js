@@ -1737,7 +1737,6 @@ function (dojo, declare) {
         //        
         onUpdateActionButtons: function( stateName, args )
         {
-            console.log("onUpdateActionButtons: " + stateName);
             if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
                     case 'takeInfluence':
