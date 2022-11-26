@@ -862,7 +862,7 @@
 .prk_mil_container {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    column-gap: 10px;
     align-items: stretch;
     min-width: calc(var(--military_l)+var(--military_s));
     min-height: fit-content;
@@ -872,14 +872,16 @@
 .prk_hoplites {
     display: flex;
     flex-direction: column;
+    row-gap: 5px;
     margin-right: 5px;
     min-height: var(--military_l);
     width: var(--military_s);
 }
 
-.prk_trireme_col {
+.prk_triremes {
     display: flex;
     flex-direction: column;
+    row-gap: 5px;
     min-height: var(--military_s);
     width: var(--military_l);
 }

@@ -2583,8 +2583,24 @@ function (dojo, declare) {
                     }
                 } else if (this.isLeader(this.player_id, opposing_city)) {
                     return _("Cities under your control cannot fight on opposite sides of the same battle!");
+                } else {
+                    // check for allied cities on the other side
+                    const opposingrel = this.gamedatas.wars[city][opposing_city];
+                    if (opposingrel == ALLIED) {
+                        return _("Units cannot join a battle on the opposite side as a city it is allied with!");
+                    }
                 }
             }
+            // are any enemy units on the same side?
+            const allies = tile.getUnits(side);
+            for (let a of allies) {
+                const allied_city = a.id.split("_")[0];
+                const rel = this.gamedatas.wars[city][allied_city];
+                if (rel == WAR) {
+                    return _("Units cannot join a battle on the same side as a city it is at war with!");
+                }
+            }
+
             return null;
         },
 
