@@ -934,8 +934,13 @@
     background-image: url(img/spartan-shield.png);
 }
 
-.prk_shield:hover {
+.prk_shield[data-permission="true"]:hover {
     transform: translateX(-5px);
+}
+
+.prk_shield[data-permission="false"] {
+    box-shadow: 5px 5px 10px 10px orangered;
+    cursor: not-allowed;
 }
 
 .prk_crt {

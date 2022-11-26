@@ -1637,7 +1637,6 @@ function (dojo, declare) {
         onEnteringState: function( stateName, args )
         {
             this.currentState = stateName;
-            console.log("onEnteringState: " + stateName);
 
             switch( stateName ) {
                 case 'chooseInitialInfluence':
@@ -2605,6 +2604,23 @@ function (dojo, declare) {
         },
 
         /**
+         * Check whether a city has permission to defend a location.
+         * @param {string} city of unit
+         * @param {string} location tile
+         * @param {bool} true if we have permission, false if not
+         */
+        checkPermissionToDefend: function(city, location) {
+            const tile = new perikles.locationtile(location);
+            if (this.isLeader(this.player_id, tile.getCity())) {
+                return true;
+            }
+            if (this.gamedatas.permissions[location] && this.gamedatas.permissions[location].includes(city)) {
+                return true;
+            }
+            return false;
+        },
+
+        /**
          * Check whether player can attack a city, only based on whether they are the leader.
          * Doesn't do other checks, like allied status.
          * @param {string} city 
@@ -2790,7 +2806,8 @@ function (dojo, declare) {
                 const loc_tile = tile.createTile(1);
                 loc_html += loc_tile;
                 if (this.checkEligibleToSend(unit_city, unit_type, "defend", battle) == null) {
-                    loc_html += '<div id="defend_'+battle+'" class="prk_battle_icon prk_shield"></div>';
+                    const permitted = this.checkPermissionToDefend(unit_city, battle);
+                    loc_html += '<div id="defend_'+battle+'" class="prk_battle_icon prk_shield" data-permission="'+permitted+'"></div>';
                 } else {
                     loc_html += '<div class="prk_blank_icon"></div>';
                 }
