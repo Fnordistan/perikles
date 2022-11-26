@@ -1307,6 +1307,12 @@
     border: 2px solid black;
 }
 
+#commit_text {
+    display: block;
+    min-width: 100%;
+    max-width: fit-content;
+}
+
 #player_options {
     display: flex;
     width: 95%;

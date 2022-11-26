@@ -2506,6 +2506,7 @@ function (dojo, declare) {
 
                 const attack_str = _("Send ${unit} to attack ${location}?");
                 const defend_str = _("Send ${unit} to defend ${location}?");
+                const permission_str = _("The player controlling ${controlling_city} must give permission for ${unit} to defend ${location}");
                 let banner_txt = null;
 
                 if (target.id == "send_button" ) {
@@ -2532,7 +2533,12 @@ function (dojo, declare) {
                     const tile = new perikles.locationtile(loc);
                     dlg.setAttribute("data-location", loc);
                     dlg.setAttribute("data-side", side);
-                    banner_txt = side == "attack" ? attack_str : defend_str;
+                    banner_txt = (side == "attack") ? attack_str : defend_str;
+                    if (side == "defend" && target.dataset.permission == "false") {
+                        banner_txt = permission_str;
+                        const owner_city = tile.getCity();
+                        banner_txt = banner_txt.replace('${controlling_city}', this.spanCityName(owner_city));
+                    }
                     banner_txt = banner_txt.replace('${location}', '<span style="color: var(--color_'+tile.getCity()+');">'+tile.getNameTr()+'</span>');
                     banner_txt = banner_txt.replace('${unit}', unit_str);
                 }
