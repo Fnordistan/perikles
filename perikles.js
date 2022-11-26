@@ -705,8 +705,8 @@ function (dojo, declare) {
             // get rid of previous tooltip
             this.removeTooltip(stack);
             tt = this.stacks.showStartingForces(city, this.spanCityName(city));
-            if (!$(stack).hasChildNodes) {
-                tt += '<div>'
+            if ($(stack).hasChildNodes) {
+                tt += '<div style="margin-top: 0.5em;">';
                 tt += _("Click to inspect stack");
                 tt += '<div>'
             }

@@ -229,7 +229,7 @@ define(["dojo/_base/declare"], function (declare) {
             }
             trireme_col += '</div>';
             hoplite_col += '</div>';
-            html += trireme_col + hoplite_col;
+            html += hoplite_col + trireme_col;
             html += '</div></div>';
             return html;
         },
