@@ -903,8 +903,9 @@
 }
 
 .prk_battle_icon {
+    background-image: url(img/sword-shield-icons.png);
+    background-size: 150px 50px;
     background-repeat: no-repeat;
-    background-size: 50px 50px;
     width: 50px;
     height: 50px;
     margin: 5px;
@@ -923,23 +924,24 @@
     /* box-shadow: 5px 5px 5px 0px rgba(110, 2, 2, 0.4); */
 }
 
-.prk_sword {
-    background-image: url(img/spartan-sword.png);
+.prk_commit_icon[data-icon="sword"] {
+    background-position: 0px 0px;
 }
-.prk_sword:hover {
+
+.prk_battle_icon[data-icon="sword"]:hover {
     transform: translateX(5px);
 }
 
-.prk_shield {
-    background-image: url(img/spartan-shield.png);
+.prk_battle_icon[data-icon="shield"] {
+    background-position: -50px 0px;
 }
 
-.prk_shield[data-permission="true"]:hover {
+.prk_battle_icon[data-icon="shield"][data-permission="true"]:hover {
     transform: translateX(-5px);
 }
 
-.prk_shield[data-permission="false"] {
-    box-shadow: 5px 5px 10px 10px orangered;
+.prk_battle_icon[data-icon="shield"][data-permission="false"] {
+    background-position: -100px 0px;
     cursor: not-allowed;
 }
 

@@ -2799,7 +2799,7 @@ function (dojo, declare) {
                 // can't attack own city
                 const battle_city = tile.getCity();
                 if (unit_city != battle_city && this.canAttack(battle_city) && this.checkEligibleToSend(unit_city, unit_type, "attack", battle) == null) {
-                    loc_html += '<div id="attack_'+battle+'" class="prk_battle_icon prk_sword"></div>';
+                    loc_html += '<div id="attack_'+battle+'" class="prk_battle_icon" data-icon="sword"></div>';
                 } else {
                     loc_html += '<div class="prk_blank_icon"></div>';
                 }
@@ -2807,7 +2807,7 @@ function (dojo, declare) {
                 loc_html += loc_tile;
                 if (this.checkEligibleToSend(unit_city, unit_type, "defend", battle) == null) {
                     const permitted = this.checkPermissionToDefend(unit_city, battle);
-                    loc_html += '<div id="defend_'+battle+'" class="prk_battle_icon prk_shield" data-permission="'+permitted+'"></div>';
+                    loc_html += '<div id="defend_'+battle+'" class="prk_battle_icon" data-icon="shield" data-permission="'+permitted+'"></div>';
                 } else {
                     loc_html += '<div class="prk_blank_icon"></div>';
                 }
