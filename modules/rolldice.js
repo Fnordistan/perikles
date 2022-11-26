@@ -4,22 +4,22 @@
  * Perikles implementation : © <David Edelstein> <david.edelstein@gmail.com>
  */
 
-const DICE_HTML = '<div id="${side}-die-${die}" class="prk_dice_cube prk_die_${die}">\
-                        <div class="prk_die_face" data-face="1" data-side="${side}"></div>\
-                        <div class="prk_die_face" data-face="6" data-side="${side}"></div>\
-                        <div class="prk_die_face" data-face="4" data-side="${side}"></div>\
-                        <div class="prk_die_face" data-face="3" data-side="${side}"></div>\
-                        <div class="prk_die_face" data-face="5" data-side="${side}"></div>\
-                        <div class="prk_die_face" data-face="2" data-side="${side}"></div>\
-                    </div>';
 
 define(["dojo/_base/declare"], function (declare) {
+
+    const DICE_HTML = '<div id="${side}-die-${die}" class="prk_dice_cube prk_die_${die}">\
+    <div class="prk_die_face" data-face="1" data-side="${side}"></div>\
+    <div class="prk_die_face" data-face="6" data-side="${side}"></div>\
+    <div class="prk_die_face" data-face="4" data-side="${side}"></div>\
+    <div class="prk_die_face" data-face="3" data-side="${side}"></div>\
+    <div class="prk_die_face" data-face="5" data-side="${side}"></div>\
+    <div class="prk_die_face" data-face="2" data-side="${side}"></div>\
+    </div>';
+
     return declare("perikles.dice", null, {
 
         /**
-         * Hold data about a Spartan Hoplites
-         * @param {string} to_city
-         * @param {string} cubeid
+         * 
          */
         constructor: function () {
         },

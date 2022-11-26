@@ -704,10 +704,12 @@ function (dojo, declare) {
             const stack = city+"_military";
             // get rid of previous tooltip
             this.removeTooltip(stack);
-            const empty = !$(stack).hasChildNodes();
-            const city_name = this.getCityNameTr(city);
-            let tt = empty ? this.stacks.showStartingForces(city) : _("${city_name} military: click to inspect stack");
-            tt = tt.replace('${city_name}', city_name);
+            tt = this.stacks.showStartingForces(city, this.spanCityName(city));
+            if (!$(stack).hasChildNodes) {
+                tt += '<div>'
+                tt += _("Click to inspect stack");
+                tt += '<div>'
+            }
             this.addTooltip(stack, tt, '');
         },
 

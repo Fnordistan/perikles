@@ -155,22 +155,26 @@
 .prk_citystack_tooltip {
     display: flex;
     flex-direction: column;
-    row-gap: 0.5em;
+    /* column-gap: 0.25em; */
     font-family: 'ThrumsSerifRegular';
-    width: fit-content;
+    justify-items: center;
+    text-align: center;
 }
 
-.prk_citystack_tooltip > h2 {
-    font-size: 3em;
-}
-.prk_citystack_tooltip > h3 {
-    font-size: 2em;
-}
-
-.prk_citystack_tooltip > div {
+.prk_citystack_tooltip_inner {
     display: flex;
-    flex-direction: row;
-    font-size: 2em;
+    flex-direction:row;
+    /* column-gap: 0.25em; */
+}
+
+/* the trireme/hoplite columns */
+
+.prk_stack_column {
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.25em;
+    width: fit-content;
+    align-items: baseline;
 }
 
 .prk_shadow {
@@ -609,11 +613,24 @@
     height: var(--military_l);
 }
 
+.prk_hoplite[data-stack="true"] {
+    background-size:  calc(2.5 * var(--military_s)) calc(3.5 * var(--military_l));
+    width: calc(0.5 * var(--military_s));
+    height: calc(0.5 * var(--military_l));
+}
+
 .prk_trireme {
     background-image: url(img/triremes.jpg);
     background-size:  calc(5 * var(--military_l)) calc(7 * var(--military_s));
     width: var(--military_l);
     height: var(--military_s);
+}
+
+.prk_trireme[data-stack="true"] {
+    background-image: url(img/triremes.jpg);
+    background-size:  calc(2.5 * var(--military_l)) calc(3.5 * var(--military_s));
+    width: calc(0.5 * var(--military_l));
+    height: calc(0.5 * var(--military_s));
 }
 
 .prk_hoplite_battle {

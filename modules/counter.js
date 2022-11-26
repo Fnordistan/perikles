@@ -2,11 +2,8 @@
  * counters.js: Represents a single military counter, with functions to convert to HTML.
  */
 
-const HOPLITE = "hoplite";
-const TRIREME = "trireme";
-
-// rows where counters are found on the sprite image
-const MILITARY_ROW = {'argos': 0, 'athens': 1, 'corinth': 2, 'megara': 3, 'sparta': 4, 'thebes': 5, 'persia': 6};
+ const HOPLITE = "hoplite";
+ const TRIREME = "trireme";
 
 // counter pixel dimensions on long and short sides
 const MIL_DIM = {
@@ -14,15 +11,19 @@ const MIL_DIM = {
     "s": 62
 }
 
-// match MAIN/ALLY ATT/DEF constants in php
-const BATTLE_POS = {
-    1: "att",
-    2: "att_ally",
-    3: "def",
-    4: "def_ally"
-}
-
 define(["dojo/_base/declare"], function (declare) {
+
+    // rows where counters are found on the sprite image
+    const MILITARY_ROW = {'argos': 0, 'athens': 1, 'corinth': 2, 'megara': 3, 'sparta': 4, 'thebes': 5, 'persia': 6};
+
+    // match MAIN/ALLY ATT/DEF constants in php
+    const BATTLE_POS = {
+        1: "att",
+        2: "att_ally",
+        3: "def",
+        4: "def_ally"
+    }
+
     return declare("perikles.counter", null, {
 
         /**
@@ -116,12 +117,16 @@ define(["dojo/_base/declare"], function (declare) {
          * Create html div for a unit in logs.
          * @returns html for a log message
          */
-        toLogIcon: function() {
+        toLogIcon: function(instack=false) {
             const counter_id = this.getCounterId()+"_log";
             const class_id = "prk_military prk_"+this.type;
-            const [xoff, yoff] = this.getOffsets();
+            let [xoff, yoff] = this.getOffsets();
+            if (instack) {
+                xoff *= 0.5;
+                yoff *= 0.5;
+            }
             let style = "background-position: "+xoff+"px "+yoff+"px; position: relative;";
-            const html = '<div id=\"'+counter_id+'"\" class=\"'+class_id+'"\" style=\"'+style+'\" data-log=true></div>';
+            const html = '<div id="'+counter_id+'" class="'+class_id+'" style="'+style+';" data-stack="'+instack+'"></div>';
             return html;
         },
 

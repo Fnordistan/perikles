@@ -3,25 +3,26 @@
  * 
  */
 
-// perikles-specific
-const PLAYER_COLORS = {
-    "E53738" : "red",
-    "37BC4C" : "green",
-    "39364F" : "black",
-    "E5A137" : "orange",
-    "FFF" : "white",
-}
-
-// map the default colors to colorblind equivalent
-const COLORBLIND_COLORS = {
-    "red" : "D55E00",
-    "green" : "009E73",
-    "black" : "000",
-    "orange" : "F0E442",
-    "white" : "FFF",
-}
-
 define(["dojo/_base/declare"], function (declare) {
+
+    // perikles-specific
+    const PLAYER_COLORS = {
+        "E53738" : "red",
+        "37BC4C" : "green",
+        "39364F" : "black",
+        "E5A137" : "orange",
+        "FFF" : "white",
+    }
+
+    // map the default colors to colorblind equivalent
+    const COLORBLIND_COLORS = {
+        "red" : "D55E00",
+        "green" : "009E73",
+        "black" : "000",
+        "orange" : "F0E442",
+        "white" : "FFF",
+    }
+
     return declare("perikles.decorator", null, {
         
         /**
