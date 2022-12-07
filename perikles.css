@@ -564,7 +564,7 @@
 }
 
 .prk_military[data-selectable="true"] {
-    outline: 3px dashed red;
+    outline: 2px dashed red;
 }
 
 .prk_military[data-selectable="true"]:hover {
