@@ -653,14 +653,7 @@ function (dojo, declare) {
                     const player_id = counter.getLocation();
                     // "_persia_" is special flag for controlled persian units
                     if (player_id == this.player_id || (player_id == "_persia_" && persianleaders.includes(String(this.player_id)))) {
-                        const city = counter.getCity();
-                        const unit = counter.getType();
-                        this.createMilitaryArea(this.player_id, city);
-                        const counter_div = counter.toDiv(1, 0);
-                        const mil_zone = city+"_"+unit+"_"+this.player_id;
-                        const counterObj = dojo.place(counter_div, $(mil_zone));
-                        Object.assign(counterObj.style, {position: "relative"});
-                        counterObj.setAttribute("title", this.counterText(counter));
+                        this.placeCounterMyMilitary(counter, this.player_id);
                     }
                 }
             }
@@ -669,6 +662,25 @@ function (dojo, declare) {
             for (const city of CITIES) {
                 this.setCityStackTooltip(city);
             }
+        },
+
+        /**
+         * Puts a counter in the appropriate zone on My Military board.
+         * @param {Object} counter 
+         * @param {string} player_id assumes this.player_id
+         */
+        placeCounterMyMilitary: function(counter, player_id) {
+            const city = counter.getCity();
+            const unit = counter.getType();
+            this.createMilitaryArea(player_id, city);
+            const counter_div = counter.toDiv(1, 0);
+            const mil_zone = [city, unit, counter.getStrength(), player_id].join("_");
+            // unhide the container
+            const counterObj = dojo.place(counter_div, $(mil_zone));
+            const bottomCounters = $(mil_zone).childElementCount-1;
+            Object.assign(counterObj.style, {margin: (bottomCounters*4)+"px"});
+            counterObj.setAttribute("title", this.counterText(counter));
+            Object.assign($(mil_zone).style, {display: "block", 'margin-bottom': (bottomCounters*4)+"px"});
         },
 
         /**
@@ -1103,27 +1115,24 @@ function (dojo, declare) {
             const player_id = military['location'];
             const id = counter.getCounterId();
             const counterObj = $(id);
+            this.slideToObjectAndDestroy(counterObj, $('player_board_'+player_id), 500, 500);
             if (player_id == this.player_id) {
-                const city = counter.getCity();
-                const type = counter.getType();
-                this.createMilitaryArea(player_id, city);
-                const mil_zone = [city, type, player_id].join("_");
-                const onEnd = fromDeadpool ? this.deadpoolCleanup.bind(this) : null;
-                this.slideToObjectRelative(counterObj, $(mil_zone), 500, 500, onEnd, "last");
-                delete counterObj.dataset.deadpool;
-                counterObj.setAttribute("title", this.counterText(counter));
-            } else {
-                this.slideToObjectAndDestroy(counterObj, $('player_board_'+player_id), 500, 500);
+                this.placeCounterMyMilitary(counter, player_id);
             }
+            if (fromDeadpool) {
+                this.stacks.sortCounterStack(counterObj);
+            }
+
         },
 
         /**
-         * Attached to playerboard sorting.
-         * @param {Object} counter 
+         * Look for all unit containers on my military board that may be empty
          */
-        deadpoolCleanup: function(counter) {
-            const mil_zone = counter.parentNode.id;
-            this.stacks.sortStack(mil_zone, false);            
+        updateMyUnitsDisplay: function() {
+            const containers = $('mymilitary').getElementsByClassName("prk_units_container");
+            [...containers].forEach(c => {
+                c.style.display = c.childElementCount == 0 ? "none" : "block";
+            });
         },
 
         /**
@@ -1330,11 +1339,27 @@ function (dojo, declare) {
                 token.classList.remove('moving_token');
                 // Perikles additions
                 if (token.classList.contains("prk_military")) {
-                    token.style.position = "relative";
-                    token.style.margin = "1px";
+                    this.adjustMilitaryCounter(token, finalPlace);
                 }
                 if (onEnd) onEnd(token);
             }, duration, delay);
+        },
+
+        /**
+         * 
+         * @param {DOM} token
+         * @param {string} container
+         */
+        adjustMilitaryCounter: function(token, container_id) {
+            const container = $(container_id);
+            // is this on my military board?
+            if (container.classList.contains("prk_units_column")) {
+
+
+            } else {
+                token.style.position = "relative";
+                token.style.margin = "1px";
+            }
         },
 
         /**
@@ -1515,12 +1540,12 @@ function (dojo, declare) {
 
         /**
          * Send a unit to a battle location.
-         * @param {*} id 
-         * @param {*} city 
-         * @param {*} unit 
-         * @param {*} strength 
-         * @param {*} side 
-         * @param {*} battle 
+         * @param {string} id 
+         * @param {string} city 
+         * @param {string} unit HOPLITE or TRIREME
+         * @param {int} strength 
+         * @param {string} side attacker or defender
+         * @param {string} battle location
          */
          onSendUnit: function(id, city, unit, strength, side, battle) {
             // is this an extra unit sent with a cube?
@@ -1719,6 +1744,7 @@ function (dojo, declare) {
                     [...mils].forEach(m => {
                         this.makeSelectable(m, false);
                     });
+                    this.updateMyUnitsDisplay();
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
                     break;
@@ -2489,7 +2515,7 @@ function (dojo, declare) {
                             <div style="display: flex; flex-direction: row; align-items: center;">'
                             +unitc + this.createLocationTileIcons(city, unit)+
                             '</div>\
-                            <div id="commit_text" style="margin: 2px; padding: 2px; text-align: center; color: #fff; background-color: #4992D2; display: none;"></div>\
+                            <div id="commit_text"></div>\
                             <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
                                 <div id="send_button" class="prk_btn prk_send_btn">'+_("Send")+'</div>\
                                 <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\

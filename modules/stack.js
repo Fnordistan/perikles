@@ -201,6 +201,15 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
+         * Attached to playerboard sorting. Resorts this counter's stack.
+         * @param {Object} counter 
+         */
+         sortCounterStack: function(counter) {
+            const mystack = counter.parentNode.id;
+            this.sortStack(mystack, false);
+        },
+
+        /**
          * For tooltip over an empty stack.
          * @param {string} city
          * @param {string} city_span html div

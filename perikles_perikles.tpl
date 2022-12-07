@@ -110,8 +110,18 @@ const jstpl_city_banner = '<button id="${city}_commit_btn" type="button" class="
 const jstpl_military_area = '<div id="${city}_military_${id}" class="prk_mil_board">\
                                 <h3 class="prk_hdr">${cityname}</h3>\
                                 <div id="${city}_mil_ctnr_${id}" class="prk_mil_container">\
-                                    <div id="${city}_hoplite_${id}" class="prk_hoplites"></div>\
-                                    <div id="${city}_trireme_${id}" class="prk_triremes"></div>\
+                                    <div id="${city}_hoplite_${id}" class="prk_units_column" data-unit="hoplites">\
+                                        <div id="${city}_hoplite_1_${id}" class="prk_units_container"></div>\
+                                        <div id="${city}_hoplite_2_${id}" class="prk_units_container"></div>\
+                                        <div id="${city}_hoplite_3_${id}" class="prk_units_container"></div>\
+                                        <div id="${city}_hoplite_4_${id}" class="prk_units_container"></div>\
+                                    </div>\
+                                    <div id="${city}_trireme_${id}" class="prk_units_column" data-unit="triremes">\
+                                        <div id="${city}_trireme_1_${id}" class="prk_units_container"></div>\
+                                        <div id="${city}_trireme_2_${id}" class="prk_units_container"></div>\
+                                        <div id="${city}_trireme_3_${id}" class="prk_units_container"></div>\
+                                        <div id="${city}_trireme_4_${id}" class="prk_units_container"></div>\
+                                        </div>\
                                 </div>\
                             </div>';
 
