@@ -580,7 +580,7 @@
 }
 
 .prk_military[data-deadpool="true"] {
-    opacity: 0.75;
+    filter: grayscale(50%);
 }
 
 .prk_military[data-casualty="true"] {
@@ -1191,7 +1191,49 @@
     padding: 0.25em;
 }
 
-/* IDs for unique elements */
+.prk_dlg_loc_row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+/* showing forces displayed in tooltip in location tile in commit forces dialog box */
+.prk_dlg_forces_tt {
+    text-align: center;
+    width: fit-content;
+}
+
+.prk_dlg_forces_tt > h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    background-color: whitesmoke;
+    border: ridge 4px slategray;
+    padding: 0.5em;
+}
+
+.prk_dlg_forces {
+    display: flex;
+    flex-direction: row;
+}
+
+.prk_dlg_forces_container {
+    text-align: center;
+    margin: 1em;
+}
+
+.prk_dlg_forces_container > h3 {
+    width: 100%;
+    background-color: lightgrey;
+    border: ridge 2px slategray;
+}
+
+.prk_dlg_forces_row {
+    display: flex;
+    flex-direction: row;
+    column-gap: 0.25em;
+}
+
+/******************* IDs for unique elements *******************/
 
 #periklesboard {
     display: flex;
@@ -1349,4 +1391,29 @@
 
 #player_options > i {
     margin: 2px 10px;
+}
+
+#CommitDialogDiv {
+    display: flex;
+    flex-direction: column;
+    top: 50px;
+    text-align: center;
+}
+
+#commit_dlg_cols {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#commit_dlg_btn_ctnr {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+#commit_dlg_locations_col {
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
 }

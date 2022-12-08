@@ -1126,24 +1126,15 @@ function (dojo, declare) {
         },
 
         /**
-         * Look for all unit containers on my military board that may be empty
-         */
-        updateMyUnitsDisplay: function() {
-            const containers = $('mymilitary').getElementsByClassName("prk_units_container");
-            [...containers].forEach(c => {
-                c.style.display = c.childElementCount == 0 ? "none" : "block";
-            });
-        },
-
-        /**
          * Remove deadpool if it's empty, or else remove empty deadpool columns.
          */
-        clearDeadpool: function() {
+        updateDeadpoolDisplay: function() {
             // hide dead pool if no more units
             const deadunits = $(DEAD_POOL).getElementsByClassName("prk_military");
             $(DEAD_POOL).style['display'] = (deadunits.length == 0) ? 'none' : 'block';
 
             if (deadunits.length > 0) {
+                // remove cities with no dead units
                 const boards = $(DEAD_POOL).getElementsByClassName("prk_mil_board");
                 [...boards].forEach(b => {
                     const bunits = b.getElementsByClassName("prk_military");
@@ -1151,6 +1142,8 @@ function (dojo, declare) {
                         b.remove();
                     }
                 });
+                // now remove containers that are empty
+                this.stacks.hideEmptyUnitContainers(DEAD_POOL);
             }
         },
 
@@ -1698,7 +1691,7 @@ function (dojo, declare) {
                         this.gamedatas.gamestate.args = {};
                         this.gamedatas.gamestate.args.committed = {};
                     }
-                    this.clearDeadpool();
+                    this.updateDeadpoolDisplay();
                     break;
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
@@ -1744,14 +1737,14 @@ function (dojo, declare) {
                     [...mils].forEach(m => {
                         this.makeSelectable(m, false);
                     });
-                    this.updateMyUnitsDisplay();
+                    this.stacks.hideEmptyUnitContainers("mymilitary");
                     this.gamedatas.gamestate.args = {};
                     this.gamedatas.gamestate.args.committed = {};
                     break;
                 case 'deadPool':
                 case 'takeDead':
                     // hide dead pool if no more units
-                    this.clearDeadpool();
+                    this.updateDeadpoolDisplay();
                     break;
                 case 'dummmy':
                     break;
@@ -2511,19 +2504,21 @@ function (dojo, declare) {
 
             this.commitDlg.setTitle( _("Commit Forces") );
             this.commitDlg.setMaxWidth( 720 );
-            const html = '<div id="CommitDialogDiv" style="display: flex; flex-direction: column; top: 50px;">\
-                            <div style="display: flex; flex-direction: row; align-items: center;">'
-                            +unitc + this.createLocationTileIcons(city, unit)+
+            const html = '<div id="CommitDialogDiv">\
+                            <div id="commit_dlg_cols">'
+                                +unitc + this.createCommitDialogLocationTiles(city, unit)+
                             '</div>\
                             <div id="commit_text"></div>\
-                            <div style="display: flex; flex-direction: row; justify-content: space-evenly;">\
-                                <div id="send_button" class="prk_btn prk_send_btn">'+_("Send")+'</div>\
-                                <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
+                            <div id-"commit_dlg_btn_ctnr">\
+                                    <div id="send_button" class="prk_btn prk_send_btn">'+_("Send")+'</div>\
+                                    <div id="cancel_button" class="prk_btn prk_cancel_btn">'+_("Cancel")+'</div>\
                             </div>\
                         </div>';
             // Show the dialog
-            this.commitDlg.setContent( html );
+            this.commitDlg.setContent(html);
             this.commitDlg.show();
+            this.addCommitLocationTooltips();
+
             this.commitDlg.hideCloseIcon();
             const dlg = $('CommitDialogDiv');
             dlg.onclick = event => {
@@ -2543,7 +2538,7 @@ function (dojo, declare) {
                             new Promise((resolve,reject) => {
                                 this.onSendUnit(id, city, unit, strength, sendto, location);
                                 resolve();
-                            }).then(this.addCommitLocationTooltips());
+                            });
                             this.commitDlg.destroy();
                         } else {
                             banner_txt = '<span style="color: white; font-size: larger; font-weight: bold;">'+errmsg+'</span>';
@@ -2579,13 +2574,95 @@ function (dojo, declare) {
          * Put tooltips on the location tiles in commit dialog.
          */
          addCommitLocationTooltips: function() {
-            const locations = $('maintitlebar_content').getElementsByClassName("prk_location_tile");
-            [...locations].forEach(loc => {
-                const location = loc.id.split("_")[0];
-                const tile = new perikles.locationtile(location);
-                const tt = tile.createTooltip(this.getCityNameTr(tile.getCity()));
-                this.addTooltipHtml(loc.id, tt, '');
+            const location_tiles = $('location_area').getElementsByClassName("prk_location_tile");
+            for (let b = 0; b < location_tiles.length; b++) {
+                this.addCommitLocationTooltip(location_tiles[b], b+1);
+            }
+        },
+
+        /**
+         * Create HTML for Location tile commit dialog.
+         * @param {string} location_tile_id
+         * @param {int} bzone
+         */
+        addCommitLocationTooltip: function(location_tile, bzone) {
+            const id = location_tile.id;
+            const location_name = id.split("_")[0];
+
+            // get attackers
+            const stationed_units = {
+                "hoplite_att": [],
+                "hoplite_def": [],
+                "trireme_att": [],
+                "trireme_def": [],
+            };
+            let is_attackers = false;
+            let is_defenders = false;
+            [HOPLITE,TRIREME].forEach(type => {
+                ["att","def"].forEach(side => {
+                    const main_box = ["battle", bzone, type, side].join("_");
+                    const ally_box = main_box+"_ally";
+                    [main_box, ally_box].forEach(bx_id => {
+                        const counters = $(bx_id).getElementsByClassName("prk_military");
+                        stationed_units[type+"_"+side].push(...counters);
+                        if (counters.length != 0) {
+                            if (side == "att") {
+                                is_attackers = true;
+                            } else {
+                                is_defenders = true;
+                            }
+                        }
+                    });
+                });
             });
+
+            let unitstr = "";
+            for(const[id, units] of Object.entries(stationed_units)) {
+                unitstr += id + ":"+units.length;
+            }
+            const loctile = new perikles.locationtile(location_name);
+            const city = loctile.getCity();
+            let html = '<div id="'+id+'"_commit_dlg_forces" class="prk_dlg_forces_tt" style="background-color:var(--color_'+city+');">\
+                            <h2>'+loctile.getNameTr()+'</h2>';
+            if (is_attackers || is_defenders) {
+                html += '<div class="prk_dlg_forces">';
+                html += '<div class="prk_dlg_forces_container">';
+                    html += '<h3>'+_("Attackers")+'</h3>';
+                    html += '<div class="prk_dlg_forces_row" data-side="att">';
+                    stationed_units["hoplite_att"].forEach(ah => {
+                        html += this.makeCounterForDialog(ah.id);
+                    });
+                    stationed_units["trireme_att"].forEach(at => {
+                        html += this.makeCounterForDialog(at.id);
+                    });
+                    html += '</div>';
+                html += '</div>';
+                html += '<div class="prk_dlg_forces_container">';
+                    html += '<h3>'+_("Defenders")+'</h3>';
+                    html += '<div class="prk_dlg_forces_row" data-side="def">';
+                    stationed_units["hoplite_def"].forEach(dh => {
+                        html += this.makeCounterForDialog(dh.id);
+                    });
+                    stationed_units["trireme_def"].forEach(dt => {
+                        html += this.makeCounterForDialog(dt.id);
+                    });
+                    html += '</div>';
+                html += '</div>';
+            }
+            html += '</div>';
+            this.addTooltipHtml(location_name+'_tile_commit_dlg', html, '');
+        },
+
+        /**
+         * Create individual unit icon.
+         * @param {string} id 
+         * @return {string} html for icon
+         */
+        makeCounterForDialog: function(counter_id) {
+            const [city,type,strength,id] = counter_id.split("_");
+            const counter = new perikles.counter(city, type, strength, id);
+            const icon = counter.toLogIcon();
+            return icon;
         },
 
         /**
@@ -2820,21 +2897,21 @@ function (dojo, declare) {
          * @param unit_type TRIREME or HOPLITE
          * @returns html
          */
-        createLocationTileIcons: function(unit_city, unit_type) {
-            let loc_html = '<div style="display: flex; flex-direction: column; margin: 10px;">';
+        createCommitDialogLocationTiles: function(unit_city, unit_type) {
+            let loc_html = '<div id="commit_dlg_locations_col">';
             const location_tiles = $('location_area').getElementsByClassName("prk_location_tile");
             [...location_tiles].forEach(loc => {
-                loc_html += '<div style="display: flex; flex-direction: row; align-items: center;">';
                 const battle = loc.id.split('_')[0];
                 const tile = new perikles.locationtile(battle);
                 // can't attack own city
                 const battle_city = tile.getCity();
+                loc_html += '<div id="'+battle+'_commit_row" class="prk_dlg_loc_row">';
                 if (unit_city != battle_city && this.canAttack(battle_city) && this.checkEligibleToSend(unit_city, unit_type, "attack", battle) == null) {
                     loc_html += '<div id="attack_'+battle+'" class="prk_battle_icon" data-icon="sword"></div>';
                 } else {
                     loc_html += '<div class="prk_blank_icon"></div>';
                 }
-                const loc_tile = tile.createTile(1);
+                const loc_tile = tile.createTile(1, 'commit_dlg');
                 loc_html += loc_tile;
                 if (this.checkEligibleToSend(unit_city, unit_type, "defend", battle) == null) {
                     const permitted = this.checkPermissionToDefend(unit_city, battle);

@@ -243,5 +243,12 @@ define(["dojo/_base/declare"], function (declare) {
             return html;
         },
 
+        hideEmptyUnitContainers: function(military_board) {
+            const containers = $(military_board).getElementsByClassName("prk_units_container");
+            [...containers].forEach(c => {
+                c.style.display = (c.childElementCount == 0) ? "none" : "block";
+            });
+        },
+
     })
 });

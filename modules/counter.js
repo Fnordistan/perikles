@@ -219,10 +219,13 @@ define(["dojo/_base/declare"], function (declare) {
          */
         placeDeadpool: function() {
             $(DEAD_POOL).style['display'] = 'block';
-            const counter_div = this.toRelativeDiv();
-            const deadpool_zone = [this.city, this.type, DEAD_POOL].join("_");
+            const counter_div = this.toDiv(1, 0);
+            const deadpool_zone = [this.city, this.type, this.strength, DEAD_POOL].join("_");
             const unit = dojo.place(counter_div, $(deadpool_zone));
+            const bottomCounters = $(deadpool_zone).childElementCount-1;
+            Object.assign(unit.style, {margin: (bottomCounters*4)+"px"});
             unit.dataset.deadpool = "true";
+            Object.assign($(deadpool_zone).style, {display: "block", 'margin-bottom': (bottomCounters*4)+"px"});
         },
 
     })
