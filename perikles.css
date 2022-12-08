@@ -1204,9 +1204,9 @@
 }
 
 .prk_dlg_forces_tt > h2 {
+    font-family: 'ThrumsSerifRegular';
     font-size: 1.5em;
     font-weight: 700;
-    background-color: whitesmoke;
     border: ridge 4px slategray;
     padding: 0.5em;
 }

@@ -2581,8 +2581,6 @@ function (dojo, declare) {
                 "trireme_att": [],
                 "trireme_def": [],
             };
-            let is_attackers = false;
-            let is_defenders = false;
             [HOPLITE,TRIREME].forEach(type => {
                 ["att","def"].forEach(side => {
                     const main_box = ["battle", bzone, type, side].join("_");
@@ -2590,13 +2588,6 @@ function (dojo, declare) {
                     [main_box, ally_box].forEach(bx_id => {
                         const counters = $(bx_id).getElementsByClassName("prk_military");
                         stationed_units[type+"_"+side].push(...counters);
-                        if (counters.length != 0) {
-                            if (side == "att") {
-                                is_attackers = true;
-                            } else {
-                                is_defenders = true;
-                            }
-                        }
                     });
                 });
             });
@@ -2607,35 +2598,36 @@ function (dojo, declare) {
             }
             const loctile = new perikles.locationtile(location_name);
             const city = loctile.getCity();
+            const owning_player = this.getLeader(city);
+            const owning_color = this.getPlayerColor(owning_player);
             let html = '<div id="'+id+'"_commit_dlg_forces" class="prk_dlg_forces_tt" style="background-color:var(--color_'+city+');">\
-                            <h2>'+loctile.getNameTr()+'</h2>';
-            if (is_attackers || is_defenders) {
-                html += '<div class="prk_dlg_forces">';
-                html += '<div class="prk_dlg_forces_container">';
-                    html += '<h3>'+_("Attackers")+'</h3>';
-                    html += '<div class="prk_dlg_forces_row" data-side="att">';
-                    stationed_units["hoplite_att"].forEach(ah => {
-                        html += this.makeCounterForDialog(ah.id);
-                    });
-                    stationed_units["trireme_att"].forEach(at => {
-                        html += this.makeCounterForDialog(at.id);
-                    });
-                    html += '</div>';
-                html += '</div>';
-                html += '<div class="prk_dlg_forces_container">';
-                    html += '<h3>'+_("Defenders")+'</h3>';
-                    html += '<div class="prk_dlg_forces_row" data-side="def">';
-                    stationed_units["hoplite_def"].forEach(dh => {
-                        html += this.makeCounterForDialog(dh.id);
-                    });
-                    stationed_units["trireme_def"].forEach(dt => {
-                        html += this.makeCounterForDialog(dt.id);
-                    });
-                    html += '</div>';
-                html += '</div>';
-            }
+                        <h2 style="background-color:'+owning_color+';">'+loctile.getNameTr()+'</h2>\
+                        <div class="prk_dlg_forces">';
+            html += this.createCommittedForcesDisplayRow("att", stationed_units);
+            html += this.createCommittedForcesDisplayRow("def", stationed_units);
             html += '</div>';
             this.addTooltipHtml(location_name+'_tile_commit_dlg', html, '');
+        },
+
+        /**
+         * Create the container row for all attacking or defending units at a location
+         * @param {string} side "att" or "def"
+         * @param {Object} units 
+         * @returns html
+         */
+        createCommittedForcesDisplayRow: function(side, units) {
+            const lbl = (side == "att") ? _("Attackers") : _("Defenders");
+            let html = '<div class="prk_dlg_forces_container">';
+                html += '<h3>'+lbl+'</h3>';
+                html += '<div class="prk_dlg_forces_row" data-side="'+side+'">';
+                units["hoplite_"+side].forEach(h => {
+                    html += this.makeCounterForDialog(h.id);
+                });
+                units["trireme_"+side].forEach(t => {
+                    html += this.makeCounterForDialog(t.id);
+                });
+            html += '</div></div>';
+            return html;
         },
 
         /**
