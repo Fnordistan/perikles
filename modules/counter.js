@@ -213,19 +213,25 @@ define(["dojo/_base/declare"], function (declare) {
         },
 
         /**
-         * Assumes this counter has been set as location=deadpool.
-         * Assumes the zone for this city exists in the Deadpool.
-         * Places a military counter in the deadpool.
+         * Place an HTML of this counter in the appropriate place in DEADPOOL or player military board
+         * @param {string} target DEAD_POOL or a player_id
+         * @return {DOM} counter object
          */
-        placeDeadpool: function() {
-            $(DEAD_POOL).style['display'] = 'block';
+        placeCounterInContainer: function(target) {
+            if (target == DEAD_POOL) {
+                // make sure it's visible
+                $(DEAD_POOL).style['display'] = 'block';
+            }
             const counter_div = this.toDiv(1, 0);
-            const deadpool_zone = [this.city, this.type, this.strength, DEAD_POOL].join("_");
-            const unit = dojo.place(counter_div, $(deadpool_zone));
-            const bottomCounters = $(deadpool_zone).childElementCount-1;
-            Object.assign(unit.style, {margin: (bottomCounters*4)+"px"});
-            unit.dataset.deadpool = "true";
-            Object.assign($(deadpool_zone).style, {display: "block", 'margin-bottom': (bottomCounters*4)+"px"});
+            const target_container = [this.city, this.type, this.strength, target].join("_");
+            const counterObj = dojo.place(counter_div, $(target_container));
+            const bottomCounters = $(target_container).childElementCount-1;
+            Object.assign(counterObj.style, {margin: (bottomCounters*4)+"px"});
+            if (target == DEAD_POOL) {
+                counterObj.dataset.deadpool = "true";
+            }
+            Object.assign($(target_container).style, {display: "block", 'margin-bottom': (bottomCounters*4)+"px"});
+            return counterObj;
         },
 
     })

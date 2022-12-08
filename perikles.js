@@ -644,7 +644,8 @@ function (dojo, declare) {
                 } else if (counter.getLocation() == DEAD_POOL) {
                     // in the dead pool
                     this.createMilitaryArea(DEAD_POOL, counter.getCity());
-                    counter.placeDeadpool();
+                    const counterObj = counter.placeCounterInContainer(DEAD_POOL);
+                    counterObj.setAttribute("title", this.counterText(counter));
                 } else if (Object.keys(LOCATION_TILES).includes(counter.getLocation())) {
                     // sent to a battle
                     counter.placeBattle();
@@ -653,7 +654,9 @@ function (dojo, declare) {
                     const player_id = counter.getLocation();
                     // "_persia_" is special flag for controlled persian units
                     if (player_id == this.player_id || (player_id == "_persia_" && persianleaders.includes(String(this.player_id)))) {
-                        this.placeCounterMyMilitary(counter, this.player_id);
+                        this.createMilitaryArea(player_id, counter.getCity());
+                        const counterObj = counter.placeCounterInContainer(player_id);
+                        counterObj.setAttribute("title", this.counterText(counter));
                     }
                 }
             }
@@ -662,25 +665,6 @@ function (dojo, declare) {
             for (const city of CITIES) {
                 this.setCityStackTooltip(city);
             }
-        },
-
-        /**
-         * Puts a counter in the appropriate zone on My Military board.
-         * @param {Object} counter 
-         * @param {string} player_id assumes this.player_id
-         */
-        placeCounterMyMilitary: function(counter, player_id) {
-            const city = counter.getCity();
-            const unit = counter.getType();
-            this.createMilitaryArea(player_id, city);
-            const counter_div = counter.toDiv(1, 0);
-            const mil_zone = [city, unit, counter.getStrength(), player_id].join("_");
-            // unhide the container
-            const counterObj = dojo.place(counter_div, $(mil_zone));
-            const bottomCounters = $(mil_zone).childElementCount-1;
-            Object.assign(counterObj.style, {margin: (bottomCounters*4)+"px"});
-            counterObj.setAttribute("title", this.counterText(counter));
-            Object.assign($(mil_zone).style, {display: "block", 'margin-bottom': (bottomCounters*4)+"px"});
         },
 
         /**
@@ -1081,7 +1065,7 @@ function (dojo, declare) {
          * @returns id of military div
          */
         createMilitaryArea: function(id, city) {
-            const city_mil = city+'_military_'+id;
+            const city_mil = [city, 'military', id].join("_");
             if (!document.getElementById(city_mil)) {
                 const mil_div = this.format_block('jstpl_military_area', {city: city, id: id, cityname: this.getCityNameTr(city)});
                 const zone_id = (id == DEAD_POOL) ? 'deadpool_ctnr' : 'mymilitary';
@@ -1100,7 +1084,6 @@ function (dojo, declare) {
          */
          moveCube: function(cube, from_div, to_div, delay) {
             const mobile = dojo.place(cube, from_div);
-            // Object.assign(mobile.style, {"opacity":1});
             mobile.addEventListener('click', (event) => this.onSelectCube(event));
             this.slideToObjectRelative(mobile, to_div, 1000, delay, this.decorator.visibilize, "last");
         },
@@ -1117,7 +1100,9 @@ function (dojo, declare) {
             const counterObj = $(id);
             this.slideToObjectAndDestroy(counterObj, $('player_board_'+player_id), 500, 500);
             if (player_id == this.player_id) {
-                this.placeCounterMyMilitary(counter, player_id);
+                this.createMilitaryArea(player_id, counter.getCity());
+                const newCounterObj = counter.placeCounterInContainer(player_id);
+                newCounterObj.setAttribute("title", this.counterText(counter));
             }
             if (fromDeadpool) {
                 this.stacks.sortCounterStack(counterObj);
@@ -4175,7 +4160,9 @@ function (dojo, declare) {
                     new perikles.counter(city, type, strength, id).addToStack();
                     this.stacks.sortStack("persia_military");
                 } else {
-                    new perikles.counter(city, type, strength, id, DEAD_POOL).placeDeadpool();
+                    const counter = new perikles.counter(city, type, strength, id, DEAD_POOL);
+                    const counterObj = counter.placeCounterInContainer(DEAD_POOL);
+                    counterObj.setAttribute("title", this.counterText(counter));
                     this.stacks.sortStack([city, type, DEAD_POOL].join("_"), false);
                 }
             });
