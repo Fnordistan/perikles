@@ -1051,7 +1051,7 @@ function (dojo, declare) {
         restoreDescriptionOnMyTurn: function() {
             const text = this.gamedatas.gamestate.olddescriptionmyturn;
             if (text) {
-                const player_id = (this.gamedatas.gamestate.name == "specialBattleTile") ? this.getCurrentPlayerId() :this. getActivePlayerId();
+                const player_id = (this.gamedatas.gamestate.name == "specialBattleTile") ? this.getCurrentPlayerId() : this.getActivePlayerId();
                 const acting = this.decorator.spanPlayerName(player_id, this.isColorblind());
                 this.setDescriptionOnMyTurn(text, {actplayer: acting});
             }
