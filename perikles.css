@@ -715,22 +715,22 @@
     height: 35px;
     margin: 2px;
     padding: 2px;
-    border: 4px ridge #767060;
+    border: 6px ridge #767060;
 }
 
 .prk_city_btn[data-status="neutral"] {
-    border: 4px ridge #767060;
+    border: 6px ridge #767060;
     background-color: lightgray;
 }
 
 .prk_city_btn[data-status="war"] {
-    border: 4px ridge red;
+    border: 6px ridge red;
     color: red;
     background-color: lightgray;
 }
 
 .prk_city_btn[data-status="allied"] {
-    border: 4px ridge green;
+    border: 6px ridge green;
     color: green;
     background-color: lightgray;
 }

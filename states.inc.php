@@ -92,6 +92,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must take an Influence tile'),
     	"type" => "activeplayer",
         "args" => "argsSpecial",
+        "updateGameProgression" => true,   
     	"possibleactions" => array("takeInfluence", "useSpecial"),
     	"transitions" => array( "placeCube" => PLACE_INFLUENCE, "choosePlaceCube" => CHOOSE_PLACE_INFLUENCE, "continueTurn" => TAKE_INFLUENCE)
     ),
@@ -264,8 +265,8 @@ $machinestates = array(
     END_TURN => array(
         "name" => "endTurn",
         "description" => "",
-        "updateGameProgression" => true,   
     	"type" => "game",
+        "updateGameProgression" => true,
     	"action" => "stEndTurn",
         "transitions" => array( "nextTurn" => TAKE_INFLUENCE, "endGame" => SCORING )
     ),

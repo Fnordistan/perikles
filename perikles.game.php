@@ -381,18 +381,22 @@ class Perikles extends Table
         (see states.inc.php)
     */
     function getGameProgression() {
-        // base 30% * turns (0/30/60)
+        $players = self::loadPlayersBasicInfos();
         $turn = self::getStat('turns_number');
-        $p = $turn * 28;
+        $turnx = count($players) == 3 ? 21 : 19;
+        $p = $turn * $turnx;
+
+        // 26 cards (36 - 10 on board), may go to as low as 16
+        $cardsremaining = $this->influence_tiles->countCardInLocation(DECK);
+        $p += (26 - $cardsremaining);
         // how many tiles have been collected?
+        // 21 locations * 2 (+42)
         $cardlocs = $this->location_tiles->countCardsInLocations();
-        $resolved = 0;
         foreach($cardlocs as $loc => $num) {
             if (($loc != DECK) && ($loc != BOARD)) {
-                $resolved += $num;
+                $p += (2 * $num);
             }
         }
-        $p += (2*$resolved);
         return $p;
     }
 
