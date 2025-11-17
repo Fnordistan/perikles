@@ -2511,7 +2511,7 @@ function (dojo, declare) {
 
                 const attack_str = _("Send ${unit} to attack ${location}?");
                 const defend_str = _("Send ${unit} to defend ${location}?");
-                const permission_str = _("The player controlling ${controlling_city} must give permission for ${unit} to defend ${location}");
+                const permission_str = _("Request permission from ${controlling_city} for ${unit} to defend ${location}?");
                 let banner_txt = null;
 
                 if (target.id == "send_button" ) {
@@ -2539,7 +2539,9 @@ function (dojo, declare) {
                     dlg.setAttribute("data-location", loc);
                     dlg.setAttribute("data-side", side);
                     banner_txt = (side == "attack") ? attack_str : defend_str;
+                    // need to request permission
                     if (side == "defend" && target.dataset.permission == "false") {
+                        debugger;
                         banner_txt = permission_str;
                         const owner_city = tile.getCity();
                         banner_txt = banner_txt.replace('${controlling_city}', this.spanCityName(owner_city));

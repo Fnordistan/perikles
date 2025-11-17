@@ -39,6 +39,9 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
     define("BRING_OUT_YOUR_DEAD", 23);
     define("COMMIT_FORCES", 24);
     define("NEXT_COMMIT", 25);
+    define("PERMISSION_REQUEST", 26);
+    define("PERMISSION_RESPONSE", 27);
+    define("HANDLE_RESPONSE", 28);
 
     // Battle phase
     define("NEXT_BATTLE_TILE", 30);
@@ -208,8 +211,34 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You must commit forces'),
         "args" => "argsSpecial",
     	"type" => "activeplayer",
-    	"possibleactions" => array( "assignUnits", "useSpecial" ),
-    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE, "continueCommit" => COMMIT_FORCES)
+    	"possibleactions" => array( "assignUnits", "useSpecial", "requestPermissionToDefend" ),
+    	"transitions" => array( "nextPlayer" => NEXT_COMMIT, "useSpecial" => SPECIAL_TILE, "continueCommit" => COMMIT_FORCES, "requestPermission" => PERMISSION_REQUEST )
+    ),
+
+    PERMISSION_REQUEST => array(
+        "name" => "requestPermission",
+        "description" => "",
+        "type"  => "game",
+        "action" => "stPermissionRequest",
+        "transitions" => array( "getResponse" => PERMISSION_RESPONSE )
+    ),
+
+    PERMISSION_RESPONSE => array(
+        "name" => "permissionResponse",
+        "description" => clienttranslate('${actplayer} is requesting permission from ${target_player} to defend ${battle_location}'),
+    	"descriptionmyturn" => clienttranslate('${actplayer} is requesting permission from ${target_player} to defend ${battle_location}'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "respondPermission" , "cancelRequest" ),
+        "args" => "argsPermissionResponse",
+        "transitions" => array( "" => HANDLE_RESPONSE )
+    ),
+
+    HANDLE_RESPONSE => array(
+        "name" => "handleResponse",
+        "description" => "",
+        "type" => "game",
+        "action" => "stPermissionRequestResponse",
+        "transitions" => array( "" => COMMIT_FORCES )
     ),
 
     // rotate to the next location tile

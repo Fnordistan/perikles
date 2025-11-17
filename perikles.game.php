@@ -1916,6 +1916,76 @@ class Perikles extends Table
         $this->gamestate->nextState($state);
     }
 
+    /**
+     * Player requests permission to send units to defend someone else's city.
+     */
+    function requestPermissionToDefend($city, $battle) {
+        self::checkAction( 'requestPermissionToDefend' ); 
+
+        $player_id = self::getActivePlayerId();
+
+        // get the owner of the city
+        $owner = $this->Cities->getLeader($city);
+
+        self::notifyAllPlayers("defendRequest", clienttranslate('${player_name} requests permission from leader of ${city_name} to defend ${battle_location}'), array(
+            'i18n' => ['city_name'],
+            'player_id' => $player_id,
+            'player_name' => self::getActivePlayerName(),
+            'city' => $city,
+            'city_name' => $this->Cities->getNameTr($city),
+            'battle_location' => $this->Locations->getNameTr($battle),
+            'preserve' => ['player_id', 'city']
+        ));
+
+        // return action to the player who made the offer
+        $this->gamestate->nextState("requestPermission");
+    }
+
+    /**
+     * Requesting player canceled the request.
+     */
+    function cancelRequest($player_id) {
+        // self::checkAction( 'cancelRequest' ); 
+        $players = self::loadPlayersBasicInfos();
+        // TODO: get the battle location
+        $battle = null;
+        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request to defend ${location_name}'), array(
+            'i18n' => ['location_name'],
+            'player_name' => $players[$player_id]['player_name'],
+            'location_name' => $this->Locations->getNameTr($battle),
+        ));
+        // return action to the player who made the offer
+        $this->gamestate->nextState();
+    }
+
+    /**
+     * Player responds to a request to defend city by another player.
+     */
+    function respondPermissionToDefend($permit) {
+        self::checkAction( 'respondPermission' ); 
+
+        $player_id = self::getActivePlayerId();
+        // TODO get the city and battle
+        $city = null;
+        $battle = null;
+
+        if ($permit) {
+            // TODO: set permissions for the requesting player to defend city
+
+        } else {
+            // rejected
+            self::notifyAllPlayers('permissionDenied', clienttranslate('${player_name} refused permission to defend ${battle_location}'), array(
+                'i18n' => ['battle_location'],
+                'player_id' => $player_id,
+                'player_name' => self::getActivePlayerName(),
+                'battle_location' => $this->Locations->getNameTr($battle),
+            ));
+
+        }
+        // return action to the player who made the request
+        $this->gamestate->nextState();
+    }
+
     //////////////////////////////////////////////////////////////////
     /// BATTLE FUNCTIONS
     //////////////////////////////////////////////////////////////////
@@ -2560,6 +2630,16 @@ class Perikles extends Table
     }
 
     /**
+     * Provide args for a request to defend a location
+     */
+    function argsPermissionResponse() {
+        // TODO: get the request parameters
+        return array(
+            'i18n' => ['defenders', 'attackers'],
+        );
+    }
+
+    /**
      * Get the phase to check against for use of a Special tile.
      * @return "influence, commit, or
      */
@@ -2712,6 +2792,29 @@ class Perikles extends Table
             }
         }
         $this->gamestate->nextState($state);
+    }
+
+    /**
+     * Handle a request to defend a city.
+     */
+    function stPermissionRequest() {
+        // TODO: get the player who is being asked to defend
+        $player_asked = self::getGameStateValue("");
+        $this->gamestate->changeActivePlayer( $player_asked );
+        $this->gamestate->nextState("getResponse");
+    }
+
+    /**
+     * The player requested permission to defend a city, and it was granted or denied. Or the requester canceled the request.
+     * Pass back to original player.
+     */
+    function stPermissionRequestResponse() {
+        // TODO get the requesting player
+        $next_player = null;
+        // clear info
+        $this->gamestate->changeActivePlayer( $next_player );
+        $this->gamestate->nextState();
+
     }
 
     /**
@@ -3431,6 +3534,10 @@ class Perikles extends Table
                     break;
                 case 'commitForces':
                     $this->sendRandomUnits($active_player);
+                    break;
+                case 'requestPermission':
+                    // this should never happen
+                    throw new BgaVisibleSystemException("Zombie player $active_player cannot request permission"); // NOI18N
                     break;
                 case 'specialTile':
                     $this->specialTilePass($active_player);

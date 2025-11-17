@@ -196,6 +196,8 @@ class action_perikles extends APP_GameAction
       self::ajaxResponse( );
     }
 
+    // TODO: add actions for send request to defend, response to request, and cancel request
+
     /**
      * Player changes player preferences.
      */
