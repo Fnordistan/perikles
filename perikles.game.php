@@ -1975,7 +1975,7 @@ class Perikles extends Table
             'city' => $city,
             'city_name' => $this->Cities->getNameTr($city),
             'battle' => $battle,
-            'battle_location' => $this->Locations->getNameTr($battle),
+            'battle_location' => $this->Locations->getName($battle),
             'preserve' => ['player_id', 'city', 'battle']
         ));
     }
