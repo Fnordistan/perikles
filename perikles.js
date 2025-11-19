@@ -1611,6 +1611,7 @@ function (dojo, declare) {
             [...civ_mils].forEach(ctr => this.makeSelectable(ctr));
         },
 
+
         /**
          * Player clicked "Cancel" while committing forces.
          * Clear "committed" gamedatas

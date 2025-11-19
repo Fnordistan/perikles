@@ -181,6 +181,15 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Get the unique id of the tile for this location.
+   * @param location
+   * @return int id of tile for this location
+   */
+  public function getLocationId($location) {
+    return $this->game->getUniqueValueFromDB("SELECT card_id FROM LOCATION WHERE card_type_arg=\"$location\"");
+  }
+
+  /**
    * Get a Tile by location.
    * @param {string} location
    * @return tile array

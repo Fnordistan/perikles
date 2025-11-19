@@ -126,6 +126,13 @@ class Perikles extends Table
             "megara_deadpool" => 73,
             "sparta_deadpool" => 74,
             "thebes_deadpool" => 75,
+            // permission requests
+            // theoretically could be requesting permission for up to four different locations!
+            "permission_request_1" => 80,
+            "permission_request_2" => 81,
+            "permission_request_3" => 82,
+            "permission_request_4" => 83,
+            "permission_requester" => 84,
 
             ACTIVE_BATTLE => 40,
             BATTLE_ROUND => 41, // 0,1
@@ -217,6 +224,12 @@ class Perikles extends Table
         self::setGameStateInitialValue(LOSER, -1);
         self::setGameStateInitialValue(BRASIDAS, 0);
         self::setGameStateInitialValue(PHORMIO, 0);
+
+        for ($i = 1; $i <= 4; $i++) {
+            self::setGameStateInitialValue("permission_request_$i", 0);
+        }
+        self::setGameStateInitialValue("permission_requester", 0);
+
         // when we are in the Influence Phase and influence special tiles can be used. Start with Influence, ends with candidate nominations.
         self::setGameStateInitialValue(INFLUENCE_PHASE, 0);
         // when we are in the committing phase. Start with first commit, end with battle phase.
@@ -1204,10 +1217,12 @@ class Perikles extends Table
     }
 
     /**
-     * Make sure all commitment assignments are valid.
+     * Make sure all commitment assignments are valid. Will throw an error if invalid.
+     * If any defender assignments require permission, return an array of locations that need permission and do not commit any assignments.
      * @param string player_id
      * @param string unitstr a comma-concatenateds string of units
      * @param string cube empty string or name of city spending an extra cube
+     * @return array associative array of locations that need permission, or empty if none
      */
     function validateMilitaryCommits($player_id, $unitstr, $cube) {
         // do all the checks for whether this is a valid action
@@ -1227,6 +1242,7 @@ class Perikles extends Table
             'defend' => [],
         );
         // MAKE NO CHANGES IN DB until this loop is completed!
+        $permission_requests = [];
         foreach($units as $unit) {
             [$id, $side, $location] = explode("_", $unit);
             $counter = self::getObjectFromDB("SELECT id, city, type, location, strength FROM MILITARY WHERE id=$id");
@@ -1252,7 +1268,10 @@ class Perikles extends Table
                 }
                 $myforces['attack'][] = $counter;
             } else if ($side == "defend") {
-                $this->validateDefender($player_id, $counter, $unit_desc);
+                // check requirement for permission here
+                if ($this->validateDefender($player_id, $counter, $unit_desc)) {
+                    $permission_requests[] = $location;
+                }
 
                 // is there already a main defender?
                 if ($defender == null) {
@@ -1262,7 +1281,10 @@ class Perikles extends Table
                 $myforces['defend'][] = $counter;
             }
         }
-
+        // interrupt and do not commit assignments because we need to ask for permissions first
+        if (!empty($permission_requests)) {
+            return $permission_requests;
+        }
         // all units passed all tests for valid assignment
         // did we spend an influence cube?
         if ($cube != "" && count($units) > 2) {
@@ -1301,6 +1323,7 @@ class Perikles extends Table
                 $this->sendToBattle($player_id, $f, $battlepos);
             }
         }
+        return [];
     }
 
     /**
@@ -1844,13 +1867,21 @@ class Perikles extends Table
         }
         $player_id = $zombiePlayerId ?? self::getActivePlayerId();
 
+        $locations_need_permission = [];
         if (trim($unitstr) == "") {
             $this->noCommitUnits($player_id);
         } else {
-            $this->validateMilitaryCommits($player_id, $unitstr, $cube);
+            $locations_need_permission = $this->validateMilitaryCommits($player_id, $unitstr, $cube);
         }
         $state = "nextPlayer";
-        if ($this->SpecialTiles->canPlaySpecial($player_id, COMMIT_PHASE) && !$this->isAutopass($player_id)) {
+        if (!empty($locations_need_permission)) {
+            $state = "requestPermission";
+            self::setGameStateValue("permission_requester", $player_id);
+
+            foreach($locations_need_permission as $i => $location) {
+                $this->requestPermissionToDefend($player_id, $i+1, $location);
+            }
+        } elseif ($this->SpecialTiles->canPlaySpecial($player_id, COMMIT_PHASE) && !$this->isAutopass($player_id)) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState($state);
@@ -1918,43 +1949,51 @@ class Perikles extends Table
 
     /**
      * Player requests permission to send units to defend someone else's city.
+     * @param {int} player_id the id of the player requesting permission
+     * @param {int} index the index of the battle location in the list of locations that need permission
+     * @param {string} battle the battle location for which permission is being requested
      */
-    function requestPermissionToDefend($city, $battle) {
+    function requestPermissionToDefend($requesting_player_id, $index, $battle) {
         self::checkAction( 'requestPermissionToDefend' ); 
 
-        $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+        $player_name = $players[$requesting_player_id]['player_name'];
 
         // get the owner of the city
+        $city = $this->Locations->getCity($battle);
         $owner = $this->Cities->getLeader($city);
 
+        // set the game state to wait for the response from the city owner
+        $location_id = $this->Locations->getLocationId($battle);
+        self::setGameStateValue("permission_request_$index", $location_id);
+        $this->gamestate->setPlayersMultiactive([$owner], "requestPermission", false);
+
         self::notifyAllPlayers("defendRequest", clienttranslate('${player_name} requests permission from leader of ${city_name} to defend ${battle_location}'), array(
-            'i18n' => ['city_name'],
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
+            'i18n' => ['city_name', 'battle_location'],
+            'player_id' => $requesting_player_id,
+            'player_name' => $player_name,
             'city' => $city,
             'city_name' => $this->Cities->getNameTr($city),
+            'battle' => $battle,
             'battle_location' => $this->Locations->getNameTr($battle),
-            'preserve' => ['player_id', 'city']
+            'preserve' => ['player_id', 'city', 'battle']
         ));
-
-        // return action to the player who made the offer
-        $this->gamestate->nextState("requestPermission");
     }
 
     /**
      * Requesting player canceled the request.
      */
-    function cancelRequest($player_id) {
+    function cancelRequestToDefend($battle) {
         // self::checkAction( 'cancelRequest' ); 
         $players = self::loadPlayersBasicInfos();
-        // TODO: get the battle location
-        $battle = null;
-        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request to defend ${location_name}'), array(
-            'i18n' => ['location_name'],
+        $player_id = self::getActivePlayerId();
+
+        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request to defend ${battle_location}'), array(
+            'i18n' => ['battle_location'],
             'player_name' => $players[$player_id]['player_name'],
-            'location_name' => $this->Locations->getNameTr($battle),
+            'battle_location' => $this->Locations->getNameTr($battle),
+            'preserve' => ['player_id', 'battle']
         ));
-        // return action to the player who made the offer
         $this->gamestate->nextState();
     }
 
@@ -2048,6 +2087,10 @@ class Perikles extends Table
 
     /**
      * Checks whether a unit can defend a city, throws an Exception if it fails.
+     * @param player_id the player trying to defend
+     * @param counter the counter being sent to defend
+     * @param unit_desc the description of the unit being sent to defend, for error messages
+     * @return bool true if permission is required, false otherwise
      */
     private function validateDefender($player_id, $counter, $unit_desc) {
         if ($counter['location'] != $player_id) {
@@ -2083,8 +2126,8 @@ class Perikles extends Table
         $leader = $this->Cities->getLeader($city);
         if ($leader != $player_id) {
             if (!$this->Locations->hasDefendPermission($counter['city'], $location)) {
-                $players = $this->loadPlayersBasicInfos();
-                throw new BgaUserException(sprintf(self::_("%s must give permission for %s to defend %s"), $players[$leader]['player_name'], $unit_desc, $this->Locations->getName($location)));
+                // return true to indicate that permission is required
+                return true;
             }
         }
 
@@ -2101,6 +2144,7 @@ class Perikles extends Table
         foreach($defenders as $def) {
             $this->Cities->setAlly($counter['city'], $def);
         }
+        return false;
     }
 
     /**
@@ -2520,6 +2564,17 @@ class Perikles extends Table
         ));
     }
 
+
+    /**
+     * Clear all permission request settings.
+     */
+    function clearPermissionRequests() {
+        for ($i = 1; $i <= 4; $i++) {
+            self::setGameStateValue("permission_request_$i", 0);
+        }
+        self::setGameStateValue("permission_requester", 0);
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -2808,7 +2863,7 @@ class Perikles extends Table
      * The player requested permission to defend a city, and it was granted or denied. Or the requester canceled the request.
      * Pass back to original player.
      */
-    function stPermissionRequestResponse() {
+    function stPermissionResponse() {
         // TODO get the requesting player
         $next_player = null;
         // clear info

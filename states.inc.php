@@ -234,10 +234,10 @@ $machinestates = array(
     ),
 
     HANDLE_RESPONSE => array(
-        "name" => "handleResponse",
+        "name" => "requestResponse",
         "description" => "",
         "type" => "game",
-        "action" => "stPermissionRequestResponse",
+        "action" => "stPermissionResponse",
         "transitions" => array( "" => COMMIT_FORCES )
     ),
 

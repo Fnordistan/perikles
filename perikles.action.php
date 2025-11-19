@@ -101,6 +101,13 @@ class action_perikles extends APP_GameAction
       self::ajaxResponse( );
     }
 
+    public function cancelRequest() {
+      self::setAjaxMode();
+      $battle = self::getArg( "battle", AT_alphanum, true );
+      $this->game->cancelRequestToDefend($battle);
+      self::ajaxResponse( );
+    }
+
     /**
      * Player selected unit to lose in battle
      */
@@ -195,8 +202,6 @@ class action_perikles extends APP_GameAction
       $this->game->setDefendPermission($location, $defender, $bDefend);
       self::ajaxResponse( );
     }
-
-    // TODO: add actions for send request to defend, response to request, and cancel request
 
     /**
      * Player changes player preferences.
