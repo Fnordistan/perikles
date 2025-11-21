@@ -101,6 +101,19 @@ class action_perikles extends APP_GameAction
       self::ajaxResponse( );
     }
 
+    /**
+     * A  player responds to a permission request to defend a location.
+     */
+    public function respondPermission() {
+      self::setAjaxMode();
+      $locations = self::getArg( "locations", AT_alphanum, true );
+      $this->game->respondPermission($response);
+      self::ajaxResponse( );
+    }
+
+    /**
+     * Player cancels a request to defend a location.
+     */
     public function cancelRequest() {
       self::setAjaxMode();
       $battle = self::getArg( "battle", AT_alphanum, true );
@@ -119,7 +132,7 @@ class action_perikles extends APP_GameAction
     }
 
     public function selectdeadpool() {
-      self::setAjaxMode();     
+      self::setAjaxMode();
       $city = self::getArg( "city", AT_alphanum, true );
       $type = self::getArg( "type", AT_alphanum, true );
       $this->game->chooseDeadpool($city, $type);

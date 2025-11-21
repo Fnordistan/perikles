@@ -199,12 +199,30 @@ class PeriklesLocations extends APP_GameClass
   }
 
   /**
+   * Get a Location by its unique id.
+   * @param {int} id
+   * @return location string
+   */
+  public function getLocationById($id) {
+    return $this->game->getUniqueValueFromDB("SELECT card_type_arg location FROM LOCATION WHERE card_id=$id");
+  }
+
+  /**
    * Get a tile by the active battle slot
    * @param {int} slot
    * @return {string} location name of tile in slot
    */
   public function getBattleTile($slot) {
         return $this->game->getUniqueValueFromDB("SELECT card_type_arg location FROM LOCATION WHERE card_location_arg=$slot AND card_location=\"".BOARD."\"");
+  }
+
+  /**
+   * Get a tile by its unique id.
+   * @param {int} id
+   * @return {string} location name of tile with this id
+   */
+  public function getBattleTileById($id) {
+        return $this->game->getUniqueValueFromDB("SELECT card_type_arg location FROM LOCATION WHERE card_id=$id");
   }
 
   /**

@@ -1790,6 +1790,10 @@ function (dojo, declare) {
                         const location = args.location;
                         this.addCasualtyButtons(type, strength, cities, location);
                         break;
+                    case 'permissionResponse':
+                        debugger;
+                        const  permission_requests  =  args.permission_requests;
+                        break;
                 }
             }
         },
@@ -2542,7 +2546,6 @@ function (dojo, declare) {
                     banner_txt = (side == "attack") ? attack_str : defend_str;
                     // need to request permission
                     if (side == "defend" && target.dataset.permission == "false") {
-                        debugger;
                         banner_txt = permission_str;
                         const owner_city = tile.getCity();
                         banner_txt = banner_txt.replace('${controlling_city}', this.spanCityName(owner_city));
@@ -3402,6 +3405,7 @@ function (dojo, declare) {
             if (this.checkAction("assignUnits", true)) {
                 let cube = this.gamedatas.gamestate.args.committed['cube'] ?? "";
                 let units = this.packCommitForcesArg(this.gamedatas.gamestate.args.committed);
+                debugger;
                 this.ajaxcall( "/perikles/perikles/commitUnits.html", { 
                     units: units,
                     cube: cube,

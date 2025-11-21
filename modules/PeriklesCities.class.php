@@ -306,6 +306,24 @@ class PeriklesCities extends APP_GameClass
   }
 
   /**
+   * Get the unique id for the City.
+   * @param city name
+   * @return int id of city
+   */
+  public function getCityId($city) {
+    return $this->game->getUniqueValueFromDB("SELECT id FROM WARS WHERE name=\"$city\"");
+  }
+
+  /**
+   * Get the city name for a given id.
+   * @param {int} id
+   * @return {string} city name
+   */
+  public function getCityById($id) {
+    return $this->game->getUniqueValueFromDB("SELECT name FROM WARS WHERE id=$id");
+  }
+
+  /**
    * Get the war bitmask for this city.
    * @return a binary war bitmask
    */
