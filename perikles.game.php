@@ -2036,7 +2036,7 @@ class Perikles extends Table
      * @param {bool} bAllow whether the player is granting permission or not
      */
     function respondPermissionToDefend($requesting_city, $location, $bAllow) {
-        self::checkAction( 'permissionResponse' ); 
+        self::checkAction( 'respondPermission' ); 
         $players = self::loadPlayersBasicInfos();
 
         $owner  = $this->Locations->getCity($location);
@@ -2062,7 +2062,7 @@ class Perikles extends Table
             'city' => $requesting_city,
             'city_name' => $this->Cities->getNameTr($requesting_city),
             'location' => $location,
-            'location_name' => $this->Locations->getNameTr($location),
+            'location_name' => $this->Locations->getName($location),
             'preserve' => ['player_id', 'city', 'location', 'allow']
         ));
     }
@@ -2968,7 +2968,12 @@ class Perikles extends Table
      * Goes into multi-active state for the city owner(s) to respond to the request.
      */
     function stPermissionRequest() {
-        $owners = [];
+        $requesting_player = $this->getGameStateValue(REQUESTING_PLAYER);
+        if ($requesting_player == 0) {
+            throw new BgaVisibleSystemException("No requesting player found for permission request"); // NOI18N
+        }
+
+        $activeplayers = [];
         for ($i = 1; $i <= 4; $i++) {
             $request = $this->getGameStateValue("permission_request_$i");
             if ($request != 0) {
@@ -2976,16 +2981,19 @@ class Perikles extends Table
                 $city = $this->Locations->getCity($location);
                 $owner = $this->Cities->getLeader($city);
                 if ($owner) {
-                    $owners[] = $owner;
+                    $activeplayers[] = $owner;
                 }
             }
         }
-        $owners = array_unique($owners);
-        if (empty($owners)) {
+        $activeplayers = array_unique($activeplayers);
+        if (empty($activeplayers)) {
             throw new BgaVisibleSystemException("No city leaders found for permission requests"); // NOI18N
+        }  else {
+            $activeplayers[] = $requesting_player;
         }
-        $this->gamestate->setPlayersMultiactive($owners, "getResponse", false);
-        $this->gamestate->nextState("getResponse");
+        // Second parameter is empty string for multiactive - transition happens when all players respond
+        $this->gamestate->setPlayersMultiactive($activeplayers, "", true);
+        $this->gamestate->nextState("");
     }
 
     /**

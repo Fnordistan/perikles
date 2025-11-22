@@ -1641,6 +1641,7 @@ function (dojo, declare) {
         onEnteringState: function( stateName, args )
         {
             this.currentState = stateName;
+            console.log("Entering state: "+stateName, args);
 
             switch( stateName ) {
                 case 'chooseInitialInfluence':
@@ -1743,7 +1744,6 @@ function (dojo, declare) {
         onUpdateActionButtons: function( stateName, args )
         {
             if( this.isCurrentPlayerActive() ) {
-                            debugger;
                 switch( stateName ) {
                     case 'takeInfluence':
                         if (args._private.special) {

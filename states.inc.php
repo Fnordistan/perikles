@@ -220,7 +220,7 @@ $machinestates = array(
         "description" => "",
         "type"  => "game",
         "action" => "stPermissionRequest",
-        "transitions" => array( "getResponse" => PERMISSION_RESPONSE )
+        "transitions" => array( "" => PERMISSION_RESPONSE )
     ),
 
     PERMISSION_RESPONSE => array(
