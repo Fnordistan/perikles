@@ -102,7 +102,7 @@ class action_perikles extends APP_GameAction
     }
 
     /**
-     * A  player responds to a permission request to defend a location.
+     * A player responds to a permission request to defend a location.
      */
     public function respondPermission() {
       self::setAjaxMode();

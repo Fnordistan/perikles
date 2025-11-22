@@ -35,7 +35,7 @@ const PREF_COLORBLIND = 103;
 const SCORING_ANIMATION = 2000;
 
 // permission buttons get displayed here
-const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'deadPool', 'takeDead', 'resolveTile', 'battle', 'rollcombat', 'specialBattleTile', 'takeLoss'];
+const MILITARY_DISPLAY_STATES = ['spartanChoice', 'nextPlayerCommit', 'commitForces', 'permissionResponse',  'deadPool', 'takeDead', 'resolveTile', 'battle', 'rollcombat', 'specialBattleTile', 'takeLoss'];
 
 const CANDIDATES = {
     "\u{003B1}" : "a",
@@ -1642,6 +1642,7 @@ function (dojo, declare) {
         {
             this.currentState = stateName;
             console.log("Entering state: "+stateName, args);
+            debugger;
 
             switch( stateName ) {
                 case 'chooseInitialInfluence':
@@ -1703,7 +1704,6 @@ function (dojo, declare) {
         //
         onLeavingState: function( stateName )
         {
-            
             switch( stateName ) {
                 case 'chooseInitialInfluence':
                 case 'choosePlaceInfluence':
@@ -1792,6 +1792,7 @@ function (dojo, declare) {
                         this.addCasualtyButtons(type, strength, cities, location);
                         break;
                     case 'permissionResponse':
+                        debugger;
                         // array of permission requests, each with {owner, owning_city, location, requesting_city}
                         const requesting_player = args.requesting_player;
                         const permission_requests = args.permission_requests;
@@ -1897,10 +1898,10 @@ function (dojo, declare) {
             msg = msg.replace('${location}', new perikles.locationtile(location).getNameTr());
             this.setDescriptionOnMyTurn(msg, {});
             this.addActionButton( 'grant_permission_btn', _("Allow"), () => {
-                this.grantPermissionRequest(requesting_city, location);
+                this.onPermissionRequest(requesting_city, location, true);
             }, null, false, 'green' );
             this.addActionButton( 'deny_permission_btn', _("Deny"), () => {
-                this.denyPermissionRequest(requesting_city, location);
+                this.onPermissionRequest(requesting_city, location, false);
             }, null, false, 'red' );
         },
 
@@ -1909,24 +1910,11 @@ function (dojo, declare) {
          * @param {*} requesting_city 
          * @param {*} location 
          */
-        grantPermissionRequest: function(requesting_city, location) {
+        onPermissionRequest: function(requesting_city, location, allow) {
             this.ajaxcall( "/perikles/perikles/respondPermission.html", {
                 requesting_city: requesting_city,
                 location: location,
-                allow: true
-            }, this, function(result) {});
-        },
-
-        /**
-         * Send permission response to server to deny a request to defend.
-         * @param {*} requesting_city 
-         * @param {*} location 
-         */
-        denyPermissionRequest: function(requesting_city, location) {
-            this.ajaxcall( "/perikles/perikles/respondPermission.html", {
-                requesting_city: requesting_city,
-                location: location,
-                allow: false
+                allow: allow
             }, this, function(result) {});
         },
 

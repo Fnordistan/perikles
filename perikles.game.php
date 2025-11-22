@@ -1971,7 +1971,6 @@ class Perikles extends Table
      * @param {string} battle the battle location for which permission is being requested
      */
     function requestPermissionToDefend($requesting_player_id, $i, $city, $battle) { 
-
         $players = self::loadPlayersBasicInfos();
         $player_name = $players[$requesting_player_id]['player_name'];
 
@@ -1983,7 +1982,7 @@ class Perikles extends Table
         $city_id = $this->Cities->getCityId($city);
         self::setGameStateValue("permission_requester_$i", $city_id);
 
-        self::notifyAllPlayers("defendRequest", clienttranslate('${city_name} (${player_name}) requests permission from leader of ${owning_city_name} to defend ${battle_location}'), array(
+        self::notifyAllPlayers("defendRequest", clienttranslate('${city_name} requests permission from ${owning_city_name} to defend ${battle_location}'), array(
             'i18n' => ['city_name', 'owning_city_name', 'battle_location'],
             'player_id' => $requesting_player_id,
             'player_name' => $player_name,
@@ -2776,22 +2775,21 @@ class Perikles extends Table
      */
     function argsPermissionResponse() {
         $permission_requests = [];
-        $requesting_player = null;
+        $requesting_player = $this->getGameStateValue(REQUESTING_PLAYER);
+        if ($requesting_player == 0) {
+            throw new BgaVisibleSystemException("No requesting player set for permission response"); // NOI18N
+        }
         for ($i = 1; $i <= 4; $i++) {
             $request = $this->getGameStateValue("permission_request_$i");
             $requester = $this->getGameStateValue("permission_requester_$i");
             if ($request != 0 && $requester != 0) {
-                if ($requesting_player == null) {
-                    $requesting_player = $this->Cities->getLeader($this->Cities->getCityById($requester));
-                } else {
-                    if ($requesting_player != $this->Cities->getLeader($requesting_city)) {
-                        throw new BgaVisibleSystemException("Multiple permission requests from different players"); // NOI18N
-                    }
+                $requesting_city = $this->Cities->getCityById($requester);
+                if ($requesting_player != $this->Cities->getLeader($requesting_city)) {
+                    throw new BgaVisibleSystemException("Multiple permission requests from different players"); // NOI18N
                 }
                 $location = $this->Locations->getLocationById($request);
                 $owning_city = $this->Locations->getCity($location);
                 $owner = $this->Cities->getLeader($owning_city);
-                $requesting_city = $this->Cities->getCityById($requester);
                 $permission_request = array(
                     'location' => $location,
                     'owning_city' => $owning_city,
