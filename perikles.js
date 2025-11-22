@@ -1743,6 +1743,7 @@ function (dojo, declare) {
         onUpdateActionButtons: function( stateName, args )
         {
             if( this.isCurrentPlayerActive() ) {
+                            debugger;
                 switch( stateName ) {
                     case 'takeInfluence':
                         if (args._private.special) {
@@ -1791,8 +1792,20 @@ function (dojo, declare) {
                         this.addCasualtyButtons(type, strength, cities, location);
                         break;
                     case 'permissionResponse':
-                        debugger;
-                        const  permission_requests  =  args.permission_requests;
+                        // array of permission requests, each with {owner, owning_city, location, requesting_city}
+                        const requesting_player = args.requesting_player;
+                        const permission_requests = args.permission_requests;
+                        for (let req of permission_requests) {
+                            const owner = req.owner;
+                            const owning_city = req.owning_city;
+                            const location = req.location;
+                            const requesting_city = req.requesting_city;
+                            if  (this.player_id == requesting_player) {
+                                this.addPermissionCancelButton(requesting_city, owning_city, location);
+                            }  else if (this.player_id == owner) {
+                                this.addPermissionRequestButtons(requesting_player, requesting_city, owning_city, location);
+                            }
+                        }
                         break;
                 }
             }
@@ -1864,6 +1877,86 @@ function (dojo, declare) {
                     this.onSelectDeadpool(unit);
                 });
             });
+        },
+
+
+        //////////////////////////////////////////////////
+        //// Permission Requests
+        //////////////////////////////////////////////////
+
+        /**
+         * Add buttons for the owning player to grant or deny a permission request.
+         * @param {*} requesting_player 
+         * @param {*} requesting_city 
+         * @param {*} owning_city 
+         * @param {*} location 
+         */
+        addPermissionRequestButtons: function(requesting_player, requesting_city, owning_city, location) {
+            let msg = _("${requesting_city} is requesting permission to defend ${location}");
+            msg = msg.replace('${requesting_city}', this.getCityNameTr(requesting_city));
+            msg = msg.replace('${location}', new perikles.locationtile(location).getNameTr());
+            this.setDescriptionOnMyTurn(msg, {});
+            this.addActionButton( 'grant_permission_btn', _("Allow"), () => {
+                this.grantPermissionRequest(requesting_city, location);
+            }, null, false, 'green' );
+            this.addActionButton( 'deny_permission_btn', _("Deny"), () => {
+                this.denyPermissionRequest(requesting_city, location);
+            }, null, false, 'red' );
+        },
+
+        /**
+         * Send permission response to server to allow a request to defend.
+         * @param {*} requesting_city 
+         * @param {*} location 
+         */
+        grantPermissionRequest: function(requesting_city, location) {
+            this.ajaxcall( "/perikles/perikles/respondPermission.html", {
+                requesting_city: requesting_city,
+                location: location,
+                allow: true
+            }, this, function(result) {});
+        },
+
+        /**
+         * Send permission response to server to deny a request to defend.
+         * @param {*} requesting_city 
+         * @param {*} location 
+         */
+        denyPermissionRequest: function(requesting_city, location) {
+            this.ajaxcall( "/perikles/perikles/respondPermission.html", {
+                requesting_city: requesting_city,
+                location: location,
+                allow: false
+            }, this, function(result) {});
+        },
+
+        /**
+         * Button for requesting player to cancel request
+         * @param {string} requesting_city
+         * @param {string} owning_city
+         * @param {string} location
+         */
+        addPermissionCancelButton: function(requesting_city, owning_city, location) {
+            let msg = _("You requested permission from ${owning_city} to send units from  ${requesting_city} to defend ${location}");
+            msg = msg.replace('${owning_city}', this.getCityNameTr(owning_city));
+            msg = msg.replace('${requesting_city}', this.getCityNameTr(requesting_city));
+            msg = msg.replace('${location}', new perikles.locationtile(location).getNameTr());
+            this.setDescriptionOnMyTurn(msg, {});
+            this.addActionButton( 'cancel_permission_btn', _("Cancel Request"), () => {
+                this.cancelPermissionRequest(requesting_city, location);
+            }, null, false, 'red' );
+        },
+
+        /**
+         * Requesting player canceled a request to defend.
+         * @param {*} requesting_city 
+         * @param {*} location 
+         */
+        cancelPermissionRequest: function(requesting_city, location) {
+            this.ajaxcall( "/perikles/perikles/cancelPermissionRequest.html", {
+                requesting_city: requesting_city,
+                location: location
+            }, this, function(result) {});
         },
 
         ///////////////////////////////////////////////////
@@ -3405,7 +3498,6 @@ function (dojo, declare) {
             if (this.checkAction("assignUnits", true)) {
                 let cube = this.gamedatas.gamestate.args.committed['cube'] ?? "";
                 let units = this.packCommitForcesArg(this.gamedatas.gamestate.args.committed);
-                debugger;
                 this.ajaxcall( "/perikles/perikles/commitUnits.html", { 
                     units: units,
                     cube: cube,
@@ -3598,6 +3690,14 @@ function (dojo, declare) {
             // ignore the message to sent to everyone about your own units
             // this.notifqueue.setIgnoreNotificationCheck( 'sendBattle', (notif) => (notif.args.id == 0 && notif.args.owners.includes(this.player_id)) );
             this.notifqueue.setSynchronous( 'sendBattle', 1000 );
+
+            //  permission requests and responses
+            // dojo.subscribe( 'defendRequest', this, "notif_permissionRequest");
+            // this.notifqueue.setSynchronous( 'defendRequest', 500 );
+            // dojo.subscribe( 'requestCanceled', this, "notif_cancelPermissionRequest");
+            // this.notifqueue.setSynchronous( 'requestCanceled', 500 );
+            dojo.subscribe( 'permissionResponse', this, "notif_permissionResponse");
+            this.notifqueue.setSynchronous( 'permissionResponse', 500 );
 
             // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
@@ -3865,6 +3965,36 @@ function (dojo, declare) {
             const wars = notif.args.wars;
             Object.assign(this.gamedatas.wars, wars);
             this.updatePermissions();
+        },
+
+        // /**
+        //  * A user sent a request for permission to defend.
+        //  * @param {*} notif 
+        //  */
+        // notif_permissionRequest: function(notif) {
+        //     // no-op right now
+        // },
+
+        // notif_cancelPermissionRequest: function(notif) {
+        //     // no-op right now
+        // },
+
+        /**
+         * Here everyone is updated on
+         * @param {*} notif 
+         */
+        notif_permissionResponse: function(notif) {
+            const location = notif.args.location;
+            // requesting city
+            const city = notif.args.city;
+            const mayDefend =  notif.args.allow;
+            if (mayDefend) {
+                const perm_btn = $(location+"_"+city+"_btn");
+                // send a click event to  it
+                if (perm_btn) {
+                    perm_btn.click();
+                }
+            }
         },
 
         /**

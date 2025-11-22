@@ -1999,47 +1999,115 @@ class Perikles extends Table
 
     /**
      * Requesting player canceled the request.
+     * @param {string} requesting_city the city that is requesting permission to defend
+     * @param {string} location the battle location for which permission is being requested
      */
-    function cancelRequestToDefend($battle) {
+    function cancelRequestToDefend($requesting_city, $location) {
         // self::checkAction( 'cancelRequest' ); 
         $players = self::loadPlayersBasicInfos();
-        $player_id = self::getActivePlayerId();
 
-        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request to defend ${battle_location}'), array(
+        $requesting_player = $this->Cities->getLeader($requesting_city);
+
+        if ($this->getGameStateValue(REQUESTING_PLAYER) != $requesting_player || $this->getCurrentPlayerId() != $requesting_player) {
+            throw new BgaUserException(self::_("You cannot cancel this request"));
+        }
+        // make sure this request exists
+        $owning_city = $this->Locations->getCity($location);
+        $owning_player = $this->Cities->getLeader($owning_city);
+
+        $this->updatePermissionsStates($owning_player, $requesting_city, $location);
+
+        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request for ${city_name} to defend ${battle_location}'), array(
             'i18n' => ['battle_location'],
-            'player_name' => $players[$player_id]['player_name'],
-            'battle_location' => $this->Locations->getNameTr($battle),
-            'preserve' => ['player_id', 'battle']
+            'player_name' => $players[$requesting_player]['player_name'],
+            'city' => $requesting_city,
+            'city_name' => $this->Cities->getNameTr($requesting_city),
+            'battle' => $location,
+            'battle_location' => $this->Locations->getNameTr($location),
+            'preserve' => ['player_id',  'city', 'battle']
         ));
-        $this->gamestate->nextState();
+
     }
 
     /**
      * Player responds to a request to defend city by another player.
+     * @param {string} requesting_city the city that is requesting permission to defend
+     * @param {string} location the battle location for which permission is being requested
+     * @param {bool} bAllow whether the player is granting permission or not
      */
-    function respondPermissionToDefend($permit) {
-        self::checkAction( 'respondPermission' ); 
+    function respondPermissionToDefend($requesting_city, $location, $bAllow) {
+        self::checkAction( 'permissionResponse' ); 
+        $players = self::loadPlayersBasicInfos();
 
-        $player_id = self::getActivePlayerId();
-        // TODO get the city and battle
-        $city = null;
-        $battle = null;
+        $owner  = $this->Locations->getCity($location);
+        $owning_player = $this->Cities->getLeader($owner);
 
-        if ($permit) {
-            // TODO: set permissions for the requesting player to defend city
-
-        } else {
-            // rejected
-            self::notifyAllPlayers('permissionDenied', clienttranslate('${player_name} refused permission to defend ${battle_location}'), array(
-                'i18n' => ['battle_location'],
-                'player_id' => $player_id,
-                'player_name' => self::getActivePlayerName(),
-                'battle_location' => $this->Locations->getNameTr($battle),
-            ));
-
+        if ($this->getCurrentPlayerId() != $owning_player) {
+            throw new BgaUserException(self::_("You cannot respond to this request"));
         }
-        // return action to the player who made the request
-        $this->gamestate->nextState();
+
+        $this->updatePermissionsStates($owning_player, $requesting_city, $location);
+
+        $deny = clienttranslate('denies');
+        $allow = clienttranslate('grants');
+        $response = $bAllow ? $allow : $deny;
+
+        // accepted or rejected, will handle permission button on client side
+        self::notifyAllPlayers('permissionResponse', clienttranslate('${player_name} ${response} permission to ${city_name} to defend ${location_name}'), array(
+            'i18n' => ['location_name', 'response', 'city_name'],
+            'player_id' => $owning_player,
+            'player_name' => $players[$owning_player]['player_name'],
+            'allow' => $bAllow,
+            'response' => $response,
+            'city' => $requesting_city,
+            'city_name' => $this->Cities->getNameTr($requesting_city),
+            'location' => $location,
+            'location_name' => $this->Locations->getNameTr($location),
+            'preserve' => ['player_id', 'city', 'location', 'allow']
+        ));
+    }
+
+    /**
+     * After any permission response, check if there are any remaining requests for the same battle location. If not, move on to the next state.
+     * @param {int} owning_player the player who owns the city being defended
+     * @param {int} city_id the city that is requesting permission to defend
+     * @param {int} location_id the battle location for which permission is being requested
+     */
+    private function updatePermissionsStates($owning_player, $requesting_city, $location) {
+        $owning_player_still_active = false;
+        $active_requests = false;
+        $location_id = $this->Locations->getLocationId($location);
+        $city_id = $this->Cities->getCityId($requesting_city);
+        for ($i = 1; $i <= 4; $i++) {
+            $request = $this->getGameStateValue("permission_request_$i");
+            $requester = $this->getGameStateValue("permission_requester_$i");
+            if ($request == $location_id && $requester == $city_id) {
+                // found it, clear it
+                self::setGameStateValue("permission_request_$i", 0);
+                self::setGameStateValue("permission_requester_$i", 0);
+            } else {
+                //  are there any remaining requests?
+                // does the owning player have any remaining quests pending? If not, deactivate
+                if  ($requester != 0 && $request != 0) {
+                    $active_requests = true;
+                    $nextlocation =  $this->Locations->getLocationById($request);
+                    $owningcity =  $this->Locations->getCity($nextlocation);
+                    $nextplayer = $this->Cities->getLeader($owningcity);
+                    if  ($nextplayer == $owning_player) {
+                        $owning_player_still_active = true;
+                    }
+                }
+            }
+        }
+        
+        if  (!$owning_player_still_active) {
+            $this->gamestate->setPlayerNonMultiactive( $owning_player, "resolveRequests");
+        }
+        if  (!$active_requests) {
+            // no more active requests, move on
+            $this->setGameStateValue(REQUESTING_PLAYER, 0);
+            $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
+        }
     }
 
     //////////////////////////////////////////////////////////////////
@@ -2704,25 +2772,31 @@ class Perikles extends Table
 
     /**
      * Provide args for requests to defend a location. Goes to all owning players.
-     * @return array of permission requests ('permission_requests') =>  array of ()'location', 'owning_city', 'owner', 'requesting_city', 'requesting_player')
+     * @return array of permission requests ('permission_requests') =>  array of ()'location', 'owning_city', 'owner', 'requesting_city')
      */
     function argsPermissionResponse() {
         $permission_requests = [];
+        $requesting_player = null;
         for ($i = 1; $i <= 4; $i++) {
             $request = $this->getGameStateValue("permission_request_$i");
             $requester = $this->getGameStateValue("permission_requester_$i");
             if ($request != 0 && $requester != 0) {
+                if ($requesting_player == null) {
+                    $requesting_player = $this->Cities->getLeader($this->Cities->getCityById($requester));
+                } else {
+                    if ($requesting_player != $this->Cities->getLeader($requesting_city)) {
+                        throw new BgaVisibleSystemException("Multiple permission requests from different players"); // NOI18N
+                    }
+                }
                 $location = $this->Locations->getLocationById($request);
                 $owning_city = $this->Locations->getCity($location);
                 $owner = $this->Cities->getLeader($owning_city);
                 $requesting_city = $this->Cities->getCityById($requester);
-                $requesting_player = $this->Cities->getLeader($requesting_city);
                 $permission_request = array(
                     'location' => $location,
                     'owning_city' => $owning_city,
                     'owner' => $owner,
                     'requesting_city' => $requesting_city,
-                    'requesting_player' => $requesting_player,
                 );
                 $permission_requests[] = $permission_request;
             }
@@ -2730,6 +2804,7 @@ class Perikles extends Table
 
         return array(
             'permission_requests' => $permission_requests,
+            'requesting_player' => $requesting_player,
         );
     }
 
@@ -3650,6 +3725,9 @@ class Perikles extends Table
                 case 'requestPermission':
                     // this should never happen
                     throw new BgaVisibleSystemException("Zombie player $active_player cannot request permission"); // NOI18N
+                    break;
+                case 'permissionResponse':
+                    throw new BgaVisibleSystemException("Zombie player $active_player cannot respond to requests - you should cancel your request"); // NOI18N
                     break;
                 case 'specialTile':
                     $this->specialTilePass($active_player);

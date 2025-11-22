@@ -106,18 +106,21 @@ class action_perikles extends APP_GameAction
      */
     public function respondPermission() {
       self::setAjaxMode();
-      $locations = self::getArg( "locations", AT_alphanum, true );
-      $this->game->respondPermission($response);
+      $allow = self::getArg( "allow", AT_bool, true );
+      $requesting_city = self::getArg( "requesting_city", AT_alphanum, true );
+      $location = self::getArg( "location", AT_alphanum, true );
+      $this->game->respondPermissionToDefend($requesting_city, $location, $allow);
       self::ajaxResponse( );
     }
 
     /**
      * Player cancels a request to defend a location.
      */
-    public function cancelRequest() {
+    public function cancelPermissionRequest() {
       self::setAjaxMode();
-      $battle = self::getArg( "battle", AT_alphanum, true );
-      $this->game->cancelRequestToDefend($battle);
+      $requesting_city = self::getArg( "requesting_city", AT_alphanum, true );
+      $location = self::getArg( "location", AT_alphanum, true );
+      $this->game->cancelRequestToDefend($requesting_city, $location);
       self::ajaxResponse( );
     }
 
