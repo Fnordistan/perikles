@@ -1797,17 +1797,28 @@ function (dojo, declare) {
                         let msg = '';
                         let multireqs = false;
 
+                        
                         // create the status bar message
+                        const isRequester = this.player_id == requesting_player;
                         for (let req of permission_requests) {
                             const location = req.location;
                             const locationName = new perikles.locationtile(location).getNameTr();
+                            const owning_city = req.owning_city;
                             const requesting_city = req.requesting_city;
                             const span_id = `${requesting_city}-${location}`;
-                            reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("${requesting_city} is requesting permission to defend ${location}") + '</div>';
-                            reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
-                            reqmsg = reqmsg.replace('${location}', locationName);
+                            let reqmsg = '';
+                            if (isRequester) {
+                                reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("You requested permission from ${owning_city} for ${requesting_city} to defend ${location}") + '</div>';
+                                reqmsg = reqmsg.replace('${owning_city}', this.spanCityName(owning_city));
+                                reqmsg = reqmsg.replace('${location}', locationName);
+                                reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
+                            } else {
+                                reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("${requesting_city} is requesting permission to defend ${location}") + '</div>';
+                                reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
+                                reqmsg = reqmsg.replace('${location}', locationName);
+                            }
                             if (multireqs) {
-                                msg += '<br/>'+reqmsg;
+                                msg += reqmsg;
                             } else {
                                 msg = reqmsg;
                                 multireqs = true;
@@ -1815,18 +1826,18 @@ function (dojo, declare) {
                         }
                         // update description with status
                         this.setDescriptionOnMyTurn(msg, {});
+
                         for (let req2 of permission_requests) {
                             const owner = req2.owner;
                             const requesting_city = req2.requesting_city;
                             const owning_city = req2.owning_city;
                             const location = req2.location;
-                            if  (this.player_id == requesting_player) {
+                            if  (isRequester) {
                                 this.addPermissionCancelButton(requesting_city, owning_city, location);
                             }  else if (this.player_id == owner) {
                                 this.addPermissionRequestButtons(requesting_city, location);
                             }
                         }
-
 
                         break;
                 }
@@ -1940,14 +1951,9 @@ function (dojo, declare) {
          * @param {string} location
          */
         addPermissionCancelButton: function(requesting_city, owning_city, location) {
-            let msg = _("You requested permission from ${owning_city} to send units from  ${requesting_city} to defend ${location}");
-            msg = msg.replace('${owning_city}', this.getCityNameTr(owning_city));
-            msg = msg.replace('${requesting_city}', this.getCityNameTr(requesting_city));
-            msg = msg.replace('${location}', new perikles.locationtile(location).getNameTr());
-            this.setDescriptionOnMyTurn(msg, {});
             this.addActionButton( 'cancel_permission_btn', _("Cancel Request"), () => {
                 this.cancelPermissionRequest(requesting_city, location);
-            }, null, false, 'red' );
+            }, "req-"+requesting_city+"-"+location, false, 'red' );
         },
 
         /**
