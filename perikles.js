@@ -1834,6 +1834,7 @@ function (dojo, declare) {
                             this.addPermissionCancelButton(requestargs);
                         }  else if (requestargs.length > 0) {
                             this.addPermissionRequestButtons(requestargs);
+                            msg += '<br/>' + _("(You may also grant or revoke permissions at any time on the Defender Permissions panel)");
                         }
 
                         // update description with status
