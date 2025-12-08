@@ -893,7 +893,7 @@ function (dojo, declare) {
                         args.icon = ldr_ctr;
                     }
                     if (!this.isSpectator) {
-                        log = log.replace("You", this.decorator.spanYou(this.player_id), this.isColorblind());
+                        log = log.replaceAll("You", this.decorator.spanYou(this.player_id), this.isColorblind());
 
                         if (args.committed) {
                             const commit_log = this.createCommittedUnits(args.committed);
