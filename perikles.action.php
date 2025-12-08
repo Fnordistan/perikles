@@ -107,9 +107,16 @@ class action_perikles extends APP_GameAction
     public function respondPermission() {
       self::setAjaxMode();
       $allow = self::getArg( "allow", AT_bool, true );
-      $requesting_city = self::getArg( "requesting_city", AT_alphanum, true );
-      $location = self::getArg( "location", AT_alphanum, true );
-      $this->game->respondPermissionToDefend($requesting_city, $location, $allow);
+      // unpack arrays and call game method for each
+      $requesting_cities = self::getArg( "requesting_cities", AT_alphanum, true );
+      $requesting_cities = explode(" ", $requesting_cities);
+      $locations = self::getArg( "locations", AT_alphanum, true );
+      $locations = explode(" ", $locations);
+      foreach ($requesting_cities as $index => $requesting_city) {
+          $location = $locations[$index];
+          $this->game->respondPermissionToDefend($requesting_city, $location, $allow);
+      }
+
       self::ajaxResponse( );
     }
 
@@ -118,9 +125,16 @@ class action_perikles extends APP_GameAction
      */
     public function cancelPermissionRequest() {
       self::setAjaxMode();
-      $requesting_city = self::getArg( "requesting_city", AT_alphanum, true );
-      $location = self::getArg( "location", AT_alphanum, true );
-      $this->game->cancelRequestToDefend($requesting_city, $location);
+      // unpack arrays and call game method for each
+      $requesting_cities = self::getArg( "requesting_cities", AT_alphanum, true );
+      $requesting_cities = explode(" ", $requesting_cities);
+      $locations = self::getArg( "locations", AT_alphanum, true );
+      $locations = explode(" ", $locations);
+      // unpack arrays and call game method for each
+      foreach ($requesting_cities as $index => $requesting_city) {
+          $location = $locations[$index];
+        $this->game->cancelRequestToDefend($requesting_city, $location);
+      }
       self::ajaxResponse( );
     }
 

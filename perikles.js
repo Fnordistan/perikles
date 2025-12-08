@@ -1792,19 +1792,25 @@ function (dojo, declare) {
                         break;
                     case 'permissionResponse':
                         // array of permission requests, each with {owner, owning_city, location, requesting_city}
-                        const requesting_player = args.requesting_player;
+                        const requesting_player = args.otherplayer_id;
                         const permission_requests = args.permission_requests;
                         let msg = '';
                         let multireqs = false;
-
                         
                         // create the status bar message
-                        const isRequester = this.player_id == requesting_player;
+                        const isRequester = (this.player_id == requesting_player);
+                        // array of mapped pairs
+                        let requestargs = [];
                         for (let req of permission_requests) {
                             const location = req.location;
                             const locationName = new perikles.locationtile(location).getNameTr();
                             const owning_city = req.owning_city;
                             const requesting_city = req.requesting_city;
+                            const owner = req.owner;
+                            if (isRequester || this.player_id == owner) {
+                                requestargs.push({requesting_city, location});
+                            }
+
                             const span_id = `${requesting_city}-${location}`;
                             let reqmsg = '';
                             if (isRequester) {
@@ -1824,21 +1830,14 @@ function (dojo, declare) {
                                 multireqs = true;
                             }
                         }
-                        // update description with status
-                        this.setDescriptionOnMyTurn(msg, {});
-
-                        for (let req2 of permission_requests) {
-                            const owner = req2.owner;
-                            const requesting_city = req2.requesting_city;
-                            const owning_city = req2.owning_city;
-                            const location = req2.location;
-                            if  (isRequester) {
-                                this.addPermissionCancelButton(requesting_city, owning_city, location);
-                            }  else if (this.player_id == owner) {
-                                this.addPermissionRequestButtons(requesting_city, location);
-                            }
+                        if  (isRequester) {
+                            this.addPermissionCancelButton(requestargs);
+                        }  else if (requestargs.length > 0) {
+                            this.addPermissionRequestButtons(requestargs);
                         }
 
+                        // update description with status
+                        this.setDescriptionOnMyTurn(msg, {});
                         break;
                 }
             }
@@ -1919,52 +1918,63 @@ function (dojo, declare) {
 
         /**
          * Add buttons for the owning player to grant or deny a permission request.
-         * @param {*} requesting_city 
-         * @param {*} location 
+         * @param {*} citylocation_pairs
          */
-        addPermissionRequestButtons: function(requesting_city, location) {
+        addPermissionRequestButtons: function(citylocation_pairs) {
             this.addActionButton( 'grant_permission_btn', _("Allow"), () => {
-                this.onPermissionRequest(requesting_city, location, true);
-            }, "req-"+requesting_city+"-"+location, false, 'green' );
+                this.onPermissionRequest(citylocation_pairs, true);
+            }, null, false, 'green' );
             this.addActionButton( 'deny_permission_btn', _("Deny"), () => {
-                this.onPermissionRequest(requesting_city, location, false);
-            }, "req-"+requesting_city+"-"+location, false, 'red' );
+                this.onPermissionRequest(citylocation_pairs, false);
+            }, null, false, 'red' );
         },
 
         /**
          * Send permission response to server to allow a request to defend.
-         * @param {*} requesting_city 
-         * @param {*} location 
+         * @param {*} citylocation_pairs
+         * @param {bool} allow
          */
-        onPermissionRequest: function(requesting_city, location, allow) {
+        onPermissionRequest: function(citylocation_pairs, allow) {
+            let cities = "";
+            let locations = "";
+            for (let pair of citylocation_pairs) {
+                cities += pair.requesting_city + " ";
+                locations += pair.location + " ";
+            }
+
             this.ajaxcall( "/perikles/perikles/respondPermission.html", {
-                requesting_city: requesting_city,
-                location: location,
+                requesting_cities: cities,
+                locations: locations,
                 allow: allow
             }, this, function(result) {});
         },
 
         /**
          * Button for requesting player to cancel request
-         * @param {string} requesting_city
-         * @param {string} owning_city
-         * @param {string} location
+         * @param {*} citylocation_pairs
          */
-        addPermissionCancelButton: function(requesting_city, owning_city, location) {
-            this.addActionButton( 'cancel_permission_btn', _("Cancel Request"), () => {
-                this.cancelPermissionRequest(requesting_city, location);
-            }, "req-"+requesting_city+"-"+location, false, 'red' );
+        addPermissionCancelButton: function(citylocation_pairs) {
+            const label = (citylocation_pairs.length > 1) ? _("Cancel Requests") : _("Cancel Request");
+            this.addActionButton( 'cancel_permission_btn', label, () => {
+                this.cancelPermissionRequest(citylocation_pairs);
+            }, null, false, 'red' );
         },
 
         /**
          * Requesting player canceled a request to defend.
-         * @param {*} requesting_city 
-         * @param {*} location 
+         * @param {*} citylocation_pairs
          */
-        cancelPermissionRequest: function(requesting_city, location) {
+        cancelPermissionRequest: function(citylocation_pairs) {
+            let cities = "";
+            let locations = "";
+            for (let pair of citylocation_pairs) {
+                cities += pair.requesting_city + " ";
+                locations += pair.location + " ";
+            }
+
             this.ajaxcall( "/perikles/perikles/cancelPermissionRequest.html", {
-                requesting_city: requesting_city,
-                location: location
+                requesting_cities: cities,
+                locations: locations
             }, this, function(result) {});
         },
 

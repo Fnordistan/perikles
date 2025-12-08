@@ -2022,7 +2022,7 @@ class Perikles extends Table
             'city' => $requesting_city,
             'city_name' => $this->Cities->getNameTr($requesting_city),
             'battle' => $location,
-            'battle_location' => $this->Locations->getNameTr($location),
+            'battle_location' => $this->Locations->getName($location),
             'preserve' => ['player_id',  'city', 'battle']
         ));
 
@@ -2801,9 +2801,11 @@ class Perikles extends Table
             }
         }
 
+        $players = self::loadPlayersBasicInfos();
         return array(
             'permission_requests' => $permission_requests,
-            'requesting_player' => $requesting_player,
+            'otherplayer' => $players[$requesting_player]['player_name'],
+            'otherplayer_id' => $requesting_player,
         );
     }
 
