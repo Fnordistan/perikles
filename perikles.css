@@ -1233,6 +1233,12 @@
     column-gap: 0.25em;
 }
 
+.prk_permrequest {
+    margin: 2px auto;
+    text-align: left;
+    padding-left: 10vw;
+}
+
 /******************* IDs for unique elements *******************/
 
 #periklesboard {

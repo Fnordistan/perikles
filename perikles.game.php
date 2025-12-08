@@ -1891,7 +1891,7 @@ class Perikles extends Table
             $this->setGameStateValue(REQUESTING_PLAYER, $player_id);
             $i = 1;
             foreach($city_requests as $city => $locations) {
-                foreach ($locations as $location) {
+                foreach (array_unique($locations) as $location) {
                     $this->requestPermissionToDefend($player_id, $i, $city, $location);
                     $i++;
                 }
@@ -2107,6 +2107,7 @@ class Perikles extends Table
             $this->setGameStateValue(REQUESTING_PLAYER, 0);
             $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
         }
+        $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
     }
 
     //////////////////////////////////////////////////////////////////

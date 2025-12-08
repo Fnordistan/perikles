@@ -1642,7 +1642,6 @@ function (dojo, declare) {
         {
             this.currentState = stateName;
             console.log("Entering state: "+stateName, args);
-            debugger;
 
             switch( stateName ) {
                 case 'chooseInitialInfluence':
@@ -1792,21 +1791,43 @@ function (dojo, declare) {
                         this.addCasualtyButtons(type, strength, cities, location);
                         break;
                     case 'permissionResponse':
-                        debugger;
                         // array of permission requests, each with {owner, owning_city, location, requesting_city}
                         const requesting_player = args.requesting_player;
                         const permission_requests = args.permission_requests;
+                        let msg = '';
+                        let multireqs = false;
+
+                        // create the status bar message
                         for (let req of permission_requests) {
-                            const owner = req.owner;
-                            const owning_city = req.owning_city;
                             const location = req.location;
+                            const locationName = new perikles.locationtile(location).getNameTr();
                             const requesting_city = req.requesting_city;
+                            const span_id = `${requesting_city}-${location}`;
+                            reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("${requesting_city} is requesting permission to defend ${location}") + '</div>';
+                            reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
+                            reqmsg = reqmsg.replace('${location}', locationName);
+                            if (multireqs) {
+                                msg += '<br/>'+reqmsg;
+                            } else {
+                                msg = reqmsg;
+                                multireqs = true;
+                            }
+                        }
+                        // update description with status
+                        this.setDescriptionOnMyTurn(msg, {});
+                        for (let req2 of permission_requests) {
+                            const owner = req2.owner;
+                            const requesting_city = req2.requesting_city;
+                            const owning_city = req2.owning_city;
+                            const location = req2.location;
                             if  (this.player_id == requesting_player) {
                                 this.addPermissionCancelButton(requesting_city, owning_city, location);
                             }  else if (this.player_id == owner) {
-                                this.addPermissionRequestButtons(requesting_player, requesting_city, owning_city, location);
+                                this.addPermissionRequestButtons(requesting_city, location);
                             }
                         }
+
+
                         break;
                 }
             }
@@ -1887,22 +1908,16 @@ function (dojo, declare) {
 
         /**
          * Add buttons for the owning player to grant or deny a permission request.
-         * @param {*} requesting_player 
          * @param {*} requesting_city 
-         * @param {*} owning_city 
          * @param {*} location 
          */
-        addPermissionRequestButtons: function(requesting_player, requesting_city, owning_city, location) {
-            let msg = _("${requesting_city} is requesting permission to defend ${location}");
-            msg = msg.replace('${requesting_city}', this.getCityNameTr(requesting_city));
-            msg = msg.replace('${location}', new perikles.locationtile(location).getNameTr());
-            this.setDescriptionOnMyTurn(msg, {});
+        addPermissionRequestButtons: function(requesting_city, location) {
             this.addActionButton( 'grant_permission_btn', _("Allow"), () => {
                 this.onPermissionRequest(requesting_city, location, true);
-            }, null, false, 'green' );
+            }, "req-"+requesting_city+"-"+location, false, 'green' );
             this.addActionButton( 'deny_permission_btn', _("Deny"), () => {
                 this.onPermissionRequest(requesting_city, location, false);
-            }, null, false, 'red' );
+            }, "req-"+requesting_city+"-"+location, false, 'red' );
         },
 
         /**
