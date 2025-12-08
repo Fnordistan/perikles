@@ -130,6 +130,9 @@ class action_perikles extends APP_GameAction
       $requesting_cities = explode(" ", $requesting_cities);
       $locations = self::getArg( "locations", AT_alphanum, true );
       $locations = explode(" ", $locations);
+      if (count($requesting_cities) != count($locations)) {
+          throw new BgaVisibleSystemException( "Mismatched cancel permission request arrays" ); // NO18N
+      }
       // unpack arrays and call game method for each
       foreach ($requesting_cities as $index => $requesting_city) {
           $location = $locations[$index];

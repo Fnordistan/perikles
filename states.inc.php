@@ -229,7 +229,7 @@ $machinestates = array(
     	"descriptionmyturn" => clienttranslate('You are waiting to resolve permission requests'),
         "args" => "argsPermissionResponse",
         "type" => "multipleactiveplayer",
-        "possibleactions" => array( "respondPermission" ),
+        "possibleactions" => array( "respondPermissionToDefend", "cancelRequestToDefend" ),
         "transitions" => array( "resolveRequests" => HANDLE_RESPONSE )
     ),
 
