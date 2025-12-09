@@ -1942,6 +1942,8 @@ function (dojo, declare) {
                 cities += pair.requesting_city + " ";
                 locations += pair.location + " ";
             }
+            cities = cities.trim();
+            locations = locations.trim();
 
             this.ajaxcall( "/perikles/perikles/respondPermission.html", {
                 requesting_cities: cities,
@@ -1972,7 +1974,8 @@ function (dojo, declare) {
                 cities += pair.requesting_city + " ";
                 locations += pair.location + " ";
             }
-
+            cities = cities.trim();
+            locations = locations.trim();
             this.ajaxcall( "/perikles/perikles/cancelPermissionRequest.html", {
                 requesting_cities: cities,
                 locations: locations
