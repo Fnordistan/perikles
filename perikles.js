@@ -1626,7 +1626,6 @@ function (dojo, declare) {
             [...civ_mils].forEach(ctr => this.makeSelectable(ctr));
         },
 
-
         /**
          * Player clicked "Cancel" while committing forces.
          * Clear "committed" gamedatas
@@ -1986,6 +1985,8 @@ function (dojo, declare) {
                 requesting_cities: cities,
                 locations: locations
             }, this, function(result) {});
+
+            this.uncommitUnits();
         },
 
         ///////////////////////////////////////////////////
@@ -2414,11 +2415,6 @@ function (dojo, declare) {
 
         ///////////////////////////////////////////////////
         //// Utility methods
-
-
-        // getState: function() {
-        //     if ($('overall-content').classList.contains("gamestate_commitForces")) {
-        // },
 
         /**
          * For a city, get the current player who's leader.
@@ -3725,7 +3721,7 @@ function (dojo, declare) {
             // this.notifqueue.setSynchronous( 'defendRequest', 500 );
             // dojo.subscribe( 'requestCanceled', this, "notif_cancelPermissionRequest");
             // this.notifqueue.setSynchronous( 'requestCanceled', 500 );
-            dojo.subscribe( 'permissionResponse', this, "notif_permissionResponse");
+            dojo.subscribe( 'permissionResponse', this, "notif_mayDefend");
             this.notifqueue.setSynchronous( 'permissionResponse', 500 );
 
             // battles
@@ -4009,20 +4005,17 @@ function (dojo, declare) {
         // },
 
         /**
-         * Here everyone is updated on
+         * Received only by the player who requested permission to defend.
          * @param {*} notif 
          */
-        notif_permissionResponse: function(notif) {
-            const location = notif.args.location;
-            // requesting city
-            const city = notif.args.city;
-            const mayDefend =  notif.args.allow;
+        notif_mayDefend: function(notif) {
+            const mayDefend = notif.args.allow;
+            debugger;
+
             if (mayDefend) {
-                const perm_btn = $(location+"_"+city+"_btn");
-                // send a click event to  it
-                if (perm_btn) {
-                    perm_btn.click();
-                }
+                this.commitForces();
+            } else {
+                this.uncommitUnits();
             }
         },
 

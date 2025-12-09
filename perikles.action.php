@@ -112,11 +112,7 @@ class action_perikles extends APP_GameAction
       $requesting_cities = explode(" ", $requesting_cities);
       $locations = self::getArg( "locations", AT_alphanum, true );
       $locations = explode(" ", $locations);
-      foreach ($requesting_cities as $index => $requesting_city) {
-          $location = $locations[$index];
-          $this->game->respondPermissionToDefend($requesting_city, $location, $allow);
-      }
-
+      $this->game->respondPermissionToDefend($requesting_cities, $locations, $allow);
       self::ajaxResponse( );
     }
 

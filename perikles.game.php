@@ -1982,17 +1982,17 @@ class Perikles extends Table
         $city_id = $this->Cities->getCityId($city);
         self::setGameStateValue("permission_requester_$i", $city_id);
 
-        self::notifyAllPlayers("defendRequest", clienttranslate('${city_name} requests permission from ${owning_city_name} to defend ${battle_location}'), array(
-            'i18n' => ['city_name', 'owning_city_name', 'battle_location'],
+        self::notifyAllPlayers("defendRequest", clienttranslate('${city_name} requests permission from ${city_name2} to defend ${battle_location}'), array(
+            'i18n' => ['city_name', 'city_name2', 'battle_location'],
             'player_id' => $requesting_player_id,
             'player_name' => $player_name,
             'city' => $city,
             'city_name' => $this->Cities->getNameTr($city),
-            'owning_city' => $owning_city,
-            'owning_city_name' => $this->Cities->getNameTr($owning_city),
+            'city2' => $owning_city,
+            'city_name2' => $this->Cities->getNameTr($owning_city),
             'battle' => $battle,
             'battle_location' => $this->Locations->getName($battle),
-            'preserve' => ['player_id', 'city', 'owning_city', 'battle']
+            'preserve' => ['player_id', 'city', 'city2', 'battle']
         ));
     }
 
@@ -2029,41 +2029,59 @@ class Perikles extends Table
     }
 
     /**
-     * Player responds to a request to defend city by another player.
-     * @param {string} requesting_city the city that is requesting permission to defend
-     * @param {string} location the battle location for which permission is being requested
+     * Player responds to one or more requests to defend city by another player.
+     * @param {array} requesting_cities the cities that is requesting permission to defend
+     * @param {array} locations the battle locations for which permission is being requested
      * @param {bool} bAllow whether the player is granting permission or not
      */
-    function respondPermissionToDefend($requesting_city, $location, $bAllow) {
+    function respondPermissionToDefend($requesting_cities, $locations, $bAllow) {
         $this->checkAction("respondPermissionToDefend"); 
         $players = self::loadPlayersBasicInfos();
 
-        $owner  = $this->Locations->getCity($location);
-        $owning_player = $this->Cities->getLeader($owner);
-
-        if ($this->getCurrentPlayerId() != $owning_player) {
-            throw new BgaUserException(self::_("You cannot respond to this request"));
+        if (count($requesting_cities) != count($locations)) {
+            throw new BgaVisibleSystemException("number of cities and locations do not match"); // NOI18N
         }
-
-        $this->updatePermissionsStates($owning_player, $requesting_city, $location);
 
         $deny = clienttranslate('denies');
         $allow = clienttranslate('grants');
         $response = $bAllow ? $allow : $deny;
 
-        // accepted or rejected, will handle permission button on client side
-        self::notifyAllPlayers('permissionResponse', clienttranslate('${player_name} ${response} permission to ${city_name} to defend ${location_name}'), array(
-            'i18n' => ['location_name', 'response', 'city_name'],
-            'player_id' => $owning_player,
-            'player_name' => $players[$owning_player]['player_name'],
+        $requesting_player = null;
+        for ($i = 0; $i < count($requesting_cities); $i++) {
+            $city = $requesting_cities[$i];
+            $location = $locations[$i];
+            $owner = $this->Locations->getCity($location);
+            $owning_player = $this->Cities->getLeader($owner);
+            if ($this->getCurrentPlayerId() != $owning_player) {
+                throw new BgaUserException(self::_("You cannot respond to this request"));
+            }
+            $requester = $this->Cities->getLeader($city);
+            if ($requesting_player === null) {
+                $requesting_player = $requester;
+            } elseif ($requesting_player != $requester) {
+                throw new BgaVisibleSystemException("Multiple city owners found in request response"); // NOI18N
+            }
+            $this->updatePermissionsStates($owning_player, $city, $location);
+
+            // this just sends a public message to everyone
+            self::notifyAllPlayers('permissionResponse', clienttranslate('${player_name} ${grants_or_denies} permission to ${city_name} to defend ${location_name}'), array(
+                'i18n' => ['location_name', 'grants_or_denies', 'city_name'],
+                'player_id' => $owning_player,
+                'player_name' => $players[$owning_player]['player_name'],
+                'allow' => $bAllow,
+                'grants_or_denies' => $response,
+                'city' => $city,
+                'city_name' => $this->Cities->getNameTr($city),
+                'location' => $location,
+                'location_name' => $this->Locations->getName($location),
+                'preserve' => ['player_id', 'city', 'location']
+            ));
+        }
+
+        // response handled by requester
+        $this->notify->player($requesting_player, 'mayDefend', '', array(
             'allow' => $bAllow,
-            'response' => $response,
-            'city' => $requesting_city,
-            'city_name' => $this->Cities->getNameTr($requesting_city),
-            'location' => $location,
-            'location_name' => $this->Locations->getName($location),
-            'preserve' => ['player_id', 'city', 'location', 'allow']
-        ));
+        ) );
     }
 
     /**
