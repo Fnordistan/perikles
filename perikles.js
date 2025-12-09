@@ -1229,6 +1229,21 @@ function (dojo, declare) {
             $(location+'_permissions_wrapper').remove();
         },
 
+        /**
+         * When player unstages units they were preparing to commit, or cancels a defend request.
+         */
+        uncommitUnits: function() {
+            const mils = $('mymilitary').getElementsByClassName('prk_military ');
+            [...mils].forEach(m => {
+                // redisplay counters that were hidden before
+                delete m.dataset.selected;
+                // reenable deselected counters
+                if (m.dataset.selectable == "false") {
+                    this.makeSelectable(m);
+                }
+            });
+        },
+
         //////////////////////////////////////////////////////////////////////////////
         //// Borrowed from Tisaac
         //////////////////////////////////////////////////////////////////////////////
@@ -1619,16 +1634,7 @@ function (dojo, declare) {
         onCancelCommit: function() {
             this.gamedatas.gamestate.args['committed'] = {};
             this.setDescriptionOnMyTurn(_("You must commit forces"));
-
-            const mils = $('mymilitary').getElementsByClassName('prk_military ');
-            [...mils].forEach(m => {
-                // redisplay counters that were hidden before
-                delete m.dataset.selected;
-                // reenable deselected counters
-                if (m.dataset.selectable == "false") {
-                    this.makeSelectable(m);
-                }
-            });
+            this.uncommitUnits();
             this.toggleAssignmentCancelButton(false);
         },
 

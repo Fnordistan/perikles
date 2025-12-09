@@ -2013,7 +2013,7 @@ class Perikles extends Table
         // make sure this request exists
         $owning_city = $this->Locations->getCity($location);
         $owning_player = $this->Cities->getLeader($owning_city);
-        $this->debug("Canceling request from $requesting_city to $owning_city for $location");
+
         $this->updatePermissionsStates($owning_player, $requesting_city, $location);
 
         self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request for ${city_name} to defend ${battle_location}'), array(
@@ -2098,11 +2098,11 @@ class Perikles extends Table
                 }
             }
         }
-        $this->debug("After updating permissions, owning player $owning_player still active: " . ($owning_player_still_active ? "yes" : "no") . ", active requests: " . ($active_requests ? "yes" : "no"));
+
         if  (!$owning_player_still_active) {
             $this->gamestate->setPlayerNonMultiactive( $owning_player, "resolveRequests");
         }
-        $this->debug("After updating permissions, active requests: " . ($active_requests ? "yes" : "no"));
+
         if  (!$active_requests) {
             // no more active requests, move on
             // $this->setGameStateValue(REQUESTING_PLAYER, 0);
