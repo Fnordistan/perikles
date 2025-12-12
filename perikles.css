@@ -961,7 +961,7 @@
 
 .prk_battle_icon[data-icon="shield"][data-permission="false"] {
     background-position: -100px 0px;
-    cursor: not-allowed;
+    cursor: grab;
 }
 
 .prk_crt {
