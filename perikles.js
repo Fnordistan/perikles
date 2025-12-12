@@ -1676,14 +1676,30 @@ function (dojo, declare) {
                     break;
                 case 'commitForces':
                     if (this.isCurrentPlayerActive()) {
-                        const mils = $('mymilitary').getElementsByClassName("prk_military");
-                        [...mils].forEach(m => {
-                            this.makeSelectable(m);
-                        });
-                        this.gamedatas.gamestate.args = {};
-                        this.gamedatas.gamestate.args.committed = {};
+                            const mils = $('mymilitary').getElementsByClassName("prk_military");
+                            [...mils].forEach(m => {
+                                this.makeSelectable(m);
+                            });
+                            debugger;
+                            if (args.args._private) {
+                                const committed = args.args._private.committed;
+                                if (committed) {
+                                    this.gamedatas.gamestate.args.committed['cube'] = committed.cube ?? "";
+                                    if (committed.units) {
+                                        // add these to gamestate committed
+                                        for (const mil of committed.units) {
+                                            const isSupportCube = (cube != "") && (mil.city == cube || mil.city == "persia");
+                                            const id = mil.city+'_'+mil.unit+'_'+mil.strength+'_'+mil.id;
+                                            this.gamedatas.gamestate.args.committed[id] = {city: mil.city, side: mil.side, location: mil.location, strength: mil.strength, unit: mil.unit, cube: isSupportCube};
+                                        }
+                                    }
+                                } else {
+                                this.gamedatas.gamestate.args = {};
+                                this.gamedatas.gamestate.args.committed = {};
+                            }
+                        }
+                        this.updateDeadpoolDisplay();
                     }
-                    this.updateDeadpoolDisplay();
                     break;
                 case 'nextPlayerCommit':
                     this.gamedatas.wars = args.args.wars;
@@ -1809,22 +1825,24 @@ function (dojo, declare) {
                         for (let req of permission_requests) {
                             const location = req.location;
                             const locationName = new perikles.locationtile(location).getNameTr();
-                            const owning_city = req.owning_city;
                             const requesting_city = req.requesting_city;
                             const owner = req.owner;
-                            if (isRequester || this.player_id == owner) {
+                            const isOwner = (this.player_id == owner);
+                            if (isRequester || isOwner) {
                                 requestargs.push({requesting_city, location});
                             }
 
                             const span_id = `${requesting_city}-${location}`;
                             let reqmsg = '';
+
                             if (isRequester) {
-                                reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("You requested permission from ${owning_city} for ${requesting_city} to defend ${location}") + '</div>';
-                                reqmsg = reqmsg.replace('${owning_city}', this.spanCityName(owning_city));
-                                reqmsg = reqmsg.replace('${location}', locationName);
+                                reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("You requested permission from ${player_name} for ${requesting_city} to defend ${location}") + '</div>';
+                                reqmsg = reqmsg.replace('${player_name}', this.decorator.spanPlayerName(owner, this.isColorblind()));
                                 reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
-                            } else {
-                                reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("${requesting_city} is requesting permission to defend ${location}") + '</div>';
+                                reqmsg = reqmsg.replace('${location}', locationName);
+                            } else if (isOwner) {
+                                reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("${player_name} is requesting permission for ${requesting_city} to defend ${location}") + '</div>';
+                                reqmsg = reqmsg.replace('${player_name}', this.decorator.spanPlayerName(requesting_player, this.isColorblind()));
                                 reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
                                 reqmsg = reqmsg.replace('${location}', locationName);
                             }
@@ -1837,6 +1855,9 @@ function (dojo, declare) {
                         }
                         if  (isRequester) {
                             this.addPermissionCancelButton(requestargs);
+                            // const is_extra = (commit_city != null) && (commit_city == city || city == "persia");
+                            //this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit, cube: is_extra};
+
                         }  else if (requestargs.length > 0) {
                             this.addPermissionRequestButtons(requestargs);
                             msg += '<br/>' + _("(You may also grant or revoke permissions at any time on the Defender Permissions panel)");
@@ -2670,6 +2691,7 @@ function (dojo, declare) {
                     }
                     banner_txt = banner_txt.replace('${location}', '<span style="color: var(--color_'+tile.getCity()+');">'+tile.getNameTr()+'</span>');
                     banner_txt = banner_txt.replace('${unit}', unit_str);
+                    this.gamedatas.gamestate.args.permission_request = true;
                 }
                 if (banner_txt) {
                     $(commit_text).style.display = "block";
@@ -3721,8 +3743,8 @@ function (dojo, declare) {
             // this.notifqueue.setSynchronous( 'defendRequest', 500 );
             // dojo.subscribe( 'requestCanceled', this, "notif_cancelPermissionRequest");
             // this.notifqueue.setSynchronous( 'requestCanceled', 500 );
-            dojo.subscribe( 'permissionResponse', this, "notif_mayDefend");
-            this.notifqueue.setSynchronous( 'permissionResponse', 500 );
+            dojo.subscribe( 'mayDefend', this, "notif_mayDefend");
+            this.notifqueue.setSynchronous( 'mayDefend', 0 );
 
             // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
@@ -4006,14 +4028,18 @@ function (dojo, declare) {
 
         /**
          * Received only by the player who requested permission to defend.
+         * During "permissionResponse" state
          * @param {*} notif 
          */
         notif_mayDefend: function(notif) {
             const mayDefend = notif.args.allow;
-            debugger;
+            const owner = notif.args.owner;
+            console.log(this.player_id + " mayDefend ="+ mayDefend + " state " + this.gamedatas.gamestate.name);
+            console.log(this.gamedatas.gamestate.args.committed);
+            const player_name = this.decorator.spanPlayerName(owner, this.isColorblind());
 
             if (mayDefend) {
-                this.commitForces();
+                debugger;
             } else {
                 this.uncommitUnits();
             }
