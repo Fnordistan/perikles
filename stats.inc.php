@@ -160,6 +160,4 @@ $stats_type = array(
 			7 => totranslate("Plague"),
         )
     )
-
-
 );

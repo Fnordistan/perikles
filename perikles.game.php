@@ -853,7 +853,7 @@ class Perikles extends Table
      */
     function sendToBattle($player_id, $mil, $battlepos) {
         $id = $mil['id'];
-        $location = $mil['battle'];
+        $location = $mil['location'];
         $counter = $this->Battles->getCounter($id);
 
         // send to location in Db
@@ -1253,7 +1253,7 @@ class Perikles extends Table
      * @param string player_id
      * @param string units a space concatenateds string of units
      * @param string cube empty string or name of city spending an extra cube
-     * @return array associative array of city => [locations] requesting permission to defend, or empty array if no permissions needed
+     * @return array associative array of city => [unitid => locations] requesting permission to defend, or empty array if no permissions needed
      */
     function validateMilitaryCommits($player_id, $units, $cube) {
         // do all the checks for whether this is a valid action
@@ -1277,7 +1277,7 @@ class Perikles extends Table
         foreach($unitstrs as $unitstr) {
             [$id, $side, $location] = explode("_", $unitstr);
             $counter = $this->getCounterById($id);
-            $counter['battle'] = $location;
+            // $counter['location'] = $location;
             $city = $counter['city'];
             // Is this unit in my pool?
             $unit_desc = $this->unitDescription($city, $counter['strength'], $counter['type'], $location);
@@ -1291,7 +1291,7 @@ class Perikles extends Table
                 $main_defender[$location] = $defender;
             }
             if ($side == "attack") {
-                $this->validateAttacker($player_id, $counter, $unit_desc);
+                $this->validateAttacker($player_id, $counter, $location, $unit_desc);
 
                 // Is there already a main attacker who is not me?
                 if ($attacker == null) {
@@ -1301,11 +1301,11 @@ class Perikles extends Table
                 $myforces['attack'][] = $counter;
             } else if ($side == "defend") {
                 // check requirement for permission here
-                if ($this->validateDefender($player_id, $counter, $unit_desc)) {
+                if ($this->validateDefender($player_id, $counter, $location, $unit_desc)) {
                     if (!isset($permission_requests[$city])) {
                         $permission_requests[$city] = [];
                     }
-                    $permission_requests[$city][] = $location;
+                    $permission_requests[$city][$id] = $location;
                 }
 
                 // is there already a main defender?
@@ -1338,7 +1338,7 @@ class Perikles extends Table
         // now ship 'em off
         foreach($myforces as $attdef => $forces) {
             foreach($forces as $f) {
-                $battle = $f['battle'];
+                $battle = $f['location'];
                 $main = ($attdef == "attack") ? $main_attacker[$battle] : $main_defender[$battle];
                 if ($main == $player_id) {
                     // I became main
@@ -1938,9 +1938,9 @@ class Perikles extends Table
             $this->setGameStateValue(REQUESTING_PLAYER, $player_id);
 
             $i = 1;
-            foreach($city_requests as $city => $locations) {
-                foreach (array_unique($locations) as $location) {
-                    $this->requestPermissionToDefend($player_id, $i, $city, $location);
+            foreach($city_requests as $city => $assignments) {
+                foreach ($assignments as $id => $location) {
+                    $this->requestPermissionToDefend($player_id, $i, $id, $city, $location);
                     $i++;
                 }
             }
@@ -2015,10 +2015,11 @@ class Perikles extends Table
      * This is called internally by assignUnits, not directly by players.
      * @param int player_id the id of the player requesting permission
      * @param int index the index of the request
+     * @param string id the unit id being requested
      * @param string city the city for which permission is being requested
      * @param string battle the battle location for which permission is being requested
      */
-    function requestPermissionToDefend($requesting_player_id, $i, $city, $battle) { 
+    function requestPermissionToDefend($requesting_player_id, $i, $id, $city, $battle) { 
         $players = self::loadPlayersBasicInfos();
         $player_name = $players[$requesting_player_id]['player_name'];
 
@@ -2030,16 +2031,24 @@ class Perikles extends Table
         $city_id = $this->Cities->getCityId($city);
         self::setGameStateValue(REQUESTING_CITY."$i", $city_id);
         // make sure it's a legal request - check conflicting units
-        $unitstr = $this->globals->get(UNIT_PENDING.$i);
-        [$id, $_, $battle] = explode("_", $unitstr);
+        
+        // $unitstr = $this->globals->get(UNIT_PENDING.$i);
+        // if (empty($unitstr)) {
+        //     throw new BgaVisibleSystemException("No pending unit found for request $i"); // NOI18N
+        // }
+        // [$id, $_, $battle] = explode("_", $unitstr);
+        // if (empty($id)) {
+        //     throw new BgaVisibleSystemException("Invalid unit ID in pending unit $unitstr"); // NOI18N
+        // }
         $counter = $this->getCounterById($id);
         $unitdesc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battle);
         // Check whether this request is legal
         // validate should return True as permission is required
         // throw an exception if it conflicts with another assignment
-        if (!$this->validateDefender($requesting_player_id, $counter, $unitdesc)) {
+        if (!$this->validateDefender($requesting_player_id, $counter, $battle, $unitdesc)) {
             throw new BgaVisibleSystemException("Invalid defender request for $unitdesc"); // NOI18N
         }
+        $this->globals->set(UNIT_PENDING."$i", $id."_def_".$battle);
 
         self::notifyAllPlayers("defendRequest", clienttranslate('${city_name} requests permission from ${city_name2} to defend ${battle_location}'), array(
             'i18n' => ['city_name', 'city_name2', 'battle_location'],
@@ -2193,15 +2202,18 @@ class Perikles extends Table
     /**
      * Checks whether a unit can attack a city, throws an Exception if it fails.
      * Also marks unit as Allies with all attackers and At War with all Defenders.
+     * @param player_id the player trying to attack
+     * @param counter the counter being sent to attack
+     * @param location the battle location being attacked
+     * @param unit_desc the description of the unit being sent to attack, for error messages
      */
-    private function validateAttacker($player_id, $counter, $unit_desc) {
+    private function validateAttacker($player_id, $counter, $location, $unit_desc) {
         if ($counter['location'] != $player_id) {
             // is this a Persian?
             if (!($counter['location'] == CONTROLLED_PERSIANS && $this->Cities->isLeader($player_id, PERSIA))) {
                 throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
             }
         }
-        $location = $counter['battle'];
         $city = $this->Locations->getCity($location);
 
         // does this location belong to my own city?
@@ -2251,18 +2263,17 @@ class Perikles extends Table
      * If permission has already been set, set unit to Ally with fellow defenders and At War with attackers and return false.
      * @param player_id the player trying to defend
      * @param counter the counter being sent to defend
+     * @param location the battle location being defended
      * @param unit_desc the description of the unit being sent to defend, for error messages
      * @return bool true if permission is required, false if no permission is required
      */
-    private function validateDefender($player_id, $counter, $unit_desc) {
+    private function validateDefender($player_id, $counter, $location, $unit_desc) {
         if ($counter['location'] != $player_id) {
             // is this a Persian?
             if (!($counter['location'] == CONTROLLED_PERSIANS && $this->Cities->isLeader($player_id, PERSIA))) {
                 throw new BgaUserException(sprintf(self::_("%s is not in your available pool"), $unit_desc));
             }
         }
-
-        $location = $counter['battle'];
 
         // am I at war with any of the defenders?
         $city = $this->Locations->getCity($location);
