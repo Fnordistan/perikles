@@ -230,7 +230,7 @@ $machinestates = array(
         "args" => "argsPermissionResponse",
         "type" => "multipleactiveplayer",
         "possibleactions" => array( "respondPermissionToDefend", "cancelRequestToDefend" ),
-        "transitions" => array( "resolveRequests" => HANDLE_RESPONSE )
+        "transitions" => array( "resolveRequests" => HANDLE_RESPONSE, "canceled" => COMMIT_FORCES )
     ),
 
     HANDLE_RESPONSE => array(

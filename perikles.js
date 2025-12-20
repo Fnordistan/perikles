@@ -1231,7 +1231,7 @@ function (dojo, declare) {
 
         /**
          * When player unstages units they were preparing to commit, or cancels a defend request.
-         */
+        1 */
         uncommitUnits: function() {
             const mils = $('mymilitary').getElementsByClassName('prk_military ');
             [...mils].forEach(m => {
@@ -1764,6 +1764,8 @@ function (dojo, declare) {
         onUpdateActionButtons: function( stateName, args )
         {
             if( this.isCurrentPlayerActive() ) {
+                debugger;
+
                 switch( stateName ) {
                     case 'takeInfluence':
                         if (args._private.special) {
@@ -1985,26 +1987,15 @@ function (dojo, declare) {
         addPermissionCancelButton: function(citylocation_pairs) {
             const label = (citylocation_pairs.length > 1) ? _("Cancel Requests") : _("Cancel Request");
             this.addActionButton( 'cancel_permission_btn', label, () => {
-                this.cancelPermissionRequest(citylocation_pairs);
+                this.cancelPermissionRequest();
             }, null, false, 'red' );
         },
 
         /**
-         * Requesting player canceled a request to defend.
-         * @param {*} citylocation_pairs
+         * Requesting player canceled request(s) to defend.
          */
-        cancelPermissionRequest: function(citylocation_pairs) {
-            let cities = "";
-            let locations = "";
-            for (let pair of citylocation_pairs) {
-                cities += pair.requesting_city + " ";
-                locations += pair.location + " ";
-            }
-            cities = cities.trim();
-            locations = locations.trim();
+        cancelPermissionRequest: function() {
             this.ajaxcall( "/perikles/perikles/cancelPermissionRequest.html", {
-                requesting_cities: cities,
-                locations: locations
             }, this, function(result) {});
 
             this.uncommitUnits();

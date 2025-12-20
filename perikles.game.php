@@ -1265,6 +1265,7 @@ class Perikles extends Table
         }
 
         $unitstrs = explode(" ", trim($units));
+        $this->debug("validateMilitaryCommits: player $player_id committing units: ".print_r($unitstrs, true)." with cube $cube");
         // get main attackers/defenders location => player
         $main_attacker = [];
         $main_defender = [];
@@ -1298,6 +1299,7 @@ class Perikles extends Table
                     // I am now the main attacker
                     $main_attacker[$location] = $player_id;
                 }
+                $counter['location'] = $location;
                 $myforces['attack'][] = $counter;
             } else if ($side == "defend") {
                 // check requirement for permission here
@@ -1313,6 +1315,7 @@ class Perikles extends Table
                     // I am now the main defender
                     $main_defender[$location] = $player_id;
                 }
+                $counter['location'] = $location;
                 $myforces['defend'][] = $counter;
             }
         }
@@ -2048,7 +2051,7 @@ class Perikles extends Table
         if (!$this->validateDefender($requesting_player_id, $counter, $battle, $unitdesc)) {
             throw new BgaVisibleSystemException("Invalid defender request for $unitdesc"); // NOI18N
         }
-        $this->globals->set(UNIT_PENDING."$i", $id."_def_".$battle);
+        $this->globals->set(UNIT_PENDING."$i", $id."_defend_".$battle);
 
         self::notifyAllPlayers("defendRequest", clienttranslate('${city_name} requests permission from ${city_name2} to defend ${battle_location}'), array(
             'i18n' => ['city_name', 'city_name2', 'battle_location'],
@@ -2066,35 +2069,26 @@ class Perikles extends Table
 
     /**
      * Requesting player canceled the request.
-     * @param {string} requesting_city the city that is requesting permission to defend
-     * @param {string} location the battle location for which permission is being requested
      */
-    function cancelRequestToDefend($requesting_city, $location) {
+    function cancelRequestToDefend() {
         $this->checkAction("cancelRequestToDefend"); 
         $players = self::loadPlayersBasicInfos();
 
-        $requesting_player = $this->Cities->getLeader($requesting_city);
+        $requesting_player = $this->getGameStateValue(REQUESTING_PLAYER);
 
-        if ($this->getGameStateValue(REQUESTING_PLAYER) != $requesting_player || $this->getCurrentPlayerId() != $requesting_player) {
-            throw new BgaUserException(self::_("You cannot cancel this request"));
+        if ($requesting_player != $this->getCurrentPlayerId()) {
+            throw new BgaUserException(self::_("You have no requests to cancel!"));
         }
-        // make sure this request exists
-        $owning_city = $this->Locations->getCity($location);
-        $owning_player = $this->Cities->getLeader($owning_city);
 
-        // clear this request and update active players
-        $this->updatePermissionsStates($owning_player, $requesting_city, $location);
-
-        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request for ${city_name} to defend ${battle_location}'), array(
-            'i18n' => ['battle_location'],
+        self::notifyAllPlayers('requestCanceled', clienttranslate('${player_name} canceled request(s)'), array(
             'player_name' => $players[$requesting_player]['player_name'],
-            'city' => $requesting_city,
-            'city_name' => $this->Cities->getNameTr($requesting_city),
-            'battle' => $location,
-            'battle_location' => $this->Locations->getName($location),
-            'preserve' => ['player_id',  'city', 'battle']
+            'player_id' => $this->getCurrentPlayerId(),
+            'preserve' => ['player_id']
         ));
-
+        $this->clearPermissionRequests();
+        // Return to commit forces state for this player
+        $this->gamestate->changeActivePlayer($requesting_player);
+        $this->gamestate->nextState("canceled");
     }
 
     /**
@@ -2149,6 +2143,7 @@ class Perikles extends Table
             'allow' => $bAllow,
             'owner' => $owning_player,
         ) );
+        $this->gamestate->nextState("");
     }
 
     /**
@@ -2737,7 +2732,6 @@ class Perikles extends Table
         ));
     }
 
-
     /**
      * Clear all permission request settings.
      */
@@ -2745,7 +2739,7 @@ class Perikles extends Table
         for ($i = 1; $i <= 4; $i++) {
             self::setGameStateValue(REQUESTED_LOCATION."$i", 0);
             self::setGameStateValue(REQUESTING_CITY."$i", 0);
-            self::setGameStateValue(PERMISSION_RESPONSE."$i", 0);
+            self::setGameStateValue(REQUEST_STATUS.$i, 0);
             $this->globals->set(UNIT_PENDING.$i, "");
         }
         self::setGameStateValue(REQUESTING_PLAYER, 0);
@@ -3095,32 +3089,32 @@ class Perikles extends Table
     }
 
     /**
-     * The player requested permission to defend cities, and ALL requests were granted or denied.
+     * The player requested permission to defend cities, and ALL requests were granted, denied, or cancelled.
      * Return to the player who made the request or to the next player
      */
     function stPermissionResponse() {
         // Get the original requesting player (stored when we entered permission flow)
         $requesting_player = $this->getGameStateValue(REQUESTING_PLAYER);
 
+        if ($requesting_player == 0) {
+            throw new BgaVisibleSystemException("No requesting player found for permission response"); // NOI18N
+        }
+
         // if all requests granted, assignUnits and move to next player
         // otherwise return to commit player
-        $req = true;
-        for ($i = 1; $i <= 4; $i++) {
-            if (self::getGameStateValue(REQUESTING_CITY.$i) != 0 &&
-                self::getGameStateValue(REQUESTED_LOCATION.$i) != 0) {
-                $req = $this->getGameStateValue(REQUEST_STATUS.$i) == 1;
-                if (!$req) {
-                    break;
-                }
+        $canCommit = true;
+        // were all requests granted?
+        for ($i = 1; $i <= 4 && $canCommit; $i++) {
+            if (self::getGameStateValue(REQUESTING_CITY.$i) != 0 && self::getGameStateValue(REQUESTED_LOCATION.$i) != 0) {
+                $canCommit = $this->getGameStateValue(REQUEST_STATUS.$i) == 1;
             }
         }
-       // Clear permission request data
-        $this->clearPermissionRequests();
 
-        if ($req) {
+        if ($canCommit) {
+            // Pack committed forces BEFORE clearing (needs UNIT_PENDING values)
             $committedunits = $this->packCommittedForces();
             $units = implode(" ", $committedunits['units']);
-            $cube = $committedunits['cube'];
+            $cube = $committedunits['cube'] ?? "";
             // all requests granted, actually ship the units, which should all be valid now
             $perms = $this->validateMilitaryCommits($requesting_player, $units, $cube);
             if (!empty($perms)) {
@@ -3133,6 +3127,9 @@ class Perikles extends Table
             // Return to commit forces state for the requesting player
             $this->gamestate->changeActivePlayer($requesting_player);
         }
+        
+        // Clear permission request data after processing
+        $this->clearPermissionRequests();
         $this->gamestate->nextState("");
     }
 
