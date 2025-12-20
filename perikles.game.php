@@ -1386,7 +1386,7 @@ class Perikles extends Table
 
     /**
      * Pack the currently committed forces for the requesting player.
-     * @return array with 'units' => array of unit strings, 'cube' => cube string (if any)
+     * @return array associative array 'units' => array of unit strings, 'cube' => cube string (if any)
      */
     function packCommittedForces() {
         $committed = array();
@@ -2143,7 +2143,6 @@ class Perikles extends Table
             'allow' => $bAllow,
             'owner' => $owning_player,
         ) );
-        $this->gamestate->nextState("");
     }
 
     /**
@@ -2166,24 +2165,24 @@ class Perikles extends Table
                 self::setGameStateValue(REQUESTING_CITY."$i", 0);
             } else {
                 //  are there any remaining requests?
-                // does the owning player have any remaining quests pending? If not, deactivate
+                // does the owning player have any remaining requests pending? If not, deactivate
                 if  ($city != 0 && $location != 0) {
                     $active_requests = true;
                     $nextlocation = $this->Locations->getLocationById($location);
                     $owningcity = $this->Locations->getCity($nextlocation);
                     $nextplayer = $this->Cities->getLeader($owningcity);
-                    if  ($nextplayer == $owning_player) {
+                    if ($nextplayer == $owning_player) {
                         $owning_player_still_active = true;
                     }
                 }
             }
         }
         // does the owning player still have pending requests?
-        if  (!$owning_player_still_active) {
+        if (!$owning_player_still_active) {
             $this->gamestate->setPlayerNonMultiactive( $owning_player, "resolveRequests");
         }
         // are there any remaining requests pending?
-        if  (!$active_requests) {
+        if (!$active_requests) {
             // no more active requests, move on
             $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
         }
@@ -3102,29 +3101,38 @@ class Perikles extends Table
 
         // if all requests granted, assignUnits and move to next player
         // otherwise return to commit player
-        $canCommit = true;
-        // were all requests granted?
-        for ($i = 1; $i <= 4 && $canCommit; $i++) {
-            if (self::getGameStateValue(REQUESTING_CITY.$i) != 0 && self::getGameStateValue(REQUESTED_LOCATION.$i) != 0) {
-                $canCommit = $this->getGameStateValue(REQUEST_STATUS.$i) == 1;
+        $permissionsGranted = true;
+
+        // Check all requests - use UNIT_PENDING because REQUESTING_CITY/LOCATION were already cleared
+        for ($i = 1; $i <= 4 && $permissionsGranted; $i++) {
+            $unitstr = $this->globals->get(UNIT_PENDING.$i);
+            if (!empty($unitstr)) {
+                // There was a request in this slot - check if it was granted
+                if ($this->getGameStateValue(REQUEST_STATUS.$i) != 1) {
+                    $permissionsGranted = false;
+                }
             }
         }
 
-        if ($canCommit) {
+        // if  ALL permissions were granted, assign units, ship 'em off, and move to next player
+        if ($permissionsGranted) {
             // Pack committed forces BEFORE clearing (needs UNIT_PENDING values)
             $committedunits = $this->packCommittedForces();
             $units = implode(" ", $committedunits['units']);
             $cube = $committedunits['cube'] ?? "";
+            
             // all requests granted, actually ship the units, which should all be valid now
             $perms = $this->validateMilitaryCommits($requesting_player, $units, $cube);
             if (!empty($perms)) {
-                throw new BgaVisibleSystemException("invalid commitment of units"); // NOI18N
+                throw new BgaVisibleSystemException(sprintf("invalid commitment of units %s", json_encode($perms))); // NOI18N
             }
+
 
             $player_id = self::activeNextPlayer();
             $this->gamestate->changeActivePlayer($player_id);
         } else {
             // Return to commit forces state for the requesting player
+            // (either no requests were made, or some were denied)
             $this->gamestate->changeActivePlayer($requesting_player);
         }
         
