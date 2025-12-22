@@ -1820,7 +1820,7 @@ function (dojo, declare) {
                         
                         // create the status bar message
                         const isRequester = (this.player_id == requesting_player);
-                        // array of mapped pairs
+                        // array of mapped pairs, city-location, only if this player is the owner or requester
                         let requestargs = [];
                         for (let req of permission_requests) {
                             const location = req.location;
@@ -1853,6 +1853,7 @@ function (dojo, declare) {
                                 multireqs = true;
                             }
                         }
+                        debugger;
                         if  (isRequester) {
                             this.addPermissionCancelButton(requestargs);
                             // const is_extra = (commit_city != null) && (commit_city == city || city == "persia");
@@ -1958,7 +1959,8 @@ function (dojo, declare) {
         },
 
         /**
-         * Send permission response to server to allow a request to defend.
+         * Send permission response to server to allow or deny a request to defend.
+         * Sets permission for all city/location pairs in one call.
          * @param {*} citylocation_pairs
          * @param {bool} allow
          */
