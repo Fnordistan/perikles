@@ -1680,7 +1680,6 @@ function (dojo, declare) {
                             [...mils].forEach(m => {
                                 this.makeSelectable(m);
                             });
-                            debugger;
                             if (args.args._private) {
                                 const committed = args.args._private.committed;
                                 if (committed) {
@@ -1763,9 +1762,8 @@ function (dojo, declare) {
         //        
         onUpdateActionButtons: function( stateName, args )
         {
+            console.log("onUpdateActionButtons: "+stateName, args);
             if( this.isCurrentPlayerActive() ) {
-                debugger;
-
                 switch( stateName ) {
                     case 'takeInfluence':
                         if (args._private.special) {
@@ -4028,11 +4026,10 @@ function (dojo, declare) {
             console.log(this.player_id + " mayDefend ="+ mayDefend + " state " + this.gamedatas.gamestate.name);
             console.log(this.gamedatas.gamestate.args.committed);
             const player_name = this.decorator.spanPlayerName(owner, this.isColorblind());
-
             if (mayDefend) {
                 debugger;
             } else {
-                this.uncommitUnits();
+                this.onCancelCommit();
             }
         },
 

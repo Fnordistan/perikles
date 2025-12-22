@@ -2092,7 +2092,7 @@ class Perikles extends Table
     }
 
     /**
-     * Player responds to one or more requests to defend city by another player.
+     * Player responds to one or more requests to defend city by another player. Grants or allows all.
      * @param array requesting_cities the cities that are requesting permission to defend
      * @param array locations the battle locations for which permission is being requested
      * @param bool bAllow whether the player is granting permission or not
@@ -2104,8 +2104,11 @@ class Perikles extends Table
             throw new BgaVisibleSystemException("number of cities and locations do not match"); // NOI18N
         }
 
-        $requesting_player = null;
+        $requesting_player = $this->getGameStateValue(REQUESTING_PLAYER);
         $owning_player = null;
+        $request_cities = [];
+        $request_locations = [];
+
         for ($i = 0; $i < count($requesting_cities); $i++) {
             $city = $requesting_cities[$i];
             $location = $locations[$i];
@@ -2114,30 +2117,49 @@ class Perikles extends Table
             if ($this->getCurrentPlayerId() != $owning_player) {
                 throw new BgaUserException(self::_("You cannot respond to this request"));
             }
-            $requester = $this->Cities->getLeader($city);
-            if ($requesting_player === null) {
-                $requesting_player = $requester;
-            } elseif ($requesting_player != $requester) {
+            if ($requesting_player != $this->Cities->getLeader($city)) {
                 throw new BgaVisibleSystemException("Multiple city owners found in request response"); // NOI18N
             }
 
-            // clear this request and update active players
-            $this->updatePermissionsStates($owning_player, $city, $location);
-            // update permission request status
-            if ($bAllow) {
-                for ($r = 1; $r <=4; $r++) {
-                    $loc = $this->getGameStateValue(REQUESTED_LOCATION.$r);
-                    $cty = $this->getGameStateValue(REQUESTING_CITY.$r);
-                    $location_id = $this->Locations->getLocationId($location);
-                    $city_id = $this->Cities->getCityId($city);
-                    if ($loc == $location_id && $cty == $city_id) {
+            // Clear this specific request from the tracking variables
+            $location_id = $this->Locations->getLocationId($location);
+            $city_id = $this->Cities->getCityId($city);
+            for ($r = 1; $r <= 4; $r++) {
+                $loc = $this->getGameStateValue(REQUESTED_LOCATION.$r);
+                $cty = $this->getGameStateValue(REQUESTING_CITY.$r);
+                if ($loc == $location_id && $cty == $city_id) {
+                    self::setGameStateValue(REQUESTED_LOCATION.$r, 0);
+                    self::setGameStateValue(REQUESTING_CITY.$r, 0);
+                    // update permission request status if granted
+                    if ($bAllow) {
                         self::setGameStateValue(REQUEST_STATUS.$r, 1);
                     }
+                    break;
                 }
             }
             $this->setDefendPermission($location, $city, $bAllow);
         }
 
+        // deactivate this player
+        $this->gamestate->setPlayerNonMultiactive( $owning_player, "resolveRequests");
+        // are there any requests waiting from other players?
+        $requests_remaining = 0;
+        for ($j = 1; $j <= 4 && !$requests_remaining; $j++) {
+            $locr = $this->getGameStateValue(REQUESTED_LOCATION.$j);
+            $ctyr = $this->getGameStateValue(REQUESTING_CITY.$j);
+            $this->debug("request $j location=$locr city=$ctyr");
+            if ($locr != 0 && $ctyr != 0) {
+                $requests_remaining++;
+            }
+        }
+        $this->debug("respondPermissionToDefend: requests_remaining=".($requests_remaining));
+
+        if ($requests_remaining == 0) {
+            // All requests resolved - setAllPlayersNonMultiactive will mark everyone (including requester) as non-active
+            $active_players = $this->gamestate->getActivePlayerList();
+            $this->debug("transitioning to 'resolveRequests' with active players: ".implode(", ", $active_players));
+            $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
+        }
         // response handled by requester
         $this->notify->player($requesting_player, 'mayDefend', '', array(
             'allow' => $bAllow,
@@ -2145,48 +2167,48 @@ class Perikles extends Table
         ) );
     }
 
-    /**
-     * After any permission response, check if this player has any remaining requests to answer. If not, deactivate him.
-     * @param {int} owning_player the player who owns the city being defended
-     * @param {int} city_id the city that is requesting permission to defend
-     * @param {int} location_id the battle location for which permission is being requested
-     */
-    private function updatePermissionsStates($owning_player, $requesting_city, $location) {
-        $owning_player_still_active = false;
-        $active_requests = false;
-        $location_id = $this->Locations->getLocationId($location);
-        $city_id = $this->Cities->getCityId($requesting_city);
-        for ($i = 1; $i <= 4; $i++) {
-            $location = $this->getGameStateValue(REQUESTED_LOCATION."$i");
-            $city = $this->getGameStateValue(REQUESTING_CITY."$i");
-            if ($location == $location_id && $city == $city_id) {
-                // found it, clear it
-                self::setGameStateValue(REQUESTED_LOCATION."$i", 0);
-                self::setGameStateValue(REQUESTING_CITY."$i", 0);
-            } else {
-                //  are there any remaining requests?
-                // does the owning player have any remaining requests pending? If not, deactivate
-                if  ($city != 0 && $location != 0) {
-                    $active_requests = true;
-                    $nextlocation = $this->Locations->getLocationById($location);
-                    $owningcity = $this->Locations->getCity($nextlocation);
-                    $nextplayer = $this->Cities->getLeader($owningcity);
-                    if ($nextplayer == $owning_player) {
-                        $owning_player_still_active = true;
-                    }
-                }
-            }
-        }
-        // does the owning player still have pending requests?
-        if (!$owning_player_still_active) {
-            $this->gamestate->setPlayerNonMultiactive( $owning_player, "resolveRequests");
-        }
-        // are there any remaining requests pending?
-        if (!$active_requests) {
-            // no more active requests, move on
-            $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
-        }
-    }
+    // /**
+    //  * After any permission response, check if this player has any remaining requests to answer. If not, deactivate him.
+    //  * @param {int} owning_player the player who owns the city being defended
+    //  * @param {int} city_id the city that is requesting permission to defend
+    //  * @param {int} location_id the battle location for which permission is being requested
+    //  */
+    // private function updatePermissionsStates($owning_player, $requesting_city, $location) {
+    //     $owning_player_still_active = false;
+    //     $active_requests = false;
+    //     $location_id = $this->Locations->getLocationId($location);
+    //     $city_id = $this->Cities->getCityId($requesting_city);
+    //     for ($i = 1; $i <= 4; $i++) {
+    //         $location = $this->getGameStateValue(REQUESTED_LOCATION."$i");
+    //         $city = $this->getGameStateValue(REQUESTING_CITY."$i");
+    //         if ($location == $location_id && $city == $city_id) {
+    //             // found it, clear it
+    //             self::setGameStateValue(REQUESTED_LOCATION."$i", 0);
+    //             self::setGameStateValue(REQUESTING_CITY."$i", 0);
+    //         } else {
+    //             //  are there any remaining requests?
+    //             // does the owning player have any remaining requests pending? If not, deactivate
+    //             if  ($city != 0 && $location != 0) {
+    //                 $active_requests = true;
+    //                 $nextlocation = $this->Locations->getLocationById($location);
+    //                 $owningcity = $this->Locations->getCity($nextlocation);
+    //                 $nextplayer = $this->Cities->getLeader($owningcity);
+    //                 if ($nextplayer == $owning_player) {
+    //                     $owning_player_still_active = true;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     // does the owning player still have pending requests?
+    //     if (!$owning_player_still_active) {
+    //         $this->gamestate->setPlayerNonMultiactive( $owning_player, "resolveRequests");
+    //     }
+    //     // are there any remaining requests pending?
+    //     if (!$active_requests) {
+    //         // no more active requests, move on
+    //         $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
+    //     }
+    // }
 
     //////////////////////////////////////////////////////////////////
     /// BATTLE FUNCTIONS
@@ -3082,7 +3104,7 @@ class Perikles extends Table
         }  else {
             $activeplayers[] = $requesting_player;
         }
-        // Second parameter is empty string for multiactive - transition happens when all players respond
+        // next state does not actually do anything with non-empty player list
         $this->gamestate->setPlayersMultiactive($activeplayers, "resolveRequests", true);
         $this->gamestate->nextState("");
     }
@@ -3127,15 +3149,16 @@ class Perikles extends Table
                 throw new BgaVisibleSystemException(sprintf("invalid commitment of units %s", json_encode($perms))); // NOI18N
             }
 
-
             $player_id = self::activeNextPlayer();
             $this->gamestate->changeActivePlayer($player_id);
+            $this->debug("stPermissionResponse: permissionsGranted=".($permissionsGranted ? "true" : "false").", next player is ".$player_id);
         } else {
             // Return to commit forces state for the requesting player
             // (either no requests were made, or some were denied)
             $this->gamestate->changeActivePlayer($requesting_player);
+            $this->debug("stPermissionResponse: permissionsGranted=".($permissionsGranted ? "true" : "false").", next player is ".$requesting_player);
         }
-        
+
         // Clear permission request data after processing
         $this->clearPermissionRequests();
         $this->gamestate->nextState("");
