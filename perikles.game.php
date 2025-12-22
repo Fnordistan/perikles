@@ -2092,7 +2092,7 @@ class Perikles extends Table
     }
 
     /**
-     * Player responds to one or more requests to defend city by another player. Grants or allows all.
+     * A single player responds to one or more requests to defend city by another player. Grants or allows all.
      * @param array requesting_cities the cities that are requesting permission to defend
      * @param array locations the battle locations for which permission is being requested
      * @param bool bAllow whether the player is granting permission or not
@@ -2109,6 +2109,7 @@ class Perikles extends Table
         $request_cities = [];
         $request_locations = [];
 
+        // check all requests which should only be those for MY cities
         for ($i = 0; $i < count($requesting_cities); $i++) {
             $city = $requesting_cities[$i];
             $location = $locations[$i];
@@ -2160,11 +2161,6 @@ class Perikles extends Table
             $this->debug("transitioning to 'resolveRequests' with active players: ".implode(", ", $active_players));
             $this->gamestate->setAllPlayersNonMultiactive( "resolveRequests" );
         }
-        // response handled by requester
-        $this->notify->player($requesting_player, 'mayDefend', '', array(
-            'allow' => $bAllow,
-            'owner' => $owning_player,
-        ) );
     }
 
     // /**
@@ -3110,7 +3106,8 @@ class Perikles extends Table
     }
 
     /**
-     * The player requested permission to defend cities, and ALL requests were granted, denied, or cancelled.
+     * The player requested permission to defend cities, and ALL requests were granted or denied.
+     * May be a mix from different players.
      * Return to the player who made the request or to the next player
      */
     function stPermissionResponse() {
@@ -3162,6 +3159,10 @@ class Perikles extends Table
         // Clear permission request data after processing
         $this->clearPermissionRequests();
         $this->gamestate->nextState("");
+
+        if (!$permissionsGranted)  {
+            $this->notify->player($requesting_player, 'noDefend', '', array() );
+        }
     }
 
     /**

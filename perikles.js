@@ -1857,9 +1857,10 @@ function (dojo, declare) {
                             this.addPermissionCancelButton(requestargs);
                             // const is_extra = (commit_city != null) && (commit_city == city || city == "persia");
                             //this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit, cube: is_extra};
-
+                            console.log("Added permission cancel button for "+requestargs);
                         }  else if (requestargs.length > 0) {
                             this.addPermissionRequestButtons(requestargs);
+                            console.log("Added permission request buttons for "+requestargs);
                             msg += '<br/>' + _("(You may also grant or revoke permissions at any time on the Defender Permissions panel)");
                         }
 
@@ -3732,8 +3733,8 @@ function (dojo, declare) {
             // this.notifqueue.setSynchronous( 'defendRequest', 500 );
             // dojo.subscribe( 'requestCanceled', this, "notif_cancelPermissionRequest");
             // this.notifqueue.setSynchronous( 'requestCanceled', 500 );
-            dojo.subscribe( 'mayDefend', this, "notif_mayDefend");
-            this.notifqueue.setSynchronous( 'mayDefend', 0 );
+            dojo.subscribe( 'noDefend', this, "notif_noDefend");
+            this.notifqueue.setSynchronous( 'noDefend', 0 );
 
             // battles
             dojo.subscribe( 'unclaimedTile', this, "notif_unclaimedTile");
@@ -4017,20 +4018,13 @@ function (dojo, declare) {
 
         /**
          * Received only by the player who requested permission to defend.
-         * During "permissionResponse" state
+         * One or more requesters denied permission. Reset state.
          * @param {*} notif 
          */
-        notif_mayDefend: function(notif) {
-            const mayDefend = notif.args.allow;
-            const owner = notif.args.owner;
-            console.log(this.player_id + " mayDefend ="+ mayDefend + " state " + this.gamedatas.gamestate.name);
+        notif_noDefend: function(notif) {
+            console.log(this.player_id + " "+ " state " + this.gamedatas.gamestate.name);
             console.log(this.gamedatas.gamestate.args.committed);
-            const player_name = this.decorator.spanPlayerName(owner, this.isColorblind());
-            if (mayDefend) {
-                debugger;
-            } else {
-                this.onCancelCommit();
-            }
+            this.onCancelCommit();
         },
 
         /**
