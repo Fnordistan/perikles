@@ -296,12 +296,18 @@ class PeriklesLocations extends APP_GameClass
    */
   private function addPermission($location, $city) {
     $permissions = $this->getPermissions($location);
+    $isAdded = true;
     if ($permissions == null) {
       $permissions = $city;
     } elseif (!str_contains($permissions, $city)) {
       $permissions .= ",".$city;
+    } else {
+      $isAdded = false;
     }
-    self::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
+    // avoid unnecessary Db updates
+    if ($isAdded) {
+      self::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
+    }
   }
 
   /**
