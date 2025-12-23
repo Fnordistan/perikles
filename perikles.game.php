@@ -1339,7 +1339,7 @@ class Perikles extends Table
 
         // all units passed all tests for valid assignment
         // did we spend an influence cube?
-        if ($cube != "" && count($units) > 2) {
+        if ($cube != "" && count($unitstrs) > 2) {
             $this->Cities->changeInfluence($cube, $player_id, -1);
             self::notifyAllPlayers('spentInfluence', clienttranslate('${player_name} spends a ${city_name} Influence cube to send extra units'), array(
                 'i18n' => ['city_name'],
