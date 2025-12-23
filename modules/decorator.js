@@ -5,6 +5,9 @@
 
 define(["dojo/_base/declare"], function (declare) {
 
+
+    const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;';
+    
     // perikles-specific
     const PLAYER_COLORS = {
         "E53738" : "red",

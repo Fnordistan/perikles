@@ -42,8 +42,6 @@ const CANDIDATES = {
     "\u{003B2}" : "b"
 }
 
-const WHITE_OUTLINE = 'text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;';
-
 const DEAD_POOL = "deadpool";
 
 const LEFT_ARROW = '<span style="font-size:2em;">&#8678;</span>';
@@ -761,7 +759,7 @@ function (dojo, declare) {
                         args.player_name = this.decorator.spanPlayerName(args.player_id, this.isColorblind());
                     }
                     if (args.actplayer) {
-                        args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF;'+WHITE_OUTLINE);
+                        args.actplayer = args.actplayer.replace('color:#FFF;', 'color:#FFF;'+this.decorator.WHITE_OUTLINE);
                     }
                     if (args.candidate_name && args.candidate_id) {
                         args.candidate_name  = this.decorator.spanPlayerName(args.candidate_id, this.isColorblind());
