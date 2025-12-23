@@ -2143,7 +2143,7 @@ class Perikles extends Table
                         if ($this->getCurrentPlayerId() != $owning_player) {
                             throw new BgaUserException(self::_("You cannot respond to this request"));
                         }
-                        if ($requesting_player != $this->Cities->getLeader($city)) {
+                        if (!$this->Cities->isLeader($requesting_player, $city)) {
                             throw new BgaVisibleSystemException("Multiple city owners found in request response"); // NOI18N
                         }
                         $isMatch = true;
