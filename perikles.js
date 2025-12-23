@@ -1646,7 +1646,7 @@ function (dojo, declare) {
         onEnteringState: function( stateName, args )
         {
             this.currentState = stateName;
-            console.log("Entering state: "+stateName, args);
+            // console.log("Entering state: "+stateName, args);
 
             switch( stateName ) {
                 case 'chooseInitialInfluence':
@@ -1762,7 +1762,7 @@ function (dojo, declare) {
         //        
         onUpdateActionButtons: function( stateName, args )
         {
-            console.log("onUpdateActionButtons: "+stateName, args);
+            // console.log("onUpdateActionButtons: "+stateName, args);
             if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
                     case 'takeInfluence':
@@ -1853,15 +1853,13 @@ function (dojo, declare) {
                                 multireqs = true;
                             }
                         }
-                        debugger;
+
                         if  (isRequester) {
+                            // console.log("Added permission cancel button for "+requestargs);
                             this.addPermissionCancelButton(requestargs);
-                            // const is_extra = (commit_city != null) && (commit_city == city || city == "persia");
-                            //this.gamedatas.gamestate.args.committed[id] = {city: city, side: side, location: battle, strength: strength, unit: unit, cube: is_extra};
-                            console.log("Added permission cancel button for "+requestargs);
                         }  else if (requestargs.length > 0) {
                             this.addPermissionRequestButtons(requestargs);
-                            console.log("Added permission request buttons for "+requestargs);
+                            // console.log("Added permission request buttons for "+requestargs);
                             msg += '<br/>' + _("(You may also grant or revoke permissions at any time on the Defender Permissions panel)");
                         }
 
@@ -3726,15 +3724,9 @@ function (dojo, declare) {
             dojo.subscribe( 'takePersians', this, "notif_takePersians");
             this.notifqueue.setSynchronous( 'takePersians', 1000 );
             dojo.subscribe( 'sendBattle', this, "notif_sendBattle");
-            // ignore the message to sent to everyone about your own units
-            // this.notifqueue.setIgnoreNotificationCheck( 'sendBattle', (notif) => (notif.args.id == 0 && notif.args.owners.includes(this.player_id)) );
             this.notifqueue.setSynchronous( 'sendBattle', 1000 );
 
             //  permission requests and responses
-            // dojo.subscribe( 'defendRequest', this, "notif_permissionRequest");
-            // this.notifqueue.setSynchronous( 'defendRequest', 500 );
-            // dojo.subscribe( 'requestCanceled', this, "notif_cancelPermissionRequest");
-            // this.notifqueue.setSynchronous( 'requestCanceled', 500 );
             dojo.subscribe( 'noDefend', this, "notif_noDefend");
             this.notifqueue.setSynchronous( 'noDefend', 0 );
 
@@ -4024,8 +4016,7 @@ function (dojo, declare) {
          * @param {*} notif 
          */
         notif_noDefend: function(notif) {
-            console.log(this.player_id + " "+ " state " + this.gamedatas.gamestate.name);
-            console.log(this.gamedatas.gamestate.args.committed);
+            // console.log(this.player_id + " "+ " state " + this.gamedatas.gamestate.name);
             this.onCancelCommit();
         },
 
