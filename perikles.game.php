@@ -2059,14 +2059,6 @@ class Perikles extends Table
         self::setGameStateValue(REQUESTING_CITY."$i", $city_id);
         // make sure it's a legal request - check conflicting units
         
-        // $unitstr = $this->globals->get(UNIT_PENDING.$i);
-        // if (empty($unitstr)) {
-        //     throw new BgaVisibleSystemException("No pending unit found for request $i"); // NOI18N
-        // }
-        // [$id, $_, $battle] = explode("_", $unitstr);
-        // if (empty($id)) {
-        //     throw new BgaVisibleSystemException("Invalid unit ID in pending unit $unitstr"); // NOI18N
-        // }
         $counter = $this->getCounterById($id);
         $unitdesc = $this->unitDescription($counter['city'], $counter['strength'], $counter['type'], $battle);
         // Check whether this request is legal
@@ -2878,7 +2870,7 @@ class Perikles extends Table
             $requester = $this->getGameStateValue(REQUESTING_CITY."$i");
             if ($request != 0 && $requester != 0) {
                 $requesting_city = $this->Cities->getCityById($requester);
-                if ($requesting_player != $this->Cities->getLeader($requesting_city)) {
+                if (!$this->Cities->isLeader($requesting_player, $requesting_city)) {
                     throw new BgaVisibleSystemException("Multiple permission requests from different players"); // NOI18N
                 }
                 $location = $this->Locations->getLocationById($request);
