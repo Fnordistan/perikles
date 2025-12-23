@@ -3870,7 +3870,7 @@ class Perikles extends Table
                     break;
                 case 'permissionResponse':
                     $requests = $this->getPermissionRequestsForPlayer($active_player);
-                    $this->respondPermissionToDefend(array_keys($requests), array_values($requests), false);
+                    $this->respondPermissionToDefend($requests["cities"], $requests["locations"], false);
                     break;
                 case 'specialTile':
                     $this->specialTilePass($active_player);
@@ -4012,10 +4012,13 @@ class Perikles extends Table
      /**
      * Get an associative array of city => location for all locations owned by player that have requests to defend.
      * @param int player_id the player whose requests are being retrieved
-     * @return array associative array of city => location, may be empty
+     * @return array associative array of "cities" => cities, "locations" => location, may be empty
      */
     function getPermissionRequestsForPlayer($player_id) {
-        $requests = [];
+        $requests = array(
+            "cities" => array(),
+            "locations" => array()
+        );
         for ($i = 1; $i <= 4; $i++) {
             $city_id = $this->getGameStateValue(REQUESTING_CITY.$i);
             $location_id = $this->getGameStateValue(REQUESTED_LOCATION.$i);
@@ -4025,7 +4028,8 @@ class Perikles extends Table
                 $controlling_city = $this->Locations->getCity($location);
                 $owner = $this->Cities->getLeader($controlling_city);
                 if ($owner == $player_id) {
-                    $requests[$requesting_city] = $location;
+                    $requests["cities"][] = $requesting_city;
+                    $requests["locations"][] = $location;
                 }
             }
         }
