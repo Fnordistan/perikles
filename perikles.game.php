@@ -2165,6 +2165,9 @@ class Perikles extends Table
                     // update permission request status if granted
                     if ($bAllow) {
                         self::setGameStateValue(REQUEST_STATUS.$i, 1);
+                    } else {
+                        // mark as explicitly denied
+                        self::setGameStateValue(REQUEST_STATUS.$i, -1);
                     }
                     $this->setDefendPermission($location, $city, $bAllow);
                 }
@@ -2881,13 +2884,18 @@ class Perikles extends Table
                 $location = $this->Locations->getLocationById($request);
                 $owning_city = $this->Locations->getCity($location);
                 $owner = $this->Cities->getLeader($owning_city);
-                $permission_request = array(
-                    'location' => $location,
-                    'owning_city' => $owning_city,
-                    'owner' => $owner,
-                    'requesting_city' => $requesting_city,
-                );
-                $permission_requests[] = $permission_request;
+
+                // do not add if the owner has already denied
+                $status = $this->getGameStateValue(REQUEST_STATUS.$i);
+                if ($status != -1) {
+                    $permission_request = array(
+                        'location' => $location,
+                        'owning_city' => $owning_city,
+                        'owner' => $owner,
+                        'requesting_city' => $requesting_city,
+                    );
+                    $permission_requests[] = $permission_request;
+                }
             }
         }
 

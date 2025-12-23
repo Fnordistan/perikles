@@ -225,8 +225,8 @@ $machinestates = array(
 
     PERMISSION_RESPONSE => array(
         "name" => "permissionResponse",
-        "description" => clienttranslate('${otherplayer} is requesting permission to defend a city'),
-    	"descriptionmyturn" => clienttranslate('You have permission requests to resolve'),
+        "description" => clienttranslate('${otherplayer} is waiting for permission to defend a city'),
+    	"descriptionmyturn" => clienttranslate('You are waiting to resolve permission requests'),
         "args" => "argsPermissionResponse",
         "type" => "multipleactiveplayer",
         "possibleactions" => array( "respondPermissionToDefend", "cancelRequestToDefend" ),

@@ -1836,7 +1836,7 @@ function (dojo, declare) {
                             let reqmsg = '';
 
                             if (isRequester) {
-                                reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("You requested permission from ${player_name} for ${requesting_city} to defend ${location}") + '</div>';
+                                reqmsg = `<div class="prk_permrequest" data-owner="${owner}">` + _("You are waiting for ${player_name} to grant permission for ${requesting_city} to defend ${location}") + '</div>';
                                 reqmsg = reqmsg.replace('${player_name}', this.decorator.spanPlayerName(owner, this.isColorblind()));
                                 reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
                                 reqmsg = reqmsg.replace('${location}', locationName);
@@ -4262,6 +4262,13 @@ function (dojo, declare) {
             const permissions = notif.args.permissions;
             this.gamedatas.permissions[location] = permissions;
             this.updatePermissions();
+            // remove this request from my banner
+            const owner = notif.args.player_id;
+            document.querySelectorAll('.prk_permrequest').forEach( div => {
+                if (div.dataset.owner == owner) {
+                    div.remove();
+                }
+            });
         },
 
         /**
