@@ -183,12 +183,6 @@ class Perikles extends Table
         $this->location_tiles->init("LOCATION");
     }
 	
-    protected function getGameName( )
-    {
-		// Used for translations and stuff. Please do not modify.
-        return "perikles";
-    }	
-
     /*
         setupNewGame:
     */
@@ -275,6 +269,8 @@ class Perikles extends Table
         $this->activeNextPlayer();
 
         /************ End of the game initialization *****/
+
+        return 3;
     }
 
     /**

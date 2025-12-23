@@ -15,8 +15,8 @@
  */
 
 if (!defined('SETUP')) { // ensure this block is only invoked once, since it is included multiple times
-    // state constants
-    define("SETUP", 1);
+    // // state constants
+    // define("SETUP", 1);
 
     // Influence phase
     define("INITIAL_INFLUENCE", 2);
@@ -63,13 +63,13 @@ if (!defined('SETUP')) { // ensure this block is only invoked once, since it is 
 $machinestates = array(
 
     // The initial state. Please do not modify.
-    SETUP => array(
-        "name" => "gameSetup",
-        "description" => "",
-        "type" => "manager",
-        "action" => "stGameSetup",
-        "transitions" => array( "" => CHOOSE_INITIAL_INFLUENCE )
-    ),
+    // SETUP => array(
+    //     "name" => "gameSetup",
+    //     "description" => "",
+    //     "type" => "manager",
+    //     "action" => "stGameSetup",
+    //     "transitions" => array( "" => CHOOSE_INITIAL_INFLUENCE )
+    // ),
 
     INITIAL_INFLUENCE => array(
     	"name" => "initialInfluence",
