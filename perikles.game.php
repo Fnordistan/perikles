@@ -87,6 +87,9 @@ define("DEADPOOL", "deadpool");
 define("UNIT_PENDING", "pending_unit");
 define("CUBE_PENDING", "pending_cube");
 
+define("COMMITTED_UNITS", "nopermissionneeded");
+define("UNCOMMITTED_UNITS", "permissionneeded");
+
 // Polyfill for PHP 4 - PHP 7, safe to utilize with PHP 8
 if (!function_exists('str_contains')) {
     function str_contains (string $haystack, string $needle)
@@ -1250,10 +1253,11 @@ class Perikles extends Table
     /**
      * Make sure all commitment assignments are valid. Will throw an error if invalid.
      * If any defender assignments require permission, return an array of locations that need permission and do not commit any assignments.
+     * Creates a double associative array of city => [unitid => location] mapped to UNCOMMITTED_UNITS if any permission is needed or COMMITTED_UNITS => city => [unitid => side_locations] for those that don't.
      * @param string player_id
      * @param string units a space concatenateds string of units
      * @param string cube empty string or name of city spending an extra cube
-     * @return array associative array of city => [unitid => locations] requesting permission to defend, or empty array if no permissions needed
+     * @return array double associative array of "permission/nopermission" => city => [unitid => location]
      */
     function validateMilitaryCommits($player_id, $units, $cube) {
         // do all the checks for whether this is a valid action
@@ -1273,6 +1277,11 @@ class Perikles extends Table
             'attack' => [],
             'defend' => [],
         );
+        $commitments = array(
+            COMMITTED_UNITS => [],
+            UNCOMMITTED_UNITS => [],
+        );
+
         // MAKE NO CHANGES IN DB until this loop is completed!
         $permission_requests = [];
         foreach($unitstrs as $unitstr) {
@@ -1301,6 +1310,7 @@ class Perikles extends Table
                 }
                 $counter['location'] = $location;
                 $myforces['attack'][] = $counter;
+                $commitments[COMMITTED_UNITS][$city][$id] = $side.'_'.$location;
             } else if ($side == "defend") {
                 // check requirement for permission here
                 if ($this->validateDefender($player_id, $counter, $location, $unit_desc)) {
@@ -1308,6 +1318,8 @@ class Perikles extends Table
                         $permission_requests[$city] = [];
                     }
                     $permission_requests[$city][$id] = $location;
+                } else {
+                    $commitments[COMMITTED_UNITS][$city][$id] = $side.'_'.$location;
                 }
 
                 // is there already a main defender?
@@ -1320,8 +1332,9 @@ class Perikles extends Table
             }
         }
         // interrupt and do not commit assignments because we need to ask for permissions first
+        $commitments[UNCOMMITTED_UNITS] = $permission_requests;
         if (!empty($permission_requests)) {
-            return $permission_requests;
+            return $commitments;
         }
 
         // all units passed all tests for valid assignment
@@ -1362,7 +1375,7 @@ class Perikles extends Table
                 $this->sendToBattle($player_id, $f, $battlepos);
             }
         }
-        return [];
+        return $commitments;
     }
 
     /**
@@ -1928,22 +1941,32 @@ class Perikles extends Table
         }
         $player_id = $zombiePlayerId ?? self::getActivePlayerId();
 
-        $city_requests = [];
+        $commitments = [];
         if (trim($units) == "") {
             $this->noCommitUnits($player_id);
         } else {
-            $city_requests = $this->validateMilitaryCommits($player_id, $units, $cube);
+            $commitments = $this->validateMilitaryCommits($player_id, $units, $cube);
         }
         $state = "nextPlayer";
-        if (!empty($city_requests)) {
+        if (!empty($commitments[UNCOMMITTED_UNITS])) {
             $state = "requestPermission";
             // Store who is requesting permission so we can return to them
             $this->setGameStateValue(REQUESTING_PLAYER, $player_id);
 
             $i = 1;
-            foreach($city_requests as $city => $assignments) {
+            foreach($commitments[UNCOMMITTED_UNITS] as $city => $assignments) {
                 foreach ($assignments as $id => $location) {
                     $this->requestPermissionToDefend($player_id, $i, $id, $city, $location);
+                    $i++;
+                }
+            }
+            // need to also pack the commited units for later
+            foreach($commitments[COMMITTED_UNITS] as $ccity => $cassignments) {
+                foreach($cassignments as $cid => $clocation) {
+                    [$side, $loc] = explode("_", $clocation);
+                    $committedunitstr = $cid."_".$side."_".$loc;
+                    $this->globals->set(UNIT_PENDING."$i", $committedunitstr);
+                    $this->setGameStateValue(REQUEST_STATUS."$i", 1);
                     $i++;
                 }
             }
@@ -3136,6 +3159,7 @@ class Perikles extends Table
         for ($i = 1; $i <= 4 && $allPermissionsGranted; $i++) {
             $unitstr = $this->globals->get(UNIT_PENDING.$i);
             if (!empty($unitstr)) {
+                $this->debug("stPermissionResponse: checking request slot $i with units $unitstr ".$this->getGameStateValue(REQUEST_STATUS.$i)." status");
                 // There was a request in this slot - check if it was granted
                 if ($this->getGameStateValue(REQUEST_STATUS.$i) != 1) {
                     $allPermissionsGranted = false;
@@ -3149,11 +3173,11 @@ class Perikles extends Table
             $committedunits = $this->packCommittedForces();
             $units = implode(" ", $committedunits['units']);
             $cube = $committedunits['cube'] ?? "";
-            
+
             // all requests granted, actually ship the units, which should all be valid now
-            $perms = $this->validateMilitaryCommits($requesting_player, $units, $cube);
-            if (!empty($perms)) {
-                throw new BgaVisibleSystemException(sprintf("invalid commitment of units %s", json_encode($perms))); // NOI18N
+            $needperms = $this->validateMilitaryCommits($requesting_player, $units, $cube)[UNCOMMITTED_UNITS];
+            if (!empty($needperms)) {
+                throw new BgaVisibleSystemException(sprintf("invalid commitment of units %s", json_encode($needperms))); // NOI18N
             }
 
             $player_id = self::activeNextPlayer();
