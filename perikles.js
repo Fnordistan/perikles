@@ -1766,7 +1766,7 @@ function (dojo, declare) {
             if( this.isCurrentPlayerActive() ) {
                 switch( stateName ) {
                     case 'takeInfluence':
-                        if (args._private.special) {
+                        if (args._private && args._private.special) {
                             this.addSpecialTileButton();
                         }
                         break;
@@ -1783,18 +1783,18 @@ function (dojo, declare) {
                         }, null, null, 'red');
                         this.toggleAssignmentCancelButton(false);
                         // if we have the Slave Revolt tile
-                        if (args._private.special) {
+                        if (args._private && args._private.special) {
                             this.addSpecialTileButton();
                         }
                         break;
                     case 'specialTile':
-                        if (args._private.special) {
+                        if (args._private && args._private.special) {
                             this.addSpecialTileButton();
                             this.addSpecialPassButton();
                         }
                         break;
                     case 'specialBattleTile':
-                        if (args._private.special) {
+                        if (args._private && args._private.special) {
                             const location = args._private.location;
                             this.addSpecialTileButton(location);
                             this.addSpecialPassButton(true);
@@ -1836,10 +1836,12 @@ function (dojo, declare) {
                             let reqmsg = '';
 
                             if (isRequester) {
-                                reqmsg = `<div class="prk_permrequest" data-owner="${owner}">` + _("You are waiting for ${player_name} to grant permission for ${requesting_city} to defend ${location}") + '</div>';
-                                reqmsg = reqmsg.replace('${player_name}', this.decorator.spanPlayerName(owner, this.isColorblind()));
-                                reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
-                                reqmsg = reqmsg.replace('${location}', locationName);
+                                if (!this.gamedatas.permissions["denied"] || !this.gamedatas.permissions["denied"].includes(owner)) {
+                                    reqmsg = `<div class="prk_permrequest" data-owner="${owner}">` + _("You are waiting for ${player_name} to grant permission for ${requesting_city} to defend ${location}") + '</div>';
+                                    reqmsg = reqmsg.replace('${player_name}', this.decorator.spanPlayerName(owner, this.isColorblind()));
+                                    reqmsg = reqmsg.replace('${requesting_city}', this.spanCityName(requesting_city));
+                                    reqmsg = reqmsg.replace('${location}', locationName);
+                                }
                             } else if (isOwner) {
                                 reqmsg = `<div class="prk_permrequest" id="req-${span_id}">` + _("${player_name} is requesting permission for ${requesting_city} to defend ${location}") + '</div>';
                                 reqmsg = reqmsg.replace('${player_name}', this.decorator.spanPlayerName(requesting_player, this.isColorblind()));
@@ -4257,18 +4259,28 @@ function (dojo, declare) {
          * @param {Object} notif 
          */
         notif_givePermission: function(notif) {
+            // console.log("notif_givePermission", notif);
             const location = notif.args.location;
             // only a string for this one location
             const permissions = notif.args.permissions;
             this.gamedatas.permissions[location] = permissions;
             this.updatePermissions();
             // remove this request from my banner
-            const owner = notif.args.player_id;
-            document.querySelectorAll('.prk_permrequest').forEach( div => {
-                if (div.dataset.owner == owner) {
-                    div.remove();
+            if (this.isCurrentPlayerActive()) {
+                const owner = notif.args.player_id;
+                //  add this owner if not already in denied
+                if (!this.gamedatas.permissions["denied"]) {
+                    this.gamedatas.permissions["denied"] = [];
                 }
-            });
+                if (!this.gamedatas.permissions["denied"].includes(owner)) {
+                    this.gamedatas.permissions["denied"].push(owner);
+                }
+                document.querySelectorAll('.prk_permrequest').forEach( div => {
+                    if (div.dataset.owner == owner) {
+                        div.remove();
+                    }
+                });
+            }
         },
 
         /**

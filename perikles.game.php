@@ -2893,6 +2893,7 @@ class Perikles extends Table
                         'owning_city' => $owning_city,
                         'owner' => $owner,
                         'requesting_city' => $requesting_city,
+                        'status' => $status,
                     );
                     $permission_requests[] = $permission_request;
                 }
