@@ -2770,6 +2770,16 @@ class Perikles extends Table
     }
 
     /**
+     * The cities the active player may propose a Candidate in, and who they may nominate in each.
+     * Sent to the client so the UI offers exactly the nominations the server will accept.
+     */
+    function argsProposeCandidates() {
+        return array(
+            'nominations' => $this->Cities->nominations(self::getActivePlayerId()),
+        );
+    }
+
+    /**
      * Can the current active player play a special card during this Influence phase.
      */
     function argsSpecial() {
@@ -3255,8 +3265,18 @@ class Perikles extends Table
         if ($type == 'assassin') {
             $state = "assassinate";
         } else if ($type == 'candidate') {
-            $state = "candidate";
-        } else if ($this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE) && !$this->isAutopass($player_id)) {
+            // rare, but every Candidate space this player could use may already be filled:
+            // sending them to proposeCandidates would leave them with no legal move
+            if ($this->Cities->canNominateAny($player_id)) {
+                $state = "candidate";
+            } else {
+                self::notifyAllPlayers("message", clienttranslate('${player_name} has no available Candidate space, and cannot propose a Candidate'), array(
+                    'player_id' => $player_id,
+                    'player_name' => self::getActivePlayerName(),
+                ));
+            }
+        }
+        if ($state == "nextPlayer" && $this->SpecialTiles->canPlaySpecial($player_id, INFLUENCE_PHASE) && !$this->isAutopass($player_id)) {
             $state = "useSpecial";
         }
         $this->gamestate->nextState( $state );

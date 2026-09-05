@@ -507,7 +507,7 @@ class PeriklesCities extends APP_GameClass
   public function isLeader($player_id, $city) {
     $isleader = false;
     if ($city == PERSIA) {
-        $isleader = $this->game->getUniqueValueFromDB("SELECT persia FROM player where player_id=$player_id");
+        $isleader = (bool)$this->game->getUniqueValueFromDB("SELECT persia FROM player where player_id=$player_id");
     } else {
       $isleader = ($this->getLeader($city) == $player_id);
     }
@@ -746,59 +746,75 @@ class PeriklesCities extends APP_GameClass
     }
 
     /**
-     * Can player nominate in this city?
-     * @param player_id
-     * @param city
-     * @return true if the player_id is eligible to nominate a candidate in this city
-     */ 
-    function canNominate($player_id, $city) {
-      $open = false;
-      // are either slots open?
-      foreach(["a", "b"] as $c) {
-          if (empty($this->getCandidate($city, $c))) {
-              $open = true;
+     * Every nomination this player may legally make right now: for each city where they can propose
+     * a Candidate, the Candidate slot that would be filled and every player eligible to be nominated
+     * into it. This is the single source of truth for canNominate() and for the client UI, which
+     * receives it as the args of the proposeCandidates state.
+     * @param {int|string} $player_id
+     * @return {array} city => ["slot" => "a"|"b", "candidates" => [player_id, ...]] (may be empty)
+     */
+    function nominations(int|string $player_id): array {
+      $nominations = [];
+      // all players' Influence cubes, in a single query
+      $sql = "SELECT player_id, ".implode(", ", $this->cities())." FROM player";
+      $influence = $this->game->getCollectionFromDB($sql);
+
+      foreach ($this->cities() as $cn) {
+          // is either Candidate slot open?
+          $alpha = $this->getCandidate($cn, "a");
+          if (empty($alpha)) {
+              $slot = "a";
+          } elseif (empty($this->getCandidate($cn, "b"))) {
+              $slot = "b";
+          } else {
+              continue;
           }
-          if ($open) {
-              // do I have influence in this city
-              if ($this->hasInfluence($player_id, $city)) {
-                // must check for edge case: I am already candidate A and nobody else is in the city
-                if ($this->getCandidate($city, "a") == $player_id) {
-                  foreach ($this->getPlayerIds() as $candidate_id) {
-                    if ($candidate_id != $player_id) {
-                      if ($this->hasInfluence($candidate_id, $city)) {
-                        return true;
-                      }
-                    }
-                  }
-                  return false;
-                } else {
-                  return true;
-                }
+          // do I have influence in this city?
+          if (!$this->hasInfluence($player_id, $cn)) {
+              continue;
+          }
+          // anyone with an Influence cube here may be nominated (including myself),
+          // except whoever is already Candidate A
+          $candidates = [];
+          foreach ($influence as $candidate_id => $cubes) {
+              if ($slot == "b" && $candidate_id == $alpha) {
+                  continue;
+              }
+              if (intval($cubes[$cn]) > 0) {
+                  $candidates[] = $candidate_id;
               }
           }
+          if (!empty($candidates)) {
+              $nominations[$cn] = ["slot" => $slot, "candidates" => $candidates];
+          }
       }
-      return false;
+      return $nominations;
+  }
+
+    /**
+     * Can player nominate in this city?
+     * @param {int|string} $player_id
+     * @param {string} $city
+     * @return {bool} true if the player_id is eligible to nominate a candidate in this city
+     */ 
+    function canNominate(int|string $player_id, string $city): bool {
+      return array_key_exists($city, $this->nominations($player_id));
   }
 
     /**
      * Is there any city this player can nominate in?
      * @param {string} player_id
-     * @return true if player is able to propose a candidate somewhere
+     * @return {bool} true if player is able to propose a candidate somewhere
      */
-    function canNominateAny($player_id) {
-      foreach ($this->cities() as $cn) {
-          if ($this->canNominate($player_id, $cn)) {
-              return true;
-          }
-      }
-      return false;
+    function canNominateAny(int|string $player_id): bool {
+      return !empty($this->nominations($player_id));
   }
 
     /**
      * Are all the Candidate slots filled?
-     * @return true if someone is able to nominate in at least one city, otherwise false
+     * @return {bool} true if someone is able to nominate in at least one city, otherwise false
      */
-    function canAnyoneNominate() {
+    function canAnyoneNominate(): bool {
       foreach ($this->getPlayerIds() as $player_id) {
           if ($this->canNominateAny($player_id)) {
               return true;
@@ -813,7 +829,7 @@ class PeriklesCities extends APP_GameClass
      * @param {string} player_id
      * @return {integer} cubes this player has on board
      */
-    function allCubesOnBoard($player_id) {
+    function allCubesOnBoard(int|string $player_id): int {
       $cubes = 0;
       foreach( $this->cities() as $cn ) {
         $cubes += $this->cubesInCity($player_id, $cn);

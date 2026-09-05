@@ -68,6 +68,8 @@ function (dojo, declare) {
 
             this.stacks = new perikles.stack();
             this.slaverevolt = new perikles.slaverevolt();
+            // legal Candidate nominations, sent by the server in the proposeCandidates state
+            this.nominations = {};
             // this.currentState = null;
         },
 
@@ -413,10 +415,10 @@ function (dojo, declare) {
             const cubes_div = $(id);
 
             cubes_div.addEventListener('mouseenter', (event) => {
-                this.onInfluenceCubesHover(event, city, true);
+                this.onInfluenceCubesHover(event, city, player_id, true);
             });
             cubes_div.addEventListener('mouseleave', (event) => {
-                this.onInfluenceCubesHover(event, city, false);
+                this.onInfluenceCubesHover(event, city, player_id, false);
             });
             cubes_div.addEventListener('click', (event) => {
                 this.onInfluenceCubesClick(event, city, player_id);
@@ -1451,16 +1453,17 @@ function (dojo, declare) {
 
         /**
          * Mouse entering or leaving player's Influence zone in city.
-         * @param {Object} event 
+         * @param {Object} event
          * @param {string} city
+         * @param {string} player_id owner of these cubes
          * @param {bool} enter
          */
-         onInfluenceCubesHover: function(event, city, enter) {
+         onInfluenceCubesHover: function(event, city, player_id, enter) {
             if (this.isCurrentPlayerActive() && this.checkAction("proposeCandidate", true)) {
                 const cube_div = event.target;
-                // player must have a cube in the city
-                if (enter && this.hasCubeInCity(city, true)) {
-                    if (cube_div.hasChildNodes() && this.decorator.isHighlighted($(city))) {
+                // this player must be a legal Candidate in this city
+                if (enter && this.canNominateCandidate(city, player_id)) {
+                    if (cube_div.hasChildNodes()) {
                         this.decorator.highlight(cube_div);
                     }
                 } else {
@@ -1480,10 +1483,10 @@ function (dojo, declare) {
                 if (this.checkAction("proposeCandidate", true)) {
                     const tgt = event.target;
                     // it's either the cube area or one of the cubes
-                    if (this.decorator.isHighlighted($(city)) && this.hasCubeInCity(city, true)) {
+                    if (this.canNominateCandidate(city, player_id)) {
                         if (tgt.classList.contains("prk_cube") || (tgt.classList.contains("prk_city_cubes") && tgt.hasChildNodes())) {
                             this.proposeCandidate(city, player_id);
-                        }    
+                        }
                     }
                 }
             }
@@ -1655,14 +1658,12 @@ function (dojo, declare) {
                     }
                     break;
                 case 'proposeCandidates':
+                    // the server tells us exactly where we may nominate, and whom
+                    this.nominations = (args.args ? args.args.nominations : args.nominations) ?? {};
                     if (this.isCurrentPlayerActive()) {
-                        for (const city of CITIES) {
-                            const candidate_space = this.openCandidateSpace(city);
-                            if (candidate_space && this.hasCubeInCity(city, true) && this.existsOtherCubesInCity(city)) {
-                                const city_div = $(city);
-                                this.decorator.highlight(city_div);
-                                this.decorator.highlight(candidate_space);
-                            }
+                        for (const [city, nomination] of Object.entries(this.nominations)) {
+                            this.decorator.highlight($(city));
+                            this.decorator.highlight($(city+"_"+nomination.slot));
                         }
                     }
                     break;
@@ -1728,6 +1729,7 @@ function (dojo, declare) {
                     break;
                 case 'proposeCandidates':
                     this.decorator.removeAllHighlighted();
+                    this.nominations = {};
                     this.last_cube = null;
                     break;
                 case 'assassinate':
@@ -2527,38 +2529,16 @@ function (dojo, declare) {
         },
 
         /**
-         * For checking the edge case where my cubes are the only ones in the city.
-         * @param {string} city 
-         * @return {bool} true if any other player has cubes here
+         * May the active player nominate this player as a Candidate in this city?
+         * Answered from the nominations the server sent with the proposeCandidates state,
+         * so the UI can never offer - or refuse - something the server would not.
+         * @param {string} city
+         * @param {string} player_id the proposed Candidate
+         * @return {bool} true if this is a legal nomination
          */
-        existsOtherCubesInCity: function(city) {
-            for (const player_id in this.gamedatas.players) {
-                if (player_id != this.player_id) {
-                    if ($(city+'_cubes_'+player_id).childElementCount > 0) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        },
-
-        /**
-         * For a city, returns the div for candidate a if it's empty, else b if it's empty, else null
-         * @param {string} city 
-         * @returns a DOM Element or else null
-         */
-         openCandidateSpace: function(city) {
-            let candidate_space = null;
-            const citya = $(city+"_a");
-            if (!citya.hasChildNodes()) {
-                candidate_space = citya;
-            } else {
-                const cityb = $(city+"_b");
-                if (!cityb.hasChildNodes()) {
-                    candidate_space = cityb; 
-                }
-            }
-            return candidate_space;
+        canNominateCandidate: function(city, player_id) {
+            const nomination = this.nominations[city];
+            return nomination != undefined && nomination.candidates.some(c => c == player_id);
         },
 
         /**

@@ -121,6 +121,7 @@ $machinestates = array(
     	"name" => "proposeCandidates",
     	"description" => clienttranslate('${actplayer} must propose a candidate'),
     	"descriptionmyturn" => clienttranslate('You must propose a candidate'),
+        "args" => "argsProposeCandidates",
     	"type" => "activeplayer",
     	"possibleactions" => array( "proposeCandidate" ),
     	"transitions" => array( "nextPlayer" => NEXT_PLAYER, "useSpecial" => SPECIAL_TILE )
