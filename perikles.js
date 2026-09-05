@@ -653,7 +653,7 @@ function (dojo, declare) {
                     // it's in a player pool
                     const player_id = counter.getLocation();
                     // "_persia_" is special flag for controlled persian units
-                    if (player_id == this.player_id || (player_id == "_persia_" && persianleaders.includes(String(this.player_id)))) {
+                    if (player_id == this.player_id || (player_id == "_persia_" && persianleaders.some(p => p == this.player_id))) {
                         this.createMilitaryArea(player_id, counter.getCity());
                         const counterObj = counter.placeCounterInContainer(player_id);
                         counterObj.setAttribute("title", this.counterText(counter));
@@ -1098,13 +1098,23 @@ function (dojo, declare) {
             const player_id = military['location'];
             const id = counter.getCounterId();
             const counterObj = $(id);
-            this.slideToObjectAndDestroy(counterObj, $('player_board_'+player_id), 500, 500);
+            const player_board = $('player_board_'+player_id);
+            if (counterObj && player_board) {
+                this.slideToObjectAndDestroy(counterObj, player_board, 500, 500);
+            } else if (counterObj) {
+                // no board to slide to: get rid of the counter without animating
+                counterObj.remove();
+            } else {
+                // the counter has no div: our display has drifted from the server, but
+                // throwing here would abort the rest of the notification, so carry on
+                console.warn("counterToPlayerBoard: no counter "+id);
+            }
             if (player_id == this.player_id) {
                 this.createMilitaryArea(player_id, counter.getCity());
                 const newCounterObj = counter.placeCounterInContainer(player_id);
                 newCounterObj.setAttribute("title", this.counterText(counter));
             }
-            if (fromDeadpool) {
+            if (fromDeadpool && counterObj) {
                 this.stacks.sortCounterStack(counterObj);
             }
 
@@ -4154,7 +4164,9 @@ function (dojo, declare) {
             [...counters].forEach(c => {
                 const counter_name = c.id;
                 const [city, _1, _2, id] = counter_name.split('_');
-                if (ids.includes(id)) {
+                // server ids may be numbers or strings, so compare loosely: a miss here
+                // would delete a counter that is actually going back to its city stack
+                if (ids.some(i => i == id)) {
                     const city_military = city+"_military";
                     milzones.add(city_military);
 
@@ -4186,7 +4198,7 @@ function (dojo, declare) {
             // persians units are sent as slightly reformatted argument
             if (player_id == "persia") {
                 const persianleaders = notif.args.persianleaders;
-                if (persianleaders.includes(this.player_id)) {
+                if (persianleaders.some(p => p == this.player_id)) {
                     player_id = this.player_id;
                 } else {
                     player_id = persianleaders[0];
