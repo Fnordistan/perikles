@@ -432,10 +432,12 @@ function (dojo, declare) {
          */
         setupLocationTiles: function(locationtiles) {
             const tile_scale = 0.2;
-            // create player area for victory tiles
+            // create player area for victory tiles (this also runs every turn, so don't duplicate them)
             for (const player_id in this.gamedatas.players) {
-                const player_tiles = this.format_block('jstpl_victory_tiles', {id: player_id, scale: tile_scale});
-                dojo.place(player_tiles, $('player_board_'+player_id));
+                if (!$(player_id+'_player_tiles')) {
+                    const player_tiles = this.format_block('jstpl_victory_tiles', {id: player_id, scale: tile_scale});
+                    dojo.place(player_tiles, $('player_board_'+player_id));
+                }
             }
             for (let loc of locationtiles) {
                 const slot = loc['slot'];
@@ -4288,8 +4290,9 @@ function (dojo, declare) {
                 c.remove();
             });
             military.forEach(m => {
-                counter = this.militaryToCounter(m);
-                counter.placeBattle();
+                const counter = this.militaryToCounter(m);
+                // use the slot from the notification rather than the tile's position on screen
+                counter.placeBattle(slot);
             });
        },
 

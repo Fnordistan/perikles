@@ -197,19 +197,39 @@ define(["dojo/_base/declare"], function (declare) {
         /**
          * Assumes this counter has been set a location at a battle tile.
          * Place a military counter on the battle stack at the location tile.
+         * @param {string} slot (optional) battle slot; worked out from the location tile if not given
+         * @returns {DOM} the counter placed, or null if there was nowhere to put it
          */
-         placeBattle: function() {
+         placeBattle: function(slot=null) {
             const location = this.getLocation();
-            const slotid = $(location+"_tile").parentNode.id;
-            const slot = slotid[slotid.length-1];
-            const place = ["battle", slot, this.getType(), this.getBattlePosition()].join("_");
-            const stackct = $(place).childElementCount;
+            if (slot == null) {
+                // the location tile sits inside the battle zone for its slot
+                const tile = $(location+"_tile");
+                const battle_zone = tile ? tile.closest("[id^='battle_zone_']") : null;
+                if (battle_zone == null) {
+                    console.warn("placeBattle: "+location+" is not in a battle zone");
+                    return null;
+                }
+                slot = battle_zone.id.substring("battle_zone_".length);
+            }
+            const battlepos = this.getBattlePosition();
+            if (battlepos == undefined) {
+                console.warn("placeBattle: "+this.getCounterId()+" at "+location+" has no battle position ("+this.getPosition()+")");
+                return null;
+            }
+            const place = ["battle", slot, this.getType(), battlepos].join("_");
+            const stack = $(place);
+            if (stack == null) {
+                console.warn("placeBattle: no battle stack "+place+" for "+this.getCounterId());
+                return null;
+            }
+            const stackct = stack.childElementCount;
             // zero ids for face-down units
             if (this.getStrength() == 0) {
                 this.setId(stackct+"_"+location);
             }
             const battlecounter = this.toBattleDiv(stackct);
-            dojo.place(battlecounter, $(place));
+            return dojo.place(battlecounter, stack);
         },
 
         /**
