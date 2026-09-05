@@ -3,7 +3,7 @@
 /*
  * Manage the Deadpool.
  */
-class PeriklesDeadpool extends APP_GameClass
+class PeriklesDeadpool
 {
   private $game;
 
@@ -21,7 +21,7 @@ class PeriklesDeadpool extends APP_GameClass
     $id = $counter['id'];
     $city = $counter['city'];
     $deadpool = ($city == PERSIA) ? PERSIA : DEADPOOL;
-    self::DbQuery("UPDATE MILITARY SET location=\"$deadpool\", battlepos=0 WHERE id=$id");
+    Table::DbQuery("UPDATE MILITARY SET location=\"$deadpool\", battlepos=0 WHERE id=$id");
   }
 
   /**
@@ -82,7 +82,7 @@ class PeriklesDeadpool extends APP_GameClass
       throw new BgaVisibleSystemException("no $city $type unit in deadpool"); // NOI18N
     }
     $id = $counter['id'];
-    self::DbQuery("UPDATE MILITARY SET location=\"$player_id\" WHERE id=$id");
+    Table::DbQuery("UPDATE MILITARY SET location=\"$player_id\" WHERE id=$id");
     return $counter;
   }
 

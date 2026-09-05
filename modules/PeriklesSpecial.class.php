@@ -3,7 +3,7 @@
 /*
  * Manage Location Tiles.
  */
-class PeriklesSpecial extends APP_GameClass
+class PeriklesSpecial
 {
   private $game;
   private $specialcards = [];
@@ -34,7 +34,7 @@ class PeriklesSpecial extends APP_GameClass
       $players = $this->game->loadPlayersBasicInfos();
       foreach (array_keys($players) as $player_id) {
           $tile = array_pop($spec);
-          self::DbQuery("UPDATE player SET special_tile = \"$tile\" WHERE player_id=$player_id");
+          Table::DbQuery("UPDATE player SET special_tile = \"$tile\" WHERE player_id=$player_id");
       }
   }
 
@@ -106,7 +106,7 @@ class PeriklesSpecial extends APP_GameClass
    * @param {string} player_id
    */
   function markUsed($player_id) {
-      self::DbQuery("UPDATE player SET special_tile_used=1 WHERE player_id=$player_id");
+      Table::DbQuery("UPDATE player SET special_tile_used=1 WHERE player_id=$player_id");
   }
 
     /**

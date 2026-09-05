@@ -3,7 +3,7 @@
 /*
  * Manage Location Tiles.
  */
-class PeriklesLocations extends APP_GameClass
+class PeriklesLocations
 {
   private $game;
   private $locations = [];
@@ -244,7 +244,7 @@ class PeriklesLocations extends APP_GameClass
       if (!empty($city)) {
         $sql .= " AND card_type=\"$city\"";
       }
-      $locations = self::getObjectListFromDB($sql);
+      $locations = Table::getObjectListFromDB($sql);
       return $locations;
   }
 
@@ -306,7 +306,7 @@ class PeriklesLocations extends APP_GameClass
     }
     // avoid unnecessary Db updates
     if ($isAdded) {
-      self::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
+      Table::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
     }
   }
 
@@ -319,7 +319,7 @@ class PeriklesLocations extends APP_GameClass
     $permissions = $this->getPermissions($location);
     if ($permissions && str_contains($permissions, $city)) {
       $permissions = str_replace($city, '', $permissions);
-      self::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
+      Table::DbQuery("UPDATE LOCATION SET permissions=\"$permissions\" WHERE card_type_arg=\"$location\"");
     }
   }
 
@@ -364,7 +364,7 @@ class PeriklesLocations extends APP_GameClass
    * @param string location
    */
   private function setRole($player_id, $role, $location) {
-    self::DbQuery("UPDATE LOCATION SET $role=$player_id WHERE card_type_arg=\"$location\"");  
+    Table::DbQuery("UPDATE LOCATION SET $role=$player_id WHERE card_type_arg=\"$location\"");  
   }
 
 

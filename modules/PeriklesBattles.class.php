@@ -3,7 +3,7 @@
 /*
  * Manage battles. Interface for getting battle-related data.
  */
-class PeriklesBattles extends APP_GameClass
+class PeriklesBattles
 {
   private $game;
   private $combat_results_table = array(
@@ -379,7 +379,7 @@ class PeriklesBattles extends APP_GameClass
    * @param int position optional, defaults to 0
    */
   public function toLocation($id, $location, $position=0) {
-    self::DbQuery("UPDATE MILITARY SET location=\"$location\", battlepos=$position WHERE id=$id");
+    Table::DbQuery("UPDATE MILITARY SET location=\"$location\", battlepos=$position WHERE id=$id");
   }
 
   /**
@@ -390,7 +390,7 @@ class PeriklesBattles extends APP_GameClass
    * @return {array} of counters
    */
   public function claimCountersInCity($player_id, $city) {
-    self::DbQuery("UPDATE MILITARY SET location=\"$player_id\", battlepos=0 WHERE location=\"$city\"");
+    Table::DbQuery("UPDATE MILITARY SET location=\"$player_id\", battlepos=0 WHERE location=\"$city\"");
     $units = $this->getCountersByCity($city, $player_id);
     return $units;
   }

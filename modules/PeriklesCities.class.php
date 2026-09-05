@@ -6,7 +6,7 @@ DEFINE("ALLIED", 1);
 /*
  * Manage city status and influence cubes, as well as war status.
  */
-class PeriklesCities extends APP_GameClass
+class PeriklesCities
 {
   private $game;
   private $cities = [];
@@ -91,7 +91,7 @@ class PeriklesCities extends APP_GameClass
   private function setupInfluenceCubes() {
     foreach($this->cities() as $cn) {
         foreach($this->getPlayerIds() as $player_id) {
-            self::DbQuery("UPDATE player SET $cn=2 WHERE player_id=$player_id");
+            Table::DbQuery("UPDATE player SET $cn=2 WHERE player_id=$player_id");
         }
     }
   }
@@ -104,7 +104,7 @@ class PeriklesCities extends APP_GameClass
     $citystates[] = PERSIA;
     $i = 1;
     foreach($citystates as $c) {
-        self::DbQuery( "INSERT INTO WARS VALUES($i,\"$c\",0,0,0,0,0,0,0)" );
+        Table::DbQuery( "INSERT INTO WARS VALUES($i,\"$c\",0,0,0,0,0,0,0)" );
         $this->setAlly($c, $c);
         $i++;
     }
@@ -242,8 +242,8 @@ class PeriklesCities extends APP_GameClass
     if ($city1 == $city2 && $r != ALLIED) {
       throw new BgaVisibleSystemException("City ($city1) cannot set relationship with itself: $r"); // NOI18N
     }
-    self::DbQuery( "UPDATE WARS SET $city2=$r WHERE name=\"$city1\"");
-    self::DbQuery( "UPDATE WARS SET $city1=$r WHERE name=\"$city2\"");
+    Table::DbQuery( "UPDATE WARS SET $city2=$r WHERE name=\"$city1\"");
+    Table::DbQuery( "UPDATE WARS SET $city1=$r WHERE name=\"$city2\"");
   }
 
   /**
@@ -269,7 +269,7 @@ class PeriklesCities extends APP_GameClass
               $unittype = $u.$i;
               if (isset($city[$unittype])) {
                   for ($t = 0; $t < $city[$unittype]; $t++) {
-                      self::DbQuery( "INSERT INTO MILITARY VALUES($idct,\"$cn\",\"$unit\",$strength,\"$cn\",0)" );
+                      Table::DbQuery( "INSERT INTO MILITARY VALUES($idct,\"$cn\",\"$unit\",$strength,\"$cn\",0)" );
                       $idct++;
                   }
               }
@@ -469,7 +469,7 @@ class PeriklesCities extends APP_GameClass
    */
   public function setLeader($player_id, $city) {
     if ($city == PERSIA) {
-        self::DbQuery("UPDATE player SET persia=TRUE where player_id=$player_id");
+        Table::DbQuery("UPDATE player SET persia=TRUE where player_id=$player_id");
     } else {
         $this->game->setGameStateValue($city."_leader", $player_id);
     }
@@ -522,7 +522,7 @@ class PeriklesCities extends APP_GameClass
     foreach ($this->cities() as $cn) {
       $this->setLeader(0, $cn);
     }
-    self::DbQuery("UPDATE player SET persia=FALSE");
+    Table::DbQuery("UPDATE player SET persia=FALSE");
   }
 
   /**
@@ -709,7 +709,7 @@ class PeriklesCities extends APP_GameClass
       if ($influence < 0) {
           throw new BgaVisibleSystemException("Cannot reduce influence below 0"); // NOI18N
       }
-      self::DbQuery("UPDATE player SET $city = $influence WHERE player_id=$player_id");
+      Table::DbQuery("UPDATE player SET $city = $influence WHERE player_id=$player_id");
   }
 
     /**
